@@ -45,9 +45,10 @@
     </section>
 
     <!-- ===================== DETALHES ===================== -->
-    <section id="tab-panel" class="tab-page">
-      <div id="alerts" class="alerts"></div>
+    <section id="tab-panel" class="tab-page split">
+      <div id="alerts" class="alerts span"></div>
 
+      <div class="col">
       <div class="gauge-row">
         <div class="card gauge-card">
           <svg id="rpm-gauge" viewBox="0 0 200 130" aria-label="Conta-giros">
@@ -83,7 +84,9 @@
         <div class="card tile"><span class="label">TPS</span><b id="tps">--</b><small>%</small></div>
         <div class="card tile"><span class="label">MAP</span><b id="map">--</b><small>kPa</small></div>
       </div>
+      </div>
 
+      <div class="col">
       <div class="card">
         <div class="row-between"><span class="label">Falhas (DTC)</span><span id="mil" class="pill">MIL --</span></div>
         <div id="dtcs" class="dtc-list muted">Nenhuma falha lida ainda.</div>
@@ -93,6 +96,7 @@
         <div class="row-between"><span class="label">Monitores de prontidão</span><span id="monitors-pill" class="pill">--</span></div>
         <div id="monitors" class="monitors muted small">Aparecem depois da primeira leitura de diagnóstico (até 30 s após conectar).</div>
         <p class="muted small">Autodiagnósticos que a injeção roda sozinha ao dirigir. "Em teste" é normal depois de desligar a bateria ou apagar códigos; completam após alguns dias de uso.</p>
+      </div>
       </div>
     </section>
 
@@ -104,14 +108,15 @@
 
     <!-- ===================== HISTÓRICO ===================== -->
     <!-- ===================== ABASTECIMENTOS ===================== -->
-    <section id="tab-fuel" class="tab-page">
-      <div class="tiles fuel-tiles">
+    <section id="tab-fuel" class="tab-page split">
+      <div class="tiles fuel-tiles span">
         <div class="card tile"><span class="label">Consumo real</span><b id="fu-kml">--</b><small id="fu-kml-note">entre tanques cheios</small></div>
         <div class="card tile"><span class="label">Custo por km</span><b id="fu-rkm">--</b><small id="fu-rkm-note">&nbsp;</small></div>
         <div class="card tile"><span class="label">Gasto no mês</span><b id="fu-month">--</b><small id="fu-month-note">&nbsp;</small></div>
       </div>
-      <p id="fu-breakeven" class="muted small"></p>
+      <p id="fu-breakeven" class="muted small span"></p>
 
+      <div class="col col-sticky">
       <div class="card form">
         <span class="label">Registrar abastecimento</span>
         <label>Data e hora <input id="fu-when" type="datetime-local"></label>
@@ -135,7 +140,9 @@
         <button id="fu-save" class="btn btn-primary">Salvar abastecimento</button>
         <p id="fu-result" class="small muted">Com tanque cheio registrado na hora, o nível do tanque e o hodômetro do app são atualizados.</p>
       </div>
+      </div>
 
+      <div class="col">
       <h2>Consumo medido</h2>
       <div id="fu-intervals" class="list"></div>
 
@@ -165,9 +172,11 @@
         <button id="fu-import" class="btn">Importar</button>
         <p id="fu-import-result" class="small"></p>
       </div>
+      </div>
     </section>
 
-    <section id="tab-history" class="tab-page">
+    <section id="tab-history" class="tab-page split">
+      <div class="col">
       <div class="row-between history-head">
         <h2>Viagens</h2>
         <button id="ask-ai" class="btn btn-small" hidden>Perguntar à IA</button>
@@ -175,8 +184,11 @@
       </div>
       <p id="history-result" class="small muted"></p>
       <div id="trips" class="list"></div>
+      </div>
+      <div class="col">
       <h2>Falhas registradas (freeze frame)</h2>
       <div id="dtc-history" class="list"></div>
+      </div>
     </section>
 
     <!-- ===================== AJUSTES ===================== -->

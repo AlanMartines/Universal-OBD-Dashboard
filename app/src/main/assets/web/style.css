@@ -87,6 +87,20 @@ body.dash-fullscreen .topbar, body.dash-fullscreen .tabs, body.dash-fullscreen #
 body.dash-fullscreen main.dash-active { padding: 0; }
 body.dash-fullscreen #dash-host { border-radius: 0; min-height: 0; }
 
+/* ---------- Tablet e celular deitado (≥ 840 px): duas colunas ----------
+   .split divide a aba em .col lado a lado; .span ocupa a largura toda. No celular em pé, tudo segue empilhado. */
+@media (min-width: 840px) {
+  main:not(.dash-active) > .tab-page { max-width: 1280px; margin: 0 auto; }
+  .tab-page.split.active { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 16px; align-items: start; }
+  .split > .span { grid-column: 1 / -1; }
+  .split > .col > h2:first-child, .split > .col > .history-head:first-child h2 { margin-top: 0; }
+  #tab-settings.active { column-count: 2; column-gap: 16px; }
+  #tab-settings .card { break-inside: avoid; }
+  .ai-body { width: 100%; max-width: 820px; margin: 0 auto; }
+}
+/* Formulário de abastecimento sempre à vista, só em tela alta (no celular deitado ele não caberia). */
+@media (min-width: 840px) and (min-height: 700px) { .col-sticky { position: sticky; top: 0; } }
+
 .card { background: var(--card); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
 .label { color: var(--muted); font-size: 0.8rem; }
 .muted { color: var(--muted); }
