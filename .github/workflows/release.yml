@@ -18,9 +18,9 @@ jobs:
       - name: Tag confere com versionName
         run: |
           TAG="${GITHUB_REF_NAME#v}"
-          NAME="$(sed -n "s/.*versionName '\(.*\)'.*/\1/p" app/build.gradle)"
+          NAME="$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)"
           if [ "$TAG" != "$NAME" ]; then
-            echo "::error::A tag $GITHUB_REF_NAME não confere com versionName '$NAME' em app/build.gradle"
+            echo "::error::A tag $GITHUB_REF_NAME não confere com versionName '$NAME' em app/build.gradle.kts"
             exit 1
           fi
 
