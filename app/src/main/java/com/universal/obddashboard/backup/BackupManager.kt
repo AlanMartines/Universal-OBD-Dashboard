@@ -2,6 +2,7 @@ package com.universal.obddashboard.backup
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.content.edit
 import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.db.AppDatabase
 import com.universal.obddashboard.diagnostics.ConsoleSession
@@ -60,18 +61,20 @@ object BackupManager {
             contents.database.copyTo(dbFile, overwrite = true)
 
             contents.settingsJson?.let { json ->
-                val edit = context.getSharedPreferences(SETTINGS_PREFS, Context.MODE_PRIVATE).edit().clear()
-                BackupArchive.decodePrefs(json).forEach { (k, v) ->
-                    when (v) {
-                        is BackupArchive.PrefValue.B -> edit.putBoolean(k, v.v)
-                        is BackupArchive.PrefValue.I -> edit.putInt(k, v.v)
-                        is BackupArchive.PrefValue.L -> edit.putLong(k, v.v)
-                        is BackupArchive.PrefValue.F -> edit.putFloat(k, v.v)
-                        is BackupArchive.PrefValue.S -> edit.putString(k, v.v)
-                        is BackupArchive.PrefValue.SS -> edit.putStringSet(k, v.v)
+                // Gravação síncrona: os ajustes precisam estar no disco antes de o app reabrir o banco
+                context.getSharedPreferences(SETTINGS_PREFS, Context.MODE_PRIVATE).edit(commit = true) {
+                    clear()
+                    BackupArchive.decodePrefs(json).forEach { (k, v) ->
+                        when (v) {
+                            is BackupArchive.PrefValue.B -> putBoolean(k, v.v)
+                            is BackupArchive.PrefValue.I -> putInt(k, v.v)
+                            is BackupArchive.PrefValue.L -> putLong(k, v.v)
+                            is BackupArchive.PrefValue.F -> putFloat(k, v.v)
+                            is BackupArchive.PrefValue.S -> putString(k, v.v)
+                            is BackupArchive.PrefValue.SS -> putStringSet(k, v.v)
+                        }
                     }
                 }
-                edit.commit()
             }
             val profileDir = File(context.filesDir, ProfileParser.ASSET_DIR).apply { mkdirs() }
             contents.profiles.forEach { it.copyTo(File(profileDir, it.name), overwrite = true) }
