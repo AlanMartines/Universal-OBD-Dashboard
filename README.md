@@ -265,5 +265,9 @@ As tags usam o prefixo `v` (ex.: `v0.1.0`) e devem coincidir com `versionName` e
 
 Versão atual: **0.4.0**.
 
+## Como contribuir
+
+Relatos de problema, perfis de outros carros e pull requests são bem-vindos. As regras (somente consulta ao carro, cuidado com dados pessoais) e o passo a passo estão em [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Licença
 Distribuído sob licença MIT.

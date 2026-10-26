@@ -45,6 +45,10 @@ python3 -I -m unittest discover -s tools/can-capture -p 'test_*.py'
 
 CI runs both, plus an emulator smoke test of the R8-optimized build. See [docs/android-auto.md](docs/android-auto.md) for testing on the Desktop Head Unit.
 
+## Contributing
+
+Bug reports, profiles for other cars and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) (in Portuguese; English issues are fine). The app is read-only towards the vehicle: no ECU writes, actuators, code clearing or CAN transmission.
+
 ## License
 
 See [LICENSE](LICENSE).
