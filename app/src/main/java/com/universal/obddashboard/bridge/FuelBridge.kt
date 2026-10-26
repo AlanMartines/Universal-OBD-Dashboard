@@ -12,20 +12,19 @@ import com.universal.obddashboard.fuel.FuelLog
 import com.universal.obddashboard.orNull
 import com.universal.obddashboard.telemetry.TelemetryHub
 import java.util.Locale
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
  * Ponte JavaScript "AndroidFuel": abastecimentos, calibração do consumo, nível do tanque e % de etanol.
  * Registrada pela [MainActivity]; na tela, `bridge.x()` encontra o método no objeto certo.
+ * O que consulta o banco responde de forma assíncrona ([MainActivity.answerAsync]).
  */
 class FuelBridge(private val activity: MainActivity) {
 
     /** {items, summary, intervals (com litros estimados pelo app no período), ve} */
     @JavascriptInterface
-    fun getFuelUps(): String = runBlocking {
+    fun getFuelUps(requestId: String) = activity.answerAsync(requestId) {
         val db = AppDatabase.get(activity)
         val list = db.fuelUpDao().all()
         val s = FuelLog.summary(list)
@@ -85,7 +84,9 @@ class FuelBridge(private val activity: MainActivity) {
 
     /** Salva um abastecimento (JSON do formulário). Tanque cheio recente → tanque e hodômetro do app atualizados. */
     @JavascriptInterface
-    fun addFuelUp(json: String): String = try {
+    fun addFuelUp(requestId: String, json: String) = activity.answerAsync(requestId) { addFuelUp(json) }
+
+    private suspend fun addFuelUp(json: String): String = try {
         val o = JSONObject(json)
         fun d(k: String) = o.optDouble(k, Double.NaN).takeIf { it.isFinite() }
         val liters = d("liters")?.takeIf { it > 0 } ?: throw IllegalArgumentException("Informe os litros")
@@ -99,7 +100,7 @@ class FuelBridge(private val activity: MainActivity) {
             fuelType = type, ethanolPct = d("ethanolPct"), fullTank = o.optBoolean("fullTank", true),
             station = o.optString("station").ifBlank { null }, notes = o.optString("notes").ifBlank { null },
         )
-        runBlocking { AppDatabase.get(activity).fuelUpDao().insert(f) }
+        AppDatabase.get(activity).fuelUpDao().insert(f)
         if (System.currentTimeMillis() - f.timestamp < MainActivity.RECENT_FUEL_UP_MS) {
             f.odometerKm?.let { activity.applyOdometer(it) }
             applyFillUp(f)?.let { "ok|$it" } ?: "ok"
@@ -111,25 +112,29 @@ class FuelBridge(private val activity: MainActivity) {
     }
 
     @JavascriptInterface
-    fun deleteFuelUp(id: Long): String = try {
-        runBlocking { AppDatabase.get(activity).fuelUpDao().delete(id) }
-        "ok"
-    } catch (e: Exception) {
-        "Falha ao apagar: ${e.message}"
+    fun deleteFuelUp(requestId: String, id: Long) = activity.answerAsync(requestId) {
+        try {
+            AppDatabase.get(activity).fuelUpDao().delete(id)
+            "ok"
+        } catch (e: Exception) {
+            "Falha ao apagar: ${e.message}"
+        }
     }
 
     /** CSV com todos os abastecimentos, pelo menu de compartilhar. */
     @JavascriptInterface
-    fun exportFuelUps(): String = try {
-        val list = runBlocking { AppDatabase.get(activity).fuelUpDao().all() }
-        if (list.isEmpty()) throw IllegalStateException("Nenhum abastecimento registrado")
-        val dir = java.io.File(activity.cacheDir, "exports").apply { mkdirs() }
-        val stamp = java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US).format(java.util.Date())
-        val file = java.io.File(dir, "abastecimentos_$stamp.csv").apply { writeText(FuelLog.toCsv(list)) }
-        activity.runOnUiThread { activity.startActivity(TripExportFiles.shareIntent(activity, file, "text/csv")) }
-        "ok"
-    } catch (e: Exception) {
-        e.message ?: "erro"
+    fun exportFuelUps(requestId: String) = activity.answerAsync(requestId) {
+        try {
+            val list = AppDatabase.get(activity).fuelUpDao().all()
+            if (list.isEmpty()) throw IllegalStateException("Nenhum abastecimento registrado")
+            val dir = java.io.File(activity.cacheDir, "exports").apply { mkdirs() }
+            val stamp = java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US).format(java.util.Date())
+            val file = java.io.File(dir, "abastecimentos_$stamp.csv").apply { writeText(FuelLog.toCsv(list)) }
+            activity.runOnUiThread { activity.startActivity(TripExportFiles.shareIntent(activity, file, "text/csv")) }
+            "ok"
+        } catch (e: Exception) {
+            e.message ?: "erro"
+        }
     }
 
     /** Importa CSV no formato exportado; ignora linhas já registradas (mesma data e litros). */
@@ -140,19 +145,19 @@ class FuelBridge(private val activity: MainActivity) {
 
     /** [replace]: apaga todos os abastecimentos antes (só depois de o CSV inteiro ser validado). */
     @JavascriptInterface
-    fun importFuelUps(csv: String, replace: Boolean): String = try {
+    fun importFuelUps(requestId: String, csv: String, replace: Boolean) = activity.answerAsync(requestId) { importFuelUps(csv, replace) }
+
+    private suspend fun importFuelUps(csv: String, replace: Boolean): String = try {
         val profileId = runCatching { activity.currentProfile().id }.getOrDefault(AppSettings.selectedProfileId(activity))
         val parsed = FuelLog.fromCsv(csv, profileId)
         if (parsed.isEmpty()) throw IllegalArgumentException("Nenhum abastecimento no CSV")
         val db = AppDatabase.get(activity)
         val dao = db.fuelUpDao()
-        val (added, removed) = runBlocking {
-            db.withTransaction {
-                val removed = if (replace) dao.all().size.also { dao.deleteAll() } else 0
-                val fresh = parsed.filter { dao.countSame(it.timestamp, it.liters) == 0 }
-                dao.insertAll(fresh)
-                fresh.size to removed
-            }
+        val (added, removed) = db.withTransaction {
+            val removed = if (replace) dao.all().size.also { dao.deleteAll() } else 0
+            val fresh = parsed.filter { dao.countSame(it.timestamp, it.liters) == 0 }
+            dao.insertAll(fresh)
+            fresh.size to removed
         }
         JSONObject().put("ok", true).put("added", added).put("skipped", parsed.size - added).put("removed", removed).toString()
     } catch (e: Exception) {

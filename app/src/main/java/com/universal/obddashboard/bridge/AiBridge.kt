@@ -15,7 +15,6 @@ import com.universal.obddashboard.db.AppDatabase
 import com.universal.obddashboard.obd.VehicleProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import org.json.JSONArray
@@ -68,7 +67,7 @@ class AiBridge(private val activity: MainActivity) {
 
     /** Texto exato que "Explicar com IA" enviaria para [json] ({code, kind, rpm, speedKmh, engineLoadPct, coolantC}). */
     @JavascriptInterface
-    fun aiPreviewDtc(json: String): String = previewJson { dtcMessages(json) }
+    fun aiPreviewDtc(requestId: String, json: String) = previewJson(requestId) { dtcMessages(json) }
 
     /** Assíncrono: a resposta chega em activity.window.onAiResult({id, ok, text | error}). */
     @JavascriptInterface
@@ -79,21 +78,21 @@ class AiBridge(private val activity: MainActivity) {
 
     /** Última resposta guardada para (kind, ref): {text, createdAt, model} ou null. */
     @JavascriptInterface
-    fun aiSavedAnswer(kind: String, ref: String): String = runBlocking {
+    fun aiSavedAnswer(requestId: String, kind: String, ref: String) = activity.answerAsync(requestId) {
         AppDatabase.get(activity).aiAnswerDao().get(kind, ref)?.let {
             JSONObject().put("text", it.text).put("createdAt", it.createdAt).put("model", it.model ?: JSONObject.NULL).toString()
         } ?: "null"
     }
 
     @JavascriptInterface
-    fun aiPreviewTrip(tripId: Long): String = previewJson { tripMessages(tripId) }
+    fun aiPreviewTrip(requestId: String, tripId: Long) = previewJson(requestId) { tripMessages(tripId) }
 
     @JavascriptInterface
     fun aiAnalyzeTrip(requestId: String, tripId: Long) = runAi(requestId, "trip", saveAs = "trip" to tripId.toString()) { tripMessages(tripId) }
 
     /** [historyJson]: [{role: user|assistant, content}] das perguntas anteriores nesta conversa. */
     @JavascriptInterface
-    fun aiPreviewAsk(question: String, historyJson: String): String = previewJson { askMessages(question, historyJson) }
+    fun aiPreviewAsk(requestId: String, question: String, historyJson: String) = previewJson(requestId) { askMessages(question, historyJson) }
 
     @JavascriptInterface
     fun aiAsk(requestId: String, question: String, historyJson: String) =
@@ -136,11 +135,14 @@ class AiBridge(private val activity: MainActivity) {
         }
     }
 
-    private fun previewJson(build: suspend () -> List<AiClient.Message>): String = try {
-        val m = runBlocking { build() }
-        JSONObject().put("ok", true).put("text", m.joinToString("\n\n") { "[${it.role}]\n${it.content}" }).toString()
-    } catch (e: Exception) {
-        JSONObject().put("ok", false).put("error", e.message ?: "erro").toString()
+    /** Texto exato do pedido, montado em IO (a análise de viagem lê toda a telemetria dela). */
+    private fun previewJson(requestId: String, build: suspend () -> List<AiClient.Message>) = activity.answerAsync(requestId) {
+        try {
+            val m = build()
+            JSONObject().put("ok", true).put("text", m.joinToString("\n\n") { "[${it.role}]\n${it.content}" }).toString()
+        } catch (e: Exception) {
+            JSONObject().put("ok", false).put("error", e.message ?: "erro").toString()
+        }
     }
 
     private fun ethanolNow(p: VehicleProfile) = AppSettings.ethanolPercent(activity, p.fuel?.defaultEthanolPct ?: 0.0)

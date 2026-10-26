@@ -6,8 +6,13 @@ const brl = (v, d = 2) => (v == null ? '--' : 'R$ ' + fmt(v, d));
 const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const localInput = (ms) => { const d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); };
 
-function loadFuel() {
-  const data = parse(bridge.getFuelUps(), { items: [], summary: {}, intervals: [] });
+let fuelSeq = 0;
+
+async function loadFuel() {
+  const seq = ++fuelSeq;
+  const json = await nativeAsync((id) => bridge.getFuelUps(id)).catch(() => null);
+  if (seq !== fuelSeq) return; // outra atualização começou depois desta
+  const data = parse(json, { items: [], summary: {}, intervals: [] });
   const s = data.summary || {};
   const last = data.intervals[0];
   $('fu-kml').textContent = s.avgKmPerL != null ? fmt(s.avgKmPerL, 1) + ' km/l' : '--';
@@ -104,13 +109,16 @@ const num = (id) => { const v = parseFloat(String($(id).value).replace(',', '.')
 $('fu-total').addEventListener('input', () => { const l = num('fu-liters'), t = num('fu-total'); if (l && t != null) $('fu-ppl').value = (t / l).toFixed(3); });
 $('fu-ppl').addEventListener('input', () => { const l = num('fu-liters'), p = num('fu-ppl'); if (l && p != null) $('fu-total').value = (p * l).toFixed(2); });
 $('fu-type').addEventListener('change', (e) => { $('fu-eth-wrap').hidden = e.target.value !== 'mix'; });
-$('fu-save').addEventListener('click', () => {
+$('fu-save').addEventListener('click', async () => {
   const when = fuWhenEdited && $('fu-when').value ? new Date($('fu-when').value).getTime() : Date.now();
-  const res = bridge.addFuelUp(JSON.stringify({
+  const json = JSON.stringify({
     timestamp: when, odometerKm: num('fu-odo'), liters: num('fu-liters'), totalPrice: num('fu-total'), pricePerLiter: num('fu-ppl'),
     fuelType: $('fu-type').value, ethanolPct: $('fu-type').value === 'mix' ? num('fu-eth') : null,
     fullTank: $('fu-full').checked, station: $('fu-station').value,
-  }));
+  });
+  $('fu-save').disabled = true; // evita salvar duas vezes com toques repetidos
+  const res = await nativeAsync((id) => bridge.addFuelUp(id, json)).catch((err) => err.message);
+  $('fu-save').disabled = false;
   const [status, info] = String(res).split('|');
   $('fu-result').textContent = status === 'ok' ? 'Abastecimento salvo.' + (info ? ' ' + info + '.' : '') : res;
   if (status === 'ok') {
@@ -119,14 +127,17 @@ $('fu-save').addEventListener('click', () => {
     loadFuel();
   }
 });
-$('fu-list').addEventListener('click', (e) => {
+$('fu-list').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-fu-delete]');
   if (!b || !confirm('Apagar este abastecimento?')) return;
-  const res = bridge.deleteFuelUp(Number(b.dataset.fuDelete));
+  const res = await nativeAsync((id) => bridge.deleteFuelUp(id, Number(b.dataset.fuDelete))).catch((err) => err.message);
   if (res !== 'ok') alert(res);
   loadFuel();
 });
-$('fu-export').addEventListener('click', () => { const r = bridge.exportFuelUps(); if (r !== 'ok') alert(r); });
+$('fu-export').addEventListener('click', async () => {
+  const r = await nativeAsync((id) => bridge.exportFuelUps(id)).catch((err) => err.message);
+  if (r !== 'ok') alert(r);
+});
 $('fu-pick').addEventListener('click', () => bridge.pickFuelCsv());
 window.onFuelCsvPicked = (r) => {
   if (r.ok) $('fu-csv').value = r.text;
@@ -134,10 +145,13 @@ window.onFuelCsvPicked = (r) => {
   $('fu-import-result').textContent = r.ok ? `Arquivo carregado: ${lines} linha(s). Confira e toque em Importar.` : 'Erro: ' + r.error;
   $('fu-import-result').style.color = r.ok ? '' : 'var(--red)';
 };
-$('fu-import').addEventListener('click', () => {
+$('fu-import').addEventListener('click', async () => {
   const replace = $('fu-replace').checked;
   if (replace && !confirm('Apagar todos os abastecimentos registrados e ficar só com os do CSV?')) return;
-  const r = parse(bridge.importFuelUps($('fu-csv').value, replace), { ok: false, error: 'resposta inválida' });
+  const csv = $('fu-csv').value;
+  $('fu-import').disabled = true;
+  const r = parse(await nativeAsync((id) => bridge.importFuelUps(id, csv, replace)).catch(() => null), { ok: false, error: 'resposta inválida' });
+  $('fu-import').disabled = false;
   $('fu-import-result').textContent = r.ok
     ? `${r.added} importado(s), ${r.skipped} já existia(m)${r.removed ? `, ${r.removed} substituído(s)` : ''}.` : 'Erro: ' + r.error;
   $('fu-import-result').style.color = r.ok ? 'var(--accent)' : 'var(--red)';

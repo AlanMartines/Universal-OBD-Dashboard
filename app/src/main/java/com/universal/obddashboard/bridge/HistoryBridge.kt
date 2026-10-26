@@ -6,18 +6,18 @@ import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.db.AppDatabase
 import com.universal.obddashboard.export.TripExportFiles
 import com.universal.obddashboard.orNull
-import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
  * Ponte JavaScript "AndroidHistory": viagens gravadas e falhas (lista, exportação e remoção).
  * Registrada pela [MainActivity]; na tela, `bridge.x()` encontra o método no objeto certo.
+ * Tudo aqui consulta o banco, então responde de forma assíncrona ([MainActivity.answerAsync]).
  */
 class HistoryBridge(private val activity: MainActivity) {
 
     @JavascriptInterface
-    fun getTrips(limit: Int): String = runBlocking {
+    fun getTrips(requestId: String, limit: Int) = activity.answerAsync(requestId) {
         val arr = JSONArray()
         AppDatabase.get(activity).tripDao().recentTrips(limit.coerceIn(1, 500)).forEach { t ->
             arr.put(
@@ -33,56 +33,58 @@ class HistoryBridge(private val activity: MainActivity) {
 
     /** Gera o CSV/GPX da viagem e abre o menu de compartilhamento. Retorna "ok" ou a mensagem de erro. */
     @JavascriptInterface
-    fun exportTrip(tripId: Long, format: String): String = try {
-        val f = TripExportFiles.Format.valueOf(format.uppercase())
-        val file = runBlocking { TripExportFiles.write(activity, tripId, f) }
-        activity.runOnUiThread { activity.startActivity(TripExportFiles.shareIntent(activity, file, f)) }
-        "ok"
-    } catch (e: TripExportFiles.ExportException) {
-        e.message ?: "erro"
-    } catch (e: Exception) {
-        "Falha ao exportar: ${e.message}"
+    fun exportTrip(requestId: String, tripId: Long, format: String) = activity.answerAsync(requestId) {
+        try {
+            val f = TripExportFiles.Format.valueOf(format.uppercase())
+            val file = TripExportFiles.write(activity, tripId, f)
+            activity.runOnUiThread { activity.startActivity(TripExportFiles.shareIntent(activity, file, f)) }
+            "ok"
+        } catch (e: TripExportFiles.ExportException) {
+            e.message ?: "erro"
+        } catch (e: Exception) {
+            "Falha ao exportar: ${e.message}"
+        }
     }
 
     /** Apaga uma viagem com a telemetria e as falhas dela. A viagem em andamento não pode ser apagada. */
     @JavascriptInterface
-    fun deleteTrip(tripId: Long): String = try {
-        if (tripId == activity.activeTripId()) {
-            "Esta viagem está em andamento: encerre a captura antes de apagar."
-        } else {
-            val db = AppDatabase.get(activity)
-            runBlocking {
+    fun deleteTrip(requestId: String, tripId: Long) = activity.answerAsync(requestId) {
+        try {
+            if (tripId == activity.activeTripId()) {
+                "Esta viagem está em andamento: encerre a captura antes de apagar."
+            } else {
+                val db = AppDatabase.get(activity)
                 db.withTransaction {
                     db.tripDao().deleteDtcsForTrip(tripId)
                     db.tripDao().deleteTrip(tripId) // telemetria sai em cascata
                     db.aiAnswerDao().delete("trip", tripId.toString())
                 }
+                "ok"
             }
-            "ok"
+        } catch (e: Exception) {
+            "Falha ao apagar: ${e.message}"
         }
-    } catch (e: Exception) {
-        "Falha ao apagar: ${e.message}"
     }
 
     /** Apaga viagens, telemetria e falhas registradas, preservando a viagem em andamento. */
     @JavascriptInterface
-    fun deleteAllHistory(): String = try {
-        val keep = activity.activeTripId() ?: -1L
-        val db = AppDatabase.get(activity)
-        runBlocking {
+    fun deleteAllHistory(requestId: String) = activity.answerAsync(requestId) {
+        try {
+            val keep = activity.activeTripId() ?: -1L
+            val db = AppDatabase.get(activity)
             db.withTransaction {
                 db.tripDao().deleteDtcsExcept(keep)
                 db.tripDao().deleteTripsExcept(keep)
                 db.aiAnswerDao().deleteKindExcept("trip", keep.toString())
             }
+            if (keep >= 0) "ok:keep" else "ok"
+        } catch (e: Exception) {
+            "Falha ao apagar: ${e.message}"
         }
-        if (keep >= 0) "ok:keep" else "ok"
-    } catch (e: Exception) {
-        "Falha ao apagar: ${e.message}"
     }
 
     @JavascriptInterface
-    fun getDtcHistory(limit: Int): String = runBlocking {
+    fun getDtcHistory(requestId: String, limit: Int) = activity.answerAsync(requestId) {
         val arr = JSONArray()
         AppDatabase.get(activity).tripDao().recentDtcs(limit.coerceIn(1, 500)).forEach { d ->
             arr.put(
