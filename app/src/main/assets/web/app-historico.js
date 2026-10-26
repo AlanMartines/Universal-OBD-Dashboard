@@ -9,9 +9,17 @@ const REASONS = {
 };
 const dt = (ms) => new Date(ms).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
-function loadHistory() {
+let historySeq = 0;
+
+async function loadHistory() {
   $('ask-ai').hidden = !aiReady();
-  const trips = parse(bridge.getTrips(50), []);
+  const seq = ++historySeq;
+  const [tripsJson, dtcsJson] = await Promise.all([
+    nativeAsync((id) => bridge.getTrips(id, 50)).catch(() => '[]'),
+    nativeAsync((id) => bridge.getDtcHistory(id, 100)).catch(() => '[]'),
+  ]);
+  if (seq !== historySeq) return; // outra atualização começou depois desta
+  const trips = parse(tripsJson, []);
   const box = $('trips');
   box.innerHTML = trips.length ? '' : '<p class="muted small">Nenhuma viagem gravada.</p>';
   trips.forEach((t) => {
@@ -35,7 +43,7 @@ function loadHistory() {
     box.appendChild(el);
   });
 
-  const dtcs = parse(bridge.getDtcHistory(100), []);
+  const dtcs = parse(dtcsJson, []);
   const dbox = $('dtc-history');
   dbox.innerHTML = dtcs.length ? '' : '<p class="muted small">Nenhuma falha registrada.</p>';
   dtcs.forEach((d) => {

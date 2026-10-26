@@ -1,0 +1,47 @@
+name: Perfil de veículo novo
+description: Pedir ou propor o perfil JSON de um carro
+title: "[Perfil] "
+labels: [perfil]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        O guia [Como criar o perfil do seu carro](https://github.com/AlanMartines/Universal-OBD-Dashboard/blob/master/docs/criar-perfil.md) mostra o passo a passo. Se você já tem o JSON, pode abrir um pull request direto.
+  - type: input
+    id: vehicle
+    attributes:
+      label: Marca, modelo, ano e motor
+      placeholder: "Fiat Uno Vivace 2012, 1.0 Fire Flex"
+    validations:
+      required: true
+  - type: input
+    id: ecu
+    attributes:
+      label: Central de injeção (ECU)
+      description: Se souber. Fica na etiqueta da central ou no manual de serviço.
+      placeholder: "Magneti Marelli IAW 7GF"
+  - type: input
+    id: protocol
+    attributes:
+      label: Protocolo encontrado
+      description: Resposta do `ATDPN` na gravação de diagnóstico, ou o que o app mostrou ao conectar.
+      placeholder: "A5 (ISO 14230-4 KWP FAST)"
+  - type: dropdown
+    id: fuel
+    attributes:
+      label: Combustível
+      options: [Flex, Gasolina, Etanol, Diesel, Outro]
+  - type: input
+    id: tank
+    attributes:
+      label: Capacidade do tanque (L)
+  - type: textarea
+    id: pids
+    attributes:
+      label: PIDs suportados e observações
+      description: Respostas do `0100`/`0120`/`0140`, leituras estranhas, fórmulas que não batem com o painel do carro.
+  - type: textarea
+    id: json
+    attributes:
+      label: Perfil JSON (se já tiver)
+      render: json

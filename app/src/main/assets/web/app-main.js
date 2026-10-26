@@ -7,23 +7,25 @@ $('import-profile').addEventListener('click', () => {
   out.style.color = res.ok ? 'var(--accent)' : 'var(--red)';
   if (res.ok) loadSettings();
 });
-$('trips').addEventListener('click', (e) => {
+$('trips').addEventListener('click', async (e) => {
   const del = e.target.closest('[data-delete-trip]');
   if (del) {
     if (!confirm('Apagar esta viagem, com a telemetria e as falhas registradas nela?')) return;
-    const res = bridge.deleteTrip(Number(del.dataset.deleteTrip));
+    const res = await nativeAsync((id) => bridge.deleteTrip(id, Number(del.dataset.deleteTrip))).catch((err) => err.message);
     if (res !== 'ok') alert(res);
     loadHistory();
     return;
   }
   const btn = e.target.closest('[data-export]');
   if (!btn) return;
-  const res = bridge.exportTrip(Number(btn.dataset.trip), btn.dataset.export);
+  btn.disabled = true;
+  const res = await nativeAsync((id) => bridge.exportTrip(id, Number(btn.dataset.trip), btn.dataset.export)).catch((err) => err.message);
+  btn.disabled = false;
   if (res !== 'ok') alert(res);
 });
-$('clear-history').addEventListener('click', () => {
+$('clear-history').addEventListener('click', async () => {
   if (!confirm('Apagar todas as viagens, a telemetria e as falhas registradas? Isso não pode ser desfeito.')) return;
-  const res = bridge.deleteAllHistory();
+  const res = await nativeAsync((id) => bridge.deleteAllHistory(id)).catch((err) => err.message);
   $('history-result').textContent = res === 'ok' ? 'Histórico apagado.'
     : res === 'ok:keep' ? 'Histórico apagado. A viagem em andamento foi mantida.' : res;
   loadHistory();

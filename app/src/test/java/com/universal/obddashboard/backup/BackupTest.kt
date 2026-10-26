@@ -47,7 +47,7 @@ class BackupTest {
         prefs.edit().clear().commit()
         File(context.filesDir, "profiles").deleteRecursively()
 
-        val msg = BackupManager.restore(context, Uri.fromFile(zip))
+        val msg = runBlocking { BackupManager.restore(context, Uri.fromFile(zip)) }
         assertTrue(msg, msg.contains("1 viagens") && msg.contains("1 abastecimentos"))
         val restored = AppDatabase.get(context)
         runBlocking { assertEquals(418.0, restored.tripDao().recentTrips(10).single().distanceKm, 0.0) }

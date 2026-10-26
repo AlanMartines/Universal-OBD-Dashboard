@@ -44,6 +44,19 @@ class BridgeContractTest {
         bridges.keys.forEach { assertTrue("$it fora da lista da tela", appJs.contains("'$it'")) }
     }
 
+    @Test fun asyncMethodsAreCalledThroughNativeAsync() {
+        // Métodos que respondem em onBridgeResult: chamados direto, devolveriam undefined à tela
+        val sources = File("src/main/java/com/universal/obddashboard/bridge").listFiles()!!.joinToString("\n") { it.readText() }
+        val async = Regex("""fun (\w+)\(requestId: String[^)]*\) = (?:activity\.answerAsync|previewJson)""")
+            .findAll(sources).map { it.groupValues[1] }.toSortedSet()
+        assertTrue("nenhum método assíncrono encontrado", async.size >= 10)
+        val wrong = async.filter { m ->
+            Regex("""\bbridge\.$m\((?!id\b)""").containsMatchIn(appJs) ||
+                Regex("""\(id\) => bridge\.$m\(id\b""").findAll(appJs).count() != Regex("""\bbridge\.$m\(""").findAll(appJs).count()
+        }
+        assertEquals("chamadas fora do nativeAsync", emptyList<String>(), wrong)
+    }
+
     @Test fun browserStubCoversEveryCall() {
         // A pré-visualização fora do app (navegador, harness do painel) usa o simulador do app-core.js
         val stub = appJs.substringAfter("}) : {").substringBefore("\n};")

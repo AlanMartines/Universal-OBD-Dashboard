@@ -57,11 +57,11 @@ const aiFormat = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/^
 
 /* Um painel para os três usos: explicar falha ("dtc"), analisar viagem ("trip") e conversa ("ask").
    Antes do primeiro envio de cada tipo, mostra o texto exato e espera o "Enviar". */
-let aiFlow = null;            // {kind, title, preview(), send(id)}
+let aiFlow = null;            // {kind, title, preview(id), send(id), saved(id)}
 const aiChat = { turns: [], question: '' };
 const aiConsented = (k) => (ai.consents || []).includes(k);
 
-function aiOpen(flow) {
+async function aiOpen(flow) {
   aiFlow = flow;
   aiPending = null;
   $('ai-panel').hidden = false;
@@ -75,7 +75,8 @@ function aiOpen(flow) {
   const p = (ai.providers || []).find((x) => x.id === ai.provider) || {};
   $('ai-provider-name').textContent = (p.label || 'o provedor') + (ai.model ? ' · ' + ai.model : '');
   if (flow.kind === 'ask') { aiRenderChat(); $('ai-question').focus(); return; }
-  const saved = flow.saved ? parse(flow.saved(), null) : null;
+  const saved = flow.saved ? parse(await nativeAsync(flow.saved).catch(() => null), null) : null;
+  if (aiFlow !== flow) return; // painel fechado ou trocado enquanto consultava
   if (saved && saved.text) {
     // Resposta guardada: mostra sem consultar (e sem gastar créditos) até pedir de novo
     $('ai-answer').innerHTML = aiFormat(saved.text);
@@ -88,8 +89,14 @@ function aiOpen(flow) {
 
 $('ai-again').addEventListener('click', () => { $('ai-saved').hidden = true; $('ai-answer').textContent = ''; aiStart(); });
 
-function aiStart() {
-  const preview = parse(aiFlow.preview(), { ok: false, error: 'resposta inválida' });
+async function aiStart() {
+  const flow = aiFlow;
+  $('ai-status').textContent = 'preparando…';
+  $('ai-ask').disabled = true; // a pergunta não sai duas vezes enquanto o texto é montado
+  const preview = parse(await nativeAsync(flow.preview).catch(() => null), { ok: false, error: 'resposta inválida' });
+  $('ai-ask').disabled = false;
+  if (aiFlow !== flow) return; // painel fechado ou trocado enquanto montava o texto
+  $('ai-status').textContent = '';
   if (!preview.ok) { aiShowError(preview.error); return; }
   $('ai-sent-text').textContent = preview.text;
   $('ai-sent').hidden = false;
@@ -133,13 +140,13 @@ function aiRenderChat(waiting, error) {
 
 function explainDtc(req) {
   const json = JSON.stringify(req);
-  aiOpen({ kind: 'dtc', title: 'Falha ' + req.code, preview: () => bridge.aiPreviewDtc(json), send: (id) => bridge.aiExplainDtc(id, json),
-    saved: () => bridge.aiSavedAnswer('dtc', String(req.code).toUpperCase()) });
+  aiOpen({ kind: 'dtc', title: 'Falha ' + req.code, preview: (id) => bridge.aiPreviewDtc(id, json), send: (id) => bridge.aiExplainDtc(id, json),
+    saved: (id) => bridge.aiSavedAnswer(id, 'dtc', String(req.code).toUpperCase()) });
 }
 
 function analyzeTrip(t) {
-  aiOpen({ kind: 'trip', title: 'Viagem de ' + dt(t.startTime), preview: () => bridge.aiPreviewTrip(t.id), send: (id) => bridge.aiAnalyzeTrip(id, t.id),
-    saved: () => bridge.aiSavedAnswer('trip', String(t.id)) });
+  aiOpen({ kind: 'trip', title: 'Viagem de ' + dt(t.startTime), preview: (id) => bridge.aiPreviewTrip(id, t.id), send: (id) => bridge.aiAnalyzeTrip(id, t.id),
+    saved: (id) => bridge.aiSavedAnswer(id, 'trip', String(t.id)) });
 }
 
 const AI_SUGGESTIONS = ['Quanto gastei de combustível este mês?', 'Por que o consumo variou entre as viagens?', 'O etanol compensa no meu carro?', 'Alguma viagem mostrou sinal de problema no motor?'];
@@ -147,7 +154,7 @@ const AI_SUGGESTIONS = ['Quanto gastei de combustível este mês?', 'Por que o c
 function openAsk() {
   aiOpen({
     kind: 'ask', title: 'Perguntar à IA',
-    preview: () => bridge.aiPreviewAsk(aiChat.question, JSON.stringify(aiChat.turns)),
+    preview: (id) => bridge.aiPreviewAsk(id, aiChat.question, JSON.stringify(aiChat.turns)),
     send: (id) => bridge.aiAsk(id, aiChat.question, JSON.stringify(aiChat.turns)),
   });
 }

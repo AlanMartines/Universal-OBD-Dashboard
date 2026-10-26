@@ -1,0 +1,24 @@
+name: Sugestão
+description: Uma ideia para o app ou para as ferramentas
+title: "[Sugestão] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema a ideia resolve
+      description: Conte a situação de uso. Isso ajuda mais que a solução pronta.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Como você imagina
+  - type: checkboxes
+    id: readonly
+    attributes:
+      label: Somente consulta
+      description: O app só lê dados do carro (veja o CONTRIBUTING).
+      options:
+        - label: A ideia não escreve na ECU, não aciona atuadores, não apaga códigos e não transmite na rede CAN.
+          required: true

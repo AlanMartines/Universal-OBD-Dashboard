@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Como contribuir
+    url: https://github.com/AlanMartines/Universal-OBD-Dashboard/blob/master/CONTRIBUTING.md
+    about: Regras do projeto, dados pessoais e como abrir um pull request.

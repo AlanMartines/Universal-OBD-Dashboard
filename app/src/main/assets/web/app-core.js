@@ -42,6 +42,26 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   consolePoll: () => '{"running":false,"seq":0,"lines":[]}', readDiagnostic: () => '{"lines":[]}',
 };
 
+/* Consultas ao banco respondem depois, em window.onBridgeResult, para não prender a tela enquanto o banco trabalha.
+   nativeAsync((id) => bridge.getTrips(id, 50)) devolve uma Promise com o texto da resposta. O simulador do
+   navegador devolve o valor na hora, e o retorno direto também resolve a Promise. */
+const bridgePending = new Map();
+let bridgeSeq = 0;
+function nativeAsync(call) {
+  return new Promise((resolve, reject) => {
+    const id = 'b' + (++bridgeSeq);
+    const direct = call(id);
+    if (direct !== undefined && direct !== null) resolve(direct);
+    else bridgePending.set(id, { resolve, reject });
+  });
+}
+window.onBridgeResult = (r) => {
+  const p = bridgePending.get(r.id);
+  if (!p) return;
+  bridgePending.delete(r.id);
+  if (r.ok) p.resolve(r.value); else p.reject(new Error(r.error));
+};
+
 const $ = (id) => document.getElementById(id);
 const nf = (d) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const fmt = (v, d = 0) => (v === null || v === undefined || Number.isNaN(v)) ? '--' : nf(d).format(v);

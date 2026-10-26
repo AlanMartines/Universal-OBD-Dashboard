@@ -1,0 +1,53 @@
+name: Problema
+description: Algo não funciona como deveria
+title: "[Problema] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de anexar gravações, CSV ou prints, confira se não aparecem o **VIN**, o **trajeto GPS**, endereços ou o hodômetro. Veja [Dados pessoais](https://github.com/AlanMartines/Universal-OBD-Dashboard/blob/master/CONTRIBUTING.md#dados-pessoais).
+  - type: textarea
+    id: what
+    attributes:
+      label: O que aconteceu
+      description: E o que você esperava que acontecesse.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      placeholder: |
+        1. Abra a aba ...
+        2. Toque em ...
+  - type: input
+    id: version
+    attributes:
+      label: Versão do app
+      description: Configurações do Android → Apps → o app, ou o nome do APK baixado das Releases.
+      placeholder: "0.8.1"
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Celular e versão do Android
+      placeholder: "Xiaomi ..., Android 14"
+  - type: input
+    id: adapter
+    attributes:
+      label: Adaptador OBD
+      description: Ajustes → Console da rede → Identificar adaptador mostra o modelo e se é clone.
+      placeholder: "ELM327 v1.5 (clone), OBDLink LX..."
+  - type: input
+    id: vehicle
+    attributes:
+      label: Veículo e perfil usado
+      placeholder: "Fiat Uno Vivace 2012, perfil fiat_uno_vivace_7gf"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Trecho da gravação de diagnóstico (opcional)
+      description: Só as linhas que interessam, sem o VIN (`0902`) e sem o campo `gps`.
+      render: json

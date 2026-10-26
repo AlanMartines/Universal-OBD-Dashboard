@@ -43,6 +43,7 @@ import com.universal.obddashboard.obd.Readiness
 import com.universal.obddashboard.service.ObdForegroundService
 import com.universal.obddashboard.telemetry.DashboardState
 import com.universal.obddashboard.telemetry.TelemetryHub
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -287,6 +288,24 @@ class MainActivity : ComponentActivity() {
     internal fun pushJs(script: String) {
         if (!::webView.isInitialized) return
         webView.post { webView.evaluateJavascript(script, null) }
+    }
+
+    /**
+     * Resposta assíncrona da ponte: [work] roda em IO e o texto chega em window.onBridgeResult({id, ok, value | error}).
+     * Uma chamada síncrona prenderia o JavaScript da tela até o banco responder.
+     */
+    internal fun answerAsync(requestId: String, work: suspend () -> String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val o = JSONObject().put("id", requestId)
+            try {
+                o.put("ok", true).put("value", work())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                o.put("ok", false).put("error", e.message ?: "erro")
+            }
+            pushJs("window.onBridgeResult && window.onBridgeResult($o)")
+        }
     }
 
     // ---------------- Serialização para o painel web ----------------

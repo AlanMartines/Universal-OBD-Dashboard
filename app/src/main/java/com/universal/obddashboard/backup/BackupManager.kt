@@ -45,7 +45,7 @@ object BackupManager {
      * @return resumo para a tela
      * @throws BackupArchive.BackupException
      */
-    fun restore(context: Context, uri: Uri): String {
+    suspend fun restore(context: Context, uri: Uri): String {
         if (ObdForegroundService.isRunning) throw BackupArchive.BackupException("Encerre a captura antes de restaurar um backup")
         if (ConsoleSession.isActive) throw BackupArchive.BackupException("Feche o console antes de restaurar um backup")
         val work = File(context.cacheDir, "restore").apply { deleteRecursively(); mkdirs() }
@@ -81,8 +81,8 @@ object BackupManager {
 
             // Reabre já migrando, se o backup for de uma versão anterior do banco
             val db = AppDatabase.get(context)
-            val trips = kotlinx.coroutines.runBlocking { db.tripDao().recentTrips(100_000).size }
-            val fuelUps = kotlinx.coroutines.runBlocking { db.fuelUpDao().all().size }
+            val trips = db.tripDao().recentTrips(100_000).size
+            val fuelUps = db.fuelUpDao().all().size
             val date = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(Date(contents.manifest.createdAt))
             return "Backup de $date (app ${contents.manifest.appVersion}) restaurado: $trips viagens, $fuelUps abastecimentos."
         } finally {
