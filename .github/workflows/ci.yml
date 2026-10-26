@@ -31,6 +31,9 @@ jobs:
       - name: Testes da ferramenta trip-report
         run: python3 -I -m unittest discover -s tools/trip-report -p 'test_*.py' -v
 
+      - name: Testes da ferramenta can-capture
+        run: python3 -I -m unittest discover -s tools/can-capture -p 'test_*.py' -v
+
       - name: Relatórios de teste e lint
         if: always()
         uses: actions/upload-artifact@v7

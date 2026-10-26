@@ -114,6 +114,8 @@ No manual, as descrições de P0420 e P0443 parecem deslocadas em relação à S
 
 O nível do tanque não vem pela ECU: o PID `012F` não é anunciado. O caminho em estudo é escutar a rede CAN que liga o painel aos outros módulos. Para isso serve o console da rede da v0.5.0, que só escuta (`ATCSM1`).
 
+**Atualização de 26/10/2026:** o ELM327 clone deste carro responde `?` ao `ATCSM1`, então o console cancela a escuta. O mapeamento passa a ser feito com Arduino Uno + MCP2515 em modo Listen-Only (cristal de 8 MHz), que garante no hardware que nada é transmitido. Ligação e roteiro em [can-escuta.md](../can-escuta.md).
+
 **O que indica que a escuta pode funcionar:**
 - Neste carro, os pinos 6/14 vão ao **painel de instrumentos**, e a ECU também está na rede CAN, pelos bornes B13/B14 (manual, pág. 162–163). A ECU faz o diagnóstico pela linha K (pino 7), então a rede dos pinos 6/14 é a da carroceria.
 - O manual de serviço do Uno ([cópia no Scribd](https://pt.scribd.com/document/595476810/Uno-Evo-Manual-de-Servico)) descreve uma **Body CAN de baixa velocidade, 50 kbit/s**. No console, escolha **50 kbps** em vez da busca automática.
