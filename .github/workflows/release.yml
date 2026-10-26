@@ -1,0 +1,80 @@
+name: Release
+
+# Publica o APK assinado em GitHub Releases quando uma tag vX.Y.Z é enviada (ver README → Releases).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Tag confere com versionName
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          NAME="$(sed -n "s/.*versionName '\(.*\)'.*/\1/p" app/build.gradle)"
+          if [ "$TAG" != "$NAME" ]; then
+            echo "::error::A tag $GITHUB_REF_NAME não confere com versionName '$NAME' em app/build.gradle"
+            exit 1
+          fi
+
+      - name: Notas da versão (CHANGELOG)
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && /^## \[/ { exit }
+            on && /^\[[^]]+\]: / { exit }
+            on { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md"; then
+            echo "::error::Seção '## [$VERSION]' não encontrada no CHANGELOG.md"
+            exit 1
+          fi
+
+      - name: Chave de assinatura
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$RELEASE_KEYSTORE_BASE64" ]; then
+            echo "::error::Secret RELEASE_KEYSTORE_BASE64 não configurado (ver README → Releases)"
+            exit 1
+          fi
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "RELEASE_STORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Testes e APK de release
+        env:
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: ./gradlew :app:testDebugUnitTest :app:assembleRelease --console=plain
+
+      - name: Publica no GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APK="universal-obd-dashboard-${GITHUB_REF_NAME}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$APK"
+          APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          "$APKSIGNER" verify --print-certs "$APK"
+          PRE=""
+          case "$GITHUB_REF_NAME" in v0.*|*-*) PRE="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" "$APK" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" $PRE
+
+      - name: Remove a chave do runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"

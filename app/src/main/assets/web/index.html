@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Universal OBD</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="dash.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="title">
+      <h1 id="vehicle">Universal OBD</h1>
+      <span id="status" class="pill pill-idle">Parado</span>
+    </div>
+    <button id="toggle" class="btn btn-primary">Iniciar</button>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="dash">Painel</button>
+    <button class="tab" data-tab="panel">Detalhes</button>
+    <button class="tab" data-tab="sensors">Sensores</button>
+    <button class="tab" data-tab="fuel">Abastecimentos</button>
+    <button class="tab" data-tab="history">Histórico</button>
+    <button class="tab" data-tab="settings">Ajustes</button>
+  </nav>
+
+  <main>
+    <div id="notices">
+      <div id="notif-warning" class="card notice" hidden>
+        <b>Notificações desativadas</b>
+        <p class="small">Sem elas você não vê o aviso de que a captura está rodando em segundo plano, nem os alertas do motor.</p>
+        <button id="notif-fix" class="btn btn-small btn-primary">Ativar notificações</button>
+      </div>
+      <div id="bgloc-warning" class="card notice" hidden>
+        <b>GPS pode parar em segundo plano</b>
+        <p class="small">Quando a captura começa sozinha (Bluetooth do carro ou Android Auto), o Android só mantém o GPS com a localização liberada "o tempo todo".</p>
+        <button id="bgloc-fix" class="btn btn-small btn-primary">Permitir o tempo todo</button>
+      </div>
+    </div>
+
+    <!-- ===================== PAINEL (temas Minimal, Cápsula, HUD — dash.js) ===================== -->
+    <section id="tab-dash" class="tab-page active">
+      <div id="dash-host" aria-label="Painel de instrumentos"></div>
+    </section>
+
+    <!-- ===================== DETALHES ===================== -->
+    <section id="tab-panel" class="tab-page">
+      <div id="alerts" class="alerts"></div>
+
+      <div class="gauge-row">
+        <div class="card gauge-card">
+          <svg id="rpm-gauge" viewBox="0 0 200 130" aria-label="Conta-giros">
+            <path id="rpm-track" class="arc-track" />
+            <path id="rpm-red" class="arc-red" />
+            <path id="rpm-value" class="arc-value" />
+            <text id="rpm-text" x="100" y="92" class="gauge-num">--</text>
+            <text x="100" y="112" class="gauge-unit">RPM</text>
+          </svg>
+          <div id="gear" class="gear"></div>
+        </div>
+
+        <div class="card speed-card">
+          <div class="big"><span id="speed">--</span><small>km/h</small></div>
+          <div class="sub">GPS <span id="gps-speed">--</span> km/h</div>
+          <div class="sub" id="trip-line">0,0 km</div>
+        </div>
+      </div>
+
+      <div class="card temp-card">
+        <div class="row-between">
+          <span class="label">Motor</span>
+          <span><b id="coolant">--</b> °C <span id="temp-band" class="band"></span></span>
+        </div>
+        <div class="thermo"><div id="thermo-fill"></div><div id="thermo-marks"></div></div>
+      </div>
+
+      <div class="tiles">
+        <div class="card tile"><span class="label">Consumo</span><b id="kml">--</b><small id="lph">-- L/h</small></div>
+        <div class="card tile"><span class="label">Média viagem</span><b id="avg-kml">--</b><small id="fuel-used">0,00 L</small></div>
+        <div class="card tile"><span class="label">Tanque (estim.)</span><b id="fuel-left">--</b><small>litros</small></div>
+        <div class="card tile"><span class="label">Bateria</span><b id="volts">--</b><small>V</small></div>
+        <div class="card tile"><span class="label">TPS</span><b id="tps">--</b><small>%</small></div>
+        <div class="card tile"><span class="label">MAP</span><b id="map">--</b><small>kPa</small></div>
+      </div>
+
+      <div class="card">
+        <div class="row-between"><span class="label">Falhas (DTC)</span><span id="mil" class="pill">MIL --</span></div>
+        <div id="dtcs" class="dtc-list muted">Nenhuma falha lida ainda.</div>
+      </div>
+
+      <div class="card">
+        <div class="row-between"><span class="label">Monitores de prontidão</span><span id="monitors-pill" class="pill">--</span></div>
+        <div id="monitors" class="monitors muted small">Aparecem depois da primeira leitura de diagnóstico (até 30 s após conectar).</div>
+        <p class="muted small">Autodiagnósticos que a injeção roda sozinha ao dirigir. "Em teste" é normal depois de desligar a bateria ou apagar códigos; completam após alguns dias de uso.</p>
+      </div>
+    </section>
+
+    <!-- ===================== SENSORES ===================== -->
+    <section id="tab-sensors" class="tab-page">
+      <div id="sensor-grid" class="sensor-grid"></div>
+      <p id="disabled-pids" class="muted small"></p>
+    </section>
+
+    <!-- ===================== HISTÓRICO ===================== -->
+    <!-- ===================== ABASTECIMENTOS ===================== -->
+    <section id="tab-fuel" class="tab-page">
+      <div class="tiles fuel-tiles">
+        <div class="card tile"><span class="label">Consumo real</span><b id="fu-kml">--</b><small id="fu-kml-note">entre tanques cheios</small></div>
+        <div class="card tile"><span class="label">Custo por km</span><b id="fu-rkm">--</b><small id="fu-rkm-note">&nbsp;</small></div>
+        <div class="card tile"><span class="label">Gasto no mês</span><b id="fu-month">--</b><small id="fu-month-note">&nbsp;</small></div>
+      </div>
+      <p id="fu-breakeven" class="muted small"></p>
+
+      <div class="card form">
+        <span class="label">Registrar abastecimento</span>
+        <label>Data e hora <input id="fu-when" type="datetime-local"></label>
+        <div class="row">
+          <label class="grow">Hodômetro (km) <input id="fu-odo" type="number" min="0" step="1" inputmode="numeric" placeholder="52300"></label>
+          <label class="grow">Litros <input id="fu-liters" type="number" min="0" step="0.001" inputmode="decimal" placeholder="32,203"></label>
+        </div>
+        <div class="row">
+          <label class="grow">Valor pago (R$) <input id="fu-total" type="number" min="0" step="0.01" inputmode="decimal" placeholder="209,00"></label>
+          <label class="grow">Preço por litro (R$) <input id="fu-ppl" type="number" min="0" step="0.001" inputmode="decimal" placeholder="6,49"></label>
+        </div>
+        <label>Combustível
+          <select id="fu-type">
+            <option value="gasoline">Gasolina</option><option value="gasoline_premium">Gasolina aditivada / premium</option>
+            <option value="ethanol">Etanol</option><option value="mix">Mistura (gasolina + etanol)</option>
+          </select>
+        </label>
+        <label id="fu-eth-wrap" hidden>% de etanol no que foi colocado <input id="fu-eth" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
+        <label class="check"><input id="fu-full" type="checkbox" checked> Tanque cheio (a bomba desarmou)</label>
+        <label>Posto / observação <input id="fu-station" type="text" placeholder="Auto Posto ..., cidade"></label>
+        <button id="fu-save" class="btn btn-primary">Salvar abastecimento</button>
+        <p id="fu-result" class="small muted">Com tanque cheio registrado na hora, o nível do tanque e o hodômetro do app são atualizados.</p>
+      </div>
+
+      <h2>Consumo medido</h2>
+      <div id="fu-intervals" class="list"></div>
+
+      <div class="card form" id="fu-calibration">
+        <span class="label">Calibração do consumo</span>
+        <p id="fu-cal-text" class="small"></p>
+        <div class="row">
+          <button id="fu-cal-apply" class="btn btn-primary" hidden>Aplicar correção</button>
+          <button id="fu-cal-reset" class="btn" hidden>Voltar ao padrão do perfil</button>
+        </div>
+        <p class="muted small">Compara os litros de cada intervalo entre tanques cheios com o que o app estimou. Intervalos com diferença acima de 25% (tanque não completado, % de etanol errado) ficam de fora. A correção vale para as próximas leituras; os intervalos seguintes servem para conferir.</p>
+      </div>
+
+      <div class="row-between history-head">
+        <h2>Abastecimentos</h2>
+        <button id="fu-export" class="btn btn-small">Exportar CSV</button>
+      </div>
+      <div id="fu-list" class="list"></div>
+
+      <div class="card form">
+        <span class="label">Importar CSV (mesmo formato do exportado)</span>
+        <button id="fu-pick" class="btn">Escolher arquivo .csv</button>
+        <label>Conteúdo (do arquivo ou colado)
+          <textarea id="fu-csv" rows="4" placeholder="data_hora,hodometro_km,litros,valor_total,preco_litro,combustivel,etanol_pct,tanque_cheio,posto,observacao"></textarea>
+        </label>
+        <label class="check"><input id="fu-replace" type="checkbox"> Substituir todos os abastecimentos pelos do CSV</label>
+        <button id="fu-import" class="btn">Importar</button>
+        <p id="fu-import-result" class="small"></p>
+      </div>
+    </section>
+
+    <section id="tab-history" class="tab-page">
+      <div class="row-between history-head">
+        <h2>Viagens</h2>
+        <button id="ask-ai" class="btn btn-small" hidden>Perguntar à IA</button>
+        <button id="clear-history" class="btn btn-small btn-danger">Apagar todo o histórico</button>
+      </div>
+      <p id="history-result" class="small muted"></p>
+      <div id="trips" class="list"></div>
+      <h2>Falhas registradas (freeze frame)</h2>
+      <div id="dtc-history" class="list"></div>
+    </section>
+
+    <!-- ===================== AJUSTES ===================== -->
+    <section id="tab-settings" class="tab-page">
+      <div class="card">
+        <div class="row-between"><span class="label">Pronto para viajar</span><span id="ready-summary" class="pill"></span></div>
+        <div id="readiness" class="readiness"></div>
+      </div>
+
+      <div class="card form">
+        <span class="label">Hodômetro do carro</span>
+        <div class="row">
+          <label class="grow">Km no painel agora
+            <input id="odometer" type="number" min="0" step="1" inputmode="numeric" placeholder="ex.: 52300">
+          </label>
+          <button id="save-odometer" class="btn">Salvar</button>
+        </div>
+        <p id="odometer-result" class="muted small">O "Total" do painel passa a acompanhar o hodômetro do carro, somando as viagens a partir de agora. Deixe vazio e salve para voltar a somar só as viagens gravadas.</p>
+      </div>
+
+      <div class="card form">
+        <span class="label">Captura</span>
+        <label>Encerrar depois de parado por
+          <select id="idle-timeout">
+            <option value="5">5 min</option><option value="15">15 min</option>
+            <option value="30">30 min</option><option value="0">Nunca (só com a ignição desligada)</option>
+          </select>
+        </label>
+        <label>Continuar a mesma viagem se recomeçar em até
+          <select id="resume-window">
+            <option value="30">30 min</option><option value="60">1 hora</option>
+            <option value="180">3 horas</option><option value="720">12 horas</option><option value="0">Nunca (sempre viagem nova)</option>
+          </select>
+        </label>
+        <p class="muted small">Desconexões automáticas (motor desligado, Bluetooth caiu, parada longa) continuam a mesma viagem e o mesmo arquivo de diagnóstico. Se você tocar em <b>Encerrar viagem</b>, a próxima captura começa uma viagem nova. Vale a partir da próxima captura.</p>
+      </div>
+
+      <div class="card form">
+        <label>Perfil do veículo
+          <select id="profile-select"></select>
+        </label>
+        <p class="muted small" id="profile-info"></p>
+      </div>
+
+      <div class="card form" id="fuel-form">
+        <label>Etanol no tanque
+          <select id="ethanol"></select>
+        </label>
+        <p class="muted small">Ajustado sozinho ao registrar um abastecimento na hora, em Abastecimentos.</p>
+        <div class="row">
+          <label class="grow">Nível atual (L)
+            <input id="fuel-level" type="number" min="0" step="0.5" inputmode="decimal">
+          </label>
+          <button id="save-fuel" class="btn">Salvar</button>
+          <button id="tank-full" class="btn">Tanque cheio</button>
+        </div>
+      </div>
+
+      <div class="card form">
+        <label>Adaptador OBD
+          <select id="adapter-select"></select>
+        </label>
+        <label>Nome/MAC do adaptador (preenchido pela lista ou digitado)
+          <input id="adapter-names" type="text" placeholder="OBDII">
+        </label>
+        <span class="label">Dispositivos-gatilho: ao conectar, iniciam a captura (ex.: multimídia do carro)</span>
+        <div id="trigger-list" class="trigger-list"></div>
+        <label>Outros gatilhos (nome ou MAC, separados por vírgula)
+          <input id="extra-triggers" type="text" placeholder="CAR MULTIMEDIA">
+        </label>
+        <div class="row">
+          <button id="save-bt" class="btn btn-primary">Salvar Bluetooth</button>
+          <button id="refresh-bt" class="btn">Atualizar lista</button>
+        </div>
+        <p id="bt-result" class="small muted"></p>
+      </div>
+
+      <div class="card form">
+        <span class="label">Gravação de diagnóstico</span>
+        <label class="check"><input id="diag-enabled" type="checkbox">
+          Gravar tráfego OBD bruto, varredura da ECU, eventos e GPS (1×/s) para análise</label>
+        <p class="muted small">Vale a partir da próxima captura. Cerca de 5–10 MB por hora; arquivos com mais de 30 dias são apagados. Exporte em .gz pelo botão de cada arquivo.</p>
+        <div id="diag-files" class="list"></div>
+      </div>
+
+      <div class="card form">
+        <span class="label">Backup completo</span>
+        <p class="muted small">Um arquivo .zip com viagens, telemetria, falhas, abastecimentos, respostas da IA, ajustes e perfis importados, para guardar ou levar para outro celular. A chave de API da IA não vai junto. Arquivos de diagnóstico ficam de fora (exporte-os à parte).</p>
+        <div class="row">
+          <button id="backup-export" class="btn btn-primary">Gerar backup</button>
+          <button id="backup-restore" class="btn btn-danger">Restaurar backup…</button>
+        </div>
+        <p id="backup-result" class="small"></p>
+      </div>
+
+      <div class="card form" id="ai-card">
+        <span class="label">Assistente IA (opcional)</span>
+        <p class="muted small">Explica códigos de falha com a IA que você escolher. Só funciona com internet e usa créditos da sua conta no provedor. Envia apenas dados do veículo e da falha, nunca GPS, trajeto ou VIN.</p>
+        <label class="check"><input id="ai-enabled" type="checkbox"> Ativar o assistente</label>
+        <label>Provedor <select id="ai-provider"></select></label>
+        <label>Endereço da API <input id="ai-url" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://…/v1/"></label>
+        <label>Modelo <input id="ai-model" type="text" autocapitalize="off" spellcheck="false"></label>
+        <label>Chave de API <input id="ai-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <div class="row">
+          <button id="ai-save" class="btn btn-primary">Salvar</button>
+          <button id="ai-test" class="btn">Testar conexão</button>
+          <button id="ai-clear" class="btn btn-danger">Remover chave</button>
+        </div>
+        <p id="ai-result" class="small"></p>
+      </div>
+
+      <div class="card form">
+        <span class="label">Console da rede (escuta)</span>
+        <p class="muted small">Escuta por 60 s o que os módulos do carro trocam na rede CAN (pinos 6/14), sem enviar nada. Exige um adaptador com modo silencioso (ATCSM); sem ele, a escuta é cancelada. Use com a captura encerrada. <b>Identificar adaptador</b> mostra se o ELM327 é original ou clone, usando só comandos internos do adaptador.</p>
+        <button id="console-open" class="btn">Abrir console</button>
+      </div>
+
+      <div class="card form">
+        <label>Importar perfil JSON
+          <textarea id="profile-json" rows="5" placeholder='{ "profile_id": "...", ... }'></textarea>
+        </label>
+        <button id="import-profile" class="btn">Validar e importar</button>
+        <p id="import-result" class="small"></p>
+      </div>
+
+      <div class="card form">
+        <span class="label">Permissões</span>
+        <div id="permissions" class="small"></div>
+        <div class="row">
+          <button id="ask-permissions" class="btn">Solicitar permissões</button>
+          <button id="ask-bgloc" class="btn">Localização o tempo todo</button>
+          <button id="open-app-settings" class="btn">Bateria e ajustes do app</button>
+        </div>
+        <p class="muted small">Em celulares Xiaomi/Redmi/POCO: em "Bateria e ajustes do app", escolha <b>Economia de bateria → Sem restrições</b> e ative <b>Início automático</b>. Sem isso o sistema pode cortar o GPS e a captura com a tela desligada.</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="console" class="console" hidden role="dialog" aria-label="Console da rede">
+    <div class="console-bar">
+      <b>Console da rede</b>
+      <span id="console-status" class="small muted"></span>
+      <button id="console-close" class="btn btn-small" aria-label="Fechar">✕</button>
+    </div>
+    <div class="console-controls">
+      <select id="console-baud" aria-label="Velocidade da rede">
+        <option value="auto">Velocidade: automática</option>
+        <option value="K500">500 kbps</option>
+        <option value="K250">250 kbps</option>
+        <option value="K125">125 kbps</option>
+        <option value="K100">100 kbps</option>
+        <option value="K83">83,3 kbps</option>
+        <option value="K50">50 kbps</option>
+        <option value="K33">33,3 kbps</option>
+      </select>
+      <button id="console-run" class="btn btn-primary">Escutar 60 s</button>
+      <button id="console-identify" class="btn">Identificar adaptador</button>
+      <button id="console-history-btn" class="btn">Histórico</button>
+    </div>
+    <pre id="console-out" class="console-out"></pre>
+    <div id="console-history" class="console-history list" hidden></div>
+  </div>
+  <div id="ai-panel" class="ai-panel" hidden role="dialog" aria-label="Assistente IA">
+    <div class="console-bar">
+      <b id="ai-title">Assistente IA</b>
+      <span id="ai-status" class="small muted"></span>
+      <button id="ai-close" class="btn btn-small" aria-label="Fechar">✕</button>
+    </div>
+    <div class="ai-body">
+      <div id="ai-consent" class="notice" hidden>
+        <p>Este é o texto que vai para <b id="ai-provider-name"></b>. Não inclui GPS, trajeto, VIN, horários nem nomes de postos. Confere?</p>
+        <div class="row"><button id="ai-send" class="btn btn-primary">Enviar</button><button id="ai-cancel" class="btn">Cancelar</button></div>
+      </div>
+      <div id="ai-saved" class="ai-saved small muted" hidden><span id="ai-saved-info"></span> <button id="ai-again" class="btn btn-small">Consultar de novo</button></div>
+      <div id="ai-answer" class="ai-answer"></div>
+      <div id="ai-chat" class="ai-chat" hidden>
+        <div id="ai-turns"></div>
+        <div id="ai-suggestions" class="ai-suggestions"></div>
+        <div class="ai-ask-row">
+          <textarea id="ai-question" rows="2" maxlength="1000" placeholder="Pergunte sobre consumo, gastos, viagens ou falhas"></textarea>
+          <button id="ai-ask" class="btn btn-primary">Perguntar</button>
+        </div>
+        <button id="ai-new" class="btn btn-small">Nova conversa</button>
+      </div>
+      <details id="ai-sent"><summary id="ai-sent-label" class="small muted">O que foi enviado</summary><pre id="ai-sent-text" class="ai-sent"></pre></details>
+    </div>
+  </div>
+
+  <script src="dash.js"></script>
+  <!-- Ordem importa: app-core primeiro (ponte e utilitários), app-main por último (inicialização). -->
+  <script src="app-core.js"></script>
+  <script src="app-painel.js"></script>
+  <script src="app-historico.js"></script>
+  <script src="app-abastecimentos.js"></script>
+  <script src="app-ajustes.js"></script>
+  <script src="app-console.js"></script>
+  <script src="app-backup.js"></script>
+  <script src="app-assistente.js"></script>
+  <script src="app-dispositivo.js"></script>
+  <script src="app-main.js"></script>
+</body>
+</html>

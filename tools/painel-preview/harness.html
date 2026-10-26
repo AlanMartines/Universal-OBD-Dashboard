@@ -1,0 +1,164 @@
+<title>Universal OBD Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Moldura de avaliação: barra de controles + "tela" do celular com o painel do app. */
+:root {
+  --bg: #eef1f5; --fg: #13202f; --muted: #5b6a7d; --line: #cfd7e2; --chip: #ffffff; --chip-on: #13202f; --chip-on-fg: #ffffff;
+  --frame: #1a1d22; --font-ui: "Barlow Semi Condensed", "Roboto Condensed", "Arial Narrow", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0b0f15; --fg: #e6edf6; --muted: #8796aa; --line: #263142; --chip: #141b25; --chip-on: #e6edf6; --chip-on-fg: #0b0f15; --frame: #000000; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0b0f15; --fg: #e6edf6; --muted: #8796aa; --line: #263142; --chip: #141b25; --chip-on: #e6edf6; --chip-on-fg: #0b0f15; --frame: #000000; color-scheme: dark; }
+
+html { height: 100%; }
+body { min-height: 100%;
+  background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px 24px; display: flex; flex-direction: column; gap: 12px;
+}
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+h1 { font-size: 1.35rem; margin: 0; font-weight: 600; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); font-size: .95rem; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.group > span { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; margin-right: 2px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--chip); }
+.seg button {
+  font: inherit; font-size: .9rem; color: var(--fg); background: transparent; border: 0; padding: 6px 12px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-fg); }
+.seg button:focus-visible { outline: 2px solid var(--muted); outline-offset: -3px; }
+.stage { display: flex; align-items: flex-start; justify-content: center; }
+.phone {
+  background: var(--frame); border-radius: 22px; padding: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  width: 100%; max-width: 1120px; aspect-ratio: 20 / 9; max-height: calc(100dvh - 150px);
+}
+.phone[data-orient="portrait"] { width: auto; height: min(78dvh, 820px); aspect-ratio: 9 / 19.5; max-width: 100%; }
+.screen { width: 100%; height: 100%; border-radius: 14px; overflow: hidden; }
+.note { color: var(--muted); font-size: .85rem; max-width: 70ch; margin: 0; }
+.player { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.player[hidden] { display: none; }
+.player input[type=range] { flex: 1; min-width: 140px; accent-color: var(--fg); }
+.player .time { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .9rem; min-width: 11ch; }
+.play { font: inherit; border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.play:focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; }
+@media (max-width: 520px) {
+  .phone:not([data-orient="portrait"]) { aspect-ratio: 16 / 9; }
+}
+</style>
+
+<header>
+  <h1>Universal OBD Dashboard</h1>
+  <p id="subtitle">Temas Minimal, Cápsula e HUD · dados simulados com o perfil de exemplo Fiat Uno Vivace</p>
+</header>
+
+<div class="controls">
+  <div class="group" id="source-group" hidden><span>Fonte</span><div class="seg" data-set="source">
+    <button type="button" id="src-sim" data-v="sim">Simulador</button><button type="button" id="src-real" data-v="real">Viagem real</button></div></div>
+  <div class="group"><span>Tema</span><div class="seg" data-set="look">
+    <button type="button" id="look-minimal" data-v="minimal">Minimal</button><button type="button" id="look-capsule" data-v="capsule">Cápsula</button><button type="button" id="look-hud" data-v="hud">HUD</button></div></div>
+  <div class="group"><span>Luz</span><div class="seg" data-set="mode">
+    <button type="button" id="mode-auto" data-v="auto">Auto</button><button type="button" id="mode-day" data-v="day">Dia</button><button type="button" id="mode-night" data-v="night">Noite</button></div></div>
+  <div class="group"><span>Tela</span><div class="seg" data-set="orient">
+    <button type="button" id="orient-landscape" data-v="landscape">Paisagem</button><button type="button" id="orient-portrait" data-v="portrait">Retrato</button></div></div>
+  <div class="group" id="scenario-group"><span>Cenário</span><div class="seg" data-set="scenario">
+    <button type="button" id="sc-drive" data-v="drive">Percurso</button><button type="button" id="sc-sport" data-v="sport">Esportivo</button><button type="button" id="sc-overheat" data-v="overheat">Superaquecimento</button><button type="button" id="sc-mil" data-v="mil">Luz de injeção</button></div></div>
+</div>
+
+<div class="player" id="player" hidden>
+  <button type="button" class="play" id="play">Pausar</button>
+  <div class="seg" data-set="speed"><button type="button" id="sp-1" data-v="1">1×</button><button type="button" id="sp-4" data-v="4">4×</button><button type="button" id="sp-16" data-v="16">16×</button></div>
+  <input type="range" id="seek" min="0" max="0" value="0" aria-label="Posição no trecho">
+  <span class="time" id="time">0:00 / 0:00</span>
+</div>
+
+<div class="stage">
+  <div class="phone" id="phone" data-orient="landscape"><div class="screen" id="screen"></div></div>
+</div>
+<p class="note" id="real-note" hidden>Viagem real: leituras gravadas pelo app e decodificadas de novo com as fórmulas atuais do perfil (tools/trip-report). Sem coordenadas GPS. O consumo é estimado pelo MAP e foi calibrado com os abastecimentos reais da viagem (±2%); o nível do tanque não é conhecido neste trecho.</p>
+<p class="note">Toque em Estrada, Motor ou Viagem no rodapé do painel, ou deslize para os lados. Com Auto ligado, o painel vai para Viagem depois de alguns segundos parado e volta à sua tela ao andar. Os números vêm de um simulador com as relações de marcha, faixas térmicas e tanque do perfil de exemplo; no app, cada veículo usa o seu próprio perfil.</p>
+
+<style id="dash-css">/*DASH_CSS*/</style>
+<script>/*SIM_JS*/</script>
+<script type="application/json" id="replay-data">/*REPLAY_JSON*/</script>
+<script>/*DASH_JS*/</script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const state = { orient: 'landscape', scenario: 'drive', source: 'sim', speed: '4' };
+  let replay = null;
+  try { replay = JSON.parse($('replay-data').textContent); } catch (e) { replay = null; }
+  const frames = replay && replay.frames ? replay.frames : [];
+  const player = { t: 0, playing: true };
+  const fmtT = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+
+  Dash.mount($('screen'));
+  Dash.setMeta(ObdSim.meta);
+  ObdSim.start((s) => { if (state.source === 'sim') Dash.update(s); });
+
+  /** Quadro da viagem real → mesmo formato de MainActivity.stateJson. */
+  function realState(f) {
+    return {
+      running: true, diagRecording: true, profileId: replay.meta.id, vehicleName: replay.meta.vehicleName,
+      connection: f.connection, statusMessage: f.connection === 'STREAMING' ? 'Capturando' : 'Reconectando…', power: 'ACTIVE',
+      readings: f.readings, derived: f.derived, gps: f.gps, alerts: f.alerts, confirmedDtcs: [], pendingDtcs: [],
+      tripId: 1, tripStartedAt: Date.now() - f.s * 1000, tripDistanceKm: f.tripDistanceKm, totalKm: null,
+    };
+  }
+  function showFrame() {
+    if (!frames.length) return;
+    const i = Math.min(frames.length - 1, Math.floor(player.t));
+    Dash.update(realState(frames[i]));
+    $('seek').value = String(i);
+    $('time').textContent = fmtT(i) + ' / ' + fmtT(frames.length - 1);
+  }
+  setInterval(() => {
+    if (state.source !== 'real' || !player.playing || !frames.length) return;
+    player.t += 0.25 * Number(state.speed);
+    if (player.t >= frames.length) player.t = 0;
+    showFrame();
+  }, 250);
+
+  function setSource(v) {
+    state.source = v;
+    const real = v === 'real';
+    $('player').hidden = !real;
+    $('real-note').hidden = !real;
+    $('scenario-group').hidden = real;
+    $('subtitle').textContent = real ? 'Temas Minimal, Cápsula e HUD · ' + replay.label : 'Temas Minimal, Cápsula e HUD · dados simulados com o perfil de exemplo Fiat Uno Vivace';
+    Dash.setMeta(real ? replay.meta : ObdSim.meta);
+    if (real) showFrame();
+  }
+  if (frames.length) {
+    $('source-group').hidden = false;
+    $('seek').max = String(frames.length - 1);
+    $('seek').addEventListener('input', (e) => { player.t = Number(e.target.value); showFrame(); });
+    $('play').addEventListener('click', () => { player.playing = !player.playing; $('play').textContent = player.playing ? 'Pausar' : 'Reproduzir'; });
+    setSource('real');
+  }
+
+  function sync() {
+    const cur = { look: Dash.look, mode: Dash.mode, orient: state.orient, scenario: state.scenario, source: state.source, speed: state.speed };
+    document.querySelectorAll('.seg').forEach((seg) => {
+      seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === cur[seg.dataset.set])));
+    });
+  }
+  document.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const v = b.dataset.v;
+    if (seg.dataset.set === 'look') Dash.setLook(v);
+    if (seg.dataset.set === 'mode') Dash.setMode(v);
+    if (seg.dataset.set === 'orient') { state.orient = v; document.getElementById('phone').dataset.orient = v; }
+    if (seg.dataset.set === 'scenario') { state.scenario = v; ObdSim.scenario(v); }
+    if (seg.dataset.set === 'source') setSource(v);
+    if (seg.dataset.set === 'speed') state.speed = v;
+    sync();
+  }));
+  // Os botões dentro do painel também trocam tema e luz
+  document.getElementById('screen').addEventListener('click', () => setTimeout(sync, 0));
+  sync();
+})();
+</script>

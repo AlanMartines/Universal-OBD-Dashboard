@@ -1,0 +1,85 @@
+{
+ "profile": "app/src/main/assets/profiles/fiat_uno_vivace_7gf.json",
+ "cases": [
+  {
+   "rpm": 850.0,
+   "map": 35.0,
+   "intake_temp": 30.0,
+   "stft_b1": 0.0,
+   "throttle": 0.0,
+   "speed": 0.0,
+   "ethanol_pct": 0.0,
+   "lph": 1.0473555991364025
+  },
+  {
+   "rpm": 3000.0,
+   "map": 60.0,
+   "intake_temp": 35.0,
+   "stft_b1": 2.3,
+   "throttle": 22.0,
+   "speed": 100.0,
+   "ethanol_pct": 0.0,
+   "lph": 6.3775038290663115
+  },
+  {
+   "rpm": 5500.0,
+   "map": 95.0,
+   "intake_temp": 40.0,
+   "stft_b1": -5.5,
+   "throttle": 85.0,
+   "speed": 140.0,
+   "ethanol_pct": 0.0,
+   "lph": 16.82792038078618
+  },
+  {
+   "rpm": 3000.0,
+   "map": 60.0,
+   "intake_temp": 35.0,
+   "stft_b1": 0.0,
+   "throttle": 22.0,
+   "speed": 100.0,
+   "ethanol_pct": 100.0,
+   "lph": 8.884784770530207
+  },
+  {
+   "rpm": 3000.0,
+   "map": 60.0,
+   "intake_temp": 35.0,
+   "stft_b1": 0.0,
+   "throttle": 22.0,
+   "speed": 100.0,
+   "ethanol_pct": 27.0,
+   "lph": 6.780278390233905
+  },
+  {
+   "rpm": 2500.0,
+   "map": 25.0,
+   "intake_temp": 30.0,
+   "stft_b1": 0.0,
+   "throttle": 0.0,
+   "speed": 80.0,
+   "ethanol_pct": 0.0,
+   "lph": 0.0
+  },
+  {
+   "rpm": 2000.0,
+   "map": 50.0,
+   "intake_temp": 30.0,
+   "stft_b1": 45.0,
+   "throttle": 10.0,
+   "speed": 50.0,
+   "ethanol_pct": 0.0,
+   "lph": 4.576679928999407
+  },
+  {
+   "rpm": 200.0,
+   "map": 90.0,
+   "intake_temp": 30.0,
+   "stft_b1": 0.0,
+   "throttle": 0.0,
+   "speed": 0.0,
+   "ethanol_pct": 0.0,
+   "lph": 0.0
+  }
+ ]
+}

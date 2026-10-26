@@ -1,0 +1,25 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.aab
+output-metadata.json
+
+# Chaves de assinatura: a de release NUNCA entra no repositório (ver README → Releases).
+# app/debug.keystore é versionada de propósito (chave pública de debug, senha "android").
+*.jks
+release.keystore
+
+# Manuais técnicos comerciais (direitos autorais): ficam só na máquina local
+docs/veiculos/*.pdf

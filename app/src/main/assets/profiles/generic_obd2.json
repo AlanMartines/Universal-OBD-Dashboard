@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "profile_id": "generic_obd2",
+  "vehicle_name": "Veículo OBD-II Genérico",
+  "ecu_model": "SAE J1979",
+  "engine": "",
+  "protocol": "AUTO",
+
+  "_comment": "Perfil conservador: busca automática de protocolo (ATSP0) e somente PIDs SAE J1979. PIDs não suportados são desativados automaticamente pelo bitmap 0100/0120/0140.",
+  "init_commands": ["ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATSP0"],
+
+  "adapter": {
+    "response_timeout_ms": 1000,
+    "search_timeout_ms": 10000,
+    "append_response_count": false,
+    "query_supported_pids": true
+  },
+
+  "lanes": {
+    "high_frequency":   { "interval_ms": 200,   "priority": 0 },
+    "medium_frequency": { "interval_ms": 2000,  "priority": 1 },
+    "diagnostics":      { "interval_ms": 15000, "priority": 2, "throttle_when_idle": false }
+  },
+
+  "roles": {
+    "maf": "maf"
+  },
+
+  "pids": {
+    "high_frequency": [
+      { "id": "rpm", "name": "Rotação do Motor", "command": "010C", "formula": "((A*256)+B)/4", "bytes": 2, "unit": "RPM", "min": 0, "max": 8000 },
+      { "id": "speed", "name": "Velocidade", "command": "010D", "formula": "A", "bytes": 1, "unit": "km/h", "min": 0, "max": 255 },
+      { "id": "throttle", "name": "Posição da Borboleta", "command": "0111", "formula": "(A*100)/255", "bytes": 1, "unit": "%", "decimals": 1 },
+      { "id": "map", "name": "Pressão do Coletor (MAP)", "command": "010B", "formula": "A", "bytes": 1, "unit": "kPa" },
+      { "id": "maf", "name": "Fluxo de Ar (MAF)", "command": "0110", "formula": "((A*256)+B)/100", "bytes": 2, "unit": "g/s", "decimals": 2 }
+    ],
+    "medium_frequency": [
+      { "id": "coolant_temp", "name": "Temperatura do Arrefecimento", "command": "0105", "formula": "A-40", "bytes": 1, "unit": "°C" },
+      { "id": "intake_temp", "name": "Temperatura do Ar Admitido", "command": "010F", "formula": "A-40", "bytes": 1, "unit": "°C" },
+      {
+        "id": "battery_volts", "name": "Tensão do Módulo", "command": "0142", "formula": "((A*256)+B)/1000", "bytes": 2,
+        "unit": "V", "decimals": 1, "fallback_command": "ATRV", "fallback_decoder": "elm_voltage"
+      },
+      { "id": "timing_advance", "name": "Avanço de Ignição", "command": "010E", "formula": "(A/2)-64", "bytes": 1, "unit": "°", "decimals": 1 },
+      { "id": "engine_load", "name": "Carga do Motor", "command": "0104", "formula": "(A*100)/255", "bytes": 1, "unit": "%" },
+      { "id": "stft_b1", "name": "STFT Banco 1", "command": "0106", "formula": "(A*100/128)-100", "bytes": 1, "unit": "%", "decimals": 1 },
+      { "id": "ltft_b1", "name": "LTFT Banco 1", "command": "0107", "formula": "(A*100/128)-100", "bytes": 1, "unit": "%", "decimals": 1 },
+      { "id": "fuel_level_pct", "name": "Nível de Combustível", "command": "012F", "formula": "(A*100)/255", "bytes": 1, "unit": "%" }
+    ],
+    "diagnostics": [
+      {
+        "id": "mil_status", "name": "Status MIL", "command": "0101", "bytes": 4,
+        "outputs": [
+          { "id": "mil_on", "name": "Luz de Injeção (MIL)", "formula": "(A >> 7) & 1" },
+          { "id": "dtc_count", "name": "DTCs Armazenados", "formula": "A & 127" },
+          { "id": "readiness_b", "name": "Prontidão (byte B)", "formula": "B", "hidden": true },
+          { "id": "readiness_c", "name": "Prontidão (byte C)", "formula": "C", "hidden": true },
+          { "id": "readiness_d", "name": "Prontidão (byte D)", "formula": "D", "hidden": true }
+        ]
+      },
+      { "id": "active_dtc", "name": "DTCs Confirmados", "command": "03", "decoder": "dtc", "dtc_kind": "confirmed" },
+      { "id": "pending_dtc", "name": "DTCs Pendentes", "command": "07", "decoder": "dtc", "dtc_kind": "pending" }
+    ]
+  },
+
+  "dashboard": { "rpm_max": 8000, "rpm_redline": 6500, "speed_max": 240 },
+
+  "fuel": {
+    "tank_capacity_l": 50.0,
+    "method": "maf",
+    "displacement_l": 1.6,
+    "volumetric_efficiency": 0.85,
+    "decel_fuel_cut_condition": "rpm > 1500 && throttle < 2",
+    "gasoline": { "name": "Gasolina", "afr": 14.7, "density_g_per_l": 745 }
+  },
+
+  "telemetry_log_interval_ms": 2000,
+
+  "alerts": [
+    { "id": "coolant_critical", "level": "critical", "condition": "coolant_temp > 110", "message": "Superaquecimento: {coolant_temp} °C", "sustain_ms": 3000 },
+    { "id": "charging_low", "level": "warning", "condition": "battery_volts < 12.5 && rpm > 700", "message": "Tensão baixa com motor ligado: {battery_volts} V", "sustain_ms": 10000 },
+    { "id": "mil_on", "level": "critical", "condition": "mil_on == 1", "message": "Luz de injeção acesa ({dtc_count} falhas)" }
+  ]
+}

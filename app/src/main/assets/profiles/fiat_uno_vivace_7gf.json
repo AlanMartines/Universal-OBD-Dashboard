@@ -1,0 +1,382 @@
+{
+  "schema_version": 1,
+  "profile_id": "fiat_uno_vivace_7gf",
+  "vehicle_name": "Fiat Uno Vivace 1.0 Flex",
+  "model_year": 2012,
+  "ecu_model": "Magneti Marelli IAW 7GF",
+  "engine": "Fire EVO 1.0 8V Flex (999 cm³)",
+  "protocol": "AUTO",
+
+  "_comment_init": "ATS0 (sem espaços) reduz ~30% dos bytes por resposta; ATAT1 = timing adaptativo. ATSP0 = busca automática: pelo manual Mecânica 2000 (pág. 162-163) a IAW 7GF chega ao pino 7 do conector OBD (linha K, ISO 9141/14230); os pinos CAN 6/14 vão ao painel de instrumentos. O protocolo real é lido com ATDPN. Confirmado numa viagem de teste: ISO 14230-4 KWP FAST (ATDPN=A5). ATSPA5 tenta KWP FAST primeiro e cai para a busca automática se falhar (conexão em ~1 s em vez de ~5 s).",
+  "init_commands": ["ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATAT1", "ATSPA5"],
+
+  "adapter": {
+    "device_names": ["OBDII", "OBD2", "OBD-II", "V-LINK"],
+    "response_timeout_ms": 800,
+    "dtc_timeout_ms": 2500,
+    "at_timeout_ms": 1500,
+    "reset_timeout_ms": 4000,
+    "search_timeout_ms": 12000,
+    "append_response_count": true,
+    "query_supported_pids": true,
+    "min_command_gap_ms": 0,
+    "max_consecutive_no_data": 5,
+    "max_consecutive_timeouts": 4
+  },
+
+  "_comment_lanes": "Linha K: ~5 leituras/s (~194 ms cada). Só RPM, velocidade e MAP na faixa rápida (~0,85 s cada); o resto a cada 5 s e diagnóstico a cada 30 s.",
+  "lanes": {
+    "high_frequency":   { "interval_ms": 100,   "priority": 0 },
+    "medium_frequency": { "interval_ms": 5000,  "priority": 1 },
+    "diagnostics":      { "interval_ms": 30000, "priority": 2, "throttle_when_idle": false }
+  },
+
+  "roles": {
+    "rpm": "rpm",
+    "speed": "speed",
+    "throttle": "throttle",
+    "map": "map",
+    "coolant_temp": "coolant_temp",
+    "intake_temp": "intake_temp",
+    "battery_volts": "battery_volts",
+    "timing_advance": "timing_advance",
+    "engine_load": "engine_load",
+    "stft": "stft_b1",
+    "ltft": null,
+    "lambda_voltage": null,
+    "mil_on": "mil_on",
+    "dtc_count": "dtc_count"
+  },
+
+  "pids": {
+    "high_frequency": [
+      {
+        "id": "rpm",
+        "name": "Rotação do Motor",
+        "command": "010C",
+        "formula": "((A*256)+B)/4",
+        "bytes": 2,
+        "unit": "RPM",
+        "min": 0,
+        "max": 7000
+      },
+      {
+        "id": "speed",
+        "name": "Velocidade",
+        "command": "010D",
+        "formula": "A",
+        "bytes": 1,
+        "unit": "km/h",
+        "min": 0,
+        "max": 200
+      },
+      {
+        "id": "map",
+        "name": "Pressão Coletor (MAP)",
+        "command": "010B",
+        "formula": "A",
+        "bytes": 1,
+        "unit": "kPa",
+        "min": 0,
+        "max": 105
+      }
+    ],
+
+    "medium_frequency": [
+      {
+        "id": "throttle",
+        "name": "Borboleta Motorizada (TPS, relativa)",
+        "command": "0111",
+        "formula": "clamp((A-29)*100/193, 0, 100)",
+        "_comment": "Posição absoluta vai de 0x1D (11,4%, fechada) a 0xDE (87%, aberta) nesta ECU; normalizada para 0–100% (viagem de teste)",
+        "bytes": 1,
+        "unit": "%",
+        "decimals": 1,
+        "min": 0,
+        "max": 100
+      },
+      {
+        "id": "timing_advance",
+        "name": "Avanço de Ignição",
+        "command": "010E",
+        "formula": "signed8(A)/2",
+        "_comment": "A IAW 7GF envia o avanço sem o deslocamento SAE de -64°: com A/2 a viagem deu 5° na lenta e 22–32° em cruzeiro",
+        "bytes": 1,
+        "unit": "°",
+        "decimals": 1,
+        "min": -20,
+        "max": 60
+      },
+      {
+        "id": "coolant_temp",
+        "name": "Temperatura do Arrefecimento",
+        "command": "0105",
+        "formula": "A-40",
+        "bytes": 1,
+        "unit": "°C",
+        "min": -40,
+        "max": 130
+      },
+      {
+        "id": "intake_temp",
+        "name": "Temperatura do Ar Admitido",
+        "command": "010F",
+        "formula": "A-40",
+        "bytes": 1,
+        "unit": "°C",
+        "min": -40,
+        "max": 90
+      },
+      {
+        "id": "battery_volts",
+        "name": "Tensão da Bateria/Alternador",
+        "command": "0142",
+        "formula": "((A*256)+B)/1000",
+        "bytes": 2,
+        "unit": "V",
+        "decimals": 1,
+        "min": 8,
+        "max": 16,
+        "_comment": "Se a ECU não suportar 0142, usa a leitura do próprio adaptador (pino 16).",
+        "fallback_command": "ATRV",
+        "fallback_decoder": "elm_voltage",
+        "fallback_formula": "V"
+      },
+      {
+        "id": "engine_load",
+        "name": "Carga Calculada do Motor",
+        "command": "0104",
+        "formula": "(A*100)/255",
+        "bytes": 1,
+        "unit": "%",
+        "min": 0,
+        "max": 100
+      },
+      {
+        "id": "stft_b1",
+        "name": "Correção de Mistura (STFT)",
+        "command": "0106",
+        "formula": "signed8(A)*100/128",
+        "_comment": "Byte com sinal centrado em zero nesta ECU (00, FB, F4...), não centrado em 128 como na SAE",
+        "bytes": 1,
+        "unit": "%",
+        "decimals": 1,
+        "min": -25,
+        "max": 25
+      },
+      {
+        "id": "lambda_b1s2",
+        "name": "Sonda Lambda Pós-Catalisador (B1S2)",
+        "_comment": "Válida nesta ECU: 0,72–0,77 V estável com catalisador bom. A sonda pré (0114) responde A=FF e o LTFT (0107) não é confiável, por isso não são lidos",
+        "command": "0115",
+        "bytes": 2,
+        "outputs": [
+          { "id": "lambda_b1s2_v", "name": "Sonda Lambda B1S2", "formula": "A/200", "unit": "V", "decimals": 3, "min": 0, "max": 1.275 }
+        ]
+      }
+    ],
+
+    "diagnostics": [
+      {
+        "id": "mil_status",
+        "name": "Status da Lâmpada de Injeção (MIL)",
+        "command": "0101",
+        "bytes": 4,
+        "outputs": [
+          { "id": "mil_on", "name": "Luz de Injeção (MIL)", "formula": "(A >> 7) & 1" },
+          { "id": "dtc_count", "name": "DTCs Armazenados", "formula": "A & 127" },
+          { "id": "readiness_b", "name": "Prontidão (byte B)", "formula": "B", "hidden": true },
+          { "id": "readiness_c", "name": "Prontidão (byte C)", "formula": "C", "hidden": true },
+          { "id": "readiness_d", "name": "Prontidão (byte D)", "formula": "D", "hidden": true }
+        ]
+      },
+      { "id": "active_dtc", "name": "DTCs Confirmados", "command": "03", "decoder": "dtc", "dtc_kind": "confirmed" },
+      { "id": "pending_dtc", "name": "DTCs Pendentes", "command": "07", "decoder": "dtc", "dtc_kind": "pending" }
+    ]
+  },
+
+  "_comment_panel": "O quadro original do Uno Vivace não tem conta-giros nem °C numérico (só barra e luzes TEMP/STOP). O app expõe RPM real e temperatura digital.",
+  "dashboard": {
+    "rpm_max": 7000,
+    "rpm_redline": 6250,
+    "speed_max": 200,
+    "voltage_min": 11.0,
+    "voltage_max": 15.5
+  },
+
+  "thermal": {
+    "thermostat_open_c": 87,
+    "fan_stage1_c": 97,
+    "fan_stage2_c": 103,
+    "critical_c": 105
+  },
+
+  "_comment_fuel": "A IAW 7GF é speed-density (MAP), sem MAF. volumetric_efficiency calibrada com 3 abastecimentos de tanque cheio numa viagem de teste (69,57 L em 901 km, gasolina C): 0,972 e 1,000 nos dois intervalos → 0,99. Consumo real medido: 12,5–13,2 km/l na estrada.",
+  "fuel": {
+    "tank_capacity_l": 48.0,
+    "reserve_min_l": 5.5,
+    "reserve_max_l": 7.5,
+    "method": "speed_density",
+    "displacement_l": 0.999,
+    "volumetric_efficiency": 0.99,
+    "decel_fuel_cut_condition": "rpm > 1500 && map < 30",
+    "gasoline": { "name": "Gasolina C (E27–E30)", "afr": 13.0, "density_g_per_l": 745 },
+    "ethanol":  { "name": "Etanol hidratado (EHC)", "afr": 8.4, "density_g_per_l": 809 },
+    "default_ethanol_pct": 0
+  },
+
+  "_comment_shift": "Velocidades de troca econômica do manual do proprietário. gear_kmh_per_1000rpm medido numa viagem de teste (picos de km/h por 1000 rpm em ~6.000 pares RPM/velocidade).",
+  "shift_indicator": {
+    "upshift_speeds_kmh": [14.8, 28.2, 43.8, 61.4],
+    "gear_kmh_per_1000rpm": [6.0, 11.3, 17.5, 25.0, 29.5],
+    "gear_match_tolerance": 0.08,
+    "upshift_rpm_hint": 2500,
+    "max_tps_for_hint_pct": 60
+  },
+
+  "power_management": {
+    "idle_timeout_s": 300,
+    "idle_confirm_timeout_s": 60,
+    "obd_idle_speed_kmh": 1.0,
+    "gps_idle_speed_kmh": 4.0,
+    "idle_poll_multiplier": 5.0,
+    "ecu_silence_timeout_s": 45,
+    "initial_connect_attempts": 6,
+    "reconnect_attempts": 6,
+    "ignition_wait_s": 300,
+    "reconnect_delay_ms": 5000
+  },
+
+  "_comment_speed": "Velocidade da ECU 2,6% abaixo do hodômetro do carro (406,6 km × 418 km num trecho de teste); o GPS ficou 1,8% acima do hodômetro. O fator só entra na distância quando não há GPS.",
+  "obd_speed_factor": 1.026,
+
+  "telemetry_log_interval_ms": 2000,
+
+  "_comment_dtc": "Descrições da tabela de códigos de defeito do manual Mecânica 2000 (pág. 163). No manual, P0420 e P0443 aparecem deslocados em relação à SAE J2012; aqui seguem o padrão SAE, e P0500 (VSS) foi incluído.",
+  "dtc_descriptions": {
+    "P0105": "Sensor de pressão do coletor (MAP) – conjunto medidor de densidade (CMD)",
+    "P0110": "Circuito do sensor de temperatura do ar do coletor (CMD)",
+    "P0115": "Sensor de temperatura do líquido de arrefecimento (ECT)",
+    "P0120": "Potenciômetro 1 da borboleta motorizada (ETC)",
+    "P0130": "Sonda lambda pré-catalisador (HEGO 1)",
+    "P0135": "Aquecedor da sonda lambda pré-catalisador (HEGO 1)",
+    "P0141": "Aquecedor da sonda lambda pós-catalisador (HEGO 2)",
+    "P0201": "Eletroinjetor do cilindro 1",
+    "P0202": "Eletroinjetor do cilindro 2",
+    "P0203": "Eletroinjetor do cilindro 3",
+    "P0204": "Eletroinjetor do cilindro 4",
+    "P0300": "Falha de ignição (aleatória/múltiplos cilindros)",
+    "P0301": "Falha de ignição no cilindro 1",
+    "P0302": "Falha de ignição no cilindro 2",
+    "P0303": "Falha de ignição no cilindro 3",
+    "P0304": "Falha de ignição no cilindro 4",
+    "P0325": "Sensor de detonação (KS)",
+    "P0335": "Sensor de rotação (CKP)",
+    "P0340": "Sensor de posição do comando de válvulas (CMP)",
+    "P0351": "Bobina de ignição (DIS) – cilindros 1 e 4",
+    "P0352": "Bobina de ignição (DIS) – cilindros 2 e 3",
+    "P0353": "Bobina de ignição (DIS)",
+    "P0354": "Bobina de ignição (DIS)",
+    "P0420": "Eficiência do catalisador abaixo do limite",
+    "P0443": "Eletroválvula de purga do cânister (CANP)",
+    "P0500": "Sensor de velocidade do veículo (VSS)",
+    "P1122": "Potenciômetro 2 da borboleta motorizada (ETC)"
+  },
+
+  "alerts": [
+    {
+      "id": "coolant_critical",
+      "level": "critical",
+      "condition": "coolant_temp > 105",
+      "message": "Superaquecimento: {coolant_temp} °C. Pare em local seguro e desligue o motor.",
+      "sustain_ms": 3000
+    },
+    {
+      "id": "coolant_fan2",
+      "level": "warning",
+      "condition": "coolant_temp >= 103 && coolant_temp <= 105",
+      "message": "Temperatura alta ({coolant_temp} °C): eletroventilador em 2ª velocidade.",
+      "sustain_ms": 5000
+    },
+    {
+      "id": "coolant_fan1",
+      "level": "info",
+      "condition": "coolant_temp >= 97 && coolant_temp < 103",
+      "message": "Eletroventilador em 1ª velocidade ({coolant_temp} °C).",
+      "notify": false
+    },
+    {
+      "id": "cold_engine_high_rpm",
+      "level": "warning",
+      "condition": "coolant_temp < 60 && rpm > 3500",
+      "message": "Motor frio ({coolant_temp} °C): evite rotações altas.",
+      "sustain_ms": 2000,
+      "notify": false
+    },
+    {
+      "id": "rpm_redline",
+      "level": "critical",
+      "condition": "rpm >= 6250",
+      "message": "Faixa vermelha: {rpm} RPM",
+      "notify": false
+    },
+    {
+      "id": "charging_low",
+      "level": "warning",
+      "condition": "battery_volts < 12.5 && rpm > 700",
+      "message": "Tensão baixa com motor ligado ({battery_volts} V): verifique alternador/correia.",
+      "sustain_ms": 10000
+    },
+    {
+      "id": "overvoltage",
+      "level": "critical",
+      "condition": "battery_volts > 15.0",
+      "message": "Sobretensão no sistema elétrico: {battery_volts} V (regulador do alternador).",
+      "sustain_ms": 5000
+    },
+    {
+      "id": "battery_weak",
+      "level": "warning",
+      "condition": "battery_volts < 11.8 && rpm < 100",
+      "message": "Bateria fraca com motor desligado: {battery_volts} V.",
+      "sustain_ms": 5000
+    },
+    {
+      "id": "mil_on",
+      "level": "critical",
+      "condition": "mil_on == 1",
+      "message": "Luz de injeção (MIL) acesa: {dtc_count} falha(s) armazenada(s).",
+      "sustain_ms": 0
+    },
+    {
+      "id": "pending_dtc",
+      "level": "warning",
+      "condition": "dtc_pending_count > 0",
+      "message": "Falha pendente detectada ({dtc_pending_count}).",
+      "notify": false
+    },
+    {
+      "id": "fuel_trim_high",
+      "level": "warning",
+      "condition": "abs(stft_b1) > 25",
+      "message": "Correção de mistura elevada ({stft_b1}%). Normal logo após abastecer (adaptação flex); persistindo, verifique entrada falsa de ar/injetores.",
+      "sustain_ms": 60000,
+      "notify": false
+    },
+    {
+      "id": "idle_unstable",
+      "level": "warning",
+      "condition": "coolant_temp >= 80 && speed < 1 && throttle < 2 && rpm > 300 && (rpm < 700 || rpm > 1000)",
+      "message": "Marcha lenta fora do normal: {rpm} RPM (especificado 815 ± 50). Verifique corpo de borboleta, entrada falsa de ar e velas.",
+      "sustain_ms": 15000,
+      "notify": false
+    },
+    {
+      "id": "fuel_reserve",
+      "level": "warning",
+      "condition": "fuel_remaining_l <= 7.5",
+      "message": "Reserva estimada: {fuel_remaining_l} L restantes.",
+      "sustain_ms": 10000
+    }
+  ]
+}
