@@ -6,6 +6,12 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Escuta passiva da rede CAN** com Arduino Uno + MCP2515, para mapear o que os módulos da carroceria transmitem (tanque, hodômetro, setas, portas):
+  - firmware em `firmware/arduino-can-listen`: modo **Listen-Only** do MCP2515, em que o chip não transmite nada à rede; para se o modo não for confirmado; 50 kbit/s com busca das outras velocidades;
+  - ferramenta `tools/can-capture`: grava pela USB com marcas de evento (Enter) e mostra o resumo por ID, o antes/depois e o que muda em volta de cada marca;
+  - guia de ligação e roteiro em `docs/can-escuta.md`.
+
 ### Alterado
 - **Ferramentas de build atualizadas:**
   - Android Gradle Plugin 9.4.1, com o Kotlin embutido no AGP;

@@ -17,7 +17,8 @@ The app UI and most documentation are in Brazilian Portuguese; this page is a sh
 - **Diagnostics:**
   - readiness monitors and the ECU's own freeze frame (mode 02);
   - a raw diagnostic recorder;
-  - a network console that can also tell whether your ELM327 is a clone.
+  - a network console that can also tell whether your ELM327 is a clone;
+  - for clones without silent mode, passive CAN sniffing with an Arduino + MCP2515 in Listen-Only mode ([guide, in Portuguese](docs/can-escuta.md)).
 - **Optional AI assistant:** any OpenAI-compatible API (OpenAI, Claude, Gemini…).
   - Explains trouble codes, analyzes trips and answers questions about the car's history.
   - Only aggregated data leaves the phone (no GPS, VIN or places), and the exact text is shown before the first send.
@@ -39,6 +40,7 @@ JDK 17 and the Android SDK (compileSdk 37, targetSdk 36; AGP 9, Kotlin 2.4, Grad
 ```bash
 ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 python3 -I -m unittest discover -s tools/trip-report -p 'test_*.py'
+python3 -I -m unittest discover -s tools/can-capture -p 'test_*.py'
 ```
 
 CI runs both, plus an emulator smoke test of the R8-optimized build. See [docs/android-auto.md](docs/android-auto.md) for testing on the Desktop Head Unit.

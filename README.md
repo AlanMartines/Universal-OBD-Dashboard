@@ -148,6 +148,8 @@ Em *Ajustes*, cada arquivo tem **Exportar .gz** (menu de compartilhar). Falhas f
 
 Cada escuta gera `diag_<data>_console-escuta.jsonl`, com linhas `can` (`l` = quadro bruto, `ms` desde o início), `can_probe`, `can_summary` e `elm`. O arquivo aparece no histórico do console e na lista de arquivos de diagnóstico, com as opções ver, exportar .gz e apagar. Use com a captura encerrada e a ignição ligada.
 
+Se o adaptador for um clone sem `ATCSM`, como o usado no desenvolvimento, a escuta pode ser feita fora do app com um Arduino Uno + MCP2515 em modo Listen-Only, que garante no hardware que nada é transmitido: veja [docs/can-escuta.md](docs/can-escuta.md).
+
 ### Continuidade da viagem
 
 Depois de uma **desconexão automática** (ignição desligada, queda de Bluetooth, inatividade sem resposta, app reiniciado pelo sistema), uma captura que começa até **1 hora** depois (ajustável em *Ajustes → Captura*) **continua a mesma viagem**: mesmos totais no histórico, mesmo CSV/GPX e mesmo arquivo de diagnóstico (com um evento `resume`). Encerrar à mão (*Encerrar viagem* no app, na notificação ou no Android Auto, ou *Encerrar agora* na inatividade) faz a próxima captura começar uma viagem nova. A varredura de diagnóstico da ECU roda uma vez por dia por veículo, e *Ajustes → Pronto para viajar* lista as permissões e ajustes de bateria que mantêm a captura e o GPS em segundo plano.
@@ -224,7 +226,7 @@ Android Auto → *Configurações* → toque 10× em *Versão* → menu ⋮ → 
 
 Todo push no `master` e todo PR rodam no GitHub Actions ([ci.yml](.github/workflows/ci.yml)):
 - `testDebugUnitTest`, `lintDebug` e `assembleDebug`. Os testes incluem Robolectric para a migração do banco, o backup e o Android Auto.
-- Os testes da ferramenta `tools/trip-report`, inclusive a paridade do cálculo de consumo com o app.
+- Os testes das ferramentas `tools/trip-report` (inclusive a paridade do cálculo de consumo com o app) e `tools/can-capture`.
 - O job **smoke**, que instala num emulador o APK otimizado pelo R8 (variante `smoke`: release com a chave de debug) e confere que o app abre sem travar.
 
 O Dependabot ([dependabot.yml](.github/dependabot.yml)) avisa semanalmente sobre atualizações. O APK de debug e os relatórios de teste/lint ficam disponíveis como artefatos da execução.
