@@ -209,8 +209,8 @@ A luz **STOP** (pressão de óleo) do quadro é ligada direto ao pressostato e n
 
 ## Compilação
 
-1. Android Studio Ladybug (ou mais recente), com o JDK 17 embutido.
-2. Abra a pasta do projeto; o Studio usa o Gradle 8.9 do wrapper.
+1. Android Studio com suporte ao AGP 9 (2026 ou mais recente), com o JDK 17 ou mais novo.
+2. Abra a pasta do projeto; o Studio usa o Gradle do wrapper (9.x). O build é em Kotlin DSL (`*.gradle.kts`), com as versões em `gradle/libs.versions.toml`, e compila com o SDK 37 (`targetSdk` 36).
 3. Pela linha de comando: `./gradlew :app:assembleDebug` gera `app/build/outputs/apk/debug/app-debug.apk` (requer `ANDROID_HOME` ou `sdk.dir` em `local.properties`).
 4. Testes de unidade do núcleo (fórmulas, parser ELM, DTC, perfis): `./gradlew :app:testDebugUnitTest`.
    Inclui o **simulador de ELM327 em JVM** (`app/src/test/java/.../obd/sim/Elm327Simulator.kt`), que exercita a `CommandQueue` com os perfis reais, em tempo virtual, sem adaptador nem carro: protocolos CAN e K-Line, DTCs, ignição desligada, adaptador travado e clones limitados.
@@ -242,7 +242,7 @@ Ao enviar uma tag `vX.Y.Z`, o workflow [release.yml](.github/workflows/release.y
 
 **Publicar uma versão:**
 1. No CHANGELOG, mova o conteúdo de `[Não lançado]` para `## [X.Y.Z] - AAAA-MM-DD` e atualize os links do rodapé.
-2. Em `app/build.gradle`, ajuste `versionName 'X.Y.Z'` e incremente `versionCode`.
+2. Em `app/build.gradle.kts`, ajuste `versionName = "X.Y.Z"` e incremente `versionCode`.
 3. Commit (`chore: versão X.Y.Z`), depois `git tag vX.Y.Z` e `git push origin master vX.Y.Z`.
 
 O workflow falha com uma mensagem clara se a tag não bater com `versionName`, se a seção do CHANGELOG não existir ou se os secrets não estiverem configurados.
@@ -259,7 +259,7 @@ O projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) (`M
 - **MINOR**: novas funcionalidades, PIDs, perfis de veículo ou telas compatíveis.
 - **PATCH**: correções de bugs e ajustes de calibração.
 
-As tags usam o prefixo `v` (ex.: `v0.1.0`) e devem coincidir com `versionName` em `app/build.gradle`. Enquanto a versão for `0.x`, o formato dos perfis ainda pode mudar.
+As tags usam o prefixo `v` (ex.: `v0.1.0`) e devem coincidir com `versionName` em `app/build.gradle.kts`. Enquanto a versão for `0.x`, o formato dos perfis ainda pode mudar.
 
 Versão atual: **0.4.0**.
 

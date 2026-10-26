@@ -34,7 +34,7 @@ Start from the generic SAE J1979 profile and follow [docs/criar-perfil.md](docs/
 
 ## Building
 
-JDK 17 and the Android SDK (compileSdk 35):
+JDK 17 and the Android SDK (compileSdk 37, targetSdk 36; AGP 9, Kotlin 2.4, Gradle 9):
 
 ```bash
 ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
