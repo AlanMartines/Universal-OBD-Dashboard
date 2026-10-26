@@ -6,6 +6,18 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Ferramentas de build atualizadas:**
+  - Android Gradle Plugin 9.4.1, com o Kotlin embutido no AGP;
+  - Gradle 9.8.2, Kotlin 2.4.21 e KSP 2.3.12;
+  - compila com o **SDK 37**; o `targetSdk` continua 36, então o comportamento do app no celular não muda.
+- **Build em Kotlin DSL** (`*.gradle.kts`), com as versões centralizadas em `gradle/libs.versions.toml`. Some a sintaxe Groovy que deixaria de funcionar no Gradle 10.
+- **Bibliotecas:** core 1.19.1, activity 1.13, fragment 1.9.1, lifecycle 2.11, webkit 1.18, Room 2.8.5, play-services-location 21.4, coroutines 1.11, kotlinx-serialization 1.12, Robolectric 4.17 e androidx.test 1.7/1.3. Cobre os PRs #1–#4 do Dependabot.
+- Gravação das preferências no formato `edit { }` do androidx (avisos `UseKtx` do lint novo).
+
+### Corrigido
+- Se o processo que desenha a tela (WebView) travasse ou fosse encerrado pelo Android por falta de memória, por exemplo com o painel aberto por horas, o app inteiro fechava. Agora a tela é recriada e a captura em segundo plano continua.
+
 ## [0.8.1] - 2026-10-26
 
 Primeira versão pública do repositório.

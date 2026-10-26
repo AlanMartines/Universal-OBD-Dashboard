@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import android.util.Log
+import androidx.core.content.edit
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -54,17 +55,17 @@ object AiSettings {
     fun save(c: Context, enabled: Boolean, provider: AiProvider, baseUrl: String, model: String) {
         val url = baseUrl.trim().ifEmpty { provider.baseUrl }
         require(url.startsWith("https://")) { "O endereço precisa começar com https://" }
-        prefs(c).edit()
-            .putBoolean(KEY_ENABLED, enabled)
-            .putString(KEY_PROVIDER, provider.name)
-            .putString(KEY_BASE_URL, url)
-            .putString(KEY_MODEL, model.trim())
-            .apply()
+        prefs(c).edit {
+            putBoolean(KEY_ENABLED, enabled)
+            putString(KEY_PROVIDER, provider.name)
+            putString(KEY_BASE_URL, url)
+            putString(KEY_MODEL, model.trim())
+        }
     }
 
     fun addConsent(c: Context, kind: String) {
         require(kind in CONSENT_KINDS) { "Tipo inválido: $kind" }
-        prefs(c).edit().putStringSet(KEY_CONSENTS, config(c).consents + kind).apply()
+        prefs(c).edit { putStringSet(KEY_CONSENTS, config(c).consents + kind) }
     }
 
     fun hasKey(c: Context) = apiKey(c) != null
@@ -77,12 +78,12 @@ object AiSettings {
     fun setApiKey(c: Context, key: String?) {
         val k = key?.trim().orEmpty()
         if (k.isEmpty()) {
-            prefs(c).edit().remove(KEY_SECRET).apply()
+            prefs(c).edit { remove(KEY_SECRET) }
             return
         }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.ENCRYPT_MODE, secretKey()) }
         val enc = cipher.iv + cipher.doFinal(k.toByteArray(Charsets.UTF_8))
-        prefs(c).edit().putString(KEY_SECRET, Base64.encodeToString(enc, Base64.NO_WRAP)).apply()
+        prefs(c).edit { putString(KEY_SECRET, Base64.encodeToString(enc, Base64.NO_WRAP)) }
     }
 
     fun apiKey(c: Context): String? {
@@ -94,7 +95,7 @@ object AiSettings {
             String(cipher.doFinal(raw, GCM_IV_BYTES, raw.size - GCM_IV_BYTES), Charsets.UTF_8)
         } catch (e: Exception) {
             Log.w(TAG, "Chave de API ilegível neste aparelho; será pedida de novo")
-            prefs(c).edit().remove(KEY_SECRET).apply()
+            prefs(c).edit { remove(KEY_SECRET) }
             null
         }
     }

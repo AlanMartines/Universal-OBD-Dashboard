@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.webkit.JsResult
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -19,6 +20,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
@@ -141,10 +143,23 @@ class MainActivity : ComponentActivity() {
                 }
 
                 override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
-                    if (url != null && !isAppPage(android.net.Uri.parse(url))) {
+                    if (url != null && !isAppPage(url.toUri())) {
                         view.stopLoading()
                         view.loadUrl(APP_URL)
                     }
+                }
+
+                /**
+                 * O processo que desenha a WebView travou ou foi encerrado pelo Android por falta de
+                 * memória (painel aberto por horas). Sem isto o app inteiro fecharia; a captura segue no
+                 * serviço, então basta descartar esta WebView e recriar a tela.
+                 */
+                override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                    Log.w(TAG, "WebView encerrada (travou: ${detail.didCrash()}); recriando a tela")
+                    (view.parent as? android.view.ViewGroup)?.removeView(view)
+                    view.destroy()
+                    recreate()
+                    return true
                 }
             }
             // Sem WebChromeClient o WebView ignora alert()/confirm() (confirm devolve false na hora).
