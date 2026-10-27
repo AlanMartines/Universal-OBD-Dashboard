@@ -7,8 +7,8 @@
   "engine": "Fire EVO 1.0 8V Flex (999 cm³)",
   "protocol": "AUTO",
 
-  "_comment_init": "ATS0 (sem espaços) reduz ~30% dos bytes por resposta; ATAT1 = timing adaptativo. ATSP0 = busca automática: pelo manual Mecânica 2000 (pág. 162-163) a IAW 7GF chega ao pino 7 do conector OBD (linha K, ISO 9141/14230); os pinos CAN 6/14 vão ao painel de instrumentos. O protocolo real é lido com ATDPN. Confirmado numa viagem de teste: ISO 14230-4 KWP FAST (ATDPN=A5). ATSPA5 tenta KWP FAST primeiro e cai para a busca automática se falhar (conexão em ~1 s em vez de ~5 s).",
-  "init_commands": ["ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATAT1", "ATSPA5"],
+  "_comment_init": "ATS0 (sem espaços) reduz ~30% dos bytes por resposta; ATAT1 = timing adaptativo. ATSP0 = busca automática: pelo manual Mecânica 2000 (pág. 162-163) a IAW 7GF chega ao pino 7 do conector OBD (linha K, ISO 9141/14230); os pinos CAN 6/14 vão ao painel de instrumentos. O protocolo real é lido com ATDPN. Confirmado numa viagem de teste: ISO 14230-4 KWP FAST (ATDPN=A5). ATSP5 fixa o KWP FAST, sem busca automática: com ATSPA5, uma falha de inicialização (ignição desligada) fazia o ELM327 procurar os protocolos CAN, transmitindo a 500 kbps na rede da carroceria (pinos 6/14, 50 kbps).",
+  "init_commands": ["ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATAT1", "ATSP5"],
 
   "adapter": {
     "device_names": ["OBDII", "OBD2", "OBD-II", "V-LINK"],

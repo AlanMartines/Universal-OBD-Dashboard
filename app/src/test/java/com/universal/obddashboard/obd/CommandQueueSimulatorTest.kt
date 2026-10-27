@@ -47,6 +47,9 @@ class CommandQueueSimulatorTest {
     private fun profile(name: String) = ProfileParser.parse(File("src/main/assets/profiles/$name.json").readText())
 
     private val uno = profile("fiat_uno_vivace_7gf")
+
+    /** O Uno fala KWP FAST na linha K; o perfil fixa esse protocolo (ATSP5), sem busca automática. */
+    private fun unoCar() = Elm327Simulator(Elm327Simulator.Protocol.KWP2000_FAST)
     private val generic = profile("generic_obd2")
 
     private fun TestScope.queue(sim: Elm327Simulator, p: LoadedProfile, rec: Recorder) =
@@ -75,7 +78,7 @@ class CommandQueueSimulatorTest {
     // ---------------- Inicialização ----------------
 
     @Test fun unoInitializesAndStreamsWithAtrvFallback() = runTest {
-        val sim = Elm327Simulator().apply { unsupportedPids += 0x42 }
+        val sim = unoCar().apply { unsupportedPids += 0x42 }
         val rec = Recorder()
         val q = queue(sim, uno, rec)
 
@@ -98,7 +101,7 @@ class CommandQueueSimulatorTest {
     }
 
     @Test fun ignitionOffAtStartIsReportedAsEcuNotResponding() = runTest {
-        val sim = Elm327Simulator().apply { vehicle.ignitionOn = false }
+        val sim = unoCar().apply { vehicle.ignitionOn = false }
         try {
             queue(sim, uno, Recorder()).initialize()
             fail("esperado EcuNotRespondingException")
@@ -108,7 +111,7 @@ class CommandQueueSimulatorTest {
     }
 
     @Test fun unsupportedPidWithoutFallbackIsDisabled() = runTest {
-        val sim = Elm327Simulator().apply { unsupportedPids += 0x15 }
+        val sim = unoCar().apply { unsupportedPids += 0x15 }
         val info = queue(sim, uno, Recorder()).initialize()
         assertEquals(listOf("lambda_b1s2"), info.disabledPids)
     }
@@ -171,7 +174,7 @@ class CommandQueueSimulatorTest {
     // ---------------- Escalonador ----------------
 
     @Test fun edfKeepsEveryLaneAliveWhenAdapterIsSaturated() = runTest {
-        val sim = Elm327Simulator().apply { latencyMs = 40 } // ~25 req/s, abaixo dos 40 req/s pedidos
+        val sim = unoCar().apply { latencyMs = 40 } // ~25 req/s, abaixo dos 40 req/s pedidos
         val rec = Recorder()
         val q = queue(sim, uno, rec)
         q.initialize()
@@ -191,7 +194,7 @@ class CommandQueueSimulatorTest {
     }
 
     @Test fun idleModeThrottlesPolling() = runTest {
-        val sim = Elm327Simulator()
+        val sim = unoCar()
         val rec = Recorder()
         val q = queue(sim, uno, rec)
         q.initialize()
@@ -211,7 +214,7 @@ class CommandQueueSimulatorTest {
     // ---------------- Falhas ----------------
 
     @Test fun ignitionOffMidTripEndsWithEcuSilent() = runTest {
-        val sim = Elm327Simulator()
+        val sim = unoCar()
         val q = queue(sim, uno, Recorder())
         q.initialize()
 
@@ -226,7 +229,7 @@ class CommandQueueSimulatorTest {
     }
 
     @Test fun briefIgnitionDropDoesNotDisablePids() = runTest {
-        val sim = Elm327Simulator()
+        val sim = unoCar()
         val rec = Recorder()
         val q = queue(sim, uno, rec)
         q.initialize()
@@ -246,7 +249,7 @@ class CommandQueueSimulatorTest {
     }
 
     @Test fun pidAdvertisedButAlwaysNoDataIsDisabledWhileOthersRespond() = runTest {
-        val sim = Elm327Simulator().apply { noDataPids += 0x0E }
+        val sim = unoCar().apply { noDataPids += 0x0E }
         val rec = Recorder()
         val q = queue(sim, uno, rec)
         q.initialize()
@@ -260,7 +263,7 @@ class CommandQueueSimulatorTest {
     }
 
     @Test fun frozenAdapterRaisesIOException() = runTest {
-        val sim = Elm327Simulator()
+        val sim = unoCar()
         val q = queue(sim, uno, Recorder())
         q.initialize()
 
@@ -273,7 +276,7 @@ class CommandQueueSimulatorTest {
     }
 
     @Test fun cloneWithoutResponseCountKeepsStreaming() = runTest {
-        val sim = Elm327Simulator().apply { acceptsResponseCount = false; rejectedCommands += "ATAT1" }
+        val sim = unoCar().apply { acceptsResponseCount = false; rejectedCommands += "ATAT1" }
         val rec = Recorder()
         val q = queue(sim, uno, rec)
         q.initialize()
@@ -288,7 +291,7 @@ class CommandQueueSimulatorTest {
     }
 
     @Test fun bufferFullAndIsolatedTimeoutsAreTolerated() = runTest {
-        val sim = Elm327Simulator()
+        val sim = unoCar()
         val rec = Recorder()
         val q = queue(sim, uno, rec)
         q.initialize()

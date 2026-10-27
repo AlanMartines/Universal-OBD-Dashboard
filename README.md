@@ -208,7 +208,7 @@ Perfis embarcados ficam em `app/src/main/assets/profiles/`. Perfis importados pe
 
 ### Perfil Fiat Uno Vivace (IAW 7GF)
 
-- ISO 14230-4 KWP FAST pela linha K (pino 7), confirmado em viagem; `ATSPA5` tenta esse protocolo primeiro; RPM 0–7000 com redline em 6250 RPM e marcha lenta de 815 ± 50 RPM;
+- ISO 14230-4 KWP FAST pela linha K (pino 7), confirmado em viagem; `ATSP5` fixa esse protocolo, sem busca automática que transmitiria na CAN da carroceria; RPM 0–7000 com redline em 6250 RPM e marcha lenta de 815 ± 50 RPM;
 - termostato 87 °C, eletroventilador 1ª 97 °C / 2ª 103 °C, crítico > 105 °C;
 - troca econômica 1→2 aos 14,8 km/h, 2→3 aos 28,2, 3→4 aos 43,8 e 4→5 aos 61,4 km/h;
 - tanque de 48 L, reserva entre 5,5 e 7,5 L (nível estimado por integração do consumo a partir do último "Tanque cheio");

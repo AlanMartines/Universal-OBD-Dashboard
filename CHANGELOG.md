@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Perfil do Uno com protocolo fixo (`ATSP5`)** em vez de `ATSPA5`. Com o `A`, uma falha de inicialização da linha K (por exemplo, ao conectar com a ignição desligada) fazia o ELM327 procurar sozinho os protocolos CAN, transmitindo a 500 kbps na rede da carroceria (pinos 6/14, de 50 kbps). Agora ele só fala na linha K, e a escuta pelo ESP32 nos pinos 6/14 pode conviver com ele pelo cabo Y.
+
 ## [0.9.1] - 2026-10-27
 
 ### Corrigido

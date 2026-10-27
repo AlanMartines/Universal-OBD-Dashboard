@@ -19,7 +19,7 @@ Na primeira conexão, o app consulta quais PIDs a ECU suporta (`0100`, `0120`, `
 ## 2. Descubra o protocolo real
 
 Ative *Ajustes → Gravação de diagnóstico* e faça uma captura curta. No arquivo `diag_*.jsonl`, procure a resposta do `ATDPN`, que é o protocolo que o adaptador encontrou. Depois:
-- **Fixe o protocolo** no `init_commands`, trocando `ATSP0` por `ATSPx`, onde `x` é o número do protocolo, ou `ATSPAx` para tentar esse primeiro e buscar se falhar. A conexão fica mais rápida.
+- **Fixe o protocolo** no `init_commands`, trocando `ATSP0` por `ATSPx`, onde `x` é o número do protocolo. A conexão fica mais rápida. Prefira `ATSPx` a `ATSPAx`: o `A` faz o adaptador buscar outros protocolos quando a inicialização falha (ignição desligada, por exemplo), e nessa busca ele transmite em redes CAN que não são a do motor.
 - **Ajuste as esteiras (`lanes`)** à velocidade do barramento. A linha K (ISO 9141/14230) faz cerca de 5 leituras por segundo; CAN faz bem mais. Deixe na esteira rápida só o que o painel precisa ver mudar (RPM, velocidade, MAP).
 
 ## 3. Confira as fórmulas com dados reais

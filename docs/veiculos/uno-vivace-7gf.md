@@ -14,7 +14,7 @@ Fonte: *Mecânica 2000 Automotive*, volume 54 (2011), "Uno Vivace 1.0 Flex – I
 
 Medido com ELM327 v1.5 (PIC18F25K80) em ~900 km / 13,6 h de gravação de diagnóstico.
 
-- **Protocolo: ISO 14230-4 KWP FAST** (`ATDPN` = `A5`), como indicava o manual. O perfil usa `ATSPA5` (tenta KWP FAST primeiro, depois busca automática).
+- **Protocolo: ISO 14230-4 KWP FAST** (`ATDPN` = `A5`), como indicava o manual. O perfil usa `ATSP5`, que fixa o KWP FAST sem busca automática. Com `ATSPA5`, uma falha de inicialização (por exemplo, ignição desligada) fazia o ELM327 procurar os protocolos CAN, transmitindo a 500 kbps na rede da carroceria dos pinos 6/14, que é de 50 kbps.
 - **Velocidade da linha K:** ~5 leituras/s (mediana de 194 ms por PID, contra 38 ms do `ATRV`, que só passa pelo Bluetooth). Por isso a faixa rápida tem só RPM, velocidade e MAP.
 - **PIDs anunciados:** `01 03 04 05 06 07 0B 0C 0D 0E 0F 11 13 14 15 1C 21`. Não há `0142` (tensão vem do `ATRV`), nem MAF, nem nível de combustível. `011C` = `1D` (norma OBDBr-2).
 - **Codificações fora do padrão SAE nesta ECU:**

@@ -36,7 +36,7 @@ class DiagnosticRecordingTest {
     }
 
     @Test fun fullSessionThroughSimulatorIsRecordedAsValidJsonLines() = runTest {
-        val sim = Elm327Simulator().apply {
+        val sim = Elm327Simulator(Elm327Simulator.Protocol.KWP2000_FAST).apply {   // o Uno, na linha K (ATSP5)
             unsupportedPids += 0x42
             vehicle.confirmedDtcs += "P0133"
         }

@@ -106,7 +106,7 @@ class ObdCoreTest {
         val p = ProfileParser.parse(asset("fiat_uno_vivace_7gf.json"))
         assertEquals("fiat_uno_vivace_7gf", p.id)
         assertTrue("linha K pelo manual: protocolo detectado por ATDPN, não fixado em CAN", !p.isCan)
-        assertTrue("ATSPA5" in p.profile.initCommands)
+        assertTrue("ATSP5" in p.profile.initCommands)       // fixo: sem busca automática pelos protocolos CAN
         assertEquals("Sonda lambda pré-catalisador (HEGO 1)", p.profile.describeDtc("p0130"))
         assertEquals(27, p.profile.dtcDescriptions.size)
         assertEquals(6250.0, p.profile.dashboard.rpmRedline, 0.0)
