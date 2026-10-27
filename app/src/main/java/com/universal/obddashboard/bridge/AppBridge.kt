@@ -10,6 +10,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.universal.obddashboard.AppSettings
+import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.obd.BluetoothSerialManager
 import com.universal.obddashboard.obd.ProfileParser
@@ -88,6 +89,12 @@ class AppBridge(private val activity: MainActivity) {
             .put("odometerKm", activity.totalKm.takeIf { AppSettings.odometerRef(ctx) != null }.orNull())
             .toString()
     }
+
+    /** Ajustes → Sobre: versão instalada, para relatar problemas. */
+    @JavascriptInterface
+    fun getAppInfo(): String = JSONObject()
+        .put("versionName", BuildConfig.VERSION_NAME).put("versionCode", BuildConfig.VERSION_CODE).put("buildType", BuildConfig.BUILD_TYPE)
+        .toString()
 
     /** Vale a partir da próxima captura. 0 = nunca encerrar por inatividade. */
     @JavascriptInterface
