@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.2] - 2026-10-27
+
 ### Corrigido
 - **Perfil do Uno com protocolo fixo (`ATSP5`)** em vez de `ATSPA5`. Com o `A`, uma falha de inicialização da linha K (por exemplo, ao conectar com a ignição desligada) fazia o ELM327 procurar sozinho os protocolos CAN, transmitindo a 500 kbps na rede da carroceria (pinos 6/14, de 50 kbps). Agora ele só fala na linha K, e a escuta pelo ESP32 nos pinos 6/14 pode conviver com ele pelo cabo Y.
 
@@ -323,7 +325,8 @@ Primeira versão funcional da arquitetura: captura OBD2 em segundo plano, caixa 
 - A categoria `IOT` do Android Auto exige "Fontes desconhecidas" para teste e pode não ser aceita na Play Store.
 - O `gradle-wrapper.jar` não está no repositório (rode `gradle wrapper` uma vez).
 
-[Não lançado]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.9.1...HEAD
+[Não lançado]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.8.1...v0.9.0
 [0.4.0]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.3.2...v0.4.0
