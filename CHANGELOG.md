@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.1] - 2026-10-27
+
 ### Corrigido
 - **% de etanol confundido com o da lei:** o campo passou a se chamar **Etanol da bomba no tanque**, com a explicação de que a gasolina já vem com etanol (32% na comum e aditivada desde 1º/08/2026; 25% na premium) e que isso não deve ser somado ali. Quem escolhia 32% ou 35% pensando na lei fazia o app calcular cerca de 10% a mais de consumo. As opções da lista agora dizem "só gasolina" e "só etanol", e o perfil do Uno descreve a gasolina como "Gasolina C (E27–E32)".
 
@@ -318,7 +320,8 @@ Primeira versão funcional da arquitetura: captura OBD2 em segundo plano, caixa 
 - A categoria `IOT` do Android Auto exige "Fontes desconhecidas" para teste e pode não ser aceita na Play Store.
 - O `gradle-wrapper.jar` não está no repositório (rode `gradle wrapper` uma vez).
 
-[Não lançado]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.9.0...HEAD
+[Não lançado]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.8.1...v0.9.0
 [0.4.0]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.3.1...v0.3.2
