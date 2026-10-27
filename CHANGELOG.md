@@ -25,6 +25,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Gravação das preferências no formato `edit { }` do androidx (avisos `UseKtx` do lint novo).
 
 ### Corrigido
+- **Assistente IA travado em "Testando…"/"Consultando a IA…":** a resposta do provedor nunca chegava à tela, por um erro no nome da função JavaScript que recebe o resultado (introduzido na v0.8.0, na divisão da ponte). Valia para o teste de conexão, Explicar com IA, Analisar viagem e Perguntar à IA. Um teste novo confere que toda resposta enviada à tela chama uma função que existe.
 - Se o processo que desenha a tela (WebView) travasse ou fosse encerrado pelo Android por falta de memória, por exemplo com o painel aberto por horas, o app inteiro fechava. Agora a tela é recriada e a captura em segundo plano continua.
 
 ## [0.8.1] - 2026-10-26

@@ -57,6 +57,19 @@ class BridgeContractTest {
         assertEquals("chamadas fora do nativeAsync", emptyList<String>(), wrong)
     }
 
+    @Test fun everyPushedScriptCallsAHandlerTheScreenDefines() {
+        // pushJs roda JavaScript na tela: um nome errado falha em silêncio e a resposta nunca chega
+        val kotlin = File("src/main/java").walkTopDown().filter { it.extension == "kt" }.joinToString("\n") { it.readText() }
+        val scripts = Regex("""pushJs\("([^"$]*)""").findAll(kotlin).map { it.groupValues[1] }.toList()
+        assertTrue("nenhum pushJs encontrado", scripts.size >= 6)
+        scripts.forEach { s ->
+            val m = Regex("""^window\.(on\w+) && window\.(on\w+)\($""").find(s)
+            assertTrue("script fora do formato window.onX && window.onX(...): $s", m != null && m.groupValues[1] == m.groupValues[2])
+            val handler = m!!.groupValues[1]
+            assertTrue("$handler não é definido pela tela", Regex("""window\.$handler\s*=""").containsMatchIn(appJs))
+        }
+    }
+
     @Test fun browserStubCoversEveryCall() {
         // A pré-visualização fora do app (navegador, harness do painel) usa o simulador do app-core.js
         val stub = appJs.substringAfter("}) : {").substringBefore("\n};")

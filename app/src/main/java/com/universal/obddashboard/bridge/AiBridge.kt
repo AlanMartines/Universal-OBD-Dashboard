@@ -69,7 +69,7 @@ class AiBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun aiPreviewDtc(requestId: String, json: String) = previewJson(requestId) { dtcMessages(json) }
 
-    /** Assíncrono: a resposta chega em activity.window.onAiResult({id, ok, text | error}). */
+    /** Assíncrono: a resposta chega em window.onAiResult({id, ok, text | error}). */
     @JavascriptInterface
     fun aiExplainDtc(requestId: String, json: String) {
         val code = runCatching { DtcPrompt.Request.fromJson(Json.parseToJsonElement(json).jsonObject).code }.getOrNull()
@@ -173,6 +173,6 @@ class AiBridge(private val activity: MainActivity) {
     private fun pushAiResult(requestId: String, text: String?, error: String?) {
         val o = JSONObject().put("id", requestId).put("ok", text != null)
         if (text != null) o.put("text", text) else o.put("error", error ?: "erro")
-        activity.pushJs("activity.window.onAiResult && activity.window.onAiResult($o)")
+        activity.pushJs("window.onAiResult && window.onAiResult($o)")
     }
 }
