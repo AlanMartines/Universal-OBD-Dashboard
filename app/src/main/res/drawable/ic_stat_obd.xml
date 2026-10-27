@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Emblema [EI] da Eletro Info Tecnologia (polígonos da logo oficial). Marca não coberta pela licença MIT. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
@@ -6,5 +7,17 @@
     android:viewportHeight="24">
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M7,4v2h3v2H7l-2,2v3H3v-3H1v8h2v-3h2v3h3l2,2h8V16h2v3h3V9h-3v3h-2V8h-6V6h3V4H7z" />
+        android:pathData="M1.00,18.22 L4.22,18.22 L4.22,17.20 L2.45,17.20 L2.45,6.78 L4.22,6.78 L4.22,5.78 L1.00,5.78 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M6.87,16.75 L13.18,16.75 L13.18,14.68 L9.46,14.68 L9.46,13.02 L13.18,13.02 L13.18,11.04 L6.87,11.04 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M6.87,9.23 L13.18,9.23 L13.18,7.23 L6.87,7.23 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M14.63,8.73 L14.63,11.42 L14.63,15.13 L14.63,15.80 L14.63,16.75 L16.82,16.75 L17.04,16.75 L17.04,7.22 L14.63,7.21 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M23.00,5.78 L19.77,5.78 L19.77,6.78 L21.53,6.78 L21.53,17.20 L19.77,17.20 L19.77,18.22 L23.00,18.22 Z" />
 </vector>
