@@ -177,6 +177,8 @@ A aba **Abastecimentos** registra cada parada no posto: data e hora, hodômetro,
 
 O card **Calibração do consumo** compara, em cada intervalo entre tanques cheios, os litros reais com o que o app estimou. A estimativa é a integral do consumo gravado no período. Com 3 ou mais intervalos parecidos, o card sugere um fator de correção, que se aplica com um toque e vale por veículo. Intervalos com diferença acima de 25% ficam de fora, por exemplo tanque não completado ou % de etanol errado.
 
+**Etanol da bomba no tanque** (em Ajustes) é só a parte do tanque que veio da bomba de etanol: 0% = só gasolina. O etanol anidro que a lei manda misturar na gasolina (32% na comum e aditivada desde agosto de 2026; 25% na premium) já está no combustível "gasolina" do perfil e não deve ser somado ali.
+
 **Exportar CSV** compartilha todos os abastecimentos (`data_hora,hodometro_km,litros,valor_total,preco_litro,combustivel,etanol_pct,tanque_cheio,posto,observacao`); o mesmo formato pode ser importado de um arquivo (**Escolher arquivo .csv**) ou colado em **Importar**, com a opção de substituir todos os registros.
 
 ### Backup completo

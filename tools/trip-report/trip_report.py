@@ -628,10 +628,24 @@ def when(ms):
     return dt.datetime.fromtimestamp(ms / 1000).strftime('%d/%m %H:%M')
 
 
+def trip_ethanol(profile, trip, ethanol_pct):
+    """% de etanol da viagem: o informado na linha de comando; senão o que o app gravou no início
+    (session.ethanol_pct, v0.9.1+); senão o padrão do perfil."""
+    if ethanol_pct is not None:
+        return ethanol_pct
+    for s in trip:
+        for e in s['events']:
+            if e.get('type') == 'session' and e.get('ethanol_pct') is not None:
+                return float(e['ethanol_pct'])
+    return (profile.fuel or {}).get('default_ethanol_pct', 0.0)
+
+
 def report(profile, trips, ethanol_pct, ve, window=(None, None)):
     rows = []
     for n, trip in enumerate(trips, 1):
-        st, _ = rebuild(profile, trip, ethanol_pct, ve, window=window)
+        e = trip_ethanol(profile, trip, ethanol_pct)
+        st, _ = rebuild(profile, trip, e, ve, window=window)
+        st['ethanol_pct'] = e
         if st['seconds']:
             rows.append((n, trip, st))
     return rows
@@ -639,7 +653,8 @@ def report(profile, trips, ethanol_pct, ve, window=(None, None)):
 
 def print_report(profile, rows, ethanol_pct, ve):
     ve_used = ve if ve is not None else (profile.fuel or {}).get('volumetric_efficiency')
-    print(f"Perfil: {profile.id} · etanol {ethanol_pct:g}% · volumetric_efficiency {ve_used}")
+    eth = f"{ethanol_pct:g}%" if ethanol_pct is not None else "o gravado em cada viagem"
+    print(f"Perfil: {profile.id} · etanol: {eth} · volumetric_efficiency {ve_used}")
     print("Consumo ESTIMADO pelo MAP (speed-density); só vale depois de calibrar com um abastecimento real.\n")
     tot = {'dist': 0.0, 'fuel': 0.0, 's': 0}
     for n, trip, st in rows:
@@ -650,7 +665,7 @@ def print_report(profile, rows, ethanol_pct, ve):
         reasons = ' → '.join(s['stop'] or '?' for s in trip)
         print(f"Viagem {n}: {when(trip[0]['start'])} – {when(trip[-1]['end'])} · {len(trip)} sessão(ões) · fim: {reasons}")
         print(f"  tempo {hms(st['seconds'])} (em movimento {hms(st['moving_s'])}, parado ligado {hms(st['idle_s'])}) · captura {st['stream_s'] * 100 / max(1, st['seconds']):.1f}%")
-        print(f"  distância {dist:.1f} km (OBD {st['dist_obd_km']:.1f} · GPS {st['dist_gps_km']:.1f})")
+        print(f"  distância {dist:.1f} km (OBD {st['dist_obd_km']:.1f} · GPS {st['dist_gps_km']:.1f}) · etanol {st['ethanol_pct']:g}%")
         kml = dist / st['fuel_l'] if st['fuel_l'] > 0.05 else float('nan')
         print(f"  combustível estimado {st['fuel_l']:.2f} L → {kml:.1f} km/l · parado ligado {st['idle_l']:.2f} L · corte de injeção {st['cut_s'] * 100 / max(1, st['stream_s']):.1f}% do tempo")
         g = st['gears']
@@ -742,7 +757,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('inputs', nargs='+', help='pastas ou arquivos diag_*.jsonl(.gz)')
     ap.add_argument('--profile', default=DEFAULT_PROFILE)
-    ap.add_argument('--ethanol-pct', type=float, default=None, help='%% de etanol no tanque (padrão: o do perfil)')
+    ap.add_argument('--ethanol-pct', type=float, default=None,
+                    help='%% de etanol da bomba no tanque (padrão: o gravado pelo app em cada viagem, ou o do perfil)')
     ap.add_argument('--ve', type=float, default=None, help='volumetric_efficiency a usar (padrão: a do perfil)')
     ap.add_argument('--resume-window-min', type=int, default=60)
     ap.add_argument('--since', help='início do período (AAAA-MM-DDTHH:MM, hora local)')
@@ -756,7 +772,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
 
     profile = Profile(a.profile)
-    ethanol = a.ethanol_pct if a.ethanol_pct is not None else (profile.fuel or {}).get('default_ethanol_pct', 0.0)
+    ethanol = a.ethanol_pct
     sessions = load_sessions(a.inputs)
     ts = lambda s: int(dt.datetime.fromisoformat(s).timestamp() * 1000)
     if a.since:
@@ -802,7 +818,7 @@ def main(argv=None):
     if a.replay:
         best = None
         for trip in trips:
-            _, frames = rebuild(profile, trip, ethanol, a.ve, frames=True)
+            _, frames = rebuild(profile, trip, trip_ethanol(profile, trip, ethanol), a.ve, frames=True)
             if a.replay_start:
                 off = (ts(a.replay_start) - trip[0]['start']) // 1000
                 if 0 <= off < len(frames):

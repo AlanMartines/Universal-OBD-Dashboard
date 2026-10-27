@@ -99,6 +99,18 @@ class WindowTest(unittest.TestCase):
         self.assertAlmostEqual(6.0 * f, half['dist_obd_km'], delta=0.05)
 
 
+class EthanolTest(unittest.TestCase):
+    """% de etanol: linha de comando > o gravado pelo app na sessão > padrão do perfil."""
+
+    def test_recorded_ethanol_is_used_unless_overridden(self):
+        p = tr.Profile(tr.DEFAULT_PROFILE)
+        recorded = [{'events': [{'t': 0, 'type': 'session', 'ethanol_pct': 35.0}]}]
+        old = [{'events': [{'t': 0, 'type': 'session'}]}]
+        self.assertEqual(35.0, tr.trip_ethanol(p, recorded, None))
+        self.assertEqual(0.0, tr.trip_ethanol(p, recorded, 0.0))
+        self.assertEqual(p.fuel['default_ethanol_pct'], tr.trip_ethanol(p, old, None))
+
+
 class FuelCsvTest(unittest.TestCase):
     """Mesmo formato e regra do app (FuelLog): três tanques cheios de uma viagem de teste."""
 

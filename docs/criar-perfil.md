@@ -47,6 +47,7 @@ O consumo vem do bloco `fuel`:
   - `speed_density` usa MAP, RPM e temperatura do ar, com `displacement_l` e `volumetric_efficiency`;
   - `maf` usa o sensor de fluxo de ar.
 - `gasoline` e, em carro flex, `ethanol`: relação ar/combustível e densidade de cada combustível.
+  - No Brasil, `gasoline` é a **gasolina C** da bomba, que já vem com etanol anidro (E27 a E32, conforme a época): use a relação ar/combustível dela, não a da gasolina pura (14,7). `ethanol` é o etanol hidratado da bomba de etanol. O % que o usuário escolhe em Ajustes é a parte do tanque que veio da bomba de etanol.
 - `decel_fuel_cut_condition`: quando a injeção corta em desaceleração e o consumo é zero.
 - `obd_speed_factor`, na raiz do perfil: corrige a velocidade da ECU para bater com o hodômetro.
 

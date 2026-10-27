@@ -427,6 +427,11 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 o.ethanolPercent?.let { eng.ethanolPercent = it }
                 o.fuelLevelL?.let { eng.fuelLevelL = it }
                 o.fuelCorrection?.let { eng.fuelCorrection = it }
+                recorder?.event("fuel_settings") {
+                    o.ethanolPercent?.let { put("ethanol_pct", it) }
+                    o.fuelLevelL?.let { put("fuel_level_l", it) }
+                    o.fuelCorrection?.let { put("fuel_correction", it) }
+                }
             }
 
             val result = eng.compute(state, trip, now, dtS)
@@ -611,6 +616,10 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 put("device", "${Build.MANUFACTURER} ${Build.MODEL}")
                 put("android_sdk", Build.VERSION.SDK_INT)
                 put("gps_allowed", locationAllowed)
+                // Ajustes que mudam o consumo calculado: sem eles, a gravação não explica o km/l da viagem
+                put("ethanol_pct", AppSettings.ethanolPercent(this@ObdForegroundService, loaded.profile.fuel?.defaultEthanolPct ?: 0.0))
+                put("fuel_correction", AppSettings.fuelCorrection(this@ObdForegroundService, loaded.id).factor)
+                put("fuel_level_l", AppSettings.fuelLevel(this@ObdForegroundService))
                 putJsonArray("adapter_names") {
                     AppSettings.adapterNames(this@ObdForegroundService, loaded.profile.adapter.deviceNames)
                         .forEach { add(JsonPrimitive(it)) }

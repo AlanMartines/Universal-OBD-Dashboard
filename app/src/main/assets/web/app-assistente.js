@@ -247,7 +247,7 @@ function setEthanolSelect(pct) {
   const sel = $('ethanol');
   const v = Math.round(pct);
   const values = [...new Set([...Array(21).keys()].map((i) => i * 5).concat(v))].sort((a, b) => a - b);
-  sel.innerHTML = values.map((x) => `<option value="${x}">${x}%${x === 0 ? ' (gasolina C)' : x === 100 ? ' (etanol)' : ''}</option>`).join('');
+  sel.innerHTML = values.map((x) => `<option value="${x}">${x}%${x === 0 ? ' (só gasolina)' : x === 100 ? ' (só etanol)' : ''}</option>`).join('');
   sel.value = String(v);
 }
 $('ethanol').addEventListener('change', (e) => bridge.setEthanolPercent(Number(e.target.value)));

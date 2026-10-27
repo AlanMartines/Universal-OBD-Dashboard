@@ -6,6 +6,12 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **% de etanol confundido com o da lei:** o campo passou a se chamar **Etanol da bomba no tanque**, com a explicação de que a gasolina já vem com etanol (32% na comum e aditivada desde 1º/08/2026; 25% na premium) e que isso não deve ser somado ali. Quem escolhia 32% ou 35% pensando na lei fazia o app calcular cerca de 10% a mais de consumo. As opções da lista agora dizem "só gasolina" e "só etanol", e o perfil do Uno descreve a gasolina como "Gasolina C (E27–E32)".
+
+### Adicionado
+- A gravação de diagnóstico registra o % de etanol, o fator de calibração e o nível do tanque no início de cada viagem e a cada mudança durante a captura. O `tools/trip-report` passa a usar o % gravado em cada viagem quando `--ethanol-pct` não é informado.
+
 ## [0.9.0] - 2026-10-26
 
 ### Adicionado

@@ -220,7 +220,7 @@
     "displacement_l": 0.999,
     "volumetric_efficiency": 0.99,
     "decel_fuel_cut_condition": "rpm > 1500 && map < 30",
-    "gasoline": { "name": "Gasolina C (E27–E30)", "afr": 13.0, "density_g_per_l": 745 },
+    "gasoline": { "name": "Gasolina C (E27–E32)", "afr": 13.0, "density_g_per_l": 745 },
     "ethanol":  { "name": "Etanol hidratado (EHC)", "afr": 8.4, "density_g_per_l": 809 },
     "default_ethanol_pct": 0
   },
