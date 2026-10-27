@@ -48,7 +48,7 @@ python3 -I -m unittest discover -s tools/trip-report -p 'test_*.py'
 python3 -I -m unittest discover -s tools/can-capture -p 'test_*.py'
 ```
 
-CI runs both, plus an emulator smoke test of the R8-optimized build. See [docs/android-auto.md](docs/android-auto.md) for testing on the Desktop Head Unit.
+CI runs both, plus an emulator smoke test of the R8-optimized build. See [docs/android-auto.md](docs/android-auto.md) for testing on the Desktop Head Unit. Note: since Android Auto 17.7, *Unknown sources* no longer admits sideloaded Car App Library apps, so the APK from Releases does not show up on a real car screen; only the Desktop Head Unit works.
 
 ## Contributing
 

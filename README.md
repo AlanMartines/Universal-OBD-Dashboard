@@ -14,7 +14,7 @@ Universal-OBD-Dashboard é uma plataforma de telemetria automotiva de código ab
 | ![Tema Minimal](docs/img/tema-minimal-dia.png) | ![Tema Cápsula](docs/img/tema-capsule-noite.png) | ![Tema HUD](docs/img/tema-hud-noite.png) |
 
 ## Destaques
-- **Compatibilidade com Android Auto**: Interface nativa baseada na AndroidX Car App Library.
+- **Compatibilidade com Android Auto**: Interface nativa baseada na AndroidX Car App Library. Instalado por APK, o app não aparece no carro a partir do Android Auto 17.7 ([detalhes](docs/android-auto.md#no-carro-apk-fora-da-play-store)).
 - **Motor em Segundo Plano**: Coleta ininterrupta de dados e diagnóstico com tela do celular bloqueada (Foreground Service).
 - **Caixa Preta de Viagens**: Registro contínuo em banco de dados SQLite local (Trip Computer e logs de DTCs).
 - **Perfis Customizáveis**: Configure fórmulas, limites de RPM/temperatura e PIDs específicos por montadora sem alterar o código-fonte.
@@ -226,8 +226,11 @@ A luz **STOP** (pressão de óleo) do quadro é ligada direto ao pressostato e n
 
 ### Testar no Android Auto
 
-O app usa a categoria `androidx.car.app.category.IOT` (não existe categoria de telemetria). Para testar fora da Play Store:
-Android Auto → *Configurações* → toque 10× em *Versão* → menu ⋮ → *Configurações do desenvolvedor* → ative **Fontes desconhecidas**. O teste no computador com o *Desktop Head Unit* (DHU) e o que conferir estão em [docs/android-auto.md](docs/android-auto.md). A tela também é testada automaticamente (`TelemetryScreenTest`).
+O app usa a categoria `androidx.car.app.category.IOT`, porque não existe categoria de telemetria.
+
+> **Limite do APK no carro:** a partir do Android Auto 17.7, a opção *Fontes desconhecidas* não libera mais apps da Car App Library instalados por APK. O app fica fora da lista do carro, mesmo com a opção ligada. Hoje, o Android Auto instalado por APK só funciona no simulador *Desktop Head Unit* (DHU) do computador. Detalhes e saídas em [docs/android-auto.md](docs/android-auto.md#no-carro-apk-fora-da-play-store).
+
+O teste no DHU e o que conferir estão em [docs/android-auto.md](docs/android-auto.md). A tela também é testada automaticamente (`TelemetryScreenTest`).
 
 ### Integração contínua
 

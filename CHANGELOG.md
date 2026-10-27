@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Problemas conhecidos
+- **Android Auto por APK:** o README e o `docs/android-auto.md` agora explicam que, a partir do Android Auto 17.7, *Fontes desconhecidas* não libera mais apps da Car App Library instalados por APK. Por isso, o APK das Releases não aparece na central do carro, só no simulador DHU.
+
 ## [0.9.2] - 2026-10-27
 
 ### Corrigido
