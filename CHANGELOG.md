@@ -13,6 +13,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
   - guia de ligação e roteiro em `docs/can-escuta.md`.
 - **Layout para tablet e celular deitado** (a partir de 840 px de largura): Detalhes, Abastecimentos e Histórico em duas colunas; Ajustes com os cartões em duas colunas; formulário de abastecimento sempre à vista em telas altas. No celular em pé nada muda.
 - `CONTRIBUTING.md` e modelos de issue: problema, perfil de veículo novo e sugestão.
+- **Identidade Eletro Info Tecnologia:**
+  - ícone novo do app com o emblema `[EI]` da Eletro Info em branco sobre o vermelho da marca, no formato adaptativo (redondo, quadrado ou o da Xiaomi, conforme o celular) e com versão monocromática para os ícones temáticos do Android 13+; vale também para o Android Auto;
+  - ícone da notificação com o mesmo emblema, e as notificações com o vermelho da marca.
+- **Ajustes → Sobre:** versão e build instalados, quem desenvolve, links para o site, o código-fonte e os relatos de problema, privacidade, licença e componentes de código aberto.
 - **Atualizar modelos** no Assistente IA: com a chave colada, o app busca na conta do provedor os modelos de texto disponíveis (OpenAI, Claude, Gemini ou endereço próprio) e mostra uma lista para escolher. Modelos de imagem, voz, vídeo e embeddings ficam de fora. A chave é a única coisa enviada.
 
 ### Alterado

@@ -1,5 +1,10 @@
 # Universal OBD Dashboard
 
+<img src="app/src/main/assets/web/eletroinfo.svg" width="56" height="56" alt="Eletro Info Tecnologia" align="left">
+
+Built by **Alan Martines** · maintained by **[Eletro Info Tecnologia](https://www.eletroinfotecnologia.com.br/)**.
+<br clear="left">
+
 Open-source car telemetry for Android and Android Auto. It reads OBD-II data through a Bluetooth ELM327-compatible adapter, shows it on configurable dashboards and records every trip locally. Everything vehicle-specific lives in **JSON profiles**, so the code knows nothing about a particular car. The first vehicle profiled is a Fiat Uno Vivace 1.0 Flex (Magneti Marelli IAW 7GF).
 
 The app UI and most documentation are in Brazilian Portuguese; this page is a short English overview. Full details are in [README.md](README.md).
@@ -51,4 +56,6 @@ Bug reports, profiles for other cars and pull requests are welcome. See [CONTRIB
 
 ## License
 
-See [LICENSE](LICENSE).
+The code is released under the [MIT License](LICENSE).
+
+The **Eletro Info Tecnologia** name, logo and the `[EI]` emblem (the app icon) are trademarks of Eletro Info Tecnologia and are **not** covered by the MIT License. If you publish a modified build of the app, use a different name and icon.

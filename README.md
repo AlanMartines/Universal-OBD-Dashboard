@@ -1,5 +1,10 @@
 # Universal-OBD-Dashboard
 
+<img src="app/src/main/assets/web/eletroinfo.svg" width="56" height="56" alt="Eletro Info Tecnologia" align="left">
+
+Desenvolvido por **Alan Martines** · mantido pela **[Eletro Info Tecnologia](https://www.eletroinfotecnologia.com.br/)**.
+<br clear="left">
+
 Universal-OBD-Dashboard é uma plataforma de telemetria automotiva de código aberto projetada para Android e Android Auto. O projeto utiliza adaptadores OBD2 (Bluetooth SPP / chip duplo PIC18F25K80) para coletar, calcular e exibir dados do veículo com alta fidelidade, funcionando de forma 100% agnóstica via arquivos de perfil JSON.
 
 *English summary: [README.en.md](README.en.md).*
@@ -270,4 +275,6 @@ Versão atual: **0.4.0**.
 Relatos de problema, perfis de outros carros e pull requests são bem-vindos. As regras (somente consulta ao carro, cuidado com dados pessoais) e o passo a passo estão em [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licença
-Distribuído sob licença MIT.
+O código é distribuído sob a [licença MIT](LICENSE).
+
+O nome **Eletro Info Tecnologia**, a logo e o emblema `[EI]` (ícone do app) são marcas da Eletro Info Tecnologia e **não** fazem parte da licença MIT. Quem publicar uma versão modificada do app deve usar outro nome e outro ícone.
