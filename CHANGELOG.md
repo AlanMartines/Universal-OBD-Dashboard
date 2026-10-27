@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.0] - 2026-10-26
+
 ### Adicionado
 - **Escuta passiva da rede CAN** com Arduino Uno + MCP2515, para mapear o que os módulos da carroceria transmitem (tanque, hodômetro, setas, portas):
   - firmware em `firmware/arduino-can-listen`: modo **Listen-Only** do MCP2515, em que o chip não transmite nada à rede; para se o modo não for confirmado; 50 kbit/s com busca das outras velocidades;
@@ -310,7 +312,8 @@ Primeira versão funcional da arquitetura: captura OBD2 em segundo plano, caixa 
 - A categoria `IOT` do Android Auto exige "Fontes desconhecidas" para teste e pode não ser aceita na Play Store.
 - O `gradle-wrapper.jar` não está no repositório (rode `gradle wrapper` uma vez).
 
-[Não lançado]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.4.0...HEAD
+[Não lançado]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.8.1...v0.9.0
 [0.4.0]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/AlanMartines/Universal-OBD-Dashboard/compare/v0.3.0...v0.3.1
