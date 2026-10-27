@@ -21,6 +21,8 @@ class AiClientTest {
             calls += Triple(url, headers, body)
             return replies[minOf(calls.size - 1, replies.size - 1)]
         }
+
+        override fun get(url: String, headers: Map<String, String>, timeoutMs: Int) = post(url, headers, "", timeoutMs)
     }
 
     private fun ok(content: String) = AiClient.HttpResponse(200, """{"choices":[{"message":{"role":"assistant","content":$content}}]}""")
@@ -83,5 +85,41 @@ class AiClientTest {
             assertFalse("vazou: $secret", all.contains(secret))
         }
         assertTrue(runCatching { DtcPrompt.Request.fromJson(Json.parseToJsonElement("""{"code":"rm -rf"}""").jsonObject) }.isFailure)
+    }
+
+    @Test fun listsTextModelsInOpenAiFormat() {
+        val t = Fake(AiClient.HttpResponse(200, """{"object":"list","data":[{"id":"gpt-4o-mini"},{"id":"text-embedding-3-small"},
+            {"id":"whisper-1"},{"id":"gpt-image-1"},{"id":"gpt-4o-realtime-preview"},{"id":"gpt-4.1"},{"id":"omni-moderation-latest"}]}"""))
+        assertEquals(listOf("gpt-4.1", "gpt-4o-mini"), AiClient(AiProvider.OPENAI.baseUrl, "sk-test", "", t).listModels())
+        val (url, headers) = t.calls.single()
+        assertEquals("https://api.openai.com/v1/models", url)
+        assertEquals("Bearer sk-test", headers["Authorization"])
+    }
+
+    @Test fun geminiModelNamesLoseThePrefix() {
+        val t = Fake(AiClient.HttpResponse(200, """{"object":"list","data":[{"id":"models/gemini-2.5-flash","object":"model"},
+            {"id":"models/gemini-embedding-001"},{"id":"models/imagen-4.0-generate-001"},{"id":"models/gemini-2.5-pro"}]}"""))
+        assertEquals(listOf("gemini-2.5-flash", "gemini-2.5-pro"), AiClient(AiProvider.GEMINI.baseUrl, "k", "", t).listModels())
+        assertEquals("https://generativelanguage.googleapis.com/v1beta/openai/models", t.calls.single().first)
+    }
+
+    @Test fun anthropicListsWithItsOwnHeaders() {
+        val t = Fake(AiClient.HttpResponse(200, """{"data":[{"type":"model","id":"claude-haiku-5-5","display_name":"Claude Haiku 5.5"},
+            {"type":"model","id":"claude-opus-5-5"}],"has_more":false}"""))
+        assertEquals(listOf("claude-haiku-5-5", "claude-opus-5-5"), AiClient(AiProvider.CLAUDE.baseUrl, "sk-ant", "", t).listModels())
+        val (url, headers) = t.calls.single()
+        assertEquals("https://api.anthropic.com/v1/models?limit=1000", url)
+        assertEquals("sk-ant", headers["x-api-key"])
+        assertTrue(headers.containsKey("anthropic-version"))
+        assertFalse(headers.containsKey("Authorization"))
+    }
+
+    @Test fun listModelsReportsKeyAndFormatErrors() {
+        val bad = Fake(AiClient.HttpResponse(401, """{"error":{"message":"invalid api key"}}"""))
+        val e = runCatching { AiClient(AiProvider.OPENAI.baseUrl, "x", "", bad).listModels() }.exceptionOrNull() as AiClient.AiException
+        assertEquals(AiClient.ErrorKind.INVALID_KEY, e.kind)
+        val odd = Fake(AiClient.HttpResponse(200, "<html>"))
+        val e2 = runCatching { AiClient(AiProvider.OPENAI.baseUrl, "x", "", odd).listModels() }.exceptionOrNull() as AiClient.AiException
+        assertEquals(AiClient.ErrorKind.EMPTY, e2.kind)
     }
 }

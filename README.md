@@ -119,7 +119,7 @@ Em *Ajustes*, cada arquivo tem **Exportar .gz** (menu de compartilhar). Falhas f
   | Gemini | `https://generativelanguage.googleapis.com/v1beta/openai/` |
   | Personalizado | outro endereço `https://` (OpenRouter, Groq…) |
 
-  O nome do modelo é informado pelo usuário. O campo traz um exemplo, mas confira o nome atual na página do provedor.
+  Com a chave colada, **Atualizar modelos** busca na conta do provedor os modelos de texto que ela pode usar (`GET <endereço>/models`; na Claude, com os cabeçalhos `x-api-key` e `anthropic-version` da Anthropic). É só escolher na lista. O nome também pode ser digitado.
 - **Privacidade:**
   - Nunca saem GPS, trajeto, horário, VIN nem o número da viagem. O lado nativo só aceita uma lista fechada de campos, e um teste garante isso.
   - Antes do primeiro envio, o app mostra o texto exato que vai sair. Depois disso, ele continua disponível em "O que foi enviado".

@@ -13,6 +13,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
   - guia de ligação e roteiro em `docs/can-escuta.md`.
 - **Layout para tablet e celular deitado** (a partir de 840 px de largura): Detalhes, Abastecimentos e Histórico em duas colunas; Ajustes com os cartões em duas colunas; formulário de abastecimento sempre à vista em telas altas. No celular em pé nada muda.
 - `CONTRIBUTING.md` e modelos de issue: problema, perfil de veículo novo e sugestão.
+- **Atualizar modelos** no Assistente IA: com a chave colada, o app busca na conta do provedor os modelos de texto disponíveis (OpenAI, Claude, Gemini ou endereço próprio) e mostra uma lista para escolher. Modelos de imagem, voz, vídeo e embeddings ficam de fora. A chave é a única coisa enviada.
 
 ### Alterado
 - **Consultas ao banco sem travar a tela:** histórico, abastecimentos, exportações, importação do CSV, respostas guardadas e pré-visualizações da IA agora respondem de forma assíncrona. Antes, a tela ficava parada até o banco responder, o que pesava com muitas viagens ou ao analisar uma viagem longa. Também evita salvar o mesmo abastecimento duas vezes com toques repetidos.

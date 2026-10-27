@@ -36,7 +36,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   consoleStart: () => 'Console disponível só no app', consoleIdentify: () => 'Console disponível só no app', consoleStop() {},
   getAiSettings: () => JSON.stringify({ enabled: false, provider: 'OPENAI', baseUrl: 'https://api.openai.com/v1/', model: '', consents: [], ready: false, keyMasked: null, online: true,
     providers: [{ id: 'OPENAI', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1/', modelHint: 'gpt-4o-mini' }, { id: 'CUSTOM', label: 'Personalizado', baseUrl: '', modelHint: '' }] }),
-  saveAiSettings: () => 'ok', setAiConsent() {}, aiPreviewDtc: () => '{"ok":true,"text":"(pré-visualização)"}',
+  saveAiSettings: () => 'ok', setAiConsent() {}, aiListModels: () => '{"ok":true,"models":["modelo-a","modelo-b"]}', aiPreviewDtc: () => '{"ok":true,"text":"(pré-visualização)"}',
   aiExplainDtc() {}, aiTest() {}, aiSavedAnswer: () => 'null', aiPreviewTrip: () => '{"ok":true,"text":"(pré-visualização)"}', aiAnalyzeTrip() {},
   aiPreviewAsk: () => '{"ok":true,"text":"(pré-visualização)"}', aiAsk() {},
   consolePoll: () => '{"running":false,"seq":0,"lines":[]}', readDiagnostic: () => '{"lines":[]}',

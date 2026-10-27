@@ -41,13 +41,18 @@ class AiClient(
     fun interface HttpTransport {
         /** @throws IOException sem rede / timeout */
         fun post(url: String, headers: Map<String, String>, body: String, timeoutMs: Int): HttpResponse
+
+        /** @throws IOException sem rede / timeout */
+        fun get(url: String, headers: Map<String, String>, timeoutMs: Int): HttpResponse =
+            throw UnsupportedOperationException("GET não suportado")
     }
 
     enum class ErrorKind { INVALID_KEY, NOT_FOUND, RATE_LIMIT, SERVER, BAD_REQUEST, NETWORK, TIMEOUT, EMPTY }
 
     class AiException(val kind: ErrorKind, message: String) : Exception(message)
 
-    private val url = baseUrl.trim().trimEnd('/') + "/chat/completions"
+    private val base = baseUrl.trim().trimEnd('/')
+    private val url = "$base/chat/completions"
 
     /** @throws AiException */
     fun chat(messages: List<Message>, maxTokens: Int = DEFAULT_MAX_TOKENS): String {
@@ -60,13 +65,34 @@ class AiClient(
         return parseContent(res.body) ?: throw AiException(ErrorKind.EMPTY, "O provedor respondeu sem texto")
     }
 
-    private fun send(body: String): HttpResponse = try {
+    /**
+     * Modelos de texto que a chave pode usar, em ordem alfabética (`GET <base>/models`). A Anthropic lista
+     * com os cabeçalhos próprios dela; os outros aceitam o `Bearer` do formato OpenAI.
+     * @throws AiException
+     */
+    fun listModels(): List<String> {
+        val anthropic = base.contains("api.anthropic.com")
+        val headers = if (anthropic) {
+            mapOf("x-api-key" to apiKey, "anthropic-version" to ANTHROPIC_VERSION, "Accept" to "application/json")
+        } else {
+            mapOf("Authorization" to "Bearer $apiKey", "Accept" to "application/json")
+        }
+        val res = network { transport.get("$base/models" + if (anthropic) "?limit=1000" else "", headers, TIMEOUT_MS) }
+        if (res.code !in 200..299) throw errorFor(res)
+        return parseModels(res.body) ?: throw AiException(ErrorKind.EMPTY, "O provedor não devolveu a lista de modelos")
+    }
+
+    private fun send(body: String): HttpResponse = network {
         transport.post(
             url,
             mapOf("Authorization" to "Bearer $apiKey", "Content-Type" to "application/json", "Accept" to "application/json"),
             body,
             TIMEOUT_MS,
         )
+    }
+
+    private fun network(call: () -> HttpResponse): HttpResponse = try {
+        call()
     } catch (e: SocketTimeoutException) {
         throw AiException(ErrorKind.TIMEOUT, "O provedor demorou demais para responder")
     } catch (e: IOException) {
@@ -79,6 +105,13 @@ class AiClient(
         const val DEFAULT_MAX_TOKENS = 900
         private const val TIMEOUT_MS = 45_000
         private const val MAX_ERROR_CHARS = 200
+        private const val ANTHROPIC_VERSION = "2023-06-01"
+
+        /** Modelos que não conversam por texto (embeddings, voz, imagem, vídeo, moderação). */
+        private val NOT_CHAT = Regex(
+            "embed|tts|whisper|transcribe|dall-e|imagen|image|veo|moderation|audio|realtime|aqa|davinci|babbage",
+            RegexOption.IGNORE_CASE,
+        )
         private val json = Json { ignoreUnknownKeys = true }
 
         fun requestBody(model: String, messages: List<Message>, maxTokens: Int, tokenParam: TokenParam): String = buildJsonObject {
@@ -88,6 +121,17 @@ class AiClient(
             }
             put(tokenParam.key, maxTokens)
         }.toString()
+
+        /**
+         * `data[].id` (OpenAI, Anthropic e Gemini). O Gemini devolve "models/gemini-…"; o prefixo sai porque o chat
+         * usa o nome curto. Ficam de fora os modelos que não são de texto.
+         */
+        fun parseModels(body: String): List<String>? = runCatching {
+            json.parseToJsonElement(body).jsonObject["data"]!!.jsonArray
+                .mapNotNull { it.jsonObject["id"]?.jsonPrimitive?.contentOrNull?.removePrefix("models/") }
+                .filterNot { NOT_CHAT.containsMatchIn(it) }
+                .distinct().sorted()
+        }.getOrNull()
 
         /** choices[0].message.content: texto, ou lista de partes {type: text, text} (alguns provedores). */
         fun parseContent(body: String): String? = runCatching {
@@ -123,15 +167,21 @@ class AiClient(
 
 /** Transporte real (HttpURLConnection). Chamar fora da thread principal. */
 object UrlConnectionTransport : AiClient.HttpTransport {
-    override fun post(url: String, headers: Map<String, String>, body: String, timeoutMs: Int): AiClient.HttpResponse {
+    override fun post(url: String, headers: Map<String, String>, body: String, timeoutMs: Int) = request("POST", url, headers, body, timeoutMs)
+
+    override fun get(url: String, headers: Map<String, String>, timeoutMs: Int) = request("GET", url, headers, null, timeoutMs)
+
+    private fun request(method: String, url: String, headers: Map<String, String>, body: String?, timeoutMs: Int): AiClient.HttpResponse {
         val conn = URL(url).openConnection() as HttpURLConnection
         try {
-            conn.requestMethod = "POST"
+            conn.requestMethod = method
             conn.connectTimeout = timeoutMs
             conn.readTimeout = timeoutMs
-            conn.doOutput = true
             headers.forEach { (k, v) -> conn.setRequestProperty(k, v) }
-            conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            if (body != null) {
+                conn.doOutput = true
+                conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            }
             val code = conn.responseCode
             val stream = if (code in 200..299) conn.inputStream else conn.errorStream
             val text = stream?.use { it.readBytes().toString(Charsets.UTF_8) }.orEmpty()

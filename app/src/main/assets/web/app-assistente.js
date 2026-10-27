@@ -16,21 +16,47 @@ function loadAiSettings() {
   $('ai-model').value = ai.model || '';
   $('ai-key').value = '';
   $('ai-key').placeholder = ai.keyMasked ? 'salva: ' + ai.keyMasked : 'cole a chave do provedor';
+  $('ai-model-list-wrap').hidden = true;
   aiHint();
   lastDtcKey = null;
 }
 
 function aiHint() {
   const p = (ai.providers || []).find((x) => x.id === $('ai-provider').value) || {};
-  $('ai-model').placeholder = p.modelHint ? 'ex.: ' + p.modelHint + ' (confira o nome atual no provedor)' : 'nome do modelo';
+  $('ai-model').placeholder = p.modelHint ? 'ex.: ' + p.modelHint : 'nome do modelo';
   $('ai-url').readOnly = p.id !== 'CUSTOM';
 }
 
 $('ai-provider').addEventListener('change', () => {
   const p = (ai.providers || []).find((x) => x.id === $('ai-provider').value) || {};
   if (p.id !== 'CUSTOM') $('ai-url').value = p.baseUrl;
+  $('ai-model-list-wrap').hidden = true; // a lista era do provedor anterior
   aiHint();
 });
+
+/* Busca na conta do provedor os modelos que a chave pode usar; escolher na lista preenche o campo Modelo. */
+$('ai-models-btn').addEventListener('click', async () => {
+  const btn = $('ai-models-btn');
+  const out = $('ai-result');
+  btn.disabled = true;
+  out.textContent = 'Buscando modelos…';
+  out.style.color = '';
+  const json = JSON.stringify({ baseUrl: $('ai-url').value.trim(), apiKey: $('ai-key').value.trim() });
+  const r = parse(await nativeAsync((id) => bridge.aiListModels(id, json)).catch(() => null), { ok: false, error: 'resposta inválida' });
+  btn.disabled = false;
+  if (!r.ok || !r.models.length) {
+    out.textContent = r.ok ? 'O provedor não devolveu nenhum modelo de texto. Digite o nome no campo Modelo.' : 'Erro: ' + r.error;
+    out.style.color = 'var(--red)';
+    return;
+  }
+  const cur = $('ai-model').value.trim();
+  $('ai-model-list').innerHTML = '<option value="">Escolha um modelo…</option>'
+    + r.models.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  $('ai-model-list').value = r.models.includes(cur) ? cur : '';
+  $('ai-model-list-wrap').hidden = false;
+  out.textContent = `${r.models.length} modelo(s) encontrados. Escolha na lista e toque em Salvar.`;
+});
+$('ai-model-list').addEventListener('change', (e) => { if (e.target.value) $('ai-model').value = e.target.value; });
 
 function aiSave(extra) {
   const res = bridge.saveAiSettings(JSON.stringify(Object.assign({

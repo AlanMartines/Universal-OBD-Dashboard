@@ -290,8 +290,12 @@
         <label class="check"><input id="ai-enabled" type="checkbox"> Ativar o assistente</label>
         <label>Provedor <select id="ai-provider"></select></label>
         <label>Endereço da API <input id="ai-url" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://…/v1/"></label>
-        <label>Modelo <input id="ai-model" type="text" autocapitalize="off" spellcheck="false"></label>
         <label>Chave de API <input id="ai-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <div class="row">
+          <label class="grow">Modelo <input id="ai-model" type="text" autocapitalize="off" spellcheck="false"></label>
+          <button id="ai-models-btn" class="btn" type="button">Atualizar modelos</button>
+        </div>
+        <label id="ai-model-list-wrap" hidden>Modelos da sua conta <select id="ai-model-list"></select></label>
         <div class="row">
           <button id="ai-save" class="btn btn-primary">Salvar</button>
           <button id="ai-test" class="btn">Testar conexão</button>

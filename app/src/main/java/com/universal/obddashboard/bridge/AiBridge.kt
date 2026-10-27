@@ -58,6 +58,28 @@ class AiBridge(private val activity: MainActivity) {
         e.message ?: "erro"
     }
 
+    /**
+     * Modelos disponíveis para a chave, com o provedor e o endereço que estão na tela ({baseUrl, apiKey}; chave
+     * vazia usa a salva). Responde {ok, models} ou {ok: false, error}. Não manda dados do carro, só a chave.
+     */
+    @JavascriptInterface
+    fun aiListModels(requestId: String, json: String) = activity.answerAsync(requestId) {
+        try {
+            val o = JSONObject(json)
+            val baseUrl = o.optString("baseUrl").trim()
+            val key = o.optString("apiKey").trim().ifEmpty { AiSettings.apiKey(activity) }
+            when {
+                key.isNullOrEmpty() -> throw IllegalArgumentException("Cole a chave de API para buscar os modelos")
+                !baseUrl.startsWith("https://") -> throw IllegalArgumentException("Informe o endereço da API (https://…)")
+                !activity.isOnline() -> throw IllegalStateException("Sem internet: conecte para buscar os modelos")
+            }
+            val models = AiClient(baseUrl, key!!, "").listModels()
+            JSONObject().put("ok", true).put("models", JSONArray(models)).toString()
+        } catch (e: Exception) {
+            JSONObject().put("ok", false).put("error", e.message ?: "erro").toString()
+        }
+    }
+
     /** [kind]: "dtc", "trip" ou "ask", depois de o usuário ver o texto e tocar em Enviar. */
     @JavascriptInterface
     fun setAiConsent(kind: String) = runCatching { AiSettings.addConsent(activity, kind) }.isSuccess
