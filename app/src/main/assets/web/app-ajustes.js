@@ -33,6 +33,14 @@ function loadSettings() {
   renderDiagnostics();
 }
 
+/* ---------------------------------------------------------------- Sobre */
+const appInfo = parse(bridge.getAppInfo(), {});
+const appVersion = appInfo.versionName ? `Versão ${appInfo.versionName} (build ${appInfo.versionCode}${appInfo.buildType === 'release' ? '' : ', ' + appInfo.buildType})` : '';
+$('about-version').textContent = appVersion;
+$('about-version-full').textContent = appVersion;
+$('about-open').addEventListener('click', () => { $('about-panel').hidden = false; });
+$('about-close').addEventListener('click', () => { $('about-panel').hidden = true; });
+
 /* ---------------------------------------------------------------- Diagnóstico */
 const mb = (bytes) => fmt(bytes / 1048576, bytes < 10485760 ? 1 : 0) + ' MB';
 

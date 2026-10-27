@@ -328,8 +328,46 @@
         </div>
         <p class="muted small">Em celulares Xiaomi/Redmi/POCO: em "Bateria e ajustes do app", escolha <b>Economia de bateria → Sem restrições</b> e ative <b>Início automático</b>. Sem isso o sistema pode cortar o GPS e a captura com a tela desligada.</p>
       </div>
+
+      <div class="card about-card">
+        <img src="eletroinfo.svg" width="40" height="40" alt="">
+        <div class="grow"><b>Universal OBD Dashboard</b><div id="about-version" class="small muted"></div></div>
+        <button id="about-open" class="btn">Sobre</button>
+      </div>
     </section>
   </main>
+
+  <div id="about-panel" class="ai-panel" hidden role="dialog" aria-label="Sobre o app">
+    <div class="console-bar">
+      <b>Sobre</b>
+      <span class="small muted"></span>
+      <button id="about-close" class="btn btn-small" aria-label="Fechar">✕</button>
+    </div>
+    <div class="ai-body about-body">
+      <div class="about-head">
+        <img src="eletroinfo.svg" width="64" height="64" alt="Eletro Info Tecnologia">
+        <div><h3>Universal OBD Dashboard</h3><div id="about-version-full" class="small muted"></div></div>
+      </div>
+      <p>Painel e caixa-preta de telemetria OBD-II: leituras em tempo real, consumo real entre abastecimentos, histórico de viagens e falhas, e Android Auto. O app só consulta o carro, nunca escreve na central.</p>
+      <p>Desenvolvido por <b>Alan Martines</b> · <b>Eletro Info Tecnologia</b></p>
+      <div class="about-links">
+        <a class="btn" href="https://www.eletroinfotecnologia.com.br/">Site da Eletro Info</a>
+        <a class="btn" href="https://github.com/AlanMartines/Universal-OBD-Dashboard">Código-fonte no GitHub</a>
+        <a class="btn" href="https://github.com/AlanMartines/Universal-OBD-Dashboard/issues/new/choose">Relatar problema ou sugerir</a>
+      </div>
+      <h2>Privacidade</h2>
+      <p class="small">Viagens, abastecimentos, falhas e ajustes ficam só neste celular. O app não tem servidor e não envia nada ao projeto. O assistente IA, se você ativar, envia ao provedor escolhido apenas os resumos que você confere antes do primeiro envio, sem GPS, trajeto nem VIN.</p>
+      <h2>Licença</h2>
+      <p class="small">Código aberto sob a <a href="https://github.com/AlanMartines/Universal-OBD-Dashboard/blob/master/LICENSE">licença MIT</a>. O nome e a logo Eletro Info são marcas da Eletro Info Tecnologia e não fazem parte da licença.</p>
+      <h2>Componentes de código aberto</h2>
+      <ul class="small about-credits">
+        <li>AndroidX: Core, Activity, Fragment, Lifecycle, WebKit, Car App e Room (Apache 2.0)</li>
+        <li>Google Play Services Location (Android SDK License)</li>
+        <li>Kotlin, Kotlin Coroutines e kotlinx.serialization (Apache 2.0)</li>
+        <li>Fontes Barlow Semi Condensed e Chakra Petch (SIL Open Font License 1.1)</li>
+      </ul>
+    </div>
+  </div>
 
   <div id="console" class="console" hidden role="dialog" aria-label="Console da rede">
     <div class="console-bar">

@@ -91,6 +91,7 @@ class AutoDisconnectReceiver : BroadcastReceiver() {
         )
         val notification = NotificationCompat.Builder(context, ObdForegroundService.CHANNEL_ALERTS)
             .setSmallIcon(R.drawable.ic_stat_obd)
+            .setColor(context.getColor(R.color.ic_launcher_background))
             .setContentTitle("${name ?: "Veículo"} conectado")
             .setContentText("Toque para iniciar a captura de telemetria")
             .setAutoCancel(true)

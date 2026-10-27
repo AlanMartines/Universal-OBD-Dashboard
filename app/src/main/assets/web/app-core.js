@@ -15,7 +15,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   getProfileMeta: () => JSON.stringify({ vehicleName: 'Pré-visualização', outputs: [], dashboard: { rpmMax: 7000, rpmRedline: 6250 },
     thermal: { thermostatOpenC: 87, fanStage1C: 97, fanStage2C: 103, criticalC: 105 }, fuel: { tankCapacityL: 48, flex: true }, roles: {} }),
   listProfiles: () => '[]', selectProfile: () => 'ok', importProfile: () => '{"ok":false,"error":"sem app"}',
-  getSettings: () => '{"ethanolPct":0}', setEthanolPercent() {}, setFuelLevel() {}, markTankFull: () => 48,
+  getSettings: () => '{"ethanolPct":0}', getAppInfo: () => '{"versionName":"pré-visualização","versionCode":0,"buildType":"debug"}', setEthanolPercent() {}, setFuelLevel() {}, markTankFull: () => 48,
   setAdapterNames() {}, setExtraTriggers() {}, getTrips: () => '[]', getDtcHistory: () => '[]',
   exportTrip: () => 'Exportação disponível só no app',
   deleteTrip: () => 'ok', deleteAllHistory: () => 'ok', openNotificationSettings() {},

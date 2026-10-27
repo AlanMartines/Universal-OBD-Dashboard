@@ -58,3 +58,5 @@ Decisões já tomadas, para não reabrir sem um motivo novo:
 ## Licença
 
 Ao contribuir, você concorda que sua contribuição seja distribuída sob a [licença do projeto](LICENSE).
+
+O nome Eletro Info Tecnologia, a logo e o emblema `[EI]` do ícone do app são marcas da empresa e não fazem parte da licença MIT. Um fork publicado como app próprio deve usar outro nome e outro ícone.

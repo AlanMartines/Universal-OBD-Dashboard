@@ -674,6 +674,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         val text = "Veículo parado há $minutes min. A captura será encerrada em ${pm.idleConfirmTimeoutS}s para poupar bateria."
         val notification = NotificationCompat.Builder(this, CHANNEL_ALERTS)
             .setSmallIcon(R.drawable.ic_stat_obd)
+            .setColor(getColor(R.color.ic_launcher_background))
             .setContentTitle("Encerrar captura?")
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
@@ -877,6 +878,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         val vehicle = s.vehicleName.ifEmpty { getString(R.string.app_name) }
         return NotificationCompat.Builder(this, CHANNEL_STATUS)
             .setSmallIcon(R.drawable.ic_stat_obd)
+            .setColor(getColor(R.color.ic_launcher_background))
             .setContentTitle("Universal OBD em execução")
             .setSubText(vehicle)
             .setContentText(text)
@@ -911,6 +913,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         val title = if (alert.level == AlertLevel.CRITICAL) "⚠ Alerta crítico" else "Atenção"
         val notification = NotificationCompat.Builder(this, CHANNEL_ALERTS)
             .setSmallIcon(R.drawable.ic_stat_obd)
+            .setColor(getColor(R.color.ic_launcher_background))
             .setContentTitle(title)
             .setContentText(alert.message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
