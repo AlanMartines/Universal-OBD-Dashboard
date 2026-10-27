@@ -23,17 +23,39 @@ O projeto só faz **consulta** ao carro. A escuta só é usada com um controlado
 | D13 | SCK |
 | (não usado) | INT |
 
-| Conector OBD do carro | MCP2515 |
+| Conector OBD do carro | Liga em |
 |---|---|
-| Pino 6 | CANH |
-| Pino 14 | CANL |
-| Pino 5 (terra de sinal) | GND |
+| Pino 6 (CAN-H) | Borne CANH do módulo |
+| Pino 14 (CAN-L) | Borne CANL do módulo |
+| Pino 5 (terra de sinal) | O outro GND livre do Arduino (ao lado do 5V) |
+
+```
+OBD 6  ───────────── CANH ┐
+OBD 14 ───────────── CANL ├ MCP2515
+Arduino GND (1) ──── GND  ┘
+Arduino GND (2) ──── OBD 5
+```
+
+O **terra é obrigatório**, não serve só para o multímetro. O transceptor lê a diferença entre CAN-H e CAN-L, mas cada fio precisa estar dentro da faixa que ele aceita em relação ao GND dele. Sem o terra comum, o Arduino e o notebook ficam "flutuando" em relação ao carro, e a recepção falha ou chega com erros. Os pinos GND do Arduino são ligados entre si na placa, então qualquer um serve. O borne de parafuso do módulo normalmente só tem CANH e CANL.
 
 Cuidados:
-- **Tire o jumper de 120 Ω** do módulo (às vezes marcado J1, perto dos bornes CANH/CANL). A rede do carro já tem a terminação dela, e um resistor a mais altera a rede.
-- **Alimentação só pelo USB do notebook.** Não use o pino 16 (+12 V) nesta montagem.
+- **Tire o jumper de 120 Ω** do módulo (às vezes marcado J1, perto dos bornes CANH/CANL). A rede do carro já tem a terminação dela. Na rede de carroceria tolerante a falhas não há resistor entre os fios, e um de 120 Ω derrubaria a tensão de repouso.
+- **Use o pino 5**, o terra de sinal. O pino 4 é o terra do chassi.
+- **Alimentação só pelo USB do notebook.** Nunca ligue o pino 16 (+12 V) nesta montagem.
+- **Notebook na bateria durante o teste**, sem o carregador na tomada. Assim o terra da casa não se liga ao terra do carro pelo cabo USB.
 - Confira com o multímetro que o pigtail ou o Y ligam de verdade os pinos 5, 6 e 14. Cabos baratos às vezes pulam pinos.
-- Com o carro desligado, um pino deve ficar perto de 0–1 V e o outro perto de 4–5 V em relação ao pino 5. É a CAN de baixa velocidade da carroceria. Os dois em ~2,5 V indicariam CAN de alta velocidade.
+- Com o carro desligado e o Arduino ainda desconectado, meça a tensão dos pinos 6 e 14 em relação ao pino 5:
+  - um perto de 0–1 V e o outro perto de 4–5 V: CAN de baixa velocidade tolerante a falhas (ISO 11898-3), típica da carroceria;
+  - os dois perto de 2,5 V: CAN de alta velocidade.
+
+  Anote qual apareceu: isso define o transceptor do futuro adaptador ESP32.
+- Não estranhe se não der 60 Ω entre CAN-H e CAN-L, como mandam alguns tutoriais. Essa medida só vale para a CAN de alta velocidade.
+
+Ordem de montagem:
+1. Meça as tensões com o multímetro.
+2. Tire o jumper de 120 Ω.
+3. Ligue os três fios (pinos 6, 14 e 5).
+4. Conecte o USB do notebook.
 
 Rede deste projeto (Uno Vivace 2012): carroceria nos pinos 6/14, a 50 kbit/s ([notas do veículo](veiculos/uno-vivace-7gf.md)).
 
@@ -49,7 +71,7 @@ O programa começa em 50 kbit/s. Se nenhum quadro chegar em 3 s, tenta 33,3, 100
 
 ## Capturar
 
-Ligue o Arduino ao notebook, o módulo ao conector OBD e a ignição.
+Com a montagem pronta, ligue a ignição e só então comece a gravar. Com a ignição desligada e as portas fechadas, a rede da carroceria pode adormecer e ficar muda. Nesse caso, "nada" em todas as velocidades não indica ligação errada: ligue a ignição ou abra uma porta para acordá-la.
 
 ```bash
 # Grava até Ctrl+C. Tecle Enter com um texto para marcar o momento de cada ação.
