@@ -71,7 +71,15 @@ O programa começa em 50 kbit/s. Se nenhum quadro chegar em 3 s, tenta 33,3, 100
 
 ## Capturar
 
-Com a montagem pronta, ligue a ignição e só então comece a gravar. Com a ignição desligada e as portas fechadas, a rede da carroceria pode adormecer e ficar muda. Nesse caso, "nada" em todas as velocidades não indica ligação errada: ligue a ignição ou abra uma porta para acordá-la.
+O jeito mais simples é a sessão guiada. Ela pede cada passo desta página na ordem, do multímetro à desmontagem, e grava tudo numa pasta:
+
+```bash
+python3 tools/can-capture/roteiro.py /dev/ttyACM0 --pasta ~/captura-can
+```
+
+A porta pode ser `/dev/ttyUSB0` nos clones com chip CH340 (`ls /dev/ttyACM* /dev/ttyUSB*`). Se der erro de permissão, rode `sudo chmod a+rw /dev/ttyACM0`. Feche o Monitor serial da Arduino IDE antes, porque ele ocupa a porta.
+
+Para gravar à mão: com a montagem pronta, ligue a ignição e só então comece a gravar. Com a ignição desligada e as portas fechadas, a rede da carroceria pode adormecer e ficar muda. Nesse caso, "nada" em todas as velocidades não indica ligação errada: ligue a ignição ou abra uma porta para acordá-la.
 
 ```bash
 # Grava até Ctrl+C. Tecle Enter com um texto para marcar o momento de cada ação.
