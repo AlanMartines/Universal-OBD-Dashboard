@@ -6,6 +6,13 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Sessão guiada de escuta CAN** (`tools/can-capture/roteiro.py`): um menu leva por cada etapa no carro, na ordem ou uma de cada vez. As etapas são a conferência do cabo, as tensões dos pinos 6/14 (com o diagnóstico do tipo de rede), a montagem, o teste de recepção, as ações, o hodômetro antes e depois de uma volta e a desmontagem.
+  - Cada ação vira uma marca de nome fixo no momento do Enter.
+  - Um Enter apressado (a menos de 3 s da marca anterior) é recusado.
+  - Refazer e pular ficam registrados, e nenhuma gravação sobrescreve outra.
+  - As anotações vão para `anotacoes.txt`.
+
 ### Problemas conhecidos
 - **Android Auto por APK:** o README e o `docs/android-auto.md` agora explicam que, a partir do Android Auto 17.7, *Fontes desconhecidas* não libera mais apps da Car App Library instalados por APK. Por isso, o APK das Releases não aparece na central do carro, só no simulador DHU.
 

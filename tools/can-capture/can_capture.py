@@ -17,6 +17,8 @@ Uso:
   # Bytes que mudaram logo depois de cada marca, comparados com os segundos anteriores
   python3 tools/can-capture/can_capture.py marcas captura.log [--janela 2]
 
+Para a sessão completa no carro, guiada passo a passo (tensões, ações, hodômetro), use o roteiro.py.
+
 Só usa a biblioteca padrão do Python 3. A gravação pela USB funciona no Linux e no macOS.
 """
 import argparse
@@ -219,6 +221,24 @@ def open_serial(port, baud):
     return fd
 
 
+def write_serial_lines(buf, chunk, fh, now):
+    """Junta [chunk] ao que sobrou em [buf] e grava as linhas completas com o horário [now] na frente.
+    Devolve (sobra, quadros gravados, linhas de estado '#')."""
+    *lines, rest = (buf + chunk).split(b"\n")
+    frames, status = 0, []
+    for raw in lines:
+        line = raw.decode("ascii", "replace").strip()
+        if not line:
+            continue
+        fh.write(f"{now} {line}\n")
+        if line.startswith("#"):
+            status.append(line)
+        else:
+            frames += 1
+    fh.flush()
+    return rest, frames, status
+
+
 def cmd_gravar(args):
     # Só lê a porta: a ferramenta nunca escreve no adaptador.
     fd = open_serial(args.porta, args.baud)
@@ -242,18 +262,10 @@ def cmd_gravar(args):
                     fh.write(f"{now} # MARCA {label or marks}\n")
                     print(f"marca {marks}: {label or marks}", file=sys.stderr)
                 if fd in ready:
-                    buf += os.read(fd, 4096)
-                    *lines, buf = buf.split(b"\n")
-                    for raw in lines:
-                        line = raw.decode("ascii", "replace").strip()
-                        if not line:
-                            continue
-                        fh.write(f"{now} {line}\n")
-                        if line.startswith("#"):
-                            print(line, file=sys.stderr)
-                        else:
-                            frames += 1
-                    fh.flush()
+                    buf, n, status = write_serial_lines(buf, os.read(fd, 4096), fh, now)
+                    frames += n
+                    for line in status:
+                        print(line, file=sys.stderr)
         except KeyboardInterrupt:
             pass
         finally:
