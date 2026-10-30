@@ -56,6 +56,15 @@ class ParseTest(unittest.TestCase):
         self.assertEqual([0, 1], [f.t_ms for f in cap.frames])
 
 
+class SerialLinesTest(unittest.TestCase):
+
+    def test_only_valid_frames_are_counted(self):
+        fh = io.StringIO()
+        rest, frames, status = cc.write_serial_lines(b"", b"ada a 500 kbps\n# stats\nt1231AA\nt12", fh, 7)
+        self.assertEqual((b"t12", 1, ["# stats"]), (rest, frames, status))
+        self.assertIn("7 ada a 500 kbps", fh.getvalue())         # o que não é quadro continua gravado
+
+
 class AnalysisTest(unittest.TestCase):
 
     def setUp(self):

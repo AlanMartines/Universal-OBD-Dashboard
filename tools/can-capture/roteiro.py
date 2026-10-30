@@ -80,13 +80,18 @@ def parse_volts(text):
 
 def classify_voltages(pin6, pin14):
     """O que as tensões em relação ao pino 5 indicam (docs/can-escuta.md)."""
-    low, high = sorted((pin6, pin14))
-    if high < 0.3:
+    if max(pin6, pin14) < 0.3:
         return "rede dormindo ou fio sem ligação"
     if abs(pin6 - 2.5) < 0.7 and abs(pin14 - 2.5) < 0.7:
         return "CAN de alta velocidade (ISO 11898-2)"
-    if low < 1.5 and 3.5 < high < 6:                         # acima de 6 V é pino errado (bateria no 16)
+    # Tolerante a falhas: em repouso o CAN-H (6) fica perto de 0 V e o CAN-L (14) perto de 5 V.
+    # Dormindo, a terminação puxa o CAN-L até a tensão da bateria.
+    if pin6 < 1.5 and 3.5 < pin14 < 6:
         return "CAN tolerante a falhas (ISO 11898-3), típica da carroceria"
+    if pin6 < 1.5 and 8 < pin14 < 16:
+        return "CAN tolerante a falhas dormindo (CAN-L na tensão da bateria): ligue a ignição para acordar"
+    if pin14 < 1.5 and pin6 > 3.5:
+        return "invertido: confira se as pontas estão mesmo nos pinos 6 e 14"
     return "fora do esperado: confira as pontas e o pino 5"
 
 
@@ -244,14 +249,14 @@ class Session:
             result = self.timed_recording("teste.log", RECEPTION_S, "teste de recepção")
             if result is None:
                 return False
-            path, frames = result
+            path, _ = result
             cap = cc.load(path)
             for _, s in cap.status:
                 if "listen-only" in s or "ERRO" in s:
                     self.out(f"   # {s}")
             ids = len({f.key for f in cap.frames})
-            if frames:
-                self.out(f"   ✓ Recepção ok: {frames} quadros de {ids} IDs diferentes.")
+            if cap.frames:
+                self.out(f"   ✓ Recepção ok: {len(cap.frames)} quadros de {ids} IDs diferentes.")
                 return True
             self.out("   ⚠ Nenhum quadro. Abra e feche uma porta para acordar a rede.")
             self.out("     Se aparecer '# ERRO', confira os fios entre o Arduino e o módulo.")

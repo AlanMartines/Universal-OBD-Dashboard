@@ -218,12 +218,13 @@ def open_serial(port, baud):
     attrs[6][termios.VMIN] = 0
     attrs[6][termios.VTIME] = 0
     termios.tcsetattr(fd, termios.TCSANOW, attrs)
+    termios.tcflush(fd, termios.TCIFLUSH)             # descarta o que ficou acumulado na porta antes de abrir
     return fd
 
 
 def write_serial_lines(buf, chunk, fh, now):
     """Junta [chunk] ao que sobrou em [buf] e grava as linhas completas com o horário [now] na frente.
-    Devolve (sobra, quadros gravados, linhas de estado '#')."""
+    Devolve (sobra, quadros válidos gravados, linhas de estado '#'). Linha corrompida é gravada, mas não conta."""
     *lines, rest = (buf + chunk).split(b"\n")
     frames, status = 0, []
     for raw in lines:
@@ -233,7 +234,7 @@ def write_serial_lines(buf, chunk, fh, now):
         fh.write(f"{now} {line}\n")
         if line.startswith("#"):
             status.append(line)
-        else:
+        elif parse_slcan(line):
             frames += 1
     fh.flush()
     return rest, frames, status

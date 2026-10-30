@@ -64,11 +64,13 @@ def notes(s):
 class VoltageTest(unittest.TestCase):
 
     def test_classification(self):
-        self.assertIn("tolerante a falhas", rt.classify_voltages(0.2, 4.8))
-        self.assertIn("tolerante a falhas", rt.classify_voltages(4.7, 0.4))
+        self.assertIn("tolerante a falhas (ISO", rt.classify_voltages(0.2, 4.8))
+        self.assertIn("tolerante a falhas dormindo", rt.classify_voltages(0.0, 11.3))   # ignição desligada
+        self.assertIn("invertido", rt.classify_voltages(4.7, 0.4))
+        self.assertIn("invertido", rt.classify_voltages(12.1, 0.0))
         self.assertIn("alta velocidade", rt.classify_voltages(2.5, 2.4))
-        self.assertIn("dormindo", rt.classify_voltages(0.0, 0.1))
-        self.assertIn("fora do esperado", rt.classify_voltages(12.1, 0.0))
+        self.assertIn("dormindo ou fio sem ligação", rt.classify_voltages(0.0, 0.1))
+        self.assertIn("fora do esperado", rt.classify_voltages(0.0, 2.5))
 
     def test_parse_accepts_comma(self):
         self.assertEqual(4.8, rt.parse_volts("4,8"))
@@ -129,6 +131,34 @@ class ActionsTest(unittest.TestCase):
             s.step_actions(only=[1])
             s.step_actions(only=[1])
             self.assertEqual(["acoes.log", "acoes_2.log"], [os.path.basename(r.path) for r in FakeRecorder.instances])
+
+
+class ReceptionTest(unittest.TestCase):
+
+    def run_reception(self, tmp, content, answers):
+        class Writing(FakeRecorder):
+            def start(self):
+                with open(self.path, "a", encoding="utf-8") as fh:
+                    fh.write(content)
+                return self
+
+        s = session(tmp, answers, FakeClock())
+        s.recorder = Writing
+        lines = []
+        s.out = lines.append
+        return s.step_reception(), lines
+
+    def test_corrupted_line_is_not_reception(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ok, lines = self.run_reception(tmp, "1 ada a 500 kbps\n2 # stats quadros=0\n", ["", "p"])
+            self.assertFalse(ok)
+            self.assertFalse(any("Recepção ok" in line for line in lines))
+
+    def test_valid_frame_is_reception(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ok, lines = self.run_reception(tmp, "1 t2808000000000A000000\n", [""])
+            self.assertTrue(ok)
+            self.assertTrue(any("1 quadros de 1 IDs" in line for line in lines))
 
 
 class OdometerTest(unittest.TestCase):
