@@ -12,6 +12,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
   - Um Enter apressado (a menos de 3 s da marca anterior) é recusado.
   - Refazer e pular ficam registrados, e nenhuma gravação sobrescreve outra.
   - As anotações vão para `anotacoes.txt`.
+- **Diagramas de ligação** em `docs/can-escuta.md`: o de teste, com Arduino e MCP2515, e o previsto para o projeto final, com ELM327 e ESP32 no cabo Y.
 
 ### Corrigido
 - **Roteiro da escuta CAN:** o CAN-L (pino 14) na tensão da bateria com a ignição desligada passa a ser lido como a rede tolerante a falhas dormindo, e não mais como "fora do esperado". Essa é a assinatura medida no Uno. CAN-H e CAN-L invertidos agora ganham um aviso próprio.

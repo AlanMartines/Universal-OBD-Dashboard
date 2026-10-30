@@ -13,6 +13,8 @@ O projeto só faz **consulta** ao carro. A escuta só é usada com um controlado
 
 ## Ligação
 
+![Ligação do Arduino com o MCP2515 ao conector OBD](img/ligacao-arduino-can.svg)
+
 | Arduino Uno | MCP2515 |
 |---|---|
 | 5V | VCC |
@@ -45,8 +47,11 @@ Cuidados:
 - **Notebook na bateria durante o teste**, sem o carregador na tomada. Assim o terra da casa não se liga ao terra do carro pelo cabo USB.
 - Confira com o multímetro que o pigtail ou o Y ligam de verdade os pinos 5, 6 e 14. Cabos baratos às vezes pulam pinos.
 - Com o carro desligado e o Arduino ainda desconectado, meça a tensão dos pinos 6 e 14 em relação ao pino 5:
-  - um perto de 0–1 V e o outro perto de 4–5 V: CAN de baixa velocidade tolerante a falhas (ISO 11898-3), típica da carroceria;
+  - pino 6 perto de 0–1 V e pino 14 perto de 4–5 V: CAN de baixa velocidade tolerante a falhas (ISO 11898-3), típica da carroceria;
+  - pino 6 perto de 0 V e pino 14 na tensão da bateria (11–13 V): a mesma rede tolerante a falhas, **dormindo**. Com a ignição desligada, a terminação puxa o CAN-L até a bateria. Ao ligar a ignição, ele volta para 4–5 V;
   - os dois perto de 2,5 V: CAN de alta velocidade.
+
+  Com o multímetro, o pino 6 pode marcar 0 V mesmo com a rede ativa. Os pulsos dominantes são curtos, e o aparelho mostra a média.
 
   Anote qual apareceu: isso define o transceptor do futuro adaptador ESP32.
 - Não estranhe se não der 60 Ω entre CAN-H e CAN-L, como mandam alguns tutoriais. Essa medida só vale para a CAN de alta velocidade.
@@ -57,7 +62,7 @@ Ordem de montagem:
 3. Ligue os três fios (pinos 6, 14 e 5).
 4. Conecte o USB do notebook.
 
-Rede deste projeto (Uno Vivace 2012): carroceria nos pinos 6/14, a 50 kbit/s ([notas do veículo](veiculos/uno-vivace-7gf.md)).
+Rede deste projeto (Uno Vivace 2012): carroceria nos pinos 6/14, a 50 kbit/s ([notas do veículo](veiculos/uno-vivace-7gf.md)), tolerante a falhas. Medido em relação ao pino 5: pino 6 ≈ 0 V nas quatro situações; pino 14 ≈ 11,3 V com a ignição desligada (dormindo) e ≈ 4,5 V com a ignição ligada ou o motor funcionando.
 
 ## Gravar o programa no Arduino
 
@@ -141,10 +146,14 @@ Evite:
 
 ### Ligação prevista
 
+No projeto final, o cabo Y mantém os dois adaptadores ligados: o ELM327 lê o motor e o ESP32 escuta a rede CAN. Cada um fala direto com o celular por Bluetooth. O transceptor final depende dos testes com o Arduino.
+
+![Ligação prevista do ELM327 e do ESP32 com o SN65HVD230](img/ligacao-esp32-can.svg)
+
 | SN65HVD230 | Liga em |
 |---|---|
 | 3V3 / GND | 3,3 V e GND do ESP32; o GND também vai ao pino 5 do OBD |
-| CRX (R) | GPIO de recepção do ESP32 |
+| CRX (R) | D21 do ESP32 (recepção) |
 | CTX (D) | **Fixo no 3,3 V** (trava física: nunca transmite) |
 | CANH / CANL | Pinos 6 e 14 do OBD |
 

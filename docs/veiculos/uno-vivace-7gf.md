@@ -116,6 +116,21 @@ O nível do tanque não vem pela ECU: o PID `012F` não é anunciado. O caminho 
 
 **Atualização de 26/10/2026:** o ELM327 clone deste carro responde `?` ao `ATCSM1`, então o console cancela a escuta. O mapeamento passa a ser feito com Arduino Uno + MCP2515 em modo Listen-Only (cristal de 8 MHz), que garante no hardware que nada é transmitido. Ligação e roteiro em [can-escuta.md](../can-escuta.md).
 
+**Tensões medidas em 27/10/2026** (multímetro DC, em relação ao pino 5, sem nada conectado):
+
+| Situação | Pino 6 (CAN-H) | Pino 14 (CAN-L) |
+|---|---|---|
+| Ignição desligada, portas fechadas | 0 V | 11,30 V |
+| Ignição desligada, porta do motorista aberta | 0 V | 11,27 V |
+| Ignição ligada, motor desligado | 0 V | 4,5 V |
+| Motor ligado | 0 V | 4,6 V |
+
+É a assinatura da CAN **tolerante a falhas (ISO 11898-3)**. Acordada, o CAN-H fica perto de 0 V e o CAN-L perto de 5 V. Dormindo, a terminação puxa o CAN-L até a bateria. Abrir a porta não acordou a rede, e só a ignição acordou. Por isso a captura é feita com a ignição ligada.
+
+Para o receptor:
+- O TJA1050 do módulo MCP2515 deve receber. Em repouso, a diferença CAN-H − CAN-L fica negativa (lida como recessivo); nos bits dominantes, o CAN-H sobe e o CAN-L desce.
+- Os 11,3 V da rede dormindo estão dentro do limite dos pinos do TJA1050 (±27 V) e do SN65HVD230 (−4 a 16 V).
+
 **O que indica que a escuta pode funcionar:**
 - Neste carro, os pinos 6/14 vão ao **painel de instrumentos**, e a ECU também está na rede CAN, pelos bornes B13/B14 (manual, pág. 162–163). A ECU faz o diagnóstico pela linha K (pino 7), então a rede dos pinos 6/14 é a da carroceria.
 - O manual de serviço do Uno ([cópia no Scribd](https://pt.scribd.com/document/595476810/Uno-Evo-Manual-de-Servico)) descreve uma **Body CAN de baixa velocidade, 50 kbit/s**. No console, escolha **50 kbps** em vez da busca automática.
