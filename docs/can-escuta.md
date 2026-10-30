@@ -82,6 +82,8 @@ O jeito mais simples é a sessão guiada. Ela pede cada passo desta página na o
 python3 tools/can-capture/roteiro.py /dev/ttyACM0 --pasta ~/captura-can
 ```
 
+Nas ações, cada teste mostra claramente o início e o fim. A primeira etapa lê a situação inicial e as seguintes leem o carro depois de cada ação: você faz a ação (por exemplo, liga a seta), tecla Enter e o roteiro lê sozinho por 5 s antes de mostrar a etapa seguinte.
+
 A porta pode ser `/dev/ttyUSB0` nos clones com chip CH340 (`ls /dev/ttyACM* /dev/ttyUSB*`). Se der erro de permissão, rode `sudo chmod a+rw /dev/ttyACM0`. Feche o Monitor serial da Arduino IDE antes, porque ele ocupa a porta.
 
 Para gravar à mão: com a montagem pronta, ligue a ignição e só então comece a gravar. Com a ignição desligada e as portas fechadas, a rede da carroceria pode adormecer e ficar muda. Nesse caso, "nada" em todas as velocidades não indica ligação errada: ligue a ignição ou abra uma porta para acordá-la.
@@ -113,6 +115,9 @@ python3 tools/can-capture/can_capture.py resumo captura.log
 
 # O que mudou logo depois de cada marca
 python3 tools/can-capture/can_capture.py marcas captura.log --janela 2
+
+# Gravação de ações do roteiro: o que mudou de uma leitura para a seguinte em cada teste
+python3 tools/can-capture/can_capture.py leituras acoes.log
 
 # Antes/depois em arquivos separados (ex.: antes e depois de abastecer)
 python3 tools/can-capture/can_capture.py comparar antes.log depois.log

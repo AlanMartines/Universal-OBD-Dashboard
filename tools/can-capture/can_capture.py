@@ -17,6 +17,9 @@ Uso:
   # Bytes que mudaram logo depois de cada marca, comparados com os segundos anteriores
   python3 tools/can-capture/can_capture.py marcas captura.log [--janela 2]
 
+  # Gravação do roteiro.py: o que mudou de uma leitura para a seguinte em cada teste
+  python3 tools/can-capture/can_capture.py leituras acoes.log
+
 Para a sessão completa no carro, guiada passo a passo (tensões, ações, hodômetro), use o roteiro.py.
 
 Só usa a biblioteca padrão do Python 3. A gravação pela USB funciona no Linux e no macOS.
@@ -159,6 +162,36 @@ def around_marks(cap, window_s=2.0):
     return result
 
 
+def readings(cap):
+    """Leituras do roteiro.py: (teste, estado, início, fim), sem as de um teste refeito ou cancelado."""
+    result, started = [], {}
+    for mark in cap.marks:
+        if mark.label.startswith(("refazer ", "cancelado ")):
+            test = result[-1][0] if result else None
+            while result and result[-1][0] == test:
+                result.pop()
+        elif mark.label.endswith(" inicio"):
+            started[mark.label[:-len(" inicio")]] = mark.t_ms
+        elif mark.label.endswith(" fim") and mark.label[:-len(" fim")] in started:
+            label = mark.label[:-len(" fim")]
+            test, _, state = label.partition(": ")
+            result.append((test, state, started.pop(label), mark.t_ms))
+    return result
+
+
+def around_readings(cap):
+    """Compara cada leitura com a anterior do mesmo teste. O 'depois' vale desde o fim da leitura anterior,
+    para incluir o quadro avulso que o módulo manda só na hora da ação, antes do Enter."""
+    result = []
+    reads = readings(cap)
+    for (test_a, state_a, start_a, end_a), (test_b, state_b, _, end_b) in zip(reads, reads[1:]):
+        if test_a == test_b:
+            before = [f for f in cap.frames if start_a <= f.t_ms < end_a]
+            after = [f for f in cap.frames if end_a <= f.t_ms < end_b]
+            result.append((test_a, state_a, state_b, compare(before, after)))
+    return result
+
+
 def hexs(values, limit=8):
     shown = " ".join(f"{v:02X}" for v in values[:limit])
     return shown + (f" …(+{len(values) - limit})" if len(values) > limit else "")
@@ -203,6 +236,16 @@ def cmd_marcas(args, out=sys.stdout):
     for mark, changes in around_marks(cap, args.janela):
         print(f"MARCA {mark.label or '(sem nome)'} @ {mark.t_ms}", file=out)
         print_changes(*changes, out)
+
+
+def cmd_leituras(args, out=sys.stdout):
+    cap = load(args.arquivo)
+    changes = around_readings(cap)
+    if not changes:
+        print("Nenhuma leitura na gravação (ela vem das ações do roteiro.py).", file=out)
+    for test, state_a, state_b, change in changes:
+        print(f"{test}: {state_a} → {state_b}", file=out)
+        print_changes(*change, out)
 
 
 def open_serial(port, baud):
@@ -290,8 +333,11 @@ def main(argv=None):
     m = sub.add_parser("marcas", help="o que muda em volta de cada marca")
     m.add_argument("arquivo")
     m.add_argument("--janela", type=float, default=2.0, help="segundos antes e depois de cada marca")
+    e = sub.add_parser("leituras", help="o que muda entre as leituras de cada teste do roteiro")
+    e.add_argument("arquivo")
     args = p.parse_args(argv)
-    {"gravar": cmd_gravar, "resumo": cmd_resumo, "comparar": cmd_comparar, "marcas": cmd_marcas}[args.cmd](args)
+    {"gravar": cmd_gravar, "resumo": cmd_resumo, "comparar": cmd_comparar, "marcas": cmd_marcas,
+     "leituras": cmd_leituras}[args.cmd](args)
 
 
 if __name__ == "__main__":

@@ -3,9 +3,10 @@
 
 Um menu leva por cada etapa de docs/can-escuta.md, na ordem, ou deixa escolher uma etapa solta:
 conferência do cabo, tensões dos pinos 6/14, montagem, teste de recepção, ações (setas, portas,
-faróis…), hodômetro antes/depois de uma volta e desmontagem. Cada ação vira uma marca com nome
-fixo na gravação, no momento do Enter. Tudo vai para uma pasta: os .log de cada gravação e o
-anotacoes.txt com as tensões, os valores do painel e o que foi pulado ou refeito.
+faróis…), hodômetro antes/depois de uma volta e desmontagem. Cada teste de ação tem uma leitura
+inicial e uma leitura depois de cada ação: você faz a ação, tecla Enter, e o roteiro lê sozinho por
+alguns segundos. Tudo vai para uma pasta: os .log de cada gravação e o anotacoes.txt com as
+tensões, os valores do painel e o que foi pulado ou refeito.
 
 Uso:
   python3 tools/can-capture/roteiro.py /dev/ttyACM0 --pasta ~/captura-can
@@ -23,26 +24,77 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import can_capture as cc  # noqa: E402
 
-MIN_GAP_S = 3.0          # entre duas marcas: o carro precisa de tempo para reagir e transmitir
+READ_S = 5               # duração de cada leitura: cobre algumas piscadas das setas
 SILENCE_S = 5.0          # sem quadros há mais que isso: avisa
 RECEPTION_S = 15
 ODOMETER_S = 120
 
-# (nome, [(instrução, marca)]). A marca é o texto que vai para a gravação; manter fixo entre sessões.
+# (nome, [(instrução, marca)]). A 1ª etapa é a situação inicial, as outras são ações. A marca é o texto
+# que vai para a gravação ("teste: estado inicio/fim"); manter fixo entre sessões.
 ACTIONS = [
-    ("Repouso (base)", [("Não mexa em nada por 10 s", ("repouso", 10))]),
-    ("Seta esquerda", [("Ligue a seta esquerda", "seta esq liga"), ("Desligue a seta esquerda", "seta esq desliga")]),
-    ("Seta direita", [("Ligue a seta direita", "seta dir liga"), ("Desligue a seta direita", "seta dir desliga")]),
-    ("Pisca-alerta", [("Ligue o pisca-alerta", "alerta liga"), ("Desligue o pisca-alerta", "alerta desliga")]),
-    ("Porta do motorista", [("Abra a porta do motorista", "porta mot abre"), ("Feche a porta do motorista", "porta mot fecha")]),
-    ("Porta do passageiro", [("Abra a porta do passageiro", "porta pass abre"), ("Feche a porta do passageiro", "porta pass fecha")]),
-    ("Farol baixo", [("Ligue o farol baixo", "farol baixo liga"), ("Desligue o farol baixo", "farol baixo desliga")]),
-    ("Farol alto", [("Ligue o farol alto", "farol alto liga"), ("Desligue o farol alto", "farol alto desliga")]),
-    ("Lanterna", [("Ligue a lanterna", "lanterna liga"), ("Desligue a lanterna", "lanterna desliga")]),
-    ("Freio de mão", [("Puxe o freio de mão", "freio mao puxa"), ("Solte o freio de mão", "freio mao solta")]),
-    ("Pedal de freio", [("Pise no pedal de freio", "freio pedal pisa"), ("Solte o pedal de freio", "freio pedal solta")]),
-    ("Cinto do motorista", [("Afivele o cinto do motorista", "cinto mot coloca"), ("Solte o cinto do motorista", "cinto mot tira")]),
-    ("Partida do motor", [("Dê a partida no motor", "partida"), ("Motor funcionando há uns 10 s, sem mexer em nada", "motor estavel")]),
+    ("Repouso (base)", [
+        ("Não mexa em nada", "repouso: 1"),
+        ("Continue sem mexer em nada", "repouso: 2"),
+    ]),
+    ("Seta esquerda", [
+        ("Deixe a seta desligada", "seta esq: desligada"),
+        ("Ligue a seta esquerda e deixe piscando", "seta esq: ligada"),
+        ("Desligue a seta esquerda", "seta esq: desligada de novo"),
+    ]),
+    ("Seta direita", [
+        ("Deixe a seta desligada", "seta dir: desligada"),
+        ("Ligue a seta direita e deixe piscando", "seta dir: ligada"),
+        ("Desligue a seta direita", "seta dir: desligada de novo"),
+    ]),
+    ("Pisca-alerta", [
+        ("Deixe o pisca-alerta desligado", "alerta: desligado"),
+        ("Ligue o pisca-alerta e deixe piscando", "alerta: ligado"),
+        ("Desligue o pisca-alerta", "alerta: desligado de novo"),
+    ]),
+    ("Porta do motorista", [
+        ("Deixe a porta do motorista fechada", "porta mot: fechada"),
+        ("Abra a porta do motorista e deixe aberta", "porta mot: aberta"),
+        ("Feche a porta do motorista", "porta mot: fechada de novo"),
+    ]),
+    ("Porta do passageiro", [
+        ("Deixe a porta do passageiro fechada", "porta pass: fechada"),
+        ("Abra a porta do passageiro e deixe aberta", "porta pass: aberta"),
+        ("Feche a porta do passageiro", "porta pass: fechada de novo"),
+    ]),
+    ("Farol baixo", [
+        ("Deixe os faróis desligados", "farol baixo: desligado"),
+        ("Ligue o farol baixo e deixe ligado", "farol baixo: ligado"),
+        ("Desligue o farol baixo", "farol baixo: desligado de novo"),
+    ]),
+    ("Farol alto", [
+        ("Deixe o farol alto desligado", "farol alto: desligado"),
+        ("Ligue o farol alto e deixe ligado", "farol alto: ligado"),
+        ("Desligue o farol alto", "farol alto: desligado de novo"),
+    ]),
+    ("Lanterna", [
+        ("Deixe a lanterna desligada", "lanterna: desligada"),
+        ("Ligue a lanterna e deixe ligada", "lanterna: ligada"),
+        ("Desligue a lanterna", "lanterna: desligada de novo"),
+    ]),
+    ("Freio de mão", [
+        ("Deixe o freio de mão puxado, com o carro em local plano e engrenado", "freio mao: puxado"),
+        ("Solte o freio de mão e deixe solto", "freio mao: solto"),
+        ("Puxe o freio de mão", "freio mao: puxado de novo"),
+    ]),
+    ("Pedal de freio", [
+        ("Deixe o pé fora do pedal de freio", "freio pedal: solto"),
+        ("Pise no pedal de freio e mantenha pisado", "freio pedal: pisado"),
+        ("Solte o pedal de freio", "freio pedal: solto de novo"),
+    ]),
+    ("Cinto do motorista", [
+        ("Deixe o cinto do motorista solto", "cinto mot: solto"),
+        ("Afivele o cinto do motorista", "cinto mot: afivelado"),
+        ("Solte o cinto do motorista", "cinto mot: solto de novo"),
+    ]),
+    ("Partida do motor", [
+        ("Deixe o motor desligado, com a ignição ligada e o câmbio em ponto morto", "motor: desligado"),
+        ("Dê a partida e espere o motor firmar", "motor: ligado"),
+    ]),
 ]
 
 CABLE_CHECKS = [
@@ -155,11 +207,11 @@ class Recorder:
 
 
 class Session:
-    """As etapas do roteiro. [ask], [out], [clock], [sleep] e [recorder] são trocáveis nos testes."""
+    """As etapas do roteiro. [ask], [out], [sleep] e [recorder] são trocáveis nos testes."""
 
-    def __init__(self, port, folder, ask=input, out=print, clock=time.monotonic, sleep=time.sleep, recorder=Recorder):
+    def __init__(self, port, folder, ask=input, out=print, sleep=time.sleep, recorder=Recorder):
         self.port, self.folder = port, folder
-        self.ask, self.out, self.clock, self.sleep, self.recorder = ask, out, clock, sleep, recorder
+        self.ask, self.out, self.sleep, self.recorder = ask, out, sleep, recorder
         self.notes_path = os.path.join(folder, "anotacoes.txt")
         self.done = set()
 
@@ -264,84 +316,70 @@ class Session:
                 self.note("teste de recepção: seguiu sem quadros")
                 return False
 
-    def run_action(self, rec, name, stages, last_mark):
-        """Uma ação, etapa por etapa. Devolve ('ok' | 'pulado' | 'parar', horário da última marca)."""
-        self.out(f"\n▶ {name}")
+    def read_stage(self, rec, label):
+        """Uma leitura de READ_S segundos entre as marcas '<label> inicio' e '<label> fim'."""
+        before = rec.frames
+        rec.mark(f"{label} inicio")
+        self.out(f"      ● LEITURA INICIADA: {READ_S} s, não mexa em nada")
+        for left in range(READ_S, 0, -1):
+            self.out(f"      … {left}")
+            self.sleep(1)
+        rec.mark(f"{label} fim")
+        self.out(f"      ■ LEITURA ENCERRADA ({rec.frames - before} quadros)")
+        if rec.silent_for() > SILENCE_S:
+            self.out(f"      ⚠ nenhum quadro há {rec.silent_for():.0f} s: a rede pode ter dormido ou um fio soltou.")
+
+    def run_action(self, rec, name, stages, number, total):
+        """Um teste, etapa por etapa. Devolve 'ok', 'pulado' ou 'parar'."""
+        self.out(f"\n{'═' * 50}\nINÍCIO DO TESTE {number} de {total}: {name}\n{'═' * 50}")
         i = 0
         marked = False
         while i < len(stages):
             instruction, label = stages[i]
-            if isinstance(label, tuple):                       # etapa cronometrada
-                label, seconds = label
-                self.ask(f"  [{i + 1}/{len(stages)}] {instruction}. Enter começa… ")
-                rec.mark(f"{label} inicio")
-                self.sleep(seconds)
-                rec.mark(f"{label} fim")
-                last_mark, marked = self.clock(), True
-                self.out(f"      ✓ marcas '{label} inicio' e '{label} fim'")
-                i += 1
-                continue
-            answer = self.ask(
-                f"  [{i + 1}/{len(stages)}] {instruction}: Enter NO MOMENTO da ação (r refaz, p pula, s para): "
-            ).strip().lower()
+            self.out(f"\n   Etapa {i + 1} de {len(stages)}")
+            self.out(f"   ▶ {instruction}.")
+            prompt = "Enter inicia a leitura" if i == 0 else "Feito? Enter inicia a leitura"
+            answer = self.ask(f"   {prompt} (r refaz o teste, p pula o teste, s para): ").strip().lower()
             if answer in ("p", "s"):
                 if marked:
                     rec.mark(f"cancelado {name}")
                 self.note(f"ação '{name}': {'pulada' if answer == 'p' else 'interrompida'}")
-                return ("pulado" if answer == "p" else "parar"), last_mark
+                return "pulado" if answer == "p" else "parar"
             if answer == "r":
                 if marked:
                     rec.mark(f"refazer {name}")
                     self.note(f"ação '{name}': refeita")
-                self.out("      ↺ recomeçando esta ação")
+                self.out("      ↺ Volte à situação inicial. Recomeçando este teste.")
                 i, marked = 0, False
                 continue
             if answer:
                 self.out("      Só Enter, r, p ou s.")
                 continue
-            gap = self.clock() - last_mark if last_mark is not None else None
-            if gap is not None and gap < MIN_GAP_S:
-                self.out(f"      ⏳ Cedo demais ({gap:.1f} s desde a última). Espere o carro reagir e tecle Enter de novo.")
-                continue
-            rec.mark(label)
-            last_mark, marked = self.clock(), True
-            self.out(f"      ✓ marca '{label}'  (quadros: {rec.frames})")
-            if rec.silent_for() > SILENCE_S:
-                self.out(f"      ⚠ nenhum quadro há {rec.silent_for():.0f} s: a rede pode ter dormido ou um fio soltou.")
+            self.read_stage(rec, label)
+            marked = True
             i += 1
         self.done.add(name)
-        return "ok", last_mark
+        self.out(f"\n{'═' * 50}\nFIM DO TESTE {number} de {total}: {name}\n{'═' * 50}")
+        return "ok"
 
     def step_actions(self, only=None):
-        """Todas as ações em sequência ou só [only] (índices de ACTIONS). Uma gravação por chamada."""
+        """Todos os testes em sequência ou só [only] (índices de ACTIONS). Uma gravação por chamada."""
         chosen = [ACTIONS[i] for i in only] if only is not None else ACTIONS
         if only is None:
             self.out("\n== Ações ==  Ignição ligada, motor DESLIGADO (a partida é a última).")
-            self.out("   Para cada etapa: faça a ação e tecle Enter no mesmo instante. Espere uns 5 s entre elas.")
+        self.out(f"   Em cada etapa: faça o que está pedido, tecle Enter e espere a leitura de {READ_S} s terminar.")
         if not self.port_ready():
             return
         path = unique_path(self.folder, "acoes.log")
         rec = self.recorder(self.port, path, show=self.out).start()
-        self.out(f"   Gravando em {path}. Aguarde 3 s…")
-        self.sleep(3)
-        last_mark = None
+        self.out(f"   Gravando em {path}.")
         try:
-            for n, (name, stages) in enumerate(chosen):
-                if only is None and n > 0:
-                    answer = self.ask(f"\n  Próximo: {name}. Enter começa, p pula, s para: ").strip().lower()
-                    if answer == "p":
-                        self.note(f"ação '{name}': pulada")
-                        continue
-                    if answer == "s":
-                        break
-                status, last_mark = self.run_action(rec, name, stages, last_mark)
-                if status == "parar":
+            for n, (name, stages) in enumerate(chosen, 1):
+                if self.run_action(rec, name, stages, n, len(chosen)) == "parar":
                     break
-            if only is None or last_mark is not None:
-                self.sleep(2)                                  # deixa gravar a reação à última ação
         finally:
             frames = rec.stop()
-        self.out(f"   ✓ {frames} quadros em {path}")
+        self.out(f"\n   ✓ {frames} quadros em {path}")
         self.note(f"ações {[name for name, _ in chosen] if only is not None else '(sequência)'}: "
                   f"{frames} quadros em {os.path.basename(path)}")
 

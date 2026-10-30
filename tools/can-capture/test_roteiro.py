@@ -51,7 +51,7 @@ def session(folder, answers, clock, step_s=5.0):
 
     FakeRecorder.instances = []
     s = rt.Session(os.path.join(folder, "porta"), folder, ask=ask, out=lambda *_: None,
-                   clock=clock, sleep=clock.sleep, recorder=FakeRecorder)
+                   sleep=clock.sleep, recorder=FakeRecorder)
     open(s.port, "w").close()                                    # porta "existe" e pode ser lida
     return s
 
@@ -89,45 +89,55 @@ class VoltageTest(unittest.TestCase):
 
 class ActionsTest(unittest.TestCase):
 
-    def test_full_sequence_marks_every_stage_in_order(self):
+    def test_full_sequence_reads_every_stage_in_order(self):
         with tempfile.TemporaryDirectory() as tmp:
-            answers = []
-            for n, (_, stages) in enumerate(rt.ACTIONS):
-                if n > 0:
-                    answers.append("")                       # "Próximo: …" → começa
-                answers += [""] * len(stages)
+            answers = [""] * sum(len(stages) for _, stages in rt.ACTIONS)
             s = session(tmp, answers, FakeClock())
             s.step_actions()
             [rec] = FakeRecorder.instances
             expected = []
             for _, stages in rt.ACTIONS:
                 for _, label in stages:
-                    expected += [f"{label[0]} inicio", f"{label[0]} fim"] if isinstance(label, tuple) else [label]
+                    expected += [f"{label} inicio", f"{label} fim"]
             self.assertEqual(expected, rec.marks)
             self.assertEqual(os.path.join(tmp, "acoes.log"), rec.path)
 
-    def test_enter_too_soon_is_refused(self):
+    def test_reading_ends_by_itself_after_the_set_time(self):
         with tempfile.TemporaryDirectory() as tmp:
             clock = FakeClock()
-            s = session(tmp, ["", "", ""], clock, step_s=1.5)        # 1,5 s entre os Enter: o segundo é cedo
+            stages = len(rt.ACTIONS[1][1])
+            s = session(tmp, [""] * stages, clock, step_s=0.0)        # nenhuma resposta além de um Enter por etapa
             s.step_actions(only=[1])                                   # seta esquerda
-            [rec] = FakeRecorder.instances
-            self.assertEqual(["seta esq liga", "seta esq desliga"], rec.marks)
+            self.assertEqual(stages * rt.READ_S, clock.t)
+
+    def test_each_test_announces_itself_and_the_next_action(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            s = session(tmp, ["", "", ""], FakeClock())
+            lines = []
+            s.out = lines.append
+            s.step_actions(only=[1])
+            text = "\n".join(lines)
+            self.assertIn("INÍCIO DO TESTE 1 de 1: Seta esquerda", text)
+            self.assertIn("FIM DO TESTE 1 de 1: Seta esquerda", text)
+            self.assertLess(text.index("Deixe a seta desligada"), text.index("Ligue a seta esquerda"))
 
     def test_redo_and_skip_are_marked(self):
         with tempfile.TemporaryDirectory() as tmp:
-            s = session(tmp, ["", "r", "", "", "p"], FakeClock())
+            s = session(tmp, ["", "r", "", "", "", "p"], FakeClock())
             idx = [i for i, (name, _) in enumerate(rt.ACTIONS) if name in ("Seta esquerda", "Seta direita")]
             s.step_actions(only=idx)
             [rec] = FakeRecorder.instances
-            self.assertEqual(["seta esq liga", "refazer Seta esquerda", "seta esq liga", "seta esq desliga"], rec.marks)
+            first = ["seta esq: desligada inicio", "seta esq: desligada fim"]
+            rest = ["seta esq: ligada inicio", "seta esq: ligada fim",
+                    "seta esq: desligada de novo inicio", "seta esq: desligada de novo fim"]
+            self.assertEqual(first + ["refazer Seta esquerda"] + first + rest, rec.marks)
             self.assertIn("Seta esquerda", s.done)
             self.assertNotIn("Seta direita", s.done)
             self.assertIn("ação 'Seta direita': pulada", notes(s))
 
     def test_recordings_never_overwrite(self):
         with tempfile.TemporaryDirectory() as tmp:
-            s = session(tmp, ["", "", "", ""], FakeClock())
+            s = session(tmp, [""] * 6, FakeClock())
             s.step_actions(only=[1])
             s.step_actions(only=[1])
             self.assertEqual(["acoes.log", "acoes_2.log"], [os.path.basename(r.path) for r in FakeRecorder.instances])

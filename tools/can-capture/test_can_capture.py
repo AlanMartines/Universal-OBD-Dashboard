@@ -112,5 +112,28 @@ class AnalysisTest(unittest.TestCase):
             self.assertIn("nenhuma diferença", out.getvalue())
 
 
+class ReadingsTest(unittest.TestCase):
+
+    LOG = [
+        "1000 # MARCA seta: desligada inicio", "1100 t2801" "00", "2000 # MARCA seta: desligada fim",
+        "2500 # MARCA refazer Seta", "3000 # MARCA seta: desligada inicio", "3100 t2801" "00",
+        "4000 # MARCA seta: desligada fim", "4500 t2801" "01", "5000 # MARCA seta: ligada inicio",
+        "6000 # MARCA seta: ligada fim", "7000 # MARCA porta: fechada inicio", "7100 t3001" "AA",
+        "8000 # MARCA porta: fechada fim",
+    ]
+
+    def test_compares_consecutive_readings_of_each_test(self):
+        cap = cc.parse_lines(self.LOG)
+        [(test, state_a, state_b, (new, gone, changed))] = cc.around_readings(cap)
+        self.assertEqual(("seta", "desligada", "ligada"), (test, state_a, state_b))
+        self.assertEqual(([], []), (new, gone))
+        self.assertEqual([("280", 0, [0x00], [0x01])], changed)              # quadro avulso antes do Enter conta
+
+    def test_redone_readings_are_dropped(self):
+        reads = cc.readings(cc.parse_lines(self.LOG))
+        self.assertEqual(3000, reads[0][2])
+        self.assertEqual(3, len(reads))
+
+
 if __name__ == "__main__":
     unittest.main()
