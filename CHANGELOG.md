@@ -12,6 +12,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
   - O comando `leituras` do `can_capture.py` mostra o que mudou de uma leitura para a seguinte em cada teste.
   - Refazer e pular ficam registrados, e nenhuma gravação sobrescreve outra.
   - As anotações vão para `anotacoes.txt`.
+- **Firmware de escuta CAN para ESP32** (`firmware/esp32-can-listen`): TWAI em listen-only a 50 kbit/s, sem fila de transmissão, com saída por USB e Bluetooth clássico no mesmo formato do Arduino. Ainda não testado no carro.
 - **Diagramas de ligação** em `docs/can-escuta.md`: o de teste, com Arduino e MCP2515, e o previsto para o projeto final, com ELM327 e ESP32 no cabo Y.
 
 - **Mapa da rede CAN do Uno** em `docs/veiculos/uno-vivace-7gf.md`: hodômetro total, parcial e luzes confirmados; RPM, temperatura, tensão e combustível ainda como candidatos.

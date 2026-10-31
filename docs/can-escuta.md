@@ -150,6 +150,23 @@ Evite:
 - **ESP32-S3, C3 e C6:** não têm Bluetooth clássico.
 - **Placas com bateria 18650:** lítio dentro do carro no sol é risco de incêndio, e a energia já vem da tomada OBD.
 
+### Teste de recepção com TJA1050
+
+O programa é o [`firmware/esp32-can-listen`](../firmware/esp32-can-listen/README.md). Esta ligação ainda não foi testada. Ela usa um módulo TJA1050 solto, sem resistor de 120 Ω (medindo em Ω entre CANH e CANL, deve dar bem acima de 120 Ω), e o ESP32 alimentado pelo USB do notebook:
+
+| Módulo TJA1050 | Liga em |
+|---|---|
+| VCC | VIN do ESP32 (5 V do USB) |
+| GND | GND do ESP32 |
+| TX | VIN do ESP32 (trava física: nunca transmite) |
+| RX | Resistor de 1 kΩ até o D21 do ESP32 e resistor de 2 kΩ do D21 ao GND |
+| CANL | Pino 14 do OBD |
+| CANH | Resistor de 1 kΩ até o 3V3 do ESP32 |
+
+O GND do ESP32 também vai ao pino 5 do OBD. O D22 e os pinos 6 e 16 do OBD ficam sem ligação. Nunca ligue o RX direto no D21: a saída de 5 V pode danificar o ESP32.
+
+Depois, grave pelo mesmo roteiro: `python3 tools/can-capture/roteiro.py /dev/ttyUSB0 --pasta ~/captura-can`, opção 4.
+
 ### Ligação prevista
 
 No projeto final, o cabo Y mantém os dois adaptadores ligados: o ELM327 lê o motor e o ESP32 escuta a rede CAN. Cada um fala direto com o celular por Bluetooth. O transceptor final depende dos testes com o Arduino.
