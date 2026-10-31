@@ -197,3 +197,20 @@ Cuidados:
 - Solde a montagem. Um mau contato no divisor faz o D21 passar de 3,3 V. Depois de soldar, meça o D21: até 3,4 V, estável.
 - Regule o conversor em 5,0 V antes de ligar o ESP32, e deixe o EN dele sem ligação. Nunca ligue 12 V direto no ESP32.
 - O pino 16 tem energia com o carro desligado, e o programa ainda não tem modo de dormir: desconecte o adaptador ao estacionar.
+
+### Alternativa com SN65HVD230
+
+Este módulo funciona em 3,3 V, então dispensa o divisor do RX. Em troca, aceita menos tensão nos pinos da rede: −4 a 16 V, contra ±27 V do TJA1050. Esta ligação ainda não foi testada.
+
+![Ligação prevista do ESP32 com o SN65HVD230](img/ligacao-esp32-sn65hvd230.svg)
+
+| SN65HVD230 | Liga em |
+|---|---|
+| 3V3 | 3V3 do ESP32 |
+| GND | GND do ESP32 |
+| CTX | **Fixo no 3,3 V** (trava física: nunca transmite) |
+| CRX | D21 do ESP32, com fio direto |
+| CANL | Pino 14 do OBD |
+| CANH | Resistor de 1 kΩ até o 3V3 do ESP32 |
+
+A alimentação e os pinos do OBD são os mesmos da ligação com o TJA1050. Antes de ligar, retire o resistor de 120 Ω do módulo, marcado "121".
