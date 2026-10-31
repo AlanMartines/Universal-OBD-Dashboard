@@ -139,8 +139,10 @@ O ESP32 clássico tem um controlador CAN embutido (TWAI) com modo listen-only. A
 | Item | O que procurar | Para quê |
 |---|---|---|
 | ESP32 DevKit (30 pinos) | "ESP32 DOIT DevKit **ESP32-WROOM-32**", o simples | Lê a CAN e manda ao celular por Bluetooth clássico |
-| Módulo SN65HVD230 | "Módulo transceptor CAN SN65HVD230" | Liga o ESP32 aos fios CAN (pinos 6/14), em 3,3 V |
-| Step-down 12 V → 5 V | "Mini-560 5V" (saída fixa) ou "LM2596" (ajustável) | Alimenta o ESP32 com os 12 V do pino 16 |
+| Módulo TJA1050 | "Módulo transceptor CAN TJA1050" | Liga o ESP32 ao CAN-L (pino 14), em 5 V. Aguenta ±27 V nos pinos da rede |
+| Resistores | Quatro de 1 kΩ | Polarização do CANH e divisor do RX |
+| Fusível | 1 A, com porta-fusível | Protege o fio do pino 16 |
+| Step-down 12 V → 5 V | "RT8272", "Mini-560 5V" (saída fixa) ou "LM2596" (ajustável) | Alimenta o ESP32 com os 12 V do pino 16 |
 | Cabo Y OBD2 | "Cabo extensor OBD2 Y 1 macho 2 fêmeas" | ELM327 e ESP32 ligados ao mesmo tempo |
 | Cabo OBD2 macho com fios soltos | "Pigtail OBD2 macho 16 pinos" | Liga a fêmea do Y ao ESP32 sem cortar nada |
 | Cabo micro-USB **de dados** | Cabos só de carga não servem | Gravar o firmware |
@@ -152,14 +154,14 @@ Evite:
 
 ### Teste de recepção com TJA1050
 
-O programa é o [`firmware/esp32-can-listen`](../firmware/esp32-can-listen/README.md). Esta ligação ainda não foi testada. Ela usa um módulo TJA1050 solto, sem resistor de 120 Ω (medindo em Ω entre CANH e CANL, deve dar bem acima de 120 Ω), e o ESP32 alimentado pelo USB do notebook:
+O programa é o [`firmware/esp32-can-listen`](../firmware/esp32-can-listen/README.md). Este teste usa um módulo TJA1050 sem resistor de 120 Ω (medindo em Ω entre CANH e CANL, deve dar bem acima de 120 Ω) e o ESP32 alimentado pelo USB. Ele ainda não foi feito no carro:
 
 | Módulo TJA1050 | Liga em |
 |---|---|
 | VCC | VIN do ESP32 (5 V do USB) |
 | GND | GND do ESP32 |
 | TX | VIN do ESP32 (trava física: nunca transmite) |
-| RX | Resistor de 1 kΩ até o D21 do ESP32 e resistor de 2 kΩ do D21 ao GND |
+| RX | Resistor de 1 kΩ até o D21 do ESP32 e dois de 1 kΩ em série do D21 ao GND |
 | CANL | Pino 14 do OBD |
 | CANH | Resistor de 1 kΩ até o 3V3 do ESP32 |
 
@@ -169,20 +171,29 @@ Depois, grave pelo mesmo roteiro: `python3 tools/can-capture/roteiro.py /dev/tty
 
 ### Ligação prevista
 
-No projeto final, o cabo Y mantém os dois adaptadores ligados: o ELM327 lê o motor e o ESP32 escuta a rede CAN. Cada um fala direto com o celular por Bluetooth. O transceptor final depende dos testes com o Arduino.
+No projeto final, o cabo Y mantém os dois adaptadores ligados: o ELM327 lê o motor e o ESP32 escuta a rede CAN. Cada um fala direto com o celular por Bluetooth. Esta ligação ainda não foi testada no carro, nem com o ELM327 no mesmo Y.
 
-**Atenção:** este diagrama ainda mostra a ligação direta nos pinos 6 e 14. No Uno Vivace, um transceptor diferencial precisa da mesma ligação do Arduino, só com o CAN-L e o CANH polarizado por resistor. Ela ainda não foi testada no ESP32.
+![Ligação prevista do ELM327 e do ESP32 com o TJA1050](img/ligacao-esp32-can.svg)
 
-![Ligação prevista do ELM327 e do ESP32 com o SN65HVD230](img/ligacao-esp32-can.svg)
-
-| SN65HVD230 | Liga em |
+| Módulo TJA1050 | Liga em |
 |---|---|
-| 3V3 / GND | 3,3 V e GND do ESP32; o GND também vai ao pino 5 do OBD |
-| CRX (R) | D21 do ESP32 (recepção) |
-| CTX (D) | **Fixo no 3,3 V** (trava física: nunca transmite) |
-| CANH / CANL | Pinos 6 e 14 do OBD |
+| VCC | OUT+ do conversor e VIN do ESP32 (5 V) |
+| GND | GND do ESP32 |
+| TX | **Fixo nos 5 V** (trava física: nunca transmite) |
+| RX | Resistor de 1 kΩ até o D21 do ESP32 e dois de 1 kΩ em série do D21 ao GND |
+| CANL | Pino 14 do OBD |
+| CANH | Resistor de 1 kΩ até o 3V3 do ESP32 |
+
+| Conector OBD | Liga em |
+|---|---|
+| Pino 16 (+12 V) | Fusível de 1 A e IN+ do conversor |
+| Pino 4 (chassi) | IN− do conversor |
+| Pino 5 (terra de sinal) | GND do ESP32 |
+| Pino 14 (CAN-L) | CANL do módulo |
+| Pino 6 (CAN-H) | Sem ligação |
 
 Cuidados:
-- Tire o resistor de 120 Ω do módulo (marcado "121").
-- O step-down vai do pino 16 (+12 V) e do pino 4 ou 5 (terra) ao VIN/GND do ESP32. Nunca ligue 12 V direto no ESP32.
-- O pino 16 tem energia com o carro desligado: desconecte o adaptador se o carro for ficar parado por dias.
+- Meça em Ω entre CANH e CANL: deve dar bem acima de 120 Ω. Se der cerca de 120 Ω, o módulo tem resistor de terminação, e ele precisa sair.
+- Solde a montagem. Um mau contato no divisor faz o D21 passar de 3,3 V. Depois de soldar, meça o D21: até 3,4 V, estável.
+- Regule o conversor em 5,0 V antes de ligar o ESP32, e deixe o EN dele sem ligação. Nunca ligue 12 V direto no ESP32.
+- O pino 16 tem energia com o carro desligado, e o programa ainda não tem modo de dormir: desconecte o adaptador ao estacionar.
