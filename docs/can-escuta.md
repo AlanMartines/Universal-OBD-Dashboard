@@ -27,16 +27,19 @@ O projeto só faz **consulta** ao carro. A escuta só é usada com um controlado
 
 | Conector OBD do carro | Liga em |
 |---|---|
-| Pino 6 (CAN-H) | Borne CANH do módulo |
 | Pino 14 (CAN-L) | Borne CANL do módulo |
 | Pino 5 (terra de sinal) | O outro GND livre do Arduino (ao lado do 5V) |
+| Pino 6 (CAN-H) | Sem ligação |
+| (resistor de 1 kΩ) | Entre o borne CANH do módulo e o pino 3.3V do Arduino |
 
 ```
-OBD 6  ───────────── CANH ┐
-OBD 14 ───────────── CANL ├ MCP2515
+OBD 14 ───────────── CANL ┐
+Arduino 3.3V ─ 1 kΩ ─ CANH ├ MCP2515
 Arduino GND (1) ──── GND  ┘
 Arduino GND (2) ──── OBD 5
 ```
+
+**Por que só o CAN-L:** no Uno Vivace, o pino 6 fica praticamente em 0 V e o sinal só aparece no pino 14. Ligando os dois fios ao TJA1050, um receptor diferencial, a diferença nunca passa do limite dele, e nenhum quadro chega. O resistor dá ao CANH uma referência fixa: a diferença fica em cerca de −1,2 V em repouso e +1,9 V nos bits dominantes. O módulo continua em listen-only. Em outro carro em que o pino 6 também tenha sinal, tente primeiro a ligação direta: pino 6 no CANH e pino 14 no CANL.
 
 O **terra é obrigatório**, não serve só para o multímetro. O transceptor lê a diferença entre CAN-H e CAN-L, mas cada fio precisa estar dentro da faixa que ele aceita em relação ao GND dele. Sem o terra comum, o Arduino e o notebook ficam "flutuando" em relação ao carro, e a recepção falha ou chega com erros. Os pinos GND do Arduino são ligados entre si na placa, então qualquer um serve. O borne de parafuso do módulo normalmente só tem CANH e CANL.
 
@@ -51,15 +54,13 @@ Cuidados:
   - pino 6 perto de 0 V e pino 14 na tensão da bateria (11–13 V): a mesma rede tolerante a falhas, **dormindo**. Com a ignição desligada, a terminação puxa o CAN-L até a bateria. Ao ligar a ignição, ele volta para 4–5 V;
   - os dois perto de 2,5 V: CAN de alta velocidade.
 
-  Com o multímetro, o pino 6 pode marcar 0 V mesmo com a rede ativa. Os pulsos dominantes são curtos, e o aparelho mostra a média.
-
   Anote qual apareceu: isso define o transceptor do futuro adaptador ESP32.
 - Não estranhe se não der 60 Ω entre CAN-H e CAN-L, como mandam alguns tutoriais. Essa medida só vale para a CAN de alta velocidade.
 
 Ordem de montagem:
 1. Meça as tensões com o multímetro.
 2. Tire o jumper de 120 Ω.
-3. Ligue os três fios (pinos 6, 14 e 5).
+3. Ligue os fios dos pinos 14 e 5 e o resistor.
 4. Conecte o USB do notebook.
 
 Rede deste projeto (Uno Vivace 2012): carroceria nos pinos 6/14, a 50 kbit/s ([notas do veículo](veiculos/uno-vivace-7gf.md)), tolerante a falhas. Medido em relação ao pino 5: pino 6 ≈ 0 V nas quatro situações; pino 14 ≈ 11,3 V com a ignição desligada (dormindo) e ≈ 4,5 V com a ignição ligada ou o motor funcionando.
@@ -123,7 +124,7 @@ python3 tools/can-capture/can_capture.py leituras acoes.log
 python3 tools/can-capture/can_capture.py comparar antes.log depois.log
 ```
 
-Os IDs encontrados vão para as [notas do veículo](veiculos/uno-vivace-7gf.md). O passo seguinte é levá-los ao perfil JSON, para o app ler com um adaptador de escuta (ESP32), ao lado do ELM327.
+Os IDs encontrados vão para as [notas do veículo](veiculos/uno-vivace-7gf.md). No Uno, setas, portas, freio de mão e cinto não aparecem nesta rede; hodômetro e parcial, sim. O passo seguinte é levá-los ao perfil JSON, para o app ler com um adaptador de escuta (ESP32), ao lado do ELM327.
 
 As gravações podem conter o hodômetro e outros dados do carro: não as versione.
 
@@ -152,6 +153,8 @@ Evite:
 ### Ligação prevista
 
 No projeto final, o cabo Y mantém os dois adaptadores ligados: o ELM327 lê o motor e o ESP32 escuta a rede CAN. Cada um fala direto com o celular por Bluetooth. O transceptor final depende dos testes com o Arduino.
+
+**Atenção:** este diagrama ainda mostra a ligação direta nos pinos 6 e 14. No Uno Vivace, um transceptor diferencial precisa da mesma ligação do Arduino, só com o CAN-L e o CANH polarizado por resistor. Ela ainda não foi testada no ESP32.
 
 ![Ligação prevista do ELM327 e do ESP32 com o SN65HVD230](img/ligacao-esp32-can.svg)
 

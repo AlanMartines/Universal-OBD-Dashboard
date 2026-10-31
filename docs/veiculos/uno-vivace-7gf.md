@@ -128,10 +128,25 @@ O nível do tanque não vem pela ECU: o PID `012F` não é anunciado. O caminho 
 É a assinatura da CAN **tolerante a falhas (ISO 11898-3)**. Acordada, o CAN-H fica perto de 0 V e o CAN-L perto de 5 V. Dormindo, a terminação puxa o CAN-L até a bateria. Abrir a porta não acordou a rede, e só a ignição acordou. Por isso a captura é feita com a ignição ligada.
 
 Para o receptor:
-- O TJA1050 do módulo MCP2515 deve receber. Em repouso, a diferença CAN-H − CAN-L fica negativa (lida como recessivo); nos bits dominantes, o CAN-H sobe e o CAN-L desce.
+- Ligado direto aos pinos 6 e 14, o TJA1050 do módulo MCP2515 **não recebeu nenhum quadro** em nenhuma velocidade. O pino 6 não mostrou atividade útil, e o sinal só aparece no pino 14.
+- Com o CANH polarizado em 3,3 V por 1 kΩ e só o CAN-L ligado, a recepção funcionou a 50 kbit/s, sem perdas nem erros ([ligação](../can-escuta.md#ligação)).
 - Os 11,3 V da rede dormindo estão dentro do limite dos pinos do TJA1050 (±27 V) e do SN65HVD230 (−4 a 16 V).
 
-**O que indica que a escuta pode funcionar:**
+**Mapa da rede em 31/10/2026** (só escuta, com ignição ligada; valores dos exemplos fictícios):
+
+| ID | Bytes | Sinal | Fórmula | Situação |
+|---|---|---|---|---|
+| `0x603` | b1–b3 | Hodômetro total | Inteiro em km. Ex.: `01 E2 40` = 123.456 km | **Confirmado** com o painel em duas leituras |
+| `0x643` | b5–b7 | Hodômetro parcial | Inteiro ÷ 160, em km. Ex.: `01 86 A0` = 625,0 km | **Confirmado** com o painel em duas leituras |
+| `0x380` e `0x3C3` | `0x380` b0 bit 3; `0x3C3` b2 bit 4 (invertido) | Luzes acesas | 1 em `0x380` e 0 em `0x3C3` com as luzes acesas | **Confirmado** com lanterna e faróis; o farol alto não tem sinal próprio |
+| `0x281` | b5–b6 | RPM | `(b6·256+b5)/8`, como na Ducato | Provável: dá cerca de 850 em marcha lenta; falta comparar com a linha K |
+| `0x281` | b3 | Temperatura do motor | `b3−40` °C, como na Ducato | Provável: sobe com o motor ligado; falta comparar com a linha K |
+| `0x3E0` | b1 | Tensão da bateria | `b1×0,16` V | Provável: cai na partida e sobe com o motor ligado; falta medir |
+| `0x380` | b5 | Combustível | Escala desconhecida | Candidato: só caiu; falta comparar em um abastecimento |
+
+Setas, pisca-alerta, portas, freio de mão, pedal de freio e cinto não mudam nenhum byte. Velocidade: ainda sem dados, nada foi gravado em movimento. Os IDs `0x040` e `0x041` aparecem a cada 180 s, sem relação com as ações.
+
+**O que indicava que a escuta podia funcionar:**
 - Neste carro, os pinos 6/14 vão ao **painel de instrumentos**, e a ECU também está na rede CAN, pelos bornes B13/B14 (manual, pág. 162–163). A ECU faz o diagnóstico pela linha K (pino 7), então a rede dos pinos 6/14 é a da carroceria.
 - O manual de serviço do Uno ([cópia no Scribd](https://pt.scribd.com/document/595476810/Uno-Evo-Manual-de-Servico)) descreve uma **Body CAN de baixa velocidade, 50 kbit/s**. No console, escolha **50 kbps** em vez da busca automática.
 - A **Fiat Ducato X250 (2009)** tem a mesma arquitetura: motor em KWP2000 no pino 7 e rede da carroceria a 50 kbit/s nos pinos 6/14, sem nada a 500 kbit/s. Esses IDs foram decodificados só escutando ([fiat-ducato-x250-wican](https://github.com/danderik88/fiat-ducato-x250-wican)). Servem de ponto de partida, mas no Uno devem ser outros:

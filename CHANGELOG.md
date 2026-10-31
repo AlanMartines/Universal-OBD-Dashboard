@@ -14,7 +14,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
   - As anotações vão para `anotacoes.txt`.
 - **Diagramas de ligação** em `docs/can-escuta.md`: o de teste, com Arduino e MCP2515, e o previsto para o projeto final, com ELM327 e ESP32 no cabo Y.
 
+- **Mapa da rede CAN do Uno** em `docs/veiculos/uno-vivace-7gf.md`: hodômetro total, parcial e luzes confirmados; RPM, temperatura, tensão e combustível ainda como candidatos.
+
 ### Corrigido
+- **Ligação da escuta CAN no Uno:** só o CAN-L (pino 14), com o CANH polarizado em 3,3 V por 1 kΩ. Com a ligação direta nos pinos 6 e 14, nenhum quadro chegava. Diagrama, guia e lista de montagem do roteiro foram atualizados.
 - **Roteiro da escuta CAN:** o CAN-L (pino 14) na tensão da bateria com a ignição desligada passa a ser lido como a rede tolerante a falhas dormindo, e não mais como "fora do esperado". Essa é a assinatura medida no Uno. CAN-H e CAN-L invertidos agora ganham um aviso próprio.
 - **Teste de recepção da escuta CAN:** só quadros válidos contam. Antes, uma linha corrompida virava "1 quadro" e o teste dizia "Recepção ok" sem ter recebido nada. O que ficou acumulado na porta também é descartado ao abrir.
 

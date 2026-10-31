@@ -99,8 +99,7 @@ ACTIONS = [
 
 CABLE_CHECKS = [
     "Pino 5 do conector chega ao fio do terra (continuidade)",
-    "Pino 6 do conector chega ao fio do CAN-H (continuidade)",
-    "Pino 14 do conector chega ao fio do CAN-L (continuidade)",
+    "Pino 14 do conector chega ao borne CANL (continuidade)",
 ]
 
 VOLTAGE_SITUATIONS = [
@@ -114,8 +113,9 @@ ASSEMBLY_CHECKS = [
     "Nada mais ligado ao carro (carregador de bateria, mantenedor)",
     "Notebook: carregador na tomada da casa (extensão), nunca em inversor do carro",
     "Jumper de 120 Ω do MCP2515 retirado",
-    "Pino 6 → CANH, pino 14 → CANL, pino 5 → GND livre do Arduino",
-    "Pino 16 (+12 V) NÃO ligado",
+    "Pino 14 → CANL, pino 5 → GND livre do Arduino",
+    "Borne CANH → resistor de 1 kΩ → 3.3V do Arduino",
+    "Pinos 6 e 16 NÃO ligados",
     "Por último: USB do Arduino no notebook",
 ]
 
