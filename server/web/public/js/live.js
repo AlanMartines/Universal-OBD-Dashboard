@@ -98,10 +98,10 @@
             parsing: false,
             plugins: { legend: { display: false } },
             scales: {
-              x: { type: 'linear', ticks: { color: '#adb5bd', maxTicksLimit: 8, callback: function (v) {
+              x: { type: 'linear', ticks: { color: '#495057', maxTicksLimit: 8, callback: function (v) {
                 return new Date(v).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-              } }, grid: { color: 'rgba(173,181,189,.15)' } },
-              y: { ticks: { color: '#adb5bd' }, grid: { color: 'rgba(173,181,189,.15)' } },
+              } }, grid: { color: 'rgba(73,80,87,.15)' } },
+              y: { ticks: { color: '#495057' }, grid: { color: 'rgba(73,80,87,.15)' } },
             },
           },
         });

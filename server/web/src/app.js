@@ -108,6 +108,12 @@ export async function buildApp({ config, logger }) {
   // Tudo servido daqui: nenhum CDN.
   await app.register(fastifyStatic, { root: join(ROOT, 'public'), prefix: '/static/', maxAge: '1h' });
   await app.register(fastifyStatic, {
+    root: join(ROOT, 'public/assets'),
+    prefix: '/assets/',
+    decorateReply: false,
+    maxAge: '7d',
+  });
+  await app.register(fastifyStatic, {
     root: join(ROOT, 'node_modules/bootstrap/dist'),
     prefix: '/vendor/bootstrap/',
     decorateReply: false,
@@ -133,7 +139,7 @@ export async function buildApp({ config, logger }) {
   app.addHook('onSend', async (request, reply) => {
     reply.header('X-Robots-Tag', 'noindex, nofollow');
     reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()');
-    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/')) {
+    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/')) {
       reply.header('Cache-Control', 'no-store');
     }
   });

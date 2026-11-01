@@ -1,4 +1,14 @@
 /* Sem estilos embutidos no HTML: a política de segurança (CSP) bloqueia. */
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background-image: url('/assets/images/body/bg01.png');
+  background-repeat: repeat;
+  background-position: top left;
+  background-size: auto;
+}
+
 .hp-field {
   position: absolute;
   left: -10000px;
@@ -37,7 +47,7 @@
   --sidebar-width: 248px;
   --sidebar-rail: 68px;
   --topbar-height: 56px;
-  --sidebar-bg: #161a1f;
+  --sidebar-gap: 5px;
 }
 
 .sidebar-link-plain {
@@ -61,14 +71,20 @@
 
 .app-sidebar {
   position: fixed;
-  inset: 0 auto 0 0;
+  inset: var(--sidebar-gap) auto var(--sidebar-gap) var(--sidebar-gap);
   z-index: 1040;
   display: flex;
   flex-direction: column;
   width: var(--sidebar-width);
   overflow: hidden;
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--bs-border-color);
+  font-weight: bold;
+  color: var(--bs-body-color);
+  background-color: #1a1a1a;
+  background-image: url('/assets/images/body/bg02.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  border-radius: 5px;
   transition: width 0.2s ease, transform 0.2s ease, visibility 0.2s;
 }
 
@@ -82,10 +98,10 @@
   border-bottom: 1px solid var(--bs-border-color);
 }
 
-.sidebar-brand .fa-gauge-high {
+.brand-logo {
   flex: none;
-  font-size: 1.25rem;
-  color: var(--bs-primary);
+  width: 28px;
+  height: 28px;
 }
 
 .sidebar-close,
@@ -198,7 +214,7 @@
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-  margin-left: var(--sidebar-width);
+  margin-left: calc(var(--sidebar-width) + 2 * var(--sidebar-gap));
   transition: margin-left 0.2s ease;
 }
 
@@ -214,6 +230,7 @@
   padding: 0 0.75rem;
   background: var(--bs-body-bg);
   border-bottom: 1px solid var(--bs-border-color);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
 }
 
 .app-topbar-title {
@@ -239,7 +256,7 @@
     width: var(--sidebar-rail);
   }
   .sidebar-collapsed .app-main {
-    margin-left: var(--sidebar-rail);
+    margin-left: calc(var(--sidebar-rail) + 2 * var(--sidebar-gap));
   }
   .sidebar-collapsed .app-sidebar .sidebar-label {
     display: none;
@@ -270,7 +287,7 @@
 @media (max-width: 991.98px) {
   .app-sidebar {
     visibility: hidden;
-    transform: translateX(-100%);
+    transform: translateX(calc(-100% - 2 * var(--sidebar-gap)));
   }
   .app-main {
     margin-left: 0;
@@ -331,6 +348,7 @@ html {
   }
   .table-stack tr {
     padding: 0.5rem 0.75rem;
+    background: var(--bs-body-bg);
     margin-bottom: 0.75rem;
     border: 1px solid var(--bs-border-color);
     border-radius: var(--bs-border-radius);

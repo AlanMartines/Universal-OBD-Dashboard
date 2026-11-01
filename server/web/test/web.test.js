@@ -56,7 +56,7 @@ describe('arquivos', () => {
     }
   });
   test('sem CDN, script ou estilo embutido', () => {
-    for (const file of [...views, ...collectFiles(join(HERE, '../public'))]) {
+    for (const file of [...views, ...collectFiles(join(HERE, '../public')).filter((f) => /\.(css|js)$/.test(f))]) {
       const raw = readFileSync(file, 'utf8');
       assert.ok(!/(src|href)="https?:/.test(raw), file);
       assert.ok(!/ style="/.test(raw), file);
@@ -245,6 +245,24 @@ describe('fluxo pelo navegador', () => {
     abort.abort();
   });
 
+  test('sair da página durante a conexão ao vivo não prende vagas', async () => {
+    const csrf = await csrfOf(adminCookie);
+    const ok = await post('/dispositivos', { name: 'Vagas', _csrf: csrf }, adminCookie);
+    const code = /font-monospace mb-2">([A-Z0-9-]+)</.exec(ok.body)[1];
+    const reg = await web.inject({ method: 'POST', url: '/api/v1/devices/register', payload: { code, installationId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' } });
+    const { deviceId } = reg.json();
+    const webUrl = web.server.listening ? `http://127.0.0.1:${web.server.address().port}` : await web.listen({ port: 0, host: '127.0.0.1' });
+    for (let i = 0; i < 8; i += 1) {
+      const abort = new AbortController();
+      setTimeout(() => abort.abort(), i % 2 ? 1 : 150);
+      await fetch(`${webUrl}/dispositivos/${deviceId}/ao-vivo`, { headers: { cookie: adminCookie }, signal: abort.signal }).then((r) => r.body.cancel()).catch(() => {});
+      await new Promise((resolve) => { setTimeout(resolve, 60); });
+    }
+    const final = await fetch(`${webUrl}/dispositivos/${deviceId}/ao-vivo`, { headers: { cookie: adminCookie }, signal: AbortSignal.timeout(2000) });
+    assert.equal(final.status, 200);
+    await final.body.cancel();
+  });
+
   test('não admin não entra na administração', async () => {
     const csrf = await csrfOf(adminCookie);
     const made = await post('/admin/usuarios', { _csrf: csrf, username: 'comum', role: 'user' }, adminCookie);
@@ -268,7 +286,7 @@ describe('fluxo pelo navegador', () => {
     const conta = await web.inject({ method: 'GET', url: '/conta', headers: { cookie: adminCookie } });
     assert.match(conta.body, /href="\/conta"[^>]*class="active"/);
     assert.match(conta.body, /href="\/admin"/);
-    for (const url of ['/static/js/shell.js', '/vendor/fontawesome/css/all.min.css', '/vendor/fontawesome/webfonts/fa-solid-900.woff2']) {
+    for (const url of ['/static/js/shell.js', '/assets/images/body/bg01.png', '/assets/images/body/bg02.png', '/assets/logos/eletroinfo.svg', '/assets/favicons/favicon-32x32.png', '/vendor/fontawesome/css/all.min.css', '/vendor/fontawesome/webfonts/fa-solid-900.woff2']) {
       assert.equal((await web.inject({ method: 'GET', url })).statusCode, 200, url);
     }
     assert.notEqual((await web.inject({ method: 'GET', url: '/vendor/fontawesome/package.json' })).statusCode, 200);

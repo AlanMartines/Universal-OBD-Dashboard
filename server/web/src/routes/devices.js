@@ -45,6 +45,8 @@ export default function devicesRoutes(app, { config, api, cookieName, requireUse
   app.get('/dispositivos/:id/ao-vivo', { preHandler: requireUser }, async (request, reply) => {
     const id = requireUuid(request);
     const abort = new AbortController();
+    // Antes do fetch: quem sai da página durante a conexão não pode deixá-la presa na API.
+    reply.raw.once('close', () => abort.abort());
     const upstream = await fetch(`${config.apiUrl}/internal/devices/${id}/live`, {
       headers: {
         'x-internal-key': config.internalKey,
@@ -67,7 +69,6 @@ export default function devicesRoutes(app, { config, api, cookieName, requireUse
     const stream = Readable.fromWeb(upstream.body);
     stream.on('error', () => reply.raw.destroy());
     stream.on('end', () => reply.raw.end());
-    reply.raw.on('close', () => abort.abort());
     stream.pipe(reply.raw);
   });
 

@@ -124,6 +124,8 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
       'X-Accel-Buffering': 'no',
       Connection: 'keep-alive',
     });
+    // Envia os cabeçalhos já: sem isso, a conexão só abre quando chega o primeiro dado.
+    reply.raw.write(': conectado\n\n');
     const send = (sample) => reply.raw.write(`event: sample\ndata: ${JSON.stringify(sample)}\n\n`);
     live.on(device.id, send);
     const heartbeat = setInterval(() => reply.raw.write(': ping\n\n'), 25000);

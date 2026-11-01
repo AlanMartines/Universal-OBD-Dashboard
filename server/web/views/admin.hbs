@@ -27,11 +27,11 @@
         <h2 class="h5">Novo usuário</h2>
         <form method="post" action="/admin/usuarios" class="row g-2">
           <input type="hidden" name="_csrf" value="{{csrf}}">
-          <div class="col-sm-6">
+          <div class="col-sm-5">
             <label class="visually-hidden" for="new-username">Usuário</label>
             <input class="form-control" id="new-username" name="username" placeholder="Usuário" autocomplete="off" maxlength="32" required>
           </div>
-          <div class="col-sm-3">
+          <div class="col-sm-4">
             <label class="visually-hidden" for="new-role">Papel</label>
             <select class="form-select" id="new-role" name="role">
               <option value="user">Usuário</option>
@@ -47,8 +47,8 @@
 
 <h2 class="h5">Usuários</h2>
 <div class="table-responsive mb-4">
-  <table class="table align-middle table-stack">
-    <thead><tr><th>Usuário</th><th>Papel</th><th>Situação</th><th>Dispositivos</th><th>Criado em</th><th></th></tr></thead>
+  <table class="table table-sm table-striped table-hover table-stack">
+    <thead class="table-dark"><tr><th>Usuário</th><th>Papel</th><th>Situação</th><th>Dispositivos</th><th>Criado em</th><th></th></tr></thead>
     <tbody>
       {{#each users}}
       <tr>
@@ -81,8 +81,8 @@
 
 <h2 class="h5">Auditoria recente</h2>
 <div class="table-responsive">
-  <table class="table table-sm small table-stack">
-    <thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Alvo</th><th>IP</th></tr></thead>
+  <table class="table table-sm table-striped table-hover table-stack">
+    <thead class="table-dark"><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Alvo</th><th>IP</th></tr></thead>
     <tbody>
       {{#each audit}}
       <tr><td data-label="Quando">{{date at}}</td><td data-label="Quem" class="text-break">{{actor}}</td><td data-label="Ação">{{action}}</td><td data-label="Alvo" class="text-break">{{target}}</td><td data-label="IP" class="text-break">{{ip}}</td></tr>
