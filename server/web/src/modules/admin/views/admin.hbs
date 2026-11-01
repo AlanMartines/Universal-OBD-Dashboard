@@ -14,7 +14,7 @@
       <div class="card-body">
         <h2 class="h5">Cadastro público</h2>
         <p>Situação atual: {{#if signupOpen}}<span class="badge text-bg-success">Aberto</span>{{else}}<span class="badge text-bg-secondary">Fechado</span>{{/if}}</p>
-        <form method="post" action="/admin/cadastro">
+        <form method="post" action="/admin/cadastro" {{#unless signupOpen}}data-confirm="Abrir o cadastro público? Qualquer pessoa poderá criar uma conta." data-confirm-label="Abrir cadastro"{{/unless}}>
           <input type="hidden" name="_csrf" value="{{csrf}}">
           <input type="hidden" name="open" value="{{#if signupOpen}}false{{else}}true{{/if}}">
           <button class="btn btn-outline-primary" type="submit">{{#if signupOpen}}Fechar cadastro{{else}}Abrir cadastro{{/if}}</button>
@@ -64,8 +64,7 @@
 </div>
 
 <h2 class="h5">Usuários</h2>
-<div class="table-responsive mb-4">
-  <table class="table table-sm table-striped table-hover table-stack">
+{{#> dataTable}}
     <thead class="table-dark"><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Conta</th><th>Situação</th><th>Dispositivos</th><th>Criado em</th><th></th></tr></thead>
     <tbody>
       {{#each users}}
@@ -82,12 +81,12 @@
         <td data-label="Criado em">{{date created_at}}</td>
         <td class="table-actions text-end">
           {{#unless (eq id ../user.id)}}
-          <form method="post" action="/admin/usuarios/{{id}}/status" class="d-inline">
+          <form method="post" action="/admin/usuarios/{{id}}/status" class="d-inline" {{#unless disabled}}data-confirm="Desativar {{username}}? As sessões abertas serão encerradas." data-confirm-label="Desativar"{{/unless}}>
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <input type="hidden" name="disabled" value="{{#if disabled}}false{{else}}true{{/if}}">
             <button class="btn btn-outline-warning btn-sm" type="submit">{{#if disabled}}Ativar{{else}}Desativar{{/if}}</button>
           </form>
-          <form method="post" action="/admin/usuarios/{{id}}/excluir" class="d-inline">
+          <form method="post" action="/admin/usuarios/{{id}}/excluir" class="d-inline" data-confirm="Excluir {{username}}? Dispositivos, telemetria e usuários vinculados também serão apagados." data-confirm-label="Excluir">
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <button class="btn btn-outline-danger btn-sm" type="submit">Excluir</button>
           </form>
@@ -96,19 +95,18 @@
       </tr>
       {{/each}}
     </tbody>
-  </table>
-</div>
+{{/dataTable}}
+{{> pagination pager=usersPager label="Páginas de usuários"}}
 
 {{#if isSuper}}
 <h2 class="h5">Auditoria recente</h2>
-<div class="table-responsive">
-  <table class="table table-sm table-striped table-hover table-stack">
+{{#> dataTable}}
     <thead class="table-dark"><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Alvo</th><th>IP</th></tr></thead>
     <tbody>
       {{#each audit}}
       <tr><td data-label="Quando">{{date at}}</td><td data-label="Quem" class="text-break">{{actor}}</td><td data-label="Ação">{{action}}</td><td data-label="Alvo" class="text-break">{{target}}</td><td data-label="IP" class="text-break">{{ip}}</td></tr>
       {{/each}}
     </tbody>
-  </table>
-</div>
+{{/dataTable}}
+{{> pagination pager=auditPager label="Páginas da auditoria"}}
 {{/if}}

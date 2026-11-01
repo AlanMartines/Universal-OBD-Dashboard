@@ -1,5 +1,4 @@
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-  <h1 class="h3 mb-0">Dispositivos</h1>
+{{#> pageHeader title="Dispositivos"}}
   {{#if (canManage user)}}
   <form method="post" action="/dispositivos" class="device-add" data-validate>
     <input type="hidden" name="_csrf" value="{{csrf}}">
@@ -10,11 +9,10 @@
     </div>
   </form>
   {{/if}}
-</div>
+{{/pageHeader}}
 {{> formError}}
 {{#if devices.length}}
-<div class="table-responsive">
-  <table class="table table-sm table-striped table-hover table-stack">
+{{#> dataTable}}
     <thead class="table-dark">
       <tr><th>Nome</th>{{#if (eq user.role "superadmin")}}<th>Conta</th>{{/if}}<th>Situação</th><th>Último envio</th><th>ID da instalação</th><th></th></tr>
     </thead>
@@ -33,12 +31,12 @@
         <td class="table-actions text-end">
           {{#if (canManage ../user)}}
           {{#unless revokedAt}}
-          <form method="post" action="/dispositivos/{{id}}/revogar" class="d-inline">
+          <form method="post" action="/dispositivos/{{id}}/revogar" class="d-inline" data-confirm="Revogar {{name}}? O aparelho deixa de enviar dados." data-confirm-label="Revogar">
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <button class="btn btn-outline-warning btn-sm" type="submit">Revogar</button>
           </form>
           {{/unless}}
-          <form method="post" action="/dispositivos/{{id}}/excluir" class="d-inline">
+          <form method="post" action="/dispositivos/{{id}}/excluir" class="d-inline" data-confirm="Excluir {{name}} e toda a sua telemetria? Não tem como desfazer." data-confirm-label="Excluir">
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <button class="btn btn-outline-danger btn-sm" type="submit">Excluir com dados</button>
           </form>
@@ -47,8 +45,8 @@
       </tr>
       {{/each}}
     </tbody>
-  </table>
-</div>
+{{/dataTable}}
+{{> pagination pager=pager label="Páginas de dispositivos"}}
 {{else}}
 <div class="card card-body text-center py-5">
   <p class="mb-1">Nenhum dispositivo ainda.</p>

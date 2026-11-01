@@ -30,6 +30,20 @@ export const MESSAGES = {
   internal_error: 'Algo deu errado. Tente novamente.',
 };
 
+// Avisos de sucesso depois de um redirecionamento. Lista fechada: o texto nunca vem da URL.
+export const NOTICES = {
+  device_revoked: 'Dispositivo revogado.',
+  device_deleted: 'Dispositivo e dados excluídos.',
+  user_updated: 'Usuário atualizado.',
+  user_deleted: 'Usuário excluído.',
+  signup_updated: 'Cadastro público atualizado.',
+  profile_saved: 'Dados atualizados.',
+  password_saved: 'Senha alterada.',
+  photo_saved: 'Foto atualizada.',
+  photo_removed: 'Foto removida.',
+  email_sent: 'Se o endereço puder ser usado, enviamos um link de confirmação para ele.',
+};
+
 export const message = (code) => MESSAGES[code] ?? MESSAGES.internal_error;
 
 export class ApiError extends Error {

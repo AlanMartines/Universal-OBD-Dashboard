@@ -14,6 +14,16 @@ Recebe do app Universal OBD os dados já tratados e mostra tudo em um painel web
 
 A `web` não alcança o banco. A `api`, o `worker` e o `db` não têm saída para a internet; só o `mailer` e a `web` têm. O HTTPS fica no seu proxy reverso.
 
+## Organização do código
+
+```
+web/src/modules/<módulo>/   routes.js, views/ e public/ (JS e CSS só daquela tela)
+web/src/shared/             layout, componentes, tema (tokens.css), paginação e avisos
+api/src/routes/             uma rota por recurso, com pagination.js e session.js em comum
+```
+
+Cada página carrega apenas os arquivos do próprio módulo. Listagens são paginadas no servidor, com links que funcionam sem JavaScript.
+
 ## Instalação
 
 ```bash

@@ -12,10 +12,16 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-icon-180x180.png">
   <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
   <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  {{#each pageCss}}<link rel="stylesheet" href="{{this}}">
+  {{/each}}
   {{#if user}}<script src="/static/js/shell.js"></script>{{/if}}
 </head>
 <body>
+  <div class="toast-container position-fixed top-0 end-0 p-3 app-toasts" id="app-toasts" aria-live="polite"></div>
+  {{#if flash}}<div id="app-flash" hidden data-message="{{flash}}"></div>{{/if}}
   {{#if user}}
   {{> sidebar}}
   <div class="app-main">
@@ -26,6 +32,7 @@
       {{{body}}}
     </main>
   </div>
+  {{> confirmModal}}
   {{else}}
   <header class="auth-header">
     <a class="sidebar-link-plain" href="/"><img class="brand-logo" src="/assets/logos/eletroinfo.svg" alt=""><span>Telemetria OBD</span></a>
@@ -38,11 +45,9 @@
   <script src="/vendor/jquery/jquery.min.js"></script>
   <script src="/vendor/jquery-validation/jquery.validate.min.js"></script>
   <script src="/static/js/forms.js"></script>
-  {{#if accountScript}}<script src="/static/js/account.js"></script>{{/if}}
-  {{#if adminScript}}<script src="/static/js/admin.js"></script>{{/if}}
-  {{#if scripts}}
-  <script src="/vendor/chartjs/chart.umd.min.js"></script>
-  <script src="/static/js/live.js"></script>
-  {{/if}}
+  <script src="/static/js/toast.js"></script>
+  {{#if user}}<script src="/static/js/confirm.js"></script>{{/if}}
+  {{#each pageScripts}}<script src="{{this}}"></script>
+  {{/each}}
 </body>
 </html>

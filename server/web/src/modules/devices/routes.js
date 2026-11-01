@@ -1,5 +1,6 @@
 import { Readable } from 'node:stream';
-import { ApiError, message } from '../errors.js';
+import { ApiError, message } from '../../shared/errors.js';
+import { pageParam, pagerFor } from '../../shared/pagination.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -9,9 +10,14 @@ export function requireUuid(request) {
 }
 
 export default function devicesRoutes(app, { config, api, cookieName, requireUser, context }) {
+  const DEVICE_ASSETS = { pageCss: ['/modules/devices/devices.css'] };
+
   const panelView = async (request, reply, status = 200, error = null) => {
-    const { devices } = await api(request, 'GET', '/internal/devices');
-    return reply.code(status).view('devices.hbs', context(request, { title: 'Dispositivos', devices, error }));
+    const query = new URLSearchParams({ page: pageParam(request) });
+    const { devices, pagination } = await api(request, 'GET', `/internal/devices?${query}`);
+    return reply.code(status).view('modules/devices/views/devices.hbs', context(request, {
+      title: 'Dispositivos', devices, error, pager: pagerFor(pagination, request, { path: '/painel' }), ...DEVICE_ASSETS,
+    }));
   };
 
   app.get('/painel', { preHandler: requireUser }, async (request, reply) => panelView(request, reply));
@@ -19,7 +25,7 @@ export default function devicesRoutes(app, { config, api, cookieName, requireUse
   app.post('/dispositivos', { preHandler: requireUser }, async (request, reply) => {
     try {
       const created = await api(request, 'POST', '/internal/devices', { body: { name: String(request.body?.name ?? '').trim() } });
-      return reply.view('pairing.hbs', context(request, { title: 'Parear dispositivo', ...created }));
+      return reply.view('modules/devices/views/pairing.hbs', context(request, { title: 'Parear dispositivo', ...created, ...DEVICE_ASSETS }));
     } catch (error) {
       if (!(error instanceof ApiError) || error.status >= 500 || error.status === 401) throw error;
       return panelView(request, reply, error.status, message(error.code));
@@ -28,11 +34,12 @@ export default function devicesRoutes(app, { config, api, cookieName, requireUse
 
   app.get('/dispositivos/:id', { preHandler: requireUser }, async (request, reply) => {
     const data = await api(request, 'GET', `/internal/devices/${requireUuid(request)}`);
-    return reply.view('device.hbs', context(request, {
+    return reply.view('modules/devices/views/device.hbs', context(request, {
       title: data.device.name,
       device: data.device,
       latestJson: JSON.stringify(data.latest),
-      scripts: true,
+      ...DEVICE_ASSETS,
+      pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/modules/devices/live.js'],
     }));
   });
 
@@ -72,10 +79,10 @@ export default function devicesRoutes(app, { config, api, cookieName, requireUse
     stream.pipe(reply.raw);
   });
 
-  const deviceAction = (action) => async (request, reply) => {
+  const deviceAction = (action, notice) => async (request, reply) => {
     await api(request, 'POST', `/internal/devices/${requireUuid(request)}/${action}`);
-    return reply.redirect('/painel', 303);
+    return reply.redirect(`/painel?ok=${notice}`, 303);
   };
-  app.post('/dispositivos/:id/revogar', { preHandler: requireUser }, deviceAction('revoke'));
-  app.post('/dispositivos/:id/excluir', { preHandler: requireUser }, deviceAction('delete'));
+  app.post('/dispositivos/:id/revogar', { preHandler: requireUser }, deviceAction('revoke', 'device_revoked'));
+  app.post('/dispositivos/:id/excluir', { preHandler: requireUser }, deviceAction('delete', 'device_deleted'));
 }

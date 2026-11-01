@@ -7,6 +7,7 @@
     intake_temp: ['Ar admitido', '°C', 0], battery_volts: ['Tensão', 'V', 1], throttle: ['Borboleta', '%', 1],
     map: ['MAP', 'kPa', 0], maf: ['MAF', 'g/s', 1], engine_load: ['Carga', '%', 0],
     timing_advance: ['Avanço', '°', 1], stft_b1: ['STFT', '%', 1], ltft_b1: ['LTFT', '%', 1],
+    odometer_km: ['Hodômetro', 'km', 0], trip_km: ['Parcial', 'km', 1], fuel_raw: ['Tanque (bruto)', '', 0],
     'derived.fuelLph': ['Consumo', 'L/h', 1], 'derived.instantKmPerL': ['Consumo inst.', 'km/L', 1],
     'derived.tripKmPerL': ['Consumo viagem', 'km/L', 1], 'derived.tripFuelUsedL': ['Combustível usado', 'L', 2],
     'derived.fuelRemainingL': ['Tanque', 'L', 1], 'derived.tripDistanceKm': ['Distância', 'km', 1],

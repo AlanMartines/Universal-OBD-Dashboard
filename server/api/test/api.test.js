@@ -415,6 +415,41 @@ describe('API', () => {
     });
   });
 
+  describe('paginação', () => {
+    test('divide, informa o total, ajusta página além da última e recusa valor estranho', async () => {
+      const dono = await userToken(app, admin, 'paginas');
+      for (let i = 0; i < 5; i += 1) await internal(app, 'POST', '/internal/devices', { token: dono, body: { name: `Aparelho ${i}` } });
+      const first = (await internal(app, 'GET', '/internal/devices?page=1&pageSize=2', { token: dono })).json();
+      assert.equal(first.devices.length, 2);
+      assert.deepEqual(first.pagination, { page: 1, pageSize: 2, total: 5, totalPages: 3 });
+      const last = (await internal(app, 'GET', '/internal/devices?page=999&pageSize=2', { token: dono })).json();
+      assert.equal(last.pagination.page, 3);
+      assert.equal(last.devices.length, 1);
+      const ids = new Set();
+      for (const page of [1, 2, 3]) {
+        const r = (await internal(app, 'GET', `/internal/devices?page=${page}&pageSize=2`, { token: dono })).json();
+        r.devices.forEach((d) => ids.add(d.id));
+      }
+      assert.equal(ids.size, 5);
+      for (const bad of ['0', '-1', 'abc', "1'%20OR%201=1"]) {
+        assert.equal((await internal(app, 'GET', `/internal/devices?page=${bad}`, { token: dono })).statusCode, 400, bad);
+      }
+      const big = (await internal(app, 'GET', '/internal/devices?pageSize=999', { token: dono })).json();
+      assert.equal(big.pagination.pageSize, 100);
+    });
+
+    test('admin pagina só os usuários da própria conta; auditoria é só do super admin', async () => {
+      const dono = await userToken(app, admin, 'paginas2');
+      await internal(app, 'POST', '/internal/admin/users', { token: dono, body: { username: 'pag-atendente', role: 'user' } });
+      const own = (await internal(app, 'GET', '/internal/admin/overview?pageSize=1', { token: dono })).json();
+      assert.equal(own.usersPagination.total, 1);
+      assert.equal(own.auditPagination, undefined);
+      const all = (await internal(app, 'GET', '/internal/admin/overview?pageSize=2&auditPage=2', { token: admin })).json();
+      assert.ok(all.usersPagination.total > 2);
+      assert.equal(all.auditPagination.page, 2);
+    });
+  });
+
   describe('Meus Dados', () => {
     let tok;
     const PW = USER_PASSWORD;

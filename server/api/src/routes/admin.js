@@ -1,5 +1,6 @@
 import { audit } from '../db.js';
 import { fail } from '../errors.js';
+import { pageNumberSchema, pageSizeSchema, paged } from '../pagination.js';
 import { uuidParam } from '../schemas.js';
 import { generatePassword, hashPassword, isValidUsername, normalizeUsername } from '../security.js';
 
@@ -7,23 +8,46 @@ export default function adminRoutes(app, {
   pool, limit, requireManager, requireSuperadmin, signupOpen,
 }) {
   // Super Admin vê tudo; Admin vê só os usuários da própria conta, sem auditoria nem configurações.
-  app.get('/internal/admin/overview', { preValidation: requireManager }, async (request) => {
+  app.get('/internal/admin/overview', {
+    preValidation: requireManager,
+    schema: {
+      querystring: {
+        type: 'object',
+        additionalProperties: false,
+        properties: { usersPage: pageNumberSchema, auditPage: pageNumberSchema, pageSize: pageSizeSchema },
+      },
+    },
+  }, async (request) => {
     const { user } = request.session;
+    const { usersPage, auditPage, pageSize } = request.query;
     const isSuper = user.role === 'superadmin';
-    const users = await pool.query(
-      `SELECT u.id, u.username, u.email, u.role, u.disabled, u.must_change_password, u.created_at,
+    const users = await paged(pool, {
+      countSql: 'SELECT count(*)::int AS total FROM users u WHERE $1 OR u.account_id = $2',
+      listSql: `SELECT u.id, u.username, u.email, u.role, u.disabled, u.must_change_password, u.created_at,
               a.username AS account,
               (SELECT count(*)::int FROM devices d WHERE d.user_id = u.id AND d.revoked_at IS NULL AND d.paired_at IS NOT NULL) AS devices
          FROM users u LEFT JOIN users a ON a.id = u.account_id
         WHERE $1 OR u.account_id = $2
-        ORDER BY u.created_at`,
-      [isSuper, user.id],
-    );
-    if (!isSuper) return { users: users.rows };
-    const auditRows = await pool.query('SELECT at, actor, action, target, ip FROM audit_log ORDER BY at DESC LIMIT 50');
+        ORDER BY u.created_at, u.id`,
+      params: [isSuper, user.id],
+      page: usersPage,
+      pageSize,
+    });
+    if (!isSuper) return { users: users.rows, usersPagination: users.pagination };
+    const auditLog = await paged(pool, {
+      countSql: 'SELECT count(*)::int AS total FROM audit_log',
+      listSql: 'SELECT at, actor, action, target, ip FROM audit_log ORDER BY at DESC, id DESC',
+      page: auditPage,
+      pageSize,
+    });
     const accounts = await pool.query(`SELECT id, username FROM users WHERE role = 'admin' AND NOT disabled ORDER BY username`);
     return {
-      signupOpen: await signupOpen(), users: users.rows, audit: auditRows.rows, accounts: accounts.rows,
+      signupOpen: await signupOpen(),
+      users: users.rows,
+      usersPagination: users.pagination,
+      audit: auditLog.rows,
+      auditPagination: auditLog.pagination,
+      accounts: accounts.rows,
     };
   });
 

@@ -9,17 +9,20 @@ import fastifyStatic from '@fastify/static';
 import view from '@fastify/view';
 import Fastify from 'fastify';
 import Handlebars from 'handlebars';
-import { ApiError, message } from './errors.js';
-import { isSameOriginRequest, safeEqualText } from './protection.js';
-import accountRoutes from './routes/account.js';
-import adminRoutes from './routes/admin.js';
-import devicesRoutes from './routes/devices.js';
-import gatewayRoutes, { DEVICE_ROUTES } from './routes/gateway.js';
-import loginRoutes from './routes/login.js';
+import { ApiError, message, NOTICES } from './shared/errors.js';
+import { isSameOriginRequest, safeEqualText } from './shared/protection.js';
+import accountRoutes from './modules/account/routes.js';
+import adminRoutes from './modules/admin/routes.js';
+import devicesRoutes from './modules/devices/routes.js';
+import gatewayRoutes, { DEVICE_ROUTES } from './modules/gateway/routes.js';
+import loginRoutes from './modules/login/routes.js';
 
-export { checkFormToken, isSameOriginRequest, issueFormToken } from './protection.js';
+export { checkFormToken, isSameOriginRequest, issueFormToken } from './shared/protection.js';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const SRC = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(SRC, '..');
+// Cada módulo publica seus próprios arquivos em /modules/<nome>/.
+const MODULES_WITH_ASSETS = ['account', 'admin', 'devices'];
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
@@ -107,26 +110,38 @@ export async function buildApp({ config, logger }) {
 
   await app.register(view, {
     engine: { handlebars: createHandlebars() },
-    root: join(ROOT, 'views'),
-    layout: 'layout.hbs',
+    root: SRC,
+    layout: 'shared/views/layout.hbs',
     viewExt: 'hbs',
     options: {
       partials: {
-        formError: 'partials/form-error.hbs',
-        sidebar: 'partials/sidebar.hbs',
-        passwordStrength: 'partials/password-strength.hbs',
+        formError: 'shared/views/components/form-error.hbs',
+        sidebar: 'shared/views/components/sidebar.hbs',
+        pageHeader: 'shared/views/components/page-header.hbs',
+        dataTable: 'shared/views/components/data-table.hbs',
+        pagination: 'shared/views/components/pagination.hbs',
+        confirmModal: 'shared/views/components/confirm-modal.hbs',
+        passwordStrength: 'shared/views/components/password-strength.hbs',
       },
     },
   });
 
   // Tudo servido daqui: nenhum CDN.
-  await app.register(fastifyStatic, { root: join(ROOT, 'public'), prefix: '/static/', maxAge: '1h' });
+  await app.register(fastifyStatic, { root: join(SRC, 'shared/public'), prefix: '/static/', maxAge: '1h' });
   await app.register(fastifyStatic, {
-    root: join(ROOT, 'public/assets'),
+    root: join(SRC, 'shared/public/assets'),
     prefix: '/assets/',
     decorateReply: false,
     maxAge: '7d',
   });
+  for (const name of MODULES_WITH_ASSETS) {
+    await app.register(fastifyStatic, {
+      root: join(SRC, 'modules', name, 'public'),
+      prefix: `/modules/${name}/`,
+      decorateReply: false,
+      maxAge: '1h',
+    });
+  }
   await app.register(fastifyStatic, {
     root: join(ROOT, 'node_modules/bootstrap/dist'),
     prefix: '/vendor/bootstrap/',
@@ -168,7 +183,7 @@ export async function buildApp({ config, logger }) {
   app.addHook('onSend', async (request, reply) => {
     reply.header('X-Robots-Tag', 'noindex, nofollow');
     reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
-    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/') && !request.url.startsWith('/conta/foto')) {
+    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/') && !request.url.startsWith('/modules/') && !request.url.startsWith('/conta/foto')) {
       reply.header('Cache-Control', 'no-store');
     }
   });
@@ -210,7 +225,7 @@ export async function buildApp({ config, logger }) {
   const clearSession = (reply) => reply.clearCookie(cookieName, { path: '/', secure: config.cookieSecure, sameSite: 'lax', httpOnly: true });
 
   function renderError(reply, status, code) {
-    return reply.code(status).view('error.hbs', {
+    return reply.code(status).view('shared/views/error.hbs', {
       title: 'Erro', status, message: message(code), user: reply.request.user, csrf: reply.request.csrf, activePage: activePageOf(reply.request.url),
     });
   }
@@ -278,6 +293,7 @@ export async function buildApp({ config, logger }) {
     user: request.user,
     csrf: request.csrf,
     activePage: activePageOf(request.url),
+    flash: NOTICES[request.query?.ok],
     ...extra,
   });
 

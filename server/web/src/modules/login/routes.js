@@ -1,5 +1,5 @@
-import { ApiError, message } from '../errors.js';
-import { checkFormToken, issueFormToken } from '../protection.js';
+import { ApiError, message } from '../../shared/errors.js';
+import { checkFormToken, issueFormToken } from '../../shared/protection.js';
 
 const SIGNUP_MIN_MS = 3000;
 
@@ -9,7 +9,7 @@ export default function loginRoutes(app, { config, api, cookieName, cookieOption
 
   const loginView = async (request, reply, status = 200, error = null) => {
     const { open } = await api(request, 'GET', '/internal/signup');
-    return reply.code(status).view('login.hbs', {
+    return reply.code(status).view('modules/login/views/login.hbs', {
       title: 'Entrar',
       error,
       signupOpen: open,
@@ -40,7 +40,7 @@ export default function loginRoutes(app, { config, api, cookieName, cookieOption
     }
   });
 
-  const registerView = (reply, status = 200, error = null) => reply.code(status).view('register.hbs', {
+  const registerView = (reply, status = 200, error = null) => reply.code(status).view('modules/login/views/register.hbs', {
     title: 'Criar conta',
     error,
     formToken: issueFormToken(config.formSecret, 'register'),

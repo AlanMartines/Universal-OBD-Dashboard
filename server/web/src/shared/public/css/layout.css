@@ -1,4 +1,4 @@
-/* Sem estilos embutidos no HTML: a política de segurança (CSP) bloqueia. */
+/* Estrutura da página: fundo, menu lateral e área de conteúdo. */
 html,
 body {
   padding: 0;
@@ -9,45 +9,9 @@ body {
   background-size: auto;
 }
 
-.hp-field {
-  position: absolute;
-  left: -10000px;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-}
-
-.pairing-code {
-  font-size: clamp(1.4rem, 6vw, 2.2rem);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  user-select: all;
-}
-
-.metric-value {
-  font-size: 1.9rem;
-  font-weight: 600;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.chart-box {
-  position: relative;
-  width: 100%;
-  height: 320px;
-  overflow: hidden;
-}
-
-.chart-box canvas {
-  max-width: 100%;
-}
-
-/* ---------- Estrutura: menu lateral ---------- */
-:root {
-  --sidebar-width: 248px;
-  --sidebar-rail: 68px;
-  --topbar-height: 56px;
-  --sidebar-gap: 5px;
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 .sidebar-link-plain {
@@ -79,12 +43,12 @@ body {
   overflow: hidden;
   font-weight: bold;
   color: var(--bs-body-color);
-  background-color: #1a1a1a;
+  background-color: var(--app-dark);
   background-image: url('/assets/images/body/bg02.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  border-radius: 5px;
+  border-radius: var(--app-radius);
   transition: width 0.2s ease, transform 0.2s ease, visibility 0.2s;
 }
 
@@ -135,8 +99,8 @@ body {
   display: none;
   font-size: 1.25rem;
   color: #fff;
-  background: #1a1a1a;
-  border-radius: 5px;
+  background: var(--app-dark);
+  border-radius: var(--app-radius);
   box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
 }
 
@@ -156,41 +120,24 @@ body {
   border-bottom: 1px solid var(--bs-border-color);
 }
 
-.sidebar-avatar,
-.profile-avatar {
+.sidebar-avatar {
   display: flex;
   flex: none;
   align-items: center;
   justify-content: center;
+  width: 44px;
+  height: 44px;
   overflow: hidden;
   font-weight: 700;
   color: #fff;
   background: var(--bs-primary);
-}
-
-.sidebar-avatar {
-  width: 44px;
-  height: 44px;
   border-radius: 8px;
 }
 
-.profile-avatar {
-  width: 88px;
-  height: 88px;
-  font-size: 1.75rem;
-  border-radius: 50%;
-}
-
-.sidebar-avatar img,
-.profile-avatar img {
+.sidebar-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.profile-head {
-  flex: 1 1 14rem;
-  min-width: 0;
 }
 
 .sidebar-user > .sidebar-label {
@@ -362,92 +309,8 @@ body {
   }
 }
 
-/* ---------- Responsividade do conteúdo ---------- */
-html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-
 .app-sidebar {
   padding-bottom: env(safe-area-inset-bottom);
-}
-
-.table-actions form {
-  display: inline-block;
-  margin: 0.125rem 0;
-}
-
-/* Tabelas viram cartões em telas estreitas, sem rolagem lateral. */
-@media (max-width: 767.98px) {
-  .table-stack thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-  }
-  .table-stack,
-  .table-stack tbody,
-  .table-stack tr,
-  .table-stack td {
-    display: block;
-    width: 100%;
-  }
-  .table-stack tr {
-    padding: 0.5rem 0.75rem;
-    background: var(--bs-body-bg);
-    margin-bottom: 0.75rem;
-    border: 1px solid var(--bs-border-color);
-    border-radius: var(--bs-border-radius);
-  }
-  .table-stack td {
-    display: flex;
-    gap: 1rem;
-    justify-content: space-between;
-    padding: 0.4rem 0;
-    text-align: right;
-    border: 0;
-  }
-  .table-stack td[data-label]::before {
-    flex: none;
-    max-width: 45%;
-    font-weight: 600;
-    color: var(--bs-secondary-color);
-    text-align: left;
-    content: attr(data-label);
-  }
-  .table-stack td:empty {
-    display: none;
-  }
-  .table-stack .table-actions {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: flex-end;
-  }
-  .table-stack .table-actions form {
-    margin: 0;
-  }
-  .device-add {
-    width: 100%;
-  }
-  .chart-box {
-    height: 240px;
-  }
-  .metric-value {
-    font-size: 1.5rem;
-  }
-}
-
-/* Alvos de toque confortáveis no celular e no tablet. */
-@media (max-width: 991.98px) {
-  .btn-sm,
-  .form-select-sm {
-    min-height: 40px;
-  }
-  .btn-sm {
-    display: inline-flex;
-    align-items: center;
-  }
 }
 
 /* Celular deitado: ganha altura para os itens do menu. */
@@ -456,29 +319,4 @@ html {
     padding-top: 0.4rem;
     padding-bottom: 0.4rem;
   }
-}
-
-/* ---------- Medidor de senha ---------- */
-.password-meter .progress {
-  height: 6px;
-}
-
-.password-meter .progress-bar {
-  width: 0;
-  transition: width 0.15s ease;
-}
-
-.password-rules li {
-  color: var(--bs-secondary-color);
-}
-
-.password-rules li.rule-ok {
-  color: var(--bs-success-text-emphasis);
-}
-
-/* Campo obrigatório: asterisco vermelho depois do rótulo. */
-.required-mark::after {
-  margin-left: 0.25rem;
-  color: var(--bs-danger);
-  content: "*";
 }

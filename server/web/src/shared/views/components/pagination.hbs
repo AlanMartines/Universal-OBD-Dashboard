@@ -1,0 +1,13 @@
+{{#if pager}}
+<nav class="app-pager mt-2 mb-4" aria-label="{{label}}">
+  <span class="small text-body-secondary">{{pager.from}} a {{pager.to}} de {{pager.total}}</span>
+  <ul class="pagination pagination-sm mb-0">
+    {{#each pager.links}}
+    <li class="page-item{{#if active}} active{{/if}}{{#if disabled}} disabled{{/if}}">
+      {{#if disabled}}<span class="page-link" aria-label="{{title}}"><i class="fa-solid {{icon}}" aria-hidden="true"></i></span>
+      {{else}}<a class="page-link" href="{{url}}"{{#if active}} aria-current="page"{{/if}}{{#if title}} aria-label="{{title}}"{{/if}}>{{#if icon}}<i class="fa-solid {{icon}}" aria-hidden="true"></i>{{else}}{{number}}{{/if}}</a>{{/if}}
+    </li>
+    {{/each}}
+  </ul>
+</nav>
+{{/if}}

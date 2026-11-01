@@ -48,7 +48,8 @@ describe('funções puras', () => {
 });
 
 describe('arquivos', () => {
-  const views = collectFiles(join(HERE, '../views'));
+  const all = collectFiles(join(HERE, '../src'));
+  const views = all.filter((f) => f.endsWith('.hbs'));
   test('sem saída sem escape além do corpo do layout', () => {
     for (const file of views) {
       const raw = readFileSync(file, 'utf8').replaceAll('{{{body}}}', '');
@@ -67,8 +68,14 @@ describe('arquivos', () => {
     }
   });
 
+  test('cada módulo publica o próprio JS e CSS', async () => {
+    assert.ok(all.some((f) => f.endsWith('modules/devices/public/live.js')));
+    assert.ok(all.some((f) => f.endsWith('modules/account/public/account.css')));
+    assert.ok(!all.some((f) => f.endsWith('app.css')));
+  });
+
   test('sem CDN, script ou estilo embutido', () => {
-    for (const file of [...views, ...collectFiles(join(HERE, '../public')).filter((f) => /\.(css|js)$/.test(f))]) {
+    for (const file of [...views, ...all.filter((f) => f.includes('/public/') && /\.(css|js)$/.test(f))]) {
       const raw = readFileSync(file, 'utf8');
       assert.ok(!/(src|href)="https?:/.test(raw), file);
       assert.ok(!/ style="/.test(raw), file);
@@ -396,6 +403,33 @@ describe('fluxo pelo navegador', () => {
       assert.equal((await web.inject({ method: 'GET', url })).statusCode, 200, url);
     }
     assert.notEqual((await web.inject({ method: 'GET', url: '/vendor/fontawesome/package.json' })).statusCode, 200);
+  });
+
+  test('paginação: links preservam a outra lista e não repetem aviso', async () => {
+    const { rows } = await apiCtx.pool.query("SELECT id FROM users WHERE role = 'superadmin'");
+    assert.ok(rows.length);
+    for (let i = 0; i < 30; i += 1) {
+      await apiCtx.pool.query("INSERT INTO users (username, password_hash, role) VALUES ($1, 'x', 'admin') ON CONFLICT DO NOTHING", [`lote-${i}`]);
+    }
+    const page = await web.inject({ method: 'GET', url: '/admin?auditoria=1&ok=user_updated', headers: { cookie: adminCookie } });
+    assert.match(page.body, /aria-label="Páginas de usuários"/);
+    assert.match(page.body, /1 a 25 de \d+/);
+    assert.match(page.body, /href="\/admin\?auditoria&#x3D;1&amp;usuarios&#x3D;2"/);
+    assert.match(page.body, /data-message="Usuário atualizado\."/);
+    const second = await web.inject({ method: 'GET', url: '/admin?usuarios=2', headers: { cookie: adminCookie } });
+    assert.match(second.body, /26 a \d+ de \d+/);
+    const strange = await web.inject({ method: 'GET', url: "/admin?usuarios=1'%20OR%201=1", headers: { cookie: adminCookie } });
+    assert.equal(strange.statusCode, 200);
+    const unknown = await web.inject({ method: 'GET', url: `/admin?ok=${encodeURIComponent('<script>x</script>')}`, headers: { cookie: adminCookie } });
+    assert.ok(!unknown.body.includes('<script>x') && !unknown.body.includes('app-flash'));
+  });
+
+  test('ações destrutivas pedem confirmação, com texto escapado', async () => {
+    const csrf = await csrfOf(adminCookie);
+    await post('/dispositivos', { name: 'Confirmar "aspas"', _csrf: csrf }, adminCookie);
+    const panel = await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } });
+    assert.match(panel.body, /data-confirm="Excluir Confirmar &quot;aspas&quot; e toda/);
+    assert.match(panel.body, /id="confirm-modal"/);
   });
 
   test('cadastro público: fechado, aberto, velocidade de robô', async () => {

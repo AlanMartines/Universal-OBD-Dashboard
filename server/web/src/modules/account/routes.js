@@ -1,7 +1,7 @@
-import { ApiError, message } from '../errors.js';
+import { ApiError, message } from '../../shared/errors.js';
 
 export default function accountRoutes(app, { api, apiBinary, clearSession, requireUser, context }) {
-  const passwordView = (request, reply, status = 200, error = null) => reply.code(status).view('password.hbs', context(request, {
+  const passwordView = (request, reply, status = 200, error = null) => reply.code(status).view('modules/account/views/password.hbs', context(request, {
     title: 'Trocar senha',
     error,
     required: request.user.mustChangePassword,
@@ -16,7 +16,7 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
       await api(request, 'POST', '/internal/auth/password', {
         body: { currentPassword: String(currentPassword ?? ''), newPassword: String(newPassword ?? '') },
       });
-      return reply.redirect('/painel', 303);
+      return reply.redirect('/painel?ok=password_saved', 303);
     } catch (error) {
       if (!(error instanceof ApiError) || error.status >= 500) throw error;
       return passwordView(request, reply, error.status, message(error.code));
@@ -25,25 +25,22 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
 
   const accountView = async (request, reply, status = 200, extra = {}) => {
     const account = await api(request, 'GET', '/internal/account');
-    return reply.code(status).view('account.hbs', context(request, {
-      title: 'Meus Dados', account, accountScript: true, ...extra,
+    return reply.code(status).view('modules/account/views/account.hbs', context(request, {
+      title: 'Meus Dados', account, pageCss: ['/modules/account/account.css'], pageScripts: ['/modules/account/account.js'], ...extra,
     }));
   };
   const clientError = (error) => error instanceof ApiError && error.status < 500 && error.status !== 401 && error.code !== 'password_change_required';
 
-  // Avisos só de uma lista fechada: o texto nunca vem da URL.
-  const NOTICES = { email: 'Se o endereço puder ser usado, enviamos um link de confirmação para ele.' };
   const REDIRECT_ERRORS = ['image_too_large'];
 
   app.get('/conta', { preHandler: requireUser }, async (request, reply) => accountView(request, reply, 200, {
-    notice: NOTICES[request.query.aviso],
     error: REDIRECT_ERRORS.includes(request.query.erro) ? message(request.query.erro) : undefined,
   }));
 
   app.post('/conta/perfil', { preHandler: requireUser }, async (request, reply) => {
     try {
       await api(request, 'POST', '/internal/account/profile', { body: { displayName: String(request.body?.displayName ?? '') } });
-      return reply.redirect('/conta', 303);
+      return reply.redirect('/conta?ok=profile_saved', 303);
     } catch (error) {
       if (!clientError(error)) throw error;
       return accountView(request, reply, error.status, { error: message(error.code) });
@@ -59,7 +56,7 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
       await api(request, 'POST', '/internal/account/email', {
         body: { newEmail: String(newEmail ?? ''), currentPassword: String(currentPassword ?? '') },
       });
-      return reply.redirect('/conta?aviso=email', 303);
+      return reply.redirect('/conta?ok=email_sent', 303);
     } catch (error) {
       if (!clientError(error) && error.code !== 'mail_unavailable') throw error;
       return accountView(request, reply, error.status, { error: message(error.code) });
@@ -69,7 +66,7 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
   // Abrir o link não altera nada: leitores de e-mail costumam abrir links sozinhos.
   app.get('/conta/email/confirmar', { logLevel: 'warn' }, async (request, reply) => {
     const token = String(request.query.token ?? '');
-    return reply.view('confirm-email.hbs', {
+    return reply.view('modules/account/views/confirm-email.hbs', {
       title: 'Confirmar e-mail',
       token,
       error: token ? null : message('email_link_invalid'),
@@ -79,11 +76,11 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
   app.post('/conta/email/confirmar', { logLevel: 'warn' }, async (request, reply) => {
     try {
       await api(request, 'POST', '/internal/account/email/confirm', { body: { token: String(request.body?.token ?? '') } });
-      return reply.view('confirm-email.hbs', { title: 'E-mail confirmado', confirmed: true });
+      return reply.view('modules/account/views/confirm-email.hbs', { title: 'E-mail confirmado', confirmed: true });
     } catch (error) {
       if (!(error instanceof ApiError) || error.status >= 500) throw error;
       const code = error.status === 429 ? 'too_many_requests' : 'email_link_invalid';
-      return reply.code(error.status).view('confirm-email.hbs', { title: 'Confirmar e-mail', error: message(code) });
+      return reply.code(error.status).view('modules/account/views/confirm-email.hbs', { title: 'Confirmar e-mail', error: message(code) });
     }
   });
 
@@ -100,7 +97,7 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
     }
     try {
       await api(request, 'POST', '/internal/account/avatar', { body: { imageBase64: file.toString('base64') } });
-      return reply.redirect('/conta', 303);
+      return reply.redirect('/conta?ok=photo_saved', 303);
     } catch (error) {
       if (!clientError(error)) throw error;
       return accountView(request, reply, error.status, { error: message(error.code) });
@@ -109,7 +106,7 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
 
   app.post('/conta/foto/remover', { preHandler: requireUser }, async (request, reply) => {
     await api(request, 'POST', '/internal/account/avatar/delete');
-    return reply.redirect('/conta', 303);
+    return reply.redirect('/conta?ok=photo_removed', 303);
   });
 
   app.post('/conta/excluir', { preHandler: requireUser }, async (request, reply) => {

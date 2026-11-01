@@ -1,0 +1,131 @@
+/* Componentes usados em várias telas. Sem estilos embutidos no HTML: a CSP bloqueia. */
+.hp-field {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+
+.table-actions form {
+  display: inline-block;
+  margin: 0.125rem 0;
+}
+
+/* Tabelas viram cartões em telas estreitas, sem rolagem lateral. */
+@media (max-width: 767.98px) {
+  .table-stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .table-stack,
+  .table-stack tbody,
+  .table-stack tr,
+  .table-stack td {
+    display: block;
+    width: 100%;
+  }
+  .table-stack tr {
+    padding: 0.5rem 0.75rem;
+    background: var(--bs-body-bg);
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+  }
+  .table-stack td {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 0.4rem 0;
+    text-align: right;
+    border: 0;
+  }
+  .table-stack td[data-label]::before {
+    flex: none;
+    max-width: 45%;
+    font-weight: 600;
+    color: var(--bs-secondary-color);
+    text-align: left;
+    content: attr(data-label);
+  }
+  .table-stack td:empty {
+    display: none;
+  }
+  .table-stack .table-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+  .table-stack .table-actions form {
+    margin: 0;
+  }
+}
+
+/* Alvos de toque confortáveis no celular e no tablet. */
+@media (max-width: 991.98px) {
+  .btn-sm,
+  .form-select-sm {
+    min-height: 40px;
+  }
+  .btn-sm {
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* ---------- Medidor de senha ---------- */
+.password-meter .progress {
+  height: 6px;
+}
+
+.password-meter .progress-bar {
+  width: 0;
+  transition: width 0.15s ease;
+}
+
+.password-rules li {
+  color: var(--bs-secondary-color);
+}
+
+.password-rules li.rule-ok {
+  color: var(--bs-success-text-emphasis);
+}
+
+/* Campo obrigatório: asterisco vermelho depois do rótulo. */
+.required-mark::after {
+  margin-left: 0.25rem;
+  color: var(--bs-danger);
+  content: "*";
+}
+
+/* ---------- Paginação ---------- */
+.app-pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-pager .pagination {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 991.98px) {
+  .app-pager .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* ---------- Avisos ---------- */
+.app-toasts {
+  z-index: 1090;
+}

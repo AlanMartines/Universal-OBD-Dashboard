@@ -1,0 +1,9 @@
+/* Medidas e cores do painel. Mudar aqui vale para todas as telas. */
+:root {
+  --sidebar-width: 248px;
+  --sidebar-rail: 68px;
+  --sidebar-gap: 5px;
+  --topbar-height: 56px;
+  --app-dark: #1a1a1a;
+  --app-radius: 5px;
+}

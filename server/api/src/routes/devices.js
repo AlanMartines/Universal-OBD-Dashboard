@@ -1,19 +1,33 @@
 import { audit } from '../db.js';
 import { fail } from '../errors.js';
+import { pageNumberSchema, pageSizeSchema, paged } from '../pagination.js';
 import { deviceName, MAX_LIVE_PER_USER, PAIRING_MINUTES, uuidParam } from '../schemas.js';
 import { formatPairingCode, generatePairingCode, sha256 } from '../security.js';
 
 export default function devicesRoutes(app, { config, pool, live, limit, requireReady, requireManager, loadDevice, publicDevice }) {
-  app.get('/internal/devices', { preValidation: requireReady }, async (request) => {
+  app.get('/internal/devices', {
+    preValidation: requireReady,
+    schema: {
+      querystring: {
+        type: 'object',
+        additionalProperties: false,
+        properties: { page: pageNumberSchema, pageSize: pageSizeSchema },
+      },
+    },
+  }, async (request) => {
     const { user } = request.session;
-    const { rows } = await pool.query(
-      `SELECT d.id, d.name, d.installation_id, d.app_version, d.created_at, d.paired_at, d.last_seen_at, d.revoked_at, u.username AS owner
+    const scope = '(d.user_id = $1 OR $2) AND (d.paired_at IS NOT NULL OR d.pairing_expires_at > now())';
+    const { rows, pagination } = await paged(pool, {
+      countSql: `SELECT count(*)::int AS total FROM devices d WHERE ${scope}`,
+      listSql: `SELECT d.id, d.name, d.installation_id, d.app_version, d.created_at, d.paired_at, d.last_seen_at, d.revoked_at, u.username AS owner
          FROM devices d JOIN users u ON u.id = d.user_id
-        WHERE (d.user_id = $1 OR $2) AND (d.paired_at IS NOT NULL OR d.pairing_expires_at > now())
-        ORDER BY d.revoked_at NULLS FIRST, d.last_seen_at DESC NULLS LAST, d.created_at DESC`,
-      [user.tenantId, user.role === 'superadmin'],
-    );
-    return { devices: rows.map(publicDevice) };
+        WHERE ${scope}
+        ORDER BY d.revoked_at NULLS FIRST, d.last_seen_at DESC NULLS LAST, d.created_at DESC, d.id`,
+      params: [user.tenantId, user.role === 'superadmin'],
+      page: request.query.page,
+      pageSize: request.query.pageSize,
+    });
+    return { devices: rows.map(publicDevice), pagination };
   });
 
   app.post('/internal/devices', {
