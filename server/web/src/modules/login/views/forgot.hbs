@@ -1,0 +1,24 @@
+<div class="row justify-content-center">
+  <div class="col-sm-10 col-md-6 col-lg-4">
+    <h1 class="h3 mb-3">Esqueci minha senha</h1>
+    {{> formError}}
+    {{#if sent}}
+    <div class="alert alert-success" role="status">Se houver uma conta com esse e-mail, enviamos um link para criar uma nova senha. Ele vale por 1 hora.</div>
+    {{else}}
+    <p class="text-body-secondary">O link é enviado para o e-mail confirmado da sua conta.</p>
+    <form method="post" action="/esqueci-senha" data-validate>
+      <input type="hidden" name="formToken" value="{{formToken}}">
+      <div class="hp-field" aria-hidden="true">
+        <label for="website">Não preencha</label>
+        <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+      </div>
+      <div class="mb-3">
+        <label class="form-label required-mark" for="email">E-mail</label>
+        <input class="form-control" id="email" name="email" type="email" autocomplete="email" maxlength="254" required autofocus>
+      </div>
+      <button class="btn btn-primary w-100" type="submit">Enviar link</button>
+    </form>
+    {{/if}}
+    <p class="mt-3 text-center"><a href="/login">Voltar ao login</a></p>
+  </div>
+</div>

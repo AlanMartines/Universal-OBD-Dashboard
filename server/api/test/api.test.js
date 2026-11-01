@@ -4,6 +4,7 @@ import { loadConfig } from '../src/config.js';
 import { bootstrap } from '../src/db.js';
 import sharp from 'sharp';
 import { resetPassword } from '../bin/user-reset-password.js';
+import { base32Encode, codeForStep, generateRecoveryCodes, stepAt } from '../src/totp.js';
 import { setMailReady, sendPending, mailConfig, parseTimeout } from '../src/mailer.js';
 import { processAvatar } from '../src/routes/account.js';
 import { isValidEmail } from '../src/security.js';
@@ -412,6 +413,197 @@ describe('API', () => {
       await internal(app, 'POST', '/internal/admin/signup', { token: admin, body: { open: false } });
       const { rows } = await pool.query(`SELECT role, account_id FROM users WHERE username = 'publico'`);
       assert.deepEqual(rows[0], { role: 'admin', account_id: null });
+    });
+  });
+
+  describe('dois fatores', () => {
+    let tok;
+    const NAME = 'doisfatores';
+    let secret; let recovery;
+    const now = (delta = 0) => codeForStep(secret, stepAt(Date.now()) + delta);
+    const log = (username, password = USER_PASSWORD) => internal(app, 'POST', '/internal/auth/login', { body: { username, password } });
+    const mfa = (mfaToken, code) => internal(app, 'POST', '/internal/auth/mfa', { body: { mfaToken, code } });
+
+    before(async () => { tok = await userToken(app, admin, NAME); });
+
+    test('código segue a RFC 6238', () => {
+      const s = base32Encode(Buffer.from('12345678901234567890'));
+      assert.equal(s, 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ');
+      assert.equal(codeForStep(s, Math.floor(59 / 30)), '287082');
+      assert.equal(codeForStep(s, Math.floor(1111111109 / 30)), '081804');
+      assert.equal(generateRecoveryCodes().length, 10);
+    });
+
+    test('ativar exige senha e um código válido; segredo fica cifrado', async () => {
+      assert.equal((await internal(app, 'POST', '/internal/account/mfa/setup', { token: tok, body: { currentPassword: 'errada' } })).statusCode, 400);
+      assert.equal((await internal(app, 'POST', '/internal/account/mfa/setup', { token: tok, body: { currentPassword: USER_PASSWORD } })).statusCode, 200);
+      ({ secret } = (await internal(app, 'GET', '/internal/account/mfa/pending', { token: tok })).json());
+      const stored = (await pool.query('SELECT totp_pending FROM users WHERE username = $1', [NAME])).rows[0].totp_pending;
+      assert.ok(!stored.includes(secret));
+      assert.equal((await log(NAME)).json().mfaRequired, undefined);
+      assert.equal((await internal(app, 'POST', '/internal/account/mfa/enable', { token: tok, body: { code: '000000' } })).statusCode, 400);
+      const on = await internal(app, 'POST', '/internal/account/mfa/enable', { token: tok, body: { code: now() } });
+      assert.equal(on.statusCode, 200);
+      recovery = on.json().recoveryCodes;
+      assert.equal(recovery.length, 10);
+      assert.ok(!JSON.stringify((await pool.query('SELECT * FROM recovery_codes')).rows).includes(recovery[0]));
+    });
+
+    test('senha sozinha não abre sessão; código repetido não vale', async () => {
+      const first = await log(NAME);
+      assert.equal(first.json().mfaRequired, true);
+      assert.equal(first.json().token, undefined);
+      assert.equal((await internal(app, 'GET', '/internal/auth/session', { token: first.json().mfaToken })).statusCode, 401);
+      const used = now();
+      const again = await mfa(first.json().mfaToken, used);
+      assert.deepEqual(again.json(), { error: 'mfa_code_invalid' });
+      const ok = await mfa(first.json().mfaToken, now(1));
+      assert.ok(ok.json().token);
+      assert.equal((await mfa(first.json().mfaToken, now(1))).statusCode, 401);
+    });
+
+    test('tentativas erradas derrubam o desafio', async () => {
+      const { mfaToken } = (await log(NAME)).json();
+      for (let i = 0; i < 5; i += 1) assert.deepEqual((await mfa(mfaToken, '111111')).json(), { error: 'mfa_code_invalid' });
+      assert.deepEqual((await mfa(mfaToken, '111111')).json(), { error: 'mfa_expired' });
+    });
+
+    test('código de recuperação entra uma vez só', async () => {
+      const a1 = (await log(NAME)).json().mfaToken;
+      assert.ok((await mfa(a1, recovery[0].toLowerCase())).json().token);
+      const a2 = (await log(NAME)).json().mfaToken;
+      assert.equal((await mfa(a2, recovery[0])).statusCode, 401);
+      const acc = await internal(app, 'GET', '/internal/account', { token: tok });
+      assert.equal(acc.statusCode, 200);
+      assert.equal(acc.json().recoveryLeft, 9);
+    });
+
+    test('desafio vencido não vale', async () => {
+      const { mfaToken } = (await log(NAME)).json();
+      await pool.query(`UPDATE mfa_challenges SET expires_at = now() - interval '1 minute'`);
+      assert.deepEqual((await mfa(mfaToken, recovery[1])).json(), { error: 'mfa_expired' });
+    });
+
+    test('comando do servidor desativa em caso de perda', async () => {
+      const t2 = await userToken(app, admin, 'perdeu2fa');
+      await internal(app, 'POST', '/internal/account/mfa/setup', { token: t2, body: { currentPassword: USER_PASSWORD } });
+      const p = (await internal(app, 'GET', '/internal/account/mfa/pending', { token: t2 })).json();
+      await internal(app, 'POST', '/internal/account/mfa/enable', { token: t2, body: { code: codeForStep(p.secret, stepAt(Date.now())) } });
+      await resetPassword(pool, 'perdeu2fa', 'senha nova pelo terminal', { disableMfa: true });
+      const res = await log('perdeu2fa', 'senha nova pelo terminal');
+      assert.ok(res.json().token);
+      assert.equal((await pool.query(`SELECT 1 FROM recovery_codes r JOIN users u ON u.id = r.user_id WHERE u.username = 'perdeu2fa'`)).rowCount, 0);
+    });
+  });
+
+  describe('sessões ativas', () => {
+    test('lista as próprias e encerra sem atingir outras contas', async () => {
+      const t1 = await userToken(app, admin, 'sessoes1');
+      const t2 = await login(app, 'sessoes1', USER_PASSWORD);
+      const list = (await internal(app, 'GET', '/internal/account/sessions', { token: t1 })).json().sessions;
+      assert.equal(list.length, 2);
+      assert.equal(list.filter((x) => x.current).length, 1);
+      assert.ok(!JSON.stringify(list).includes('token_hash'));
+      const other = list.find((x) => !x.current);
+      const intruso = await userToken(app, admin, 'sessoes2');
+      assert.equal((await internal(app, 'POST', `/internal/account/sessions/${other.id}/revoke`, { token: intruso })).statusCode, 404);
+      const me = list.find((x) => x.current);
+      assert.equal((await internal(app, 'POST', `/internal/account/sessions/${me.id}/revoke`, { token: t1 })).statusCode, 404);
+      assert.equal((await internal(app, 'POST', `/internal/account/sessions/${other.id}/revoke`, { token: t1 })).statusCode, 200);
+      assert.equal((await internal(app, 'GET', '/internal/auth/session', { token: t2 })).statusCode, 401);
+      assert.equal((await internal(app, 'GET', '/internal/auth/session', { token: t1 })).statusCode, 200);
+    });
+  });
+
+  describe('esqueci a senha', () => {
+    const lastLink = async (to) => /token=([A-Za-z0-9_-]+)/.exec((await pool.query('SELECT body FROM mail_outbox WHERE recipient = $1 ORDER BY id DESC LIMIT 1', [to])).rows[0]?.body ?? '')?.[1];
+    const forgot = (email) => internal(app, 'POST', '/internal/auth/forgot', { body: { email } });
+    const reset = (token, newPassword) => internal(app, 'POST', '/internal/auth/reset', { body: { token, newPassword } });
+    let tok;
+
+    before(async () => {
+      await setMailReady(pool, true);
+      tok = await userToken(app, admin, 'esquecida');
+      await pool.query(`UPDATE users SET email = 'esquecida@exemplo.test' WHERE username = 'esquecida'`);
+    });
+
+    test('e-mail desconhecido responde igual e nada é enviado', async () => {
+      const a = await forgot('ninguem-aqui@exemplo.test');
+      const b = await forgot('esquecida@exemplo.test');
+      assert.equal(a.statusCode, b.statusCode);
+      assert.equal(a.body, b.body);
+      assert.equal((await pool.query(`SELECT 1 FROM mail_outbox WHERE recipient = 'ninguem-aqui@exemplo.test'`)).rowCount, 0);
+    });
+
+    test('senha fraca não gasta o link; troca encerra sessões; link vale uma vez', async () => {
+      const token = await lastLink('esquecida@exemplo.test');
+      assert.ok(!JSON.stringify((await pool.query('SELECT * FROM password_resets')).rows).includes(token));
+      assert.deepEqual((await reset(token, 'curta')).json(), { error: 'password_too_short' });
+      assert.equal((await reset(token, 'uma nova frase bem comprida aqui')).statusCode, 200);
+      assert.equal((await reset(token, 'outra nova frase bem comprida')).statusCode, 400);
+      assert.equal((await internal(app, 'GET', '/internal/auth/session', { token: tok })).statusCode, 401);
+      assert.ok(await login(app, 'esquecida', 'uma nova frase bem comprida aqui'));
+      assert.equal(await login(app, 'esquecida', USER_PASSWORD), null);
+    });
+
+    test('link vencido e pedido repetido são barrados', async () => {
+      await pool.query('DELETE FROM password_resets');
+      await forgot('esquecida@exemplo.test');
+      const before2 = (await pool.query('SELECT count(*)::int n FROM mail_outbox')).rows[0].n;
+      await forgot('esquecida@exemplo.test');
+      assert.equal((await pool.query('SELECT count(*)::int n FROM mail_outbox')).rows[0].n, before2);
+      const token = await lastLink('esquecida@exemplo.test');
+      await pool.query(`UPDATE password_resets SET expires_at = now() - interval '1 minute'`);
+      assert.deepEqual((await reset(token, 'uma nova frase bem comprida aqui')).json(), { error: 'reset_link_invalid' });
+    });
+  });
+
+  describe('personificação', () => {
+    let alvo; let alvoId; let superTok;
+
+    before(async () => {
+      alvo = await userToken(app, admin, 'alvo');
+      alvoId = (await pool.query(`SELECT id FROM users WHERE username = 'alvo'`)).rows[0].id;
+      await pairDevice(app, alvo, 'cccccccc-1111-4111-8111-cccccccccccc');
+      superTok = await login(app, ADMIN.username, 'outra frase longa do administrador');
+    });
+    const go = (token, id = alvoId) => internal(app, 'POST', `/internal/admin/users/${id}/impersonate`, { token });
+
+    test('só super admin, e nunca contra outro super admin', async () => {
+      assert.equal((await go(alvo)).statusCode, 403);
+      const superId = (await pool.query(`SELECT id FROM users WHERE role = 'superadmin'`)).rows[0].id;
+      assert.equal((await go(superTok, superId)).statusCode, 404);
+    });
+
+    test('vê a conta, não toca em dados pessoais, fica na auditoria e volta', async () => {
+      const { token } = (await go(superTok)).json();
+      assert.equal((await internal(app, 'GET', '/internal/auth/session', { token: superTok })).statusCode, 401);
+      const s = (await internal(app, 'GET', '/internal/auth/session', { token })).json();
+      assert.equal(s.user.username, 'alvo');
+      assert.equal(s.user.impersonatedBy, ADMIN.username);
+      assert.ok((await internal(app, 'GET', '/internal/devices', { token })).json().devices.length >= 1);
+      for (const [url, body] of [
+        ['/internal/auth/password', { currentPassword: USER_PASSWORD, newPassword: 'frase nova bem comprida aqui' }],
+        ['/internal/account/email', { newEmail: 'x@exemplo.test', currentPassword: USER_PASSWORD }],
+        ['/internal/account/mfa/setup', { currentPassword: USER_PASSWORD }],
+        ['/internal/account/delete', { password: USER_PASSWORD }],
+        ['/internal/account/profile', { displayName: 'x' }],
+        ['/internal/account/sessions/revoke-others', undefined],
+      ]) {
+        assert.equal((await internal(app, 'POST', url, { token, body })).statusCode, 403, url);
+      }
+      const logged = await pool.query(`SELECT actor, target FROM audit_log WHERE action = 'personificacao_iniciada' ORDER BY id DESC LIMIT 1`);
+      assert.deepEqual(logged.rows[0], { actor: ADMIN.username, target: 'alvo' });
+      await pool.query(`UPDATE sessions SET expires_at = expires_at`);
+      const expires = (await pool.query(`SELECT expires_at < now() + interval '61 minutes' AS short FROM sessions WHERE impersonator_id IS NOT NULL`)).rows[0];
+      assert.equal(expires.short, true);
+      const back = await internal(app, 'POST', '/internal/auth/impersonate/stop', { token });
+      assert.equal((await internal(app, 'GET', '/internal/auth/session', { token: back.json().token })).json().user.role, 'superadmin');
+      assert.equal((await internal(app, 'GET', '/internal/auth/session', { token })).statusCode, 401);
+    });
+
+    test('quem não está personificando não pode usar o retorno', async () => {
+      assert.equal((await internal(app, 'POST', '/internal/auth/impersonate/stop', { token: alvo })).statusCode, 400);
     });
   });
 

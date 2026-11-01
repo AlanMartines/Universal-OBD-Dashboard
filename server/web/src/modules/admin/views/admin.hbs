@@ -81,6 +81,12 @@
         <td data-label="Criado em">{{date created_at}}</td>
         <td class="table-actions text-end">
           {{#unless (eq id ../user.id)}}
+          {{#if ../isSuper}}{{#unless (eq role "superadmin")}}{{#unless disabled}}
+          <form method="post" action="/admin/usuarios/{{id}}/personificar" class="d-inline" data-confirm="Entrar como {{username}}? A sessão de suporte dura 1 hora e fica registrada na auditoria." data-confirm-label="Entrar">
+            <input type="hidden" name="_csrf" value="{{../csrf}}">
+            <button class="btn btn-outline-primary btn-sm" type="submit">Entrar como</button>
+          </form>
+          {{/unless}}{{/unless}}{{/if}}
           <form method="post" action="/admin/usuarios/{{id}}/status" class="d-inline" {{#unless disabled}}data-confirm="Desativar {{username}}? As sessões abertas serão encerradas." data-confirm-label="Desativar"{{/unless}}>
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <input type="hidden" name="disabled" value="{{#if disabled}}false{{else}}true{{/if}}">

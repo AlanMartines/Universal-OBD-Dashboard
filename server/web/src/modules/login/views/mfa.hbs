@@ -1,0 +1,15 @@
+<div class="row justify-content-center">
+  <div class="col-sm-10 col-md-6 col-lg-4">
+    <h1 class="h3 mb-3">Verificação em duas etapas</h1>
+    <p class="text-body-secondary">Digite o código do aplicativo autenticador ou um código de recuperação.</p>
+    {{> formError}}
+    <form method="post" action="/login/verificacao" autocomplete="off" data-validate>
+      <div class="mb-3">
+        <label class="form-label required-mark" for="code">Código</label>
+        <input class="form-control" id="code" name="code" autocomplete="one-time-code" minlength="6" maxlength="16" required autofocus>
+      </div>
+      <button class="btn btn-primary w-100" type="submit">Entrar</button>
+    </form>
+    <p class="mt-3 text-center"><a href="/login">Voltar</a></p>
+  </div>
+</div>

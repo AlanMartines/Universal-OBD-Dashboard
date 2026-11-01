@@ -1,0 +1,14 @@
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <h1 class="h3 mb-3">Códigos de recuperação</h1>
+    <div class="alert alert-warning" role="alert">
+      <strong>Guarde estes códigos agora.</strong> Eles não serão mostrados de novo. Cada um funciona uma vez, se você perder o aplicativo autenticador.
+    </div>
+    <div class="card card-body mb-3">
+      <ul class="recovery-codes list-unstyled font-monospace user-select-all mb-0">
+        {{#each codes}}<li>{{this}}</li>{{/each}}
+      </ul>
+    </div>
+    <a class="btn btn-primary" href="/conta">Já guardei</a>
+  </div>
+</div>

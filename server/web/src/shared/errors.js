@@ -24,6 +24,10 @@ export const MESSAGES = {
   mail_unavailable: 'O envio de e-mails está indisponível no momento. Tente mais tarde.',
   image_invalid: 'Não foi possível usar esta imagem. Envie um arquivo JPG, PNG ou WebP.',
   image_too_large: 'A foto passa de 5 MB. Escolha um arquivo menor.',
+  mfa_code_invalid: 'Código incorreto. Confira o aplicativo e tente de novo.',
+  mfa_expired: 'A verificação expirou. Entre novamente.',
+  mfa_already_enabled: 'A verificação em duas etapas já está ativa.',
+  reset_link_invalid: 'Este link é inválido ou já venceu. Peça um novo em "Esqueci minha senha".',
   not_found: 'Não encontrado.',
   forbidden: 'Você não tem acesso a esta página.',
   bad_form: 'O formulário expirou. Recarregue a página e tente de novo.',
@@ -41,6 +45,10 @@ export const NOTICES = {
   password_saved: 'Senha alterada.',
   photo_saved: 'Foto atualizada.',
   photo_removed: 'Foto removida.',
+  mfa_disabled: 'Verificação em duas etapas desativada.',
+  session_revoked: 'Sessão encerrada.',
+  sessions_revoked: 'As outras sessões foram encerradas.',
+  password_reset: 'Senha alterada. Entre com a nova senha.',
   email_sent: 'Se o endereço puder ser usado, enviamos um link de confirmação para ele.',
 };
 

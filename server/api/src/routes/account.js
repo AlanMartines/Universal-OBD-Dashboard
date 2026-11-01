@@ -23,13 +23,14 @@ export async function processAvatar(input) {
 }
 
 export default function accountRoutes(app, {
-  config, pool, limit, requireSession, requireReady,
+  config, pool, limit, requireSession, requireOwnReady,
 }) {
   const perUser = (request) => request.session?.user.id ?? request.clientIp;
 
   app.get('/internal/account', { preValidation: requireSession }, async (request) => {
     const { rows } = await pool.query(
-      `SELECT u.username, u.display_name, u.email, u.role, u.disabled, u.avatar_updated_at,
+      `SELECT u.username, u.display_name, u.email, u.role, u.disabled, u.avatar_updated_at, u.totp_enabled_at,
+              (SELECT count(*)::int FROM recovery_codes r WHERE r.user_id = u.id) AS recovery_left,
               c.new_email AS pending_email
          FROM users u LEFT JOIN email_changes c ON c.user_id = u.id AND c.expires_at > now()
         WHERE u.id = $1`,
@@ -42,13 +43,15 @@ export default function accountRoutes(app, {
       email: u.email,
       pendingEmail: u.pending_email,
       role: u.role,
+      mfaEnabled: Boolean(u.totp_enabled_at),
+      recoveryLeft: u.recovery_left,
       avatarVersion: u.avatar_updated_at ? u.avatar_updated_at.getTime() : null,
     };
   });
 
   app.post('/internal/account/profile', {
     ...limit(30, '1 hour', perUser),
-    preValidation: requireReady,
+    preValidation: requireOwnReady,
     schema: {
       body: {
         type: 'object',
@@ -67,7 +70,7 @@ export default function accountRoutes(app, {
 
   app.post('/internal/account/email', {
     ...limit(5, '1 hour', perUser),
-    preValidation: requireReady,
+    preValidation: requireOwnReady,
     schema: {
       body: {
         type: 'object',
@@ -183,7 +186,7 @@ export default function accountRoutes(app, {
   app.post('/internal/account/avatar', {
     ...limit(20, '1 hour', perUser),
     bodyLimit: 8 * 1024 * 1024,
-    preValidation: requireReady,
+    preValidation: requireOwnReady,
     schema: {
       body: {
         type: 'object',
@@ -200,7 +203,7 @@ export default function accountRoutes(app, {
     return { ok: true };
   });
 
-  app.post('/internal/account/avatar/delete', { preValidation: requireReady }, async (request) => {
+  app.post('/internal/account/avatar/delete', { preValidation: requireOwnReady }, async (request) => {
     await pool.query('UPDATE users SET avatar = NULL, avatar_updated_at = NULL WHERE id = $1', [request.session.user.id]);
     return { ok: true };
   });

@@ -3,6 +3,7 @@
 //   --user NOME                 gera uma senha aleatória e mostra uma única vez
 //   --user NOME --prompt        pede a senha sem mostrar na tela (recomendado)
 //   --user NOME --password X    usa a senha informada (fica no histórico do terminal)
+//   --disable-2fa               também desativa os dois fatores, se o autenticador foi perdido
 import { createInterface } from 'node:readline';
 import { parseArgs } from 'node:util';
 import { audit, createPool } from '../src/db.js';
@@ -30,7 +31,7 @@ function askHidden(question) {
   });
 }
 
-export async function resetPassword(pool, username, password) {
+export async function resetPassword(pool, username, password, { disableMfa = false } = {}) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -44,6 +45,14 @@ export async function resetPassword(pool, username, password) {
       return false;
     }
     await client.query('DELETE FROM sessions WHERE user_id = $1', [rows[0].id]);
+    if (disableMfa) {
+      await client.query(
+        'UPDATE users SET totp_secret = NULL, totp_pending = NULL, totp_enabled_at = NULL, totp_last_step = NULL WHERE id = $1',
+        [rows[0].id],
+      );
+      await client.query('DELETE FROM recovery_codes WHERE user_id = $1', [rows[0].id]);
+      await audit(client, { actor: 'linha-de-comando', action: '2fa_desativado', target: username });
+    }
     await audit(client, { actor: 'linha-de-comando', action: 'senha_resetada', target: username });
     await client.query('COMMIT');
     return true;
@@ -57,11 +66,11 @@ export async function resetPassword(pool, username, password) {
 
 async function main() {
   const { values } = parseArgs({
-    options: { user: { type: 'string' }, password: { type: 'string' }, prompt: { type: 'boolean', default: false } },
+    options: { user: { type: 'string' }, password: { type: 'string' }, prompt: { type: 'boolean', default: false }, 'disable-2fa': { type: 'boolean', default: false } },
   });
   const username = normalizeUsername(values.user);
   if (!username || (values.password !== undefined && values.prompt)) {
-    console.error('Uso: npm run user:reset-password -- --user NOME [--prompt | --password SENHA]');
+    console.error('Uso: npm run user:reset-password -- --user NOME [--prompt | --password SENHA] [--disable-2fa]');
     return 2;
   }
   let password = values.password;
@@ -85,7 +94,7 @@ async function main() {
   }
   const pool = createPool(process.env.DATABASE_URL);
   try {
-    if (!(await resetPassword(pool, username, password))) {
+    if (!(await resetPassword(pool, username, password, { disableMfa: values['disable-2fa'] }))) {
       console.error(`Usuário não encontrado: ${username}. Nada foi alterado.`);
       return 1;
     }

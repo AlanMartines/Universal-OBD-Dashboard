@@ -91,6 +91,8 @@ export async function audit(db, { actor = null, action, target = null, ip = null
 export async function purgeExpired(pool, retentionDays) {
   await pool.query('DELETE FROM sessions WHERE expires_at < now()');
   await pool.query('DELETE FROM email_changes WHERE expires_at < now()');
+  await pool.query('DELETE FROM mfa_challenges WHERE expires_at < now()');
+  await pool.query('DELETE FROM password_resets WHERE expires_at < now()');
   await pool.query(`DELETE FROM mail_outbox WHERE created_at < now() - interval '1 day'`);
   await pool.query(`DELETE FROM telemetry_samples WHERE ts < now() - make_interval(days => $1)`, [retentionDays]);
   await pool.query(`DELETE FROM audit_log WHERE at < now() - interval '365 days'`);

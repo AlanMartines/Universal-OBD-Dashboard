@@ -1,6 +1,10 @@
+import QRCode from 'qrcode';
 import { ApiError, message } from '../../shared/errors.js';
+import { requireUuid } from '../devices/routes.js';
 
-export default function accountRoutes(app, { api, apiBinary, clearSession, requireUser, context }) {
+export default function accountRoutes(app, {
+  api, apiBinary, cookieName, cookieOptions, clearSession, requireUser, context,
+}) {
   const passwordView = (request, reply, status = 200, error = null) => reply.code(status).view('modules/account/views/password.hbs', context(request, {
     title: 'Trocar senha',
     error,
@@ -82,6 +86,74 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
       const code = error.status === 429 ? 'too_many_requests' : 'email_link_invalid';
       return reply.code(error.status).view('modules/account/views/confirm-email.hbs', { title: 'Confirmar e-mail', error: message(code) });
     }
+  });
+
+  // ---------- Dois fatores ----------
+
+  const setupView = async (request, reply, status = 200, error = null) => {
+    const { secret, uri } = await api(request, 'GET', '/internal/account/mfa/pending');
+    return reply.code(status).view('modules/account/views/mfa-setup.hbs', context(request, {
+      title: 'Verificação em duas etapas', secret, qr: await QRCode.toDataURL(uri, { width: 220, margin: 1 }), error, pageCss: ['/modules/account/account.css'],
+    }));
+  };
+
+  app.get('/conta/2fa', { preHandler: requireUser }, async (request, reply) => setupView(request, reply));
+
+  app.post('/conta/2fa/iniciar', { preHandler: requireUser }, async (request, reply) => {
+    try {
+      await api(request, 'POST', '/internal/account/mfa/setup', { body: { currentPassword: String(request.body?.currentPassword ?? '') } });
+      return reply.redirect('/conta/2fa', 303);
+    } catch (error) {
+      if (!clientError(error)) throw error;
+      return accountView(request, reply, error.status, { error: message(error.code) });
+    }
+  });
+
+  app.post('/conta/2fa/ativar', { preHandler: requireUser }, async (request, reply) => {
+    try {
+      const { recoveryCodes } = await api(request, 'POST', '/internal/account/mfa/enable', { body: { code: String(request.body?.code ?? '').trim() } });
+      return reply.view('modules/account/views/mfa-codes.hbs', context(request, { title: 'Códigos de recuperação', codes: recoveryCodes, pageCss: ['/modules/account/account.css'] }));
+    } catch (error) {
+      if (!clientError(error)) throw error;
+      return setupView(request, reply, error.status, message(error.code === 'invalid_request' ? 'mfa_code_invalid' : error.code));
+    }
+  });
+
+  app.post('/conta/2fa/desativar', { preHandler: requireUser }, async (request, reply) => {
+    try {
+      await api(request, 'POST', '/internal/account/mfa/disable', {
+        body: { currentPassword: String(request.body?.currentPassword ?? ''), code: String(request.body?.code ?? '').trim() },
+      });
+      return reply.redirect('/conta?ok=mfa_disabled', 303);
+    } catch (error) {
+      if (!clientError(error)) throw error;
+      return accountView(request, reply, error.status, { error: message(error.code === 'invalid_request' ? 'mfa_code_invalid' : error.code) });
+    }
+  });
+
+  // ---------- Sessões ativas ----------
+
+  app.get('/conta/sessoes', { preHandler: requireUser }, async (request, reply) => {
+    const { sessions } = await api(request, 'GET', '/internal/account/sessions');
+    return reply.view('modules/account/views/sessions.hbs', context(request, { title: 'Sessões ativas', sessions }));
+  });
+
+  app.post('/conta/sessoes/encerrar-outras', { preHandler: requireUser }, async (request, reply) => {
+    await api(request, 'POST', '/internal/account/sessions/revoke-others');
+    return reply.redirect('/conta/sessoes?ok=sessions_revoked', 303);
+  });
+
+  app.post('/conta/sessoes/:id/encerrar', { preHandler: requireUser }, async (request, reply) => {
+    await api(request, 'POST', `/internal/account/sessions/${requireUuid(request)}/revoke`);
+    return reply.redirect('/conta/sessoes?ok=session_revoked', 303);
+  });
+
+  // ---------- Fim da personificação ----------
+
+  app.post('/conta/personificacao/sair', { preHandler: requireUser }, async (request, reply) => {
+    const { token } = await api(request, 'POST', '/internal/auth/impersonate/stop');
+    reply.setCookie(cookieName, token, cookieOptions);
+    return reply.redirect('/admin', 303);
   });
 
   app.get('/conta/foto', { preHandler: requireUser }, async (request, reply) => {

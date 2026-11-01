@@ -2,10 +2,12 @@ import { audit } from '../db.js';
 import { fail } from '../errors.js';
 import { LOCK_AFTER, LOCK_MAX_MINUTES, passwordField } from '../schemas.js';
 import {
-  burnPasswordCheck, hashPassword, isValidUsername, normalizeUsername, passwordProblem, verifyPassword,
+  burnPasswordCheck, hashPassword, isValidUsername, normalizeUsername, passwordProblem, randomToken, sha256, verifyPassword,
 } from '../security.js';
 
-export default function authRoutes(app, { pool, limit, requireSession, requireReady, createSession, signupOpen }) {
+export default function authRoutes(app, {
+  pool, limit, requireSession, requireOwnSession, requireOwnReady, createSession, signupOpen,
+}) {
   const credentials = {
     type: 'object',
     required: ['username', 'password'],
@@ -20,7 +22,7 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
     const { password } = request.body;
     const { rows } = await pool.query(
       // Nome de usuário nunca tem @, então não há como confundir com um e-mail.
-      `SELECT u.id, u.username, u.password_hash, u.failed_logins, u.locked_until,
+      `SELECT u.id, u.username, u.password_hash, u.failed_logins, u.locked_until, u.totp_enabled_at,
               u.disabled OR COALESCE(owner.disabled, false) AS disabled
          FROM users u LEFT JOIN users owner ON owner.id = u.account_id
         WHERE u.${username.includes('@') ? 'email' : 'username'} = $1`,
@@ -47,8 +49,17 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
       throw fail(401, 'invalid_credentials');
     }
     await pool.query('UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = $1', [user.id]);
+    // Senha certa com 2FA ativo ainda não abre sessão: só um desafio curto para o segundo passo.
+    if (user.totp_enabled_at) {
+      const mfaToken = randomToken();
+      await pool.query(
+        `INSERT INTO mfa_challenges (token_hash, user_id, expires_at) VALUES ($1, $2, now() + interval '5 minutes')`,
+        [sha256(mfaToken), user.id],
+      );
+      return { mfaRequired: true, mfaToken };
+    }
     await audit(pool, { actor: user.username, action: 'login', ip: request.clientIp });
-    return { token: await createSession(user.id) };
+    return { token: await createSession(user.id, { request }) };
   });
 
   app.post('/internal/auth/register', { ...limit(5, '1 hour'), schema: { body: credentials } }, async (request) => {
@@ -64,7 +75,7 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
     );
     if (!result.rowCount) throw fail(409, 'username_taken');
     await audit(pool, { actor: username, action: 'cadastro', ip: request.clientIp });
-    return { token: await createSession(result.rows[0].id) };
+    return { token: await createSession(result.rows[0].id, { request }) };
   });
 
   app.get('/internal/auth/session', { preValidation: requireSession }, async (request) => ({
@@ -79,7 +90,7 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
 
   app.post('/internal/auth/password', {
     ...limit(10, '15 minutes'),
-    preValidation: requireSession,
+    preValidation: requireOwnSession,
     schema: {
       body: {
         type: 'object',
@@ -107,7 +118,7 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
 
   app.post('/internal/account/delete', {
     ...limit(5, '15 minutes'),
-    preValidation: requireReady,
+    preValidation: requireOwnReady,
     schema: {
       body: { type: 'object', required: ['password'], additionalProperties: false, properties: { password: passwordField } },
     },

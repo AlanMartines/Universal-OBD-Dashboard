@@ -32,6 +32,7 @@ export function loadConfig(env = process.env) {
     host: env.API_HOST || '0.0.0.0',
     databaseUrl: required(env, 'DATABASE_URL'),
     internalKey: secret(env, 'INTERNAL_API_KEY'),
+    totpKey: secret(env, 'TOTP_ENCRYPTION_KEY'),
     trustProxy: env.TRUST_PROXY || '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.1/32',
     logLevel: env.LOG_LEVEL || 'info',
     signupDefaultOpen: env.SIGNUP_DEFAULT === 'open',

@@ -24,3 +24,14 @@
   flex: 1 1 14rem;
   min-width: 0;
 }
+
+.mfa-qr {
+  max-width: 100%;
+  height: auto;
+}
+
+.recovery-codes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.25rem 1rem;
+}

@@ -106,14 +106,14 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
       `UPDATE devices SET revoked_at = COALESCE(revoked_at, now()), token_hash = NULL, pairing_code_hash = NULL WHERE id = $1`,
       [device.id],
     );
-    await audit(pool, { actor: request.session.user.username, action: 'dispositivo_revogado', target: device.id, ip: request.clientIp });
+    await audit(pool, { actor: request.session.impersonatedBy ?? request.session.user.username, action: 'dispositivo_revogado', target: device.id, ip: request.clientIp });
     return { ok: true };
   });
 
   app.post('/internal/devices/:id/delete', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
     const device = await loadDevice(request);
     await pool.query('DELETE FROM devices WHERE id = $1', [device.id]);
-    await audit(pool, { actor: request.session.user.username, action: 'dispositivo_excluido', target: device.id, ip: request.clientIp });
+    await audit(pool, { actor: request.session.impersonatedBy ?? request.session.user.username, action: 'dispositivo_excluido', target: device.id, ip: request.clientIp });
     return { ok: true };
   });
 

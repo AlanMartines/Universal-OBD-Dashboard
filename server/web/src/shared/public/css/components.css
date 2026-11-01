@@ -129,3 +129,9 @@
 .app-toasts {
   z-index: 1090;
 }
+
+/* ---------- Modo suporte ---------- */
+.impersonation-bar {
+  background: var(--bs-warning-bg-subtle);
+  border-bottom: 2px solid var(--bs-warning);
+}

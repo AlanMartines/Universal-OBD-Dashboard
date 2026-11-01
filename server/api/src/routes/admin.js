@@ -56,7 +56,7 @@ export default function adminRoutes(app, {
     schema: { body: { type: 'object', required: ['open'], additionalProperties: false, properties: { open: { type: 'boolean' } } } },
   }, async (request) => {
     await pool.query(`UPDATE settings SET value = $1::jsonb WHERE key = 'signup_open'`, [JSON.stringify(request.body.open)]);
-    await audit(pool, { actor: request.session.user.username, action: request.body.open ? 'cadastro_aberto' : 'cadastro_fechado', ip: request.clientIp });
+    await audit(pool, { actor: request.session.impersonatedBy ?? request.session.user.username, action: request.body.open ? 'cadastro_aberto' : 'cadastro_fechado', ip: request.clientIp });
     return { ok: true };
   });
 
@@ -102,7 +102,7 @@ export default function adminRoutes(app, {
       [username, await hashPassword(password), role, accountId],
     );
     if (!result.rowCount) throw fail(409, 'username_taken');
-    await audit(pool, { actor: user.username, action: 'usuario_criado', target: username, ip: request.clientIp });
+    await audit(pool, { actor: request.session.impersonatedBy ?? user.username, action: 'usuario_criado', target: username, ip: request.clientIp });
     return { username, password };
   });
 
@@ -128,14 +128,14 @@ export default function adminRoutes(app, {
     const target = await loadTargetUser(request);
     await pool.query('UPDATE users SET disabled = $2 WHERE id = $1', [target.id, request.body.disabled]);
     if (request.body.disabled) await pool.query('DELETE FROM sessions WHERE user_id = $1', [target.id]);
-    await audit(pool, { actor: request.session.user.username, action: request.body.disabled ? 'usuario_desativado' : 'usuario_ativado', target: target.username, ip: request.clientIp });
+    await audit(pool, { actor: request.session.impersonatedBy ?? request.session.user.username, action: request.body.disabled ? 'usuario_desativado' : 'usuario_ativado', target: target.username, ip: request.clientIp });
     return { ok: true };
   });
 
   app.post('/internal/admin/users/:id/delete', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
     const target = await loadTargetUser(request);
     await pool.query('DELETE FROM users WHERE id = $1', [target.id]);
-    await audit(pool, { actor: request.session.user.username, action: 'usuario_excluido', target: target.username, ip: request.clientIp });
+    await audit(pool, { actor: request.session.impersonatedBy ?? request.session.user.username, action: 'usuario_excluido', target: target.username, ip: request.clientIp });
     return { ok: true };
   });
 }

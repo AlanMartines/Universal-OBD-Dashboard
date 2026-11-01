@@ -48,6 +48,7 @@
   </div>
 </div>
 
+{{#unless user.impersonatedBy}}
 <div class="card mb-4">
   <div class="card-header fw-semibold"><i class="fa-solid fa-envelope me-2" aria-hidden="true"></i>Trocar e-mail</div>
   <div class="card-body">
@@ -115,6 +116,45 @@
   </div>
 </div>
 
+<div class="card mb-4">
+  <div class="card-header fw-semibold"><i class="fa-solid fa-shield-halved me-2" aria-hidden="true"></i>Verificação em duas etapas</div>
+  <div class="card-body">
+    {{#if account.mfaEnabled}}
+    <p><span class="badge text-bg-success">Ativa</span> <span class="small text-body-secondary">{{account.recoveryLeft}} códigos de recuperação restantes.</span></p>
+    <form method="post" action="/conta/2fa/desativar" class="row g-3" data-validate data-confirm="Desativar a verificação em duas etapas?" data-confirm-label="Desativar">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div class="col-md-6">
+        <label class="form-label fw-semibold required-mark" for="mfaOffPassword">Senha atual</label>
+        <input class="form-control" id="mfaOffPassword" name="currentPassword" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold required-mark" for="mfaOffCode">Código</label>
+        <input class="form-control" id="mfaOffCode" name="code" autocomplete="one-time-code" minlength="6" maxlength="16" required>
+      </div>
+      <div class="col-12 text-end"><button class="btn btn-outline-danger" type="submit">Desativar</button></div>
+    </form>
+    {{else}}
+    <p class="text-body-secondary">Pede também um código do aplicativo autenticador ao entrar. É a melhor proteção contra roubo de senha.</p>
+    <form method="post" action="/conta/2fa/iniciar" class="row g-3" data-validate>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div class="col-md-6">
+        <label class="form-label fw-semibold required-mark" for="mfaPassword">Senha atual</label>
+        <input class="form-control" id="mfaPassword" name="currentPassword" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="col-12 text-end"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-shield-halved me-1" aria-hidden="true"></i>Configurar</button></div>
+    </form>
+    {{/if}}
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header fw-semibold"><i class="fa-solid fa-laptop me-2" aria-hidden="true"></i>Sessões</div>
+  <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span class="text-body-secondary">Veja onde sua conta está conectada e encerre o que não reconhecer.</span>
+    <a class="btn btn-outline-primary" href="/conta/sessoes">Sessões ativas</a>
+  </div>
+</div>
+
 {{#if (eq account.role "admin")}}
 <div class="card border-danger-subtle mb-4">
   <div class="card-header fw-semibold text-danger-emphasis"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>Excluir conta</div>
@@ -131,3 +171,4 @@
   </div>
 </div>
 {{/if}}
+{{/unless}}

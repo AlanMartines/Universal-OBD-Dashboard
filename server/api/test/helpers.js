@@ -10,6 +10,7 @@ export function testConfig(extra = {}) {
   return loadConfig({
     DATABASE_URL: DB_URL,
     INTERNAL_API_KEY: KEY,
+    TOTP_ENCRYPTION_KEY: 'chave-de-totp-de-teste-com-mais-de-32-caracteres',
     ADMIN_USERNAME: ADMIN.username,
     ADMIN_PASSWORD: ADMIN.password,
     RATE_LIMIT_FACTOR: '1000',

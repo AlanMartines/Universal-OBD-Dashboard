@@ -405,6 +405,71 @@ describe('fluxo pelo navegador', () => {
     assert.notEqual((await web.inject({ method: 'GET', url: '/vendor/fontawesome/package.json' })).statusCode, 200);
   });
 
+  test('login em dois passos: cookie curto, sem sessão antes do código', async () => {
+    const { codeForStep, stepAt } = await import('../../api/src/totp.js');
+    const csrf = await csrfOf(adminCookie);
+    const made = await post('/admin/usuarios', { _csrf: csrf, username: 'comcodigo', role: 'admin' }, adminCookie);
+    const temp = /user-select-all[^"]*">([^<]+)</.exec(made.body)[1];
+    const PW = 'uma frase longa para esta conta';
+    const cookie = cookieOf(await signIn('comcodigo', temp));
+    await post('/conta/senha', { _csrf: await csrfOf(cookie, '/conta/senha'), currentPassword: temp, newPassword: PW, confirm: PW }, cookie);
+    const accountPage = await web.inject({ method: 'GET', url: '/conta', headers: { cookie } });
+    const c = field(accountPage.body, '_csrf');
+    assert.match(accountPage.body, /\/conta\/sessoes/);
+    assert.equal((await post('/conta/2fa/iniciar', { _csrf: c, currentPassword: PW }, cookie)).headers.location, '/conta/2fa');
+    const setup = await web.inject({ method: 'GET', url: '/conta/2fa', headers: { cookie } });
+    assert.match(setup.body, /src="data:image\/png;base64,/);
+    const secret = /user-select-all text-break">([A-Z2-7]+)</.exec(setup.body)[1];
+    const on = await post('/conta/2fa/ativar', { _csrf: c, code: codeForStep(secret, stepAt(Date.now())) }, cookie);
+    assert.match(on.body, /Códigos de recuperação/);
+    const first = await signIn('comcodigo', PW);
+    assert.equal(first.headers.location, '/login/verificacao');
+    const raw = first.headers['set-cookie'];
+    assert.match(raw, /^obd_mfa=/);
+    assert.match(raw, /HttpOnly/);
+    assert.match(raw, /Path=\/login/);
+    assert.ok(!raw.includes('__Host-obd_session'));
+    const mfaCookie = cookieOf(first);
+    const wrong = await post('/login/verificacao', { code: '000000' }, mfaCookie);
+    assert.equal(wrong.statusCode, 401);
+    const good = await post('/login/verificacao', { code: codeForStep(secret, stepAt(Date.now()) + 1) }, mfaCookie);
+    assert.equal(good.statusCode, 303);
+    assert.match(String(good.headers['set-cookie']), /__Host-obd_session=/);
+  });
+
+  test('esqueci a senha: mesma tela para qualquer e-mail; link abre sem alterar nada', async () => {
+    const page = await web.inject({ method: 'GET', url: '/login' });
+    assert.match(page.body, /href="\/esqueci-senha"/);
+    const form = await web.inject({ method: 'GET', url: '/esqueci-senha' });
+    const sent = await post('/esqueci-senha', { email: 'ninguem@exemplo.test', formToken: field(form.body, 'formToken') });
+    assert.match(sent.body, /Se houver uma conta/);
+    const bot = await post('/esqueci-senha', { email: 'a@exemplo.test', website: 'x', formToken: field(form.body, 'formToken') });
+    assert.match(bot.body, /Se houver uma conta/);
+    const open = await web.inject({ method: 'GET', url: '/redefinir-senha?token=token-de-teste-1234567890123' });
+    assert.match(open.body, /name="newPassword"/);
+    const dead = await post('/redefinir-senha', { token: 'token-de-teste-1234567890123', newPassword: 'uma frase longa qualquer', confirm: 'uma frase longa qualquer' });
+    assert.equal(dead.statusCode, 400);
+    assert.match(dead.body, /inválido ou já venceu/);
+  });
+
+  test('sessões e modo suporte: faixa visível, cartões pessoais ocultos e retorno', async () => {
+    const list = await web.inject({ method: 'GET', url: '/conta/sessoes', headers: { cookie: adminCookie } });
+    assert.match(list.body, /Esta sessão/);
+    const admin = await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } });
+    const target = /action="(\/admin\/usuarios\/[0-9a-f-]+\/personificar)"/.exec(admin.body)[1];
+    const started = await post(target, { _csrf: field(admin.body, '_csrf') }, adminCookie);
+    assert.equal(started.statusCode, 303);
+    const support = cookieOf(started);
+    const account = await web.inject({ method: 'GET', url: '/conta', headers: { cookie: support } });
+    assert.match(account.body, /Modo suporte/);
+    assert.ok(!account.body.includes('action="/conta/email"'));
+    assert.ok(!account.body.includes('action="/conta/excluir"'));
+    const back = await post('/conta/personificacao/sair', { _csrf: field(account.body, '_csrf') }, support);
+    assert.equal(back.headers.location, '/admin');
+    adminCookie = cookieOf(back);
+    assert.equal((await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } })).statusCode, 200);
+  });
+
   test('paginação: links preservam a outra lista e não repetem aviso', async () => {
     const { rows } = await apiCtx.pool.query("SELECT id FROM users WHERE role = 'superadmin'");
     assert.ok(rows.length);

@@ -9,6 +9,7 @@ import adminRoutes from './routes/admin.js';
 import authRoutes from './routes/auth.js';
 import deviceRoutes from './routes/device.js';
 import devicesRoutes from './routes/devices.js';
+import securityRoutes from './routes/security.js';
 
 export async function buildApp({ config, pool, logger }) {
   const app = Fastify({
@@ -82,6 +83,7 @@ export async function buildApp({ config, pool, logger }) {
   deviceRoutes(app, context);
   authRoutes(app, context);
   accountRoutes(app, context);
+  securityRoutes(app, context);
   devicesRoutes(app, context);
   adminRoutes(app, context);
 

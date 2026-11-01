@@ -1,0 +1,30 @@
+{{#> pageHeader title="Sessões ativas"}}
+  <form method="post" action="/conta/sessoes/encerrar-outras" data-confirm="Encerrar todas as outras sessões?" data-confirm-label="Encerrar">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fa-solid fa-right-from-bracket me-1" aria-hidden="true"></i>Encerrar as outras</button>
+  </form>
+{{/pageHeader}}
+{{#> dataTable}}
+  <thead class="table-dark"><tr><th>Dispositivo</th><th>IP</th><th>Início</th><th>Último acesso</th><th></th></tr></thead>
+  <tbody>
+    {{#each sessions}}
+    <tr>
+      <td data-label="Dispositivo" class="text-break">{{#if user_agent}}{{user_agent}}{{else}}Não identificado{{/if}}
+        {{#if current}}<span class="badge text-bg-success">Esta sessão</span>{{/if}}
+        {{#if support}}<span class="badge text-bg-warning">Suporte</span>{{/if}}</td>
+      <td data-label="IP" class="text-break">{{ip}}</td>
+      <td data-label="Início">{{date created_at}}</td>
+      <td data-label="Último acesso">{{date last_seen_at}}</td>
+      <td class="table-actions text-end">
+        {{#unless current}}
+        <form method="post" action="/conta/sessoes/{{id}}/encerrar" class="d-inline" data-confirm="Encerrar esta sessão?" data-confirm-label="Encerrar">
+          <input type="hidden" name="_csrf" value="{{../csrf}}">
+          <button class="btn btn-outline-danger btn-sm" type="submit">Encerrar</button>
+        </form>
+        {{/unless}}
+      </td>
+    </tr>
+    {{/each}}
+  </tbody>
+{{/dataTable}}
+<a class="btn btn-outline-secondary mt-3" href="/conta"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Voltar</a>

@@ -2,7 +2,9 @@ import { ApiError, message } from '../../shared/errors.js';
 import { pageParam, pagerFor } from '../../shared/pagination.js';
 import { requireUuid } from '../devices/routes.js';
 
-export default function adminRoutes(app, { api, requireAdmin, context }) {
+export default function adminRoutes(app, {
+  api, cookieName, cookieOptions, requireAdmin, context,
+}) {
   const adminView = async (request, reply, status = 200, extra = {}) => {
     const query = new URLSearchParams({ usersPage: pageParam(request, 'usuarios'), auditPage: pageParam(request, 'auditoria') });
     const data = await api(request, 'GET', `/internal/admin/overview?${query}`);
@@ -43,6 +45,12 @@ export default function adminRoutes(app, { api, requireAdmin, context }) {
   app.post('/admin/usuarios/:id/status', { preHandler: requireAdmin }, async (request, reply) => {
     await api(request, 'POST', `/internal/admin/users/${requireUuid(request)}/disabled`, { body: { disabled: request.body?.disabled === 'true' } });
     return reply.redirect('/admin?ok=user_updated', 303);
+  });
+
+  app.post('/admin/usuarios/:id/personificar', { preHandler: requireAdmin }, async (request, reply) => {
+    const { token } = await api(request, 'POST', `/internal/admin/users/${requireUuid(request)}/impersonate`);
+    reply.setCookie(cookieName, token, cookieOptions);
+    return reply.redirect('/painel', 303);
   });
 
   app.post('/admin/usuarios/:id/excluir', { preHandler: requireAdmin }, async (request, reply) => {

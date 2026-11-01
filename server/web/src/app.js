@@ -194,6 +194,7 @@ export async function buildApp({ config, logger }) {
     const headers = {
       'x-internal-key': config.internalKey,
       'x-client-ip': request.ip,
+      'x-client-ua': String(request.headers['user-agent'] ?? '').slice(0, 200),
     };
     const sessionToken = token ?? request.cookies[cookieName];
     if (sessionToken) headers['x-session-token'] = sessionToken;
@@ -277,7 +278,7 @@ export async function buildApp({ config, logger }) {
     if (request.method === 'POST' && !safeEqualText(request.body?._csrf, session.csrf)) {
       throw new ApiError(403, 'bad_form');
     }
-    if (session.user.mustChangePassword && !['/conta/senha', '/logout', '/conta/foto'].includes(request.routeOptions.url)) {
+    if (session.user.mustChangePassword && !['/conta/senha', '/logout', '/conta/foto', '/conta/personificacao/sair'].includes(request.routeOptions.url)) {
       return reply.redirect('/conta/senha');
     }
     return undefined;
