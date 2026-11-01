@@ -6,6 +6,15 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.3] - 2026-11-01
+
+### Adicionado
+- **Telemetria remota no app** (*Ajustes → Telemetria remota*): envia as leituras a um servidor próprio, com pareamento por código de uso único. Fica desligada até parear. VIN não é enviado, e o GPS tem opção própria, desligada por padrão. Sem sinal, os dados ficam guardados e sobem depois.
+- **Servidor de telemetria** (`server/`): painel web, API, PostgreSQL, envio de e-mail e tarefas periódicas em serviços separados, com Docker Compose.
+  - Três perfis: Super Admin, Admin (dono da conta) e Usuário de atendimento, que só visualiza.
+  - Login por usuário ou e-mail, verificação em duas etapas, sessões ativas, redefinição de senha e modo suporte.
+  - Dispositivos com dados ao vivo, histórico em gráfico e paginação.
+
 ### Adicionado
 - **Sessão guiada de escuta CAN** (`tools/can-capture/roteiro.py`): um menu leva por cada etapa no carro, na ordem ou uma de cada vez. As etapas são a conferência do cabo, as tensões dos pinos 6/14 (com o diagnóstico do tipo de rede), a montagem, o teste de recepção, as ações, o hodômetro antes e depois de uma volta e a desmontagem.
   - Cada teste de ação mostra o início e o fim, e cada etapa pede uma coisa só: você faz a ação, tecla Enter e o roteiro lê sozinho por 5 s.
