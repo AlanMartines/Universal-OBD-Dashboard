@@ -78,26 +78,29 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
       params: uuidParam,
       querystring: {
         type: 'object',
-        required: ['metric', 'hours'],
+        required: ['metric'],
         additionalProperties: false,
         properties: {
           metric: { type: 'string', pattern: '^[A-Za-z0-9_.-]{1,48}$' },
           hours: { type: 'string', pattern: '^(1|6|24|168)$' },
+          minutes: { type: 'string', pattern: '^(5|15|60|360|1440|10080)$' },
         },
       },
     },
   }, async (request) => {
     const device = await loadDevice(request);
-    const hours = Number(request.query.hours);
+    const minutes = request.query.minutes ? Number(request.query.minutes) : Number(request.query.hours) * 60;
+    if (!minutes) throw fail(400, 'invalid_request');
+    const bucketSeconds = Math.max(1, Math.ceil((minutes * 60) / 300));
     const { rows } = await pool.query(
       `SELECT date_bin(make_interval(secs => $3), ts, 'epoch'::timestamptz) AS bucket,
               avg((metrics->>$2)::double precision) AS value
          FROM telemetry_samples
-        WHERE device_id = $1 AND ts > now() - make_interval(hours => $4) AND metrics ? $2
+        WHERE device_id = $1 AND ts > now() - make_interval(mins => $4) AND metrics ? $2
         GROUP BY bucket ORDER BY bucket`,
-      [device.id, request.query.metric, Math.ceil((hours * 3600) / 300), hours],
+      [device.id, request.query.metric, bucketSeconds, minutes],
     );
-    return { points: rows.map((r) => ({ t: r.bucket, v: r.value })) };
+    return { bucketSeconds, points: rows.map((r) => ({ t: r.bucket, v: r.value })) };
   });
 
   app.post('/internal/devices/:id/revoke', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {

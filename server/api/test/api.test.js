@@ -288,6 +288,11 @@ describe('API', () => {
       const bad = await internal(app, 'GET', `/internal/devices/${dev.id}/history?metric=${encodeURIComponent("rpm' OR 1=1--")}&hours=1`, { token: alice });
       assert.equal(bad.statusCode, 400);
       const hours = await internal(app, 'GET', `/internal/devices/${dev.id}/history?metric=rpm&hours=99999`, { token: alice });
+      const short = await internal(app, 'GET', `/internal/devices/${dev.id}/history?metric=rpm&minutes=5`, { token: alice });
+      assert.equal(short.json().bucketSeconds, 1);
+      assert.ok(short.json().points.length >= 1);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}/history?metric=rpm&minutes=7`, { token: alice })).statusCode, 400);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}/history?metric=rpm`, { token: alice })).statusCode, 400);
       assert.equal(hours.statusCode, 400);
     });
   });

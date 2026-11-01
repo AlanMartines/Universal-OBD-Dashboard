@@ -53,7 +53,9 @@ export default function devicesRoutes(app, { config, api, cookieName, requireUse
   });
 
   app.get('/dispositivos/:id/historico', { preHandler: requireUser }, async (request) => {
-    const params = new URLSearchParams({ metric: String(request.query.metric ?? ''), hours: String(request.query.hours ?? '') });
+    const params = new URLSearchParams({ metric: String(request.query.metric ?? '') });
+    if (request.query.minutes !== undefined) params.set('minutes', String(request.query.minutes));
+    else params.set('hours', String(request.query.hours ?? ''));
     return api(request, 'GET', `/internal/devices/${requireUuid(request)}/history?${params}`);
   });
 

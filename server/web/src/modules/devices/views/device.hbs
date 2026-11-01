@@ -1,37 +1,46 @@
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-  <div>
-    <h1 class="h3 mb-1">{{device.name}}</h1>
-    <p class="small text-body-secondary mb-0">Conta: {{device.owner}} · App {{device.appVersion}}</p>
+<div class="device-head d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div class="me-auto min-w-0">
+    <h1 class="h4 mb-0 text-break">{{device.name}}</h1>
+    <p class="small text-body-secondary mb-0">Conta: {{device.owner}}{{#if device.appVersion}} · App {{device.appVersion}}{{/if}}</p>
   </div>
   <span id="live-status" class="badge text-bg-secondary" role="status">Sem dados</span>
+  <span id="last-update" class="small text-body-secondary"></span>
+  <a class="btn btn-outline-primary btn-sm" href="/painel-veiculo?dispositivo={{device.id}}"><i class="fa-solid fa-gauge-high me-1" aria-hidden="true"></i>Painel do veículo</a>
 </div>
 
 <div id="live-root" data-device-id="{{device.id}}">
   <div id="latest-data" hidden data-sample="{{latestJson}}"></div>
   <p id="no-data" class="text-body-secondary d-none">Ainda não chegaram dados deste dispositivo.</p>
-  <p class="small text-body-secondary">Última leitura: <span id="last-update">—</span></p>
-  <div id="metrics" class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4"></div>
 
   <div id="dtc-box" class="alert alert-warning d-none" role="alert">
-    <strong>Códigos de falha:</strong> <span id="dtc-list"></span>
+    <i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i><strong>Códigos de falha:</strong> <span id="dtc-list"></span>
   </div>
-  <p id="gps-box" class="small text-body-secondary d-none">Posição: <span id="gps-text"></span></p>
 
-  <div class="card">
-    <div class="card-body">
-      <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-        <h2 class="h5 mb-0 me-auto">Histórico</h2>
-        <label class="visually-hidden" for="chart-metric">Sinal</label>
-        <select id="chart-metric" class="form-select form-select-sm w-auto"></select>
-        <label class="visually-hidden" for="chart-hours">Período</label>
-        <select id="chart-hours" class="form-select form-select-sm w-auto">
-          <option value="1">1 hora</option>
-          <option value="6">6 horas</option>
-          <option value="24">24 horas</option>
-          <option value="168">7 dias</option>
-        </select>
+  <div class="row row-cols-2 row-cols-lg-4 g-3 mb-3" id="highlights"></div>
+
+  <section class="stat-panel mb-3" aria-labelledby="history-title">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+      <h2 class="h6 mb-0 me-auto" id="history-title">Histórico</h2>
+      <label class="visually-hidden" for="chart-metric">Sinal</label>
+      <select id="chart-metric" class="form-select form-select-sm w-auto"></select>
+      <label class="visually-hidden" for="chart-compare">Comparar com</label>
+      <select id="chart-compare" class="form-select form-select-sm w-auto"><option value="">Comparar com…</option></select>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Período" id="chart-range">
+        <button type="button" class="btn btn-outline-secondary" data-minutes="5">5 min</button>
+        <button type="button" class="btn btn-outline-secondary active" data-minutes="15">15 min</button>
+        <button type="button" class="btn btn-outline-secondary" data-minutes="60">1 h</button>
+        <button type="button" class="btn btn-outline-secondary" data-minutes="360">6 h</button>
+        <button type="button" class="btn btn-outline-secondary" data-minutes="1440">24 h</button>
+        <button type="button" class="btn btn-outline-secondary" data-minutes="10080">7 d</button>
       </div>
-      <div class="chart-box"><canvas id="history-chart" aria-label="Gráfico do sinal escolhido" role="img"></canvas></div>
     </div>
+    <div class="chart-box"><canvas id="history-chart" aria-label="Gráfico do sinal escolhido" role="img"></canvas></div>
+  </section>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3" id="groups"></div>
+
+  <div id="gps-box" class="d-none">
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="gps-toggle" aria-expanded="false"><i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i>Ver localização</button>
+    <span id="gps-text" class="small text-body-secondary ms-2" hidden></span>
   </div>
 </div>
