@@ -1,0 +1,29 @@
+<h1 class="h3 mb-4">Minha conta</h1>
+{{> formError}}
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h5">Senha</h2>
+        <p class="text-body-secondary">Trocar a senha encerra suas outras sessões.</p>
+        <a class="btn btn-outline-primary" href="/conta/senha">Trocar senha</a>
+      </div>
+    </div>
+  </div>
+  {{#unless (eq user.role "admin")}}
+  <div class="col-md-6">
+    <div class="card h-100 border-danger-subtle">
+      <div class="card-body">
+        <h2 class="h5">Excluir conta</h2>
+        <p class="text-body-secondary">Apaga sua conta, seus dispositivos e toda a telemetria. Não tem como desfazer.</p>
+        <form method="post" action="/conta/excluir">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <label class="form-label" for="password">Confirme com sua senha</label>
+          <input class="form-control mb-3" id="password" name="password" type="password" autocomplete="current-password" required>
+          <button class="btn btn-danger" type="submit">Excluir minha conta</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {{/unless}}
+</div>

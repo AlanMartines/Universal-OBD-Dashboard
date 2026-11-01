@@ -1,0 +1,29 @@
+{
+  "name": "obd-telemetry-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test --test-force-exit --test-timeout=60000 test/*.test.js"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/formbody": "^9.0.1",
+    "@fastify/helmet": "^13.2.0",
+    "@fastify/rate-limit": "^11.2.1",
+    "@fastify/static": "^10.1.8",
+    "@fastify/view": "^12.0.1",
+    "@fortawesome/fontawesome-free": "^7.3.1",
+    "bootstrap": "^5.3.8",
+    "chart.js": "^4.6.1",
+    "fastify": "^5.12.7",
+    "handlebars": "^4.7.10"
+  },
+  "overrides": {
+    "glob": "^14.0.3"
+  }
+}

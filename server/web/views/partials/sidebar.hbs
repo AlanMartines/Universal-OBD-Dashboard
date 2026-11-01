@@ -1,0 +1,43 @@
+<nav class="app-sidebar" id="app-sidebar" aria-label="Menu principal">
+  <div class="sidebar-brand">
+    <a href="/painel" class="sidebar-link-plain" title="Telemetria OBD">
+      <i class="fa-solid fa-gauge-high fa-fw" aria-hidden="true"></i><span class="sidebar-label">Telemetria OBD</span>
+    </a>
+    <button class="btn btn-link sidebar-close d-lg-none" type="button" data-sidebar-close aria-label="Fechar menu">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <div class="sidebar-user" title="{{user.username}}">
+    <i class="fa-solid fa-circle-user fa-fw" aria-hidden="true"></i>
+    <div class="sidebar-label">
+      <div class="sidebar-user-name text-truncate">{{user.username}}</div>
+      <div class="small text-body-secondary">{{#if (eq user.role "admin")}}Superadmin{{else}}Usuário{{/if}}</div>
+    </div>
+  </div>
+
+  <div class="sidebar-scroll">
+    <p class="sidebar-group sidebar-label">Monitoramento</p>
+    <ul class="sidebar-nav">
+      <li><a href="/painel" title="Dispositivos" class="{{#if (eq activePage "painel")}}active{{/if}}" {{#if (eq activePage "painel")}}aria-current="page"{{/if}}><i class="fa-solid fa-mobile-screen fa-fw" aria-hidden="true"></i><span class="sidebar-label">Dispositivos</span></a></li>
+    </ul>
+
+    {{#if (eq user.role "admin")}}
+    <p class="sidebar-group sidebar-label">Administração</p>
+    <ul class="sidebar-nav">
+      <li><a href="/admin" title="Configurações" class="{{#if (eq activePage "admin")}}active{{/if}}" {{#if (eq activePage "admin")}}aria-current="page"{{/if}}><i class="fa-solid fa-gear fa-fw" aria-hidden="true"></i><span class="sidebar-label">Configurações</span></a></li>
+    </ul>
+    {{/if}}
+
+    <p class="sidebar-group sidebar-label">Conta</p>
+    <ul class="sidebar-nav">
+      <li><a href="/conta" title="Minha conta" class="{{#if (eq activePage "conta")}}active{{/if}}" {{#if (eq activePage "conta")}}aria-current="page"{{/if}}><i class="fa-solid fa-user fa-fw" aria-hidden="true"></i><span class="sidebar-label">Minha conta</span></a></li>
+    </ul>
+  </div>
+
+  <form method="post" action="/logout" class="sidebar-footer">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="submit" title="Sair"><i class="fa-solid fa-right-from-bracket fa-fw" aria-hidden="true"></i><span class="sidebar-label">Sair</span></button>
+  </form>
+</nav>
+<div class="sidebar-backdrop" data-sidebar-close></div>

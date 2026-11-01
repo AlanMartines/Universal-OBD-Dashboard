@@ -1,0 +1,92 @@
+<h1 class="h3 mb-4">Administração</h1>
+{{> formError}}
+{{#if created}}
+<div class="alert alert-success" role="alert">
+  Usuário <strong>{{created.username}}</strong> criado. Senha temporária, mostrada só agora:
+  <code class="user-select-all text-break">{{created.password}}</code>
+</div>
+{{/if}}
+
+<div class="row g-4 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h5">Cadastro público</h2>
+        <p>Situação atual: {{#if signupOpen}}<span class="badge text-bg-success">Aberto</span>{{else}}<span class="badge text-bg-secondary">Fechado</span>{{/if}}</p>
+        <form method="post" action="/admin/cadastro">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <input type="hidden" name="open" value="{{#if signupOpen}}false{{else}}true{{/if}}">
+          <button class="btn btn-outline-primary" type="submit">{{#if signupOpen}}Fechar cadastro{{else}}Abrir cadastro{{/if}}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h5">Novo usuário</h2>
+        <form method="post" action="/admin/usuarios" class="row g-2">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <div class="col-sm-6">
+            <label class="visually-hidden" for="new-username">Usuário</label>
+            <input class="form-control" id="new-username" name="username" placeholder="Usuário" autocomplete="off" maxlength="32" required>
+          </div>
+          <div class="col-sm-3">
+            <label class="visually-hidden" for="new-role">Papel</label>
+            <select class="form-select" id="new-role" name="role">
+              <option value="user">Usuário</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="col-sm-3"><button class="btn btn-primary w-100" type="submit">Criar</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2 class="h5">Usuários</h2>
+<div class="table-responsive mb-4">
+  <table class="table align-middle table-stack">
+    <thead><tr><th>Usuário</th><th>Papel</th><th>Situação</th><th>Dispositivos</th><th>Criado em</th><th></th></tr></thead>
+    <tbody>
+      {{#each users}}
+      <tr>
+        <td data-label="Usuário" class="text-break">{{username}}</td>
+        <td data-label="Papel">{{role}}</td>
+        <td data-label="Situação">
+          {{#if disabled}}<span class="badge text-bg-secondary">Desativado</span>{{else}}<span class="badge text-bg-success">Ativo</span>{{/if}}
+          {{#if must_change_password}}<span class="badge text-bg-warning">Trocar senha</span>{{/if}}
+        </td>
+        <td data-label="Dispositivos">{{devices}}</td>
+        <td data-label="Criado em">{{date created_at}}</td>
+        <td class="table-actions text-end">
+          {{#unless (eq id ../user.id)}}
+          <form method="post" action="/admin/usuarios/{{id}}/status" class="d-inline">
+            <input type="hidden" name="_csrf" value="{{../csrf}}">
+            <input type="hidden" name="disabled" value="{{#if disabled}}false{{else}}true{{/if}}">
+            <button class="btn btn-outline-warning btn-sm" type="submit">{{#if disabled}}Ativar{{else}}Desativar{{/if}}</button>
+          </form>
+          <form method="post" action="/admin/usuarios/{{id}}/excluir" class="d-inline">
+            <input type="hidden" name="_csrf" value="{{../csrf}}">
+            <button class="btn btn-outline-danger btn-sm" type="submit">Excluir</button>
+          </form>
+          {{/unless}}
+        </td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="h5">Auditoria recente</h2>
+<div class="table-responsive">
+  <table class="table table-sm small table-stack">
+    <thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Alvo</th><th>IP</th></tr></thead>
+    <tbody>
+      {{#each audit}}
+      <tr><td data-label="Quando">{{date at}}</td><td data-label="Quem" class="text-break">{{actor}}</td><td data-label="Ação">{{action}}</td><td data-label="Alvo" class="text-break">{{target}}</td><td data-label="IP" class="text-break">{{ip}}</td></tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

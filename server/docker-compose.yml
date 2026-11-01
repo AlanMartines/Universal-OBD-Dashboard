@@ -1,0 +1,139 @@
+name: obd-telemetry
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+services:
+  db:
+    <<: *hardening
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-obd}
+      POSTGRES_USER: ${DB_OWNER:-obd_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      APP_DB_USER: ${APP_DB_USER:-obd_app}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?defina APP_DB_PASSWORD no .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    # Sem "ports": o banco só existe na rede "backend", onde apenas a API entra.
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_OWNER:-obd_owner} -d ${DB_NAME:-obd}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+
+  api:
+    <<: *hardening
+    build: ./api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${APP_DB_USER:-obd_app}:${APP_DB_PASSWORD}@db:5432/${DB_NAME:-obd}
+      API_HOST: ${API_HOST:-0.0.0.0}
+      API_PORT: ${API_PORT:-28472}
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?defina INTERNAL_API_KEY no .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SIGNUP_DEFAULT: ${SIGNUP_DEFAULT:-closed}
+      RETENTION_DAYS: ${RETENTION_DAYS:-90}
+      MAX_DEVICES_PER_USER: ${MAX_DEVICES_PER_USER:-10}
+      SESSION_IDLE_HOURS: ${SESSION_IDLE_HOURS:-12}
+      SESSION_MAX_DAYS: ${SESSION_MAX_DAYS:-7}
+      RATE_LIMIT_FACTOR: ${RATE_LIMIT_FACTOR:-1}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    networks: [backend, app]
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop: [ALL]
+    pids_limit: 128
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:${API_PORT:-28472}/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  web:
+    <<: *hardening
+    build: ./web
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_URL: http://api:${API_PORT:-28472}
+      APP_URL: ${APP_URL:?defina APP_URL no .env}
+      WEB_HOST: ${WEB_HOST:-0.0.0.0}
+      WEB_PORT: ${WEB_PORT:-28471}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      FORM_SECRET: ${FORM_SECRET:?defina FORM_SECRET no .env}
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      SESSION_MAX_DAYS: ${SESSION_MAX_DAYS:-7}
+      RATE_LIMIT_FACTOR: ${RATE_LIMIT_FACTOR:-1}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    # Única porta publicada, em HTTP: o HTTPS fica no proxy reverso à frente.
+    # IP e porta vêm do .env (HTTP_BIND e HTTP_PORT).
+    ports:
+      - "${HTTP_BIND:-0.0.0.0}:${HTTP_PORT:-28470}:${WEB_PORT:-28471}"
+    # A web não entra na rede "backend": não alcança o banco.
+    networks: [edge, app]
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop: [ALL]
+    pids_limit: 128
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:${WEB_PORT:-28471}/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # Tarefas periódicas isoladas: se parar, API e painel seguem funcionando.
+  worker:
+    <<: *hardening
+    build: ./api
+    command: ["node", "src/worker.js"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${APP_DB_USER:-obd_app}:${APP_DB_PASSWORD}@db:5432/${DB_NAME:-obd}
+      RETENTION_DAYS: ${RETENTION_DAYS:-90}
+      PURGE_INTERVAL_MINUTES: ${PURGE_INTERVAL_MINUTES:-60}
+    networks: [backend]
+    read_only: true
+    tmpfs:
+      - /tmp:size=4m
+    cap_drop: [ALL]
+    pids_limit: 64
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "node", "-e", "const f=require('fs');const t=Number(f.readFileSync('/tmp/worker-alive','utf8'));process.exit(Date.now()-t<3*${PURGE_INTERVAL_MINUTES:-60}*60000?0:1)"]
+      interval: 1m
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  # Só a web fica na rede com saída; API e banco ficam em redes internas.
+  edge:
+  app:
+    internal: true
+  backend:
+    internal: true
+
+volumes:
+  db-data:
