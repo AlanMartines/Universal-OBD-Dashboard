@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cookie from '@fastify/cookie';
@@ -82,7 +84,7 @@ export async function buildApp({ config, logger }) {
         defaultSrc: ["'none'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:'],
+        imgSrc: ["'self'", 'data:', 'blob:'],
         fontSrc: ["'self'"],
         connectSrc: ["'self'"],
         formAction: ["'self'"],
@@ -106,6 +108,8 @@ export async function buildApp({ config, logger }) {
     global: true,
     max: 300 * config.rateLimitFactor,
     timeWindow: '1 minute',
+    // O mapa pede dezenas de trechos por tela e já exige sessão válida.
+    allowList: (request) => request.url.startsWith('/mapa/') || request.url.startsWith('/vendor/'),
   });
 
   const pageLimit = (max, timeWindow) => ({ config: { rateLimit: { max: max * config.rateLimitFactor, timeWindow } } });
@@ -136,6 +140,43 @@ export async function buildApp({ config, logger }) {
     decorateReply: false,
     maxAge: '7d',
   });
+  for (const [prefix, dir, allowed] of [
+    ['/vendor/maplibre/', 'node_modules/maplibre-gl/dist', ['/maplibre-gl.mjs', '/maplibre-gl-worker.mjs', '/maplibre-gl.css']],
+    ['/vendor/pmtiles/', 'node_modules/pmtiles/dist', ['/pmtiles.js']],
+    ['/vendor/basemaps/', 'node_modules/@protomaps/basemaps/dist', ['/basemaps.js']],
+  ]) {
+    await app.register(fastifyStatic, {
+      root: join(ROOT, dir), prefix, decorateReply: false, maxAge: '7d', allowedPath: (path) => allowed.includes(path),
+    });
+  }
+
+  // Mapa próprio: só para quem tem sessão válida. A validação fica em cache curto,
+  // porque cada tela pede dezenas de trechos do arquivo.
+  const mapFile = join(config.mapDir, 'brasil.pmtiles');
+  const hasMapData = () => existsSync(mapFile);
+  const validSessions = new Map();
+  if (existsSync(config.mapDir)) {
+    await app.register(async (scope) => {
+      scope.addHook('onRequest', async (request, reply) => {
+        const token = request.cookies[cookieName];
+        if (!token) return reply.code(401).send({ error: 'unauthenticated' });
+        const key = createHash('sha256').update(token).digest('base64');
+        if ((validSessions.get(key) ?? 0) > Date.now()) return undefined;
+        try {
+          await api(request, 'GET', '/internal/auth/session');
+        } catch {
+          return reply.code(401).send({ error: 'unauthenticated' });
+        }
+        if (validSessions.size > 1000) validSessions.clear();
+        validSessions.set(key, Date.now() + 60000);
+        return undefined;
+      });
+      await scope.register(fastifyStatic, {
+        root: config.mapDir, prefix: '/mapa/', decorateReply: false, maxAge: '7d', acceptRanges: true, dotfiles: 'deny',
+      });
+    });
+  }
+
   for (const name of MODULES_WITH_ASSETS) {
     await app.register(fastifyStatic, {
       root: join(SRC, 'modules', name, 'public'),
@@ -185,7 +226,7 @@ export async function buildApp({ config, logger }) {
   app.addHook('onSend', async (request, reply) => {
     reply.header('X-Robots-Tag', 'noindex, nofollow');
     reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
-    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/') && !request.url.startsWith('/modules/') && !request.url.startsWith('/conta/foto')) {
+    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/') && !request.url.startsWith('/modules/') && !request.url.startsWith('/mapa/') && !request.url.startsWith('/conta/foto')) {
       reply.header('Cache-Control', 'no-store');
     }
   });
@@ -307,7 +348,7 @@ export async function buildApp({ config, logger }) {
   app.get('/', async (request, reply) => reply.redirect(request.cookies[cookieName] ? '/painel' : '/login'));
 
   const shared = {
-    config, api, apiBinary, cookieName, cookieOptions, clearSession, renderError, pageLimit, requireUser, requireAdmin, context,
+    config, api, apiBinary, hasMapData, cookieName, cookieOptions, clearSession, renderError, pageLimit, requireUser, requireAdmin, context,
   };
   gatewayRoutes(app, shared);
   loginRoutes(app, shared);

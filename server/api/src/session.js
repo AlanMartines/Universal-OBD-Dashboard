@@ -105,6 +105,10 @@ export function createAccess({ config, pool }) {
     return rows[0];
   }
 
+  // O percurso revela onde a pessoa mora e circula. Super Admin só vê o de outra conta no modo
+  // suporte, em que a sessão é da própria conta e fica na auditoria.
+  const locationAllowed = (session, device) => session.user.role !== 'superadmin' || device.user_id === session.user.id;
+
   const publicDevice = (d) => ({
     id: d.id,
     name: d.name,
@@ -117,5 +121,5 @@ export function createAccess({ config, pool }) {
     revokedAt: d.revoked_at,
   });
 
-  return { requireSession, requireReady, requireOwnSession, requireOwnReady, requireManager, requireSuperadmin, createSession, signupOpen, loadDevice, publicDevice };
+  return { requireSession, requireReady, requireOwnSession, requireOwnReady, requireManager, requireSuperadmin, createSession, signupOpen, loadDevice, publicDevice, locationAllowed };
 }

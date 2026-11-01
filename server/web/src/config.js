@@ -18,6 +18,7 @@ export function loadConfig(env = process.env) {
   return {
     port: Number(env.WEB_PORT || 28471),
     host: env.WEB_HOST || '0.0.0.0',
+    mapDir: env.MAP_DATA_DIR || '/app/maps',
     apiUrl: env.API_URL || 'http://api:28472',
     publicOrigin,
     cookieSecure: !insecureAllowed,

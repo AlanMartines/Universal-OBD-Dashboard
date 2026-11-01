@@ -58,5 +58,7 @@
   {{#if user}}<script src="/static/js/confirm.js"></script>{{/if}}
   {{#each pageScripts}}<script src="{{this}}"></script>
   {{/each}}
+  {{#each pageModules}}<script type="module" src="{{this}}"></script>
+  {{/each}}
 </body>
 </html>

@@ -4,7 +4,9 @@ import { pageNumberSchema, pageSizeSchema, paged } from '../pagination.js';
 import { deviceName, MAX_LIVE_PER_USER, PAIRING_MINUTES, uuidParam } from '../schemas.js';
 import { formatPairingCode, generatePairingCode, sha256 } from '../security.js';
 
-export default function devicesRoutes(app, { config, pool, live, limit, requireReady, requireManager, loadDevice, publicDevice }) {
+const ROUTE_MAX_POINTS = 2000;
+
+export default function devicesRoutes(app, { config, pool, live, limit, requireReady, requireManager, loadDevice, publicDevice, locationAllowed }) {
   app.get('/internal/devices', {
     preValidation: requireReady,
     schema: {
@@ -61,13 +63,15 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
       [device.id],
     );
     const s = rows[0];
+    const allowed = locationAllowed(request.session, device);
     return {
+      locationAllowed: allowed,
       device: publicDevice(device),
       latest: s ? {
         ts: s.ts,
         metrics: s.metrics,
         dtcs: s.dtcs,
-        gps: s.latitude === null ? null : { lat: s.latitude, lon: s.longitude, speedKmh: s.gps_speed },
+        gps: !allowed || s.latitude === null ? null : { lat: s.latitude, lon: s.longitude, speedKmh: s.gps_speed },
       } : null,
     };
   });
@@ -101,6 +105,52 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
       [device.id, request.query.metric, bucketSeconds, minutes],
     );
     return { bucketSeconds, points: rows.map((r) => ({ t: r.bucket, v: r.value })) };
+  });
+
+  app.get('/internal/devices/:id/route', {
+    preValidation: requireReady,
+    schema: {
+      params: uuidParam,
+      querystring: {
+        type: 'object',
+        required: ['minutes'],
+        additionalProperties: false,
+        properties: {
+          minutes: { type: 'string', pattern: '^(60|1440|10080)$' },
+          tripId: { type: 'string', pattern: '^[0-9]{1,15}$' },
+        },
+      },
+    },
+  }, async (request) => {
+    const device = await loadDevice(request);
+    if (!locationAllowed(request.session, device)) throw fail(403, 'location_restricted');
+    const minutes = Number(request.query.minutes);
+    const tripId = request.query.tripId ?? null;
+    const { rows: trips } = await pool.query(
+      `SELECT trip_id AS id, min(ts) AS start FROM telemetry_samples
+        WHERE device_id = $1 AND latitude IS NOT NULL AND trip_id IS NOT NULL AND ts > now() - make_interval(mins => $2)
+        GROUP BY trip_id ORDER BY start DESC LIMIT 100`,
+      [device.id, minutes],
+    );
+    // Sem viagem escolhida vale o período; com viagem, ela inteira dentro da retenção.
+    const scope = `device_id = $1 AND latitude IS NOT NULL AND longitude IS NOT NULL
+      AND ($2::bigint IS NULL OR trip_id = $2::bigint) AND ($2::bigint IS NOT NULL OR ts > now() - make_interval(mins => $3))`;
+    const { rows: [{ total }] } = await pool.query(`SELECT count(*)::int AS total FROM telemetry_samples WHERE ${scope}`, [device.id, tripId, minutes]);
+    const step = Math.max(1, Math.ceil(total / ROUTE_MAX_POINTS));
+    const { rows } = await pool.query(
+      `SELECT ts, latitude, longitude, speed FROM (
+         SELECT ts, latitude, longitude, COALESCE((metrics->>'speed')::double precision, gps_speed) AS speed,
+                row_number() OVER (ORDER BY ts) AS n, count(*) OVER () AS c
+           FROM telemetry_samples WHERE ${scope}
+       ) t WHERE n % $4 = 1 OR $4 = 1 OR n = c ORDER BY ts`,
+      [device.id, tripId, minutes, step],
+    );
+    return {
+      total,
+      gapSeconds: Math.max(60, step * 10),
+      trips,
+      points: rows.map((r) => ({ t: r.ts, lat: r.latitude, lon: r.longitude, speed: r.speed })),
+    };
   });
 
   app.post('/internal/devices/:id/revoke', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
@@ -143,7 +193,8 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     });
     // Envia os cabeçalhos já: sem isso, a conexão só abre quando chega o primeiro dado.
     reply.raw.write(': conectado\n\n');
-    const send = (sample) => reply.raw.write(`event: sample\ndata: ${JSON.stringify(sample)}\n\n`);
+    const allowed = locationAllowed(request.session, device);
+    const send = (sample) => reply.raw.write(`event: sample\ndata: ${JSON.stringify(allowed ? sample : { ...sample, gps: null })}\n\n`);
     live.on(device.id, send);
     const heartbeat = setInterval(() => reply.raw.write(': ping\n\n'), 25000);
     // Logout, revogação de sessão ou conta desativada encerram a transmissão aberta.

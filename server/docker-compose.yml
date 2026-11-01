@@ -89,6 +89,8 @@ services:
     # IP e porta vêm do .env (HTTP_BIND e HTTP_PORT).
     ports:
       - "${HTTP_BIND:-0.0.0.0}:${HTTP_PORT:-28470}:${WEB_PORT:-28471}"
+    volumes:
+      - ${MAP_DATA_DIR:-./data/maps}:/app/maps:ro
     # A web não entra na rede "backend": não alcança o banco.
     networks: [edge, app]
     read_only: true

@@ -37,6 +37,28 @@
     <div class="chart-box"><canvas id="history-chart" aria-label="Gráfico do sinal escolhido" role="img"></canvas></div>
   </section>
 
+  {{#if locationAllowed}}
+  <section class="stat-panel mb-3" id="route-card" data-device-id="{{device.id}}" data-has-map="{{hasMap}}" aria-labelledby="route-title">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+      <h2 class="h6 mb-0 me-auto" id="route-title">Percurso <span class="small fw-normal text-body-secondary" id="route-summary"></span></h2>
+      <label class="visually-hidden" for="route-trip">Viagem</label>
+      <select id="route-trip" class="form-select form-select-sm w-auto"><option value="">Todas as viagens do período</option></select>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Período do percurso" id="route-range">
+        <button type="button" class="btn btn-outline-secondary" data-minutes="60">1 h</button>
+        <button type="button" class="btn btn-outline-secondary active" data-minutes="1440">24 h</button>
+        <button type="button" class="btn btn-outline-secondary" data-minutes="10080">7 d</button>
+      </div>
+    </div>
+    <p class="small text-body-secondary" id="route-notice" hidden></p>
+    <div class="route-map" id="route-map" hidden></div>
+    <p class="route-legend small text-body-secondary mt-2 mb-0">
+      <span class="route-dot route-slow"></span>até 30 km/h <span class="route-dot route-mid"></span>até 60 <span class="route-dot route-fast"></span>até 90 <span class="route-dot route-top"></span>acima de 90
+    </p>
+  </section>
+  {{else}}
+  <p class="small text-body-secondary"><i class="fa-solid fa-lock me-1" aria-hidden="true"></i>A localização de outras contas só fica disponível no modo suporte, registrado na auditoria.</p>
+  {{/if}}
+
   <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3" id="groups"></div>
 
   <div id="gps-box" class="d-none">

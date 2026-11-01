@@ -9,7 +9,9 @@ export function requireUuid(request) {
   return request.params.id;
 }
 
-export default function devicesRoutes(app, { config, api, cookieName, requireUser, context }) {
+export default function devicesRoutes(app, {
+  config, api, cookieName, requireUser, context, hasMapData,
+}) {
   const DEVICE_ASSETS = { pageCss: ['/modules/devices/devices.css'] };
 
   const panelView = async (request, reply, status = 200, error = null) => {
@@ -48,8 +50,18 @@ export default function devicesRoutes(app, { config, api, cookieName, requireUse
       device: data.device,
       latestJson: JSON.stringify(data.latest),
       ...DEVICE_ASSETS,
-      pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/modules/devices/live.js'],
+      pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/modules/devices/live.js', ...(data.locationAllowed ? ['/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js'] : [])],
+      pageModules: data.locationAllowed ? ['/modules/devices/route.js'] : [],
+      pageCss: ['/modules/devices/devices.css', ...(data.locationAllowed ? ['/vendor/maplibre/maplibre-gl.css'] : [])],
+      locationAllowed: data.locationAllowed,
+      hasMap: hasMapData(),
     }));
+  });
+
+  app.get('/dispositivos/:id/percurso', { preHandler: requireUser }, async (request) => {
+    const params = new URLSearchParams({ minutes: String(request.query.minutes ?? '') });
+    if (request.query.viagem) params.set('tripId', String(request.query.viagem));
+    return api(request, 'GET', `/internal/devices/${requireUuid(request)}/route?${params}`);
   });
 
   app.get('/dispositivos/:id/historico', { preHandler: requireUser }, async (request) => {

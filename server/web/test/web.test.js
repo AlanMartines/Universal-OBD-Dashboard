@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -94,7 +95,7 @@ describe('arquivos', () => {
 });
 
 describe('fluxo pelo navegador', () => {
-  let apiCtx; let apiUrl; let web;
+  let apiCtx; let apiUrl; let web; let mapDir;
 
   const browser = (cookie) => ({ ...(cookie ? { cookie } : {}), origin: ORIGIN, 'sec-fetch-site': 'same-origin' });
   const cookieOf = (res) => res.headers['set-cookie']?.split(';')[0];
@@ -113,10 +114,12 @@ describe('fluxo pelo navegador', () => {
 
   before(async () => {
     apiCtx = await startApi();
+    mapDir = mkdtempSync(join(tmpdir(), 'obd-mapa-'));
+    writeFileSync(join(mapDir, 'brasil.pmtiles'), 'ABCDEFGH');
     apiUrl = await apiCtx.app.listen({ port: 0, host: '127.0.0.1' });
     web = await buildApp({
       logger: false,
-      config: loadConfig({ APP_URL: ORIGIN, INTERNAL_API_KEY: KEY, FORM_SECRET: SECRET, API_URL: apiUrl, RATE_LIMIT_FACTOR: '1000' }),
+      config: loadConfig({ APP_URL: ORIGIN, INTERNAL_API_KEY: KEY, FORM_SECRET: SECRET, API_URL: apiUrl, RATE_LIMIT_FACTOR: '1000', MAP_DATA_DIR: mapDir }),
     });
   });
   after(async () => {
@@ -259,6 +262,19 @@ describe('fluxo pelo navegador', () => {
     assert.match(panel.body, /id="add-device-modal"/);
     assert.ok(!panel.body.includes(`<a href="/dispositivos/${id}">`));
     assert.match(panel.body, new RegExp(`btn btn-primary btn-sm" href="/dispositivos/${id}"`));
+  });
+
+  test('mapa próprio: arquivo só com sessão, com leitura por trechos e sem sair do servidor', async () => {
+    const page = await web.inject({ method: 'GET', url: '/mapa/brasil.pmtiles' });
+    assert.equal(page.statusCode, 401);
+    const partial = await web.inject({ method: 'GET', url: '/mapa/brasil.pmtiles', headers: { cookie: adminCookie, range: 'bytes=0-3' } });
+    assert.equal(partial.statusCode, 206);
+    assert.equal(partial.body, 'ABCD');
+    assert.equal((await web.inject({ method: 'GET', url: '/mapa/brasil.pmtiles', headers: { cookie: '__Host-obd_session=invalida-invalida-invalida' } })).statusCode, 401);
+    assert.notEqual((await web.inject({ method: 'GET', url: '/mapa/../package.json', headers: { cookie: adminCookie } })).statusCode, 200);
+    for (const url of ['/vendor/maplibre/maplibre-gl.mjs', '/vendor/maplibre/maplibre-gl-worker.mjs', '/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js']) {
+      assert.equal((await web.inject({ method: 'GET', url })).statusCode, 200, url);
+    }
   });
 
   test('corpo inválido na rota do aparelho responde JSON, sem HTML', async () => {

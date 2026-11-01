@@ -45,6 +45,17 @@ Aponte o domínio de `APP_URL` para `http://IP_DO_SERVIDOR:HTTP_PORT` e configur
 
 Com `HTTP_BIND=0.0.0.0`, libere `HTTP_PORT` no firewall só para o proxy. O Docker publica portas passando por cima de regras comuns do `ufw`, então confira a cadeia `DOCKER-USER`. Se a porta ficar aberta, é possível falsificar o IP de origem e escapar dos limites por IP. Se o proxy estiver em um IP público, informe esse IP em `TRUST_PROXY`.
 
+## Mapa do percurso
+
+O percurso usa um mapa do próprio servidor: as posições não saem para nenhum serviço externo. Para instalar, rode uma vez, dentro de `server/`:
+
+```bash
+sh scripts/baixar-mapa.sh
+docker compose up -d web
+```
+
+O script precisa de Docker e de alguns GB livres, e o tempo depende da internet. Sem o arquivo, o traçado aparece sem as ruas. O Super Admin só vê a localização de outras contas no modo suporte, que fica registrado na auditoria. Dados do mapa: © OpenStreetMap, por meio do Protomaps.
+
 ## Conta
 
 O login aceita usuário ou e-mail. Em **Meus Dados**, a pessoa altera nome, foto, e-mail e senha.

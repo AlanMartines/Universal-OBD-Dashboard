@@ -33,6 +33,27 @@
   }
 }
 
+/* ---------- Percurso ---------- */
+.route-map {
+  width: 100%;
+  height: clamp(280px, 50vh, 520px);
+  overflow: hidden;
+  border-radius: var(--app-radius);
+}
+
+.route-dot {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin: 0 0.25rem 0 0.6rem;
+  border-radius: 50%;
+}
+
+.route-slow { background: #198754; }
+.route-mid { background: #0d6efd; }
+.route-fast { background: #fd7e14; }
+.route-top { background: #dc3545; }
+
 /* ---------- Tela do dispositivo ---------- */
 .min-w-0 {
   min-width: 0;

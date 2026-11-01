@@ -631,6 +631,64 @@ describe('API', () => {
     });
   });
 
+  describe('percurso', () => {
+    let dono; let dev;
+    const route = (token, q = 'minutes=1440', id = dev.id) => internal(app, 'GET', `/internal/devices/${id}/route?${q}`, { token });
+
+    before(async () => {
+      dono = await userToken(app, admin, 'donorota');
+      dev = await pairDevice(app, dono, 'dddddddd-1111-4111-8111-dddddddddddd');
+      const now = Date.now();
+      const samples = [];
+      for (let i = 1; i <= 30; i += 1) samples.push(sample(i, { ts: now - (40 - i) * 1000, tripId: i <= 20 ? 1 : 2, metrics: { speed: i }, gps: { lat: -10 - i / 1000, lon: -20 - i / 1000 } }));
+      samples.push(sample(31, { ts: now - 5000, tripId: 2, metrics: { speed: 9 } }));
+      await send(app, dev.deviceToken, samples);
+    });
+
+    test('dono vê o traçado em ordem, por período e por viagem', async () => {
+      const all = (await route(dono)).json();
+      assert.equal(all.total, 30);
+      assert.equal(all.points[0].lat, -10.001);
+      assert.equal(all.trips.length, 2);
+      assert.equal((await route(dono, 'minutes=1440&tripId=1')).json().total, 20);
+    });
+
+    test('super admin não vê localização de outra conta, em nenhum caminho', async () => {
+      const superTok = await login(app, ADMIN.username, 'outra frase longa do administrador');
+      const res = await route(superTok);
+      assert.equal(res.statusCode, 403);
+      assert.deepEqual(res.json(), { error: 'location_restricted' });
+      await send(app, dev.deviceToken, [sample(40, { gps: { lat: -11, lon: -21 } })]);
+      const detail = (await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: superTok })).json();
+      assert.equal(detail.locationAllowed, false);
+      assert.equal(detail.latest.gps, null);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: dono })).json().latest.gps.lat, -11);
+    });
+
+    test('outra conta não acessa e parâmetros estranhos são recusados', async () => {
+      const outro = await userToken(app, admin, 'outrorota');
+      assert.equal((await route(outro)).statusCode, 404);
+      assert.equal((await route(dono, 'minutes=7')).statusCode, 400);
+      assert.equal((await route(dono, "minutes=60&tripId=1'%20OR%201=1")).statusCode, 400);
+    });
+
+    test('percurso longo é reduzido sem perder o último ponto', async () => {
+      const big = await userToken(app, admin, 'grande');
+      const d = await pairDevice(app, big, 'eeeeeeee-1111-4111-8111-eeeeeeeeeeee');
+      const { rows } = await pool.query(`SELECT 1`);
+      assert.equal(rows.length, 1);
+      await pool.query(
+        `INSERT INTO telemetry_samples (device_id, seq, ts, metrics, latitude, longitude)
+         SELECT $1, g, now() - make_interval(secs => 5000 - g), '{}'::jsonb, -10 - g / 100000.0, -20 FROM generate_series(1, 4500) g`,
+        [d.id],
+      );
+      const r = (await route(big, 'minutes=1440', d.id)).json();
+      assert.equal(r.total, 4500);
+      assert.ok(r.points.length <= 2001);
+      assert.ok(Math.abs(r.points.at(-1).lat - (-10 - 4500 / 100000)) < 1e-9);
+    });
+  });
+
   describe('paginação', () => {
     test('divide, informa o total, ajusta página além da última e recusa valor estranho', async () => {
       const dono = await userToken(app, admin, 'paginas');
