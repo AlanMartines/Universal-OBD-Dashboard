@@ -22,7 +22,8 @@
         <td data-label="Último envio">{{date lastSeenAt}}</td>
         <td data-label="ID da instalação" class="small text-body-secondary font-monospace text-break">{{installationId}}</td>
         <td class="table-actions text-end">
-          {{#if pairedAt}}<a class="btn btn-primary btn-sm" href="/dispositivos/{{id}}" title="Visualizar" aria-label="Visualizar {{name}}"><i class="fa-solid fa-eye" aria-hidden="true"></i></a>{{/if}}
+          {{#if pairedAt}}<a class="btn btn-primary btn-sm" href="/dispositivos/{{id}}" title="Visualizar" aria-label="Visualizar {{name}}"><i class="fa-solid fa-eye" aria-hidden="true"></i></a>
+          <a class="btn btn-outline-primary btn-sm" href="/painel-veiculo?dispositivo={{id}}" title="Painel do veículo" aria-label="Painel do veículo de {{name}}"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></a>{{/if}}
           {{#if (canManage ../user)}}
           {{#unless revokedAt}}
           <form method="post" action="/dispositivos/{{id}}/revogar" class="d-inline" data-confirm="Revogar {{name}}? O aparelho deixa de enviar dados." data-confirm-label="Revogar">

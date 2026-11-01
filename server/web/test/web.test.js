@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -68,6 +68,14 @@ describe('arquivos', () => {
     }
   });
 
+  test('painel do veículo usa exatamente os mesmos mostradores do APK', () => {
+    const app = join(HERE, '../../../app/src/main/assets/web');
+    if (!existsSync(app)) return;
+    for (const name of ['dash.js', 'dash.css', 'fonts/ChakraPetch-700.woff2', 'fonts/BarlowSemiCondensed-400.woff2']) {
+      assert.ok(readFileSync(join(HERE, '../src/modules/vehicle/public', name)).equals(readFileSync(join(app, name))), name);
+    }
+  });
+
   test('cada módulo publica o próprio JS e CSS', async () => {
     assert.ok(all.some((f) => f.endsWith('modules/devices/public/live.js')));
     assert.ok(all.some((f) => f.endsWith('modules/account/public/account.css')));
@@ -75,7 +83,7 @@ describe('arquivos', () => {
   });
 
   test('sem CDN, script ou estilo embutido', () => {
-    for (const file of [...views, ...all.filter((f) => f.includes('/public/') && /\.(css|js)$/.test(f))]) {
+    for (const file of [...views, ...all.filter((f) => f.includes('/public/') && /\.(css|js)$/.test(f) && !f.includes('/modules/vehicle/public/dash.'))]) {
       const raw = readFileSync(file, 'utf8');
       assert.ok(!/(src|href)="https?:/.test(raw), file);
       assert.ok(!/ style="/.test(raw), file);
@@ -492,6 +500,18 @@ describe('fluxo pelo navegador', () => {
     assert.equal(back.headers.location, '/admin');
     adminCookie = cookieOf(back);
     assert.equal((await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } })).statusCode, 200);
+  });
+
+  test('painel do veículo: sem dispositivo avisa; só abre o que a conta pode ver', async () => {
+    const empty = await web.inject({ method: 'GET', url: '/painel-veiculo?dispositivo=11111111-1111-4111-8111-111111111111', headers: { cookie: adminCookie } });
+    assert.equal(empty.statusCode, 404);
+    const page = await web.inject({ method: 'GET', url: '/painel-veiculo', headers: { cookie: adminCookie } });
+    assert.equal(page.statusCode, 200);
+    assert.match(page.body, /data-device-id="[0-9a-f-]{36}"/);
+    assert.match(page.body, /src="\/modules\/vehicle\/dash\.js"/);
+    assert.match(page.body, /aria-current="page"[^>]*>|class="active"/);
+    assert.equal((await web.inject({ method: 'GET', url: '/modules/vehicle/fonts/ChakraPetch-700.woff2' })).statusCode, 200);
+    assert.equal((await web.inject({ method: 'GET', url: '/painel-veiculo' })).headers.location, '/login');
   });
 
   test('paginação: links preservam a outra lista e não repetem aviso', async () => {

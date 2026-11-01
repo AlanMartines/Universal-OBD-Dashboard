@@ -25,6 +25,7 @@
     <p class="sidebar-group sidebar-label">Monitoramento</p>
     <ul class="sidebar-nav">
       <li><a href="/painel" title="Dispositivos" class="{{#if (eq activePage "painel")}}active{{/if}}" {{#if (eq activePage "painel")}}aria-current="page"{{/if}}><i class="fa-solid fa-mobile-screen fa-fw" aria-hidden="true"></i><span class="sidebar-label">Dispositivos</span></a></li>
+      <li><a href="/painel-veiculo" title="Painel do veículo" class="{{#if (eq activePage "vehicle")}}active{{/if}}" {{#if (eq activePage "vehicle")}}aria-current="page"{{/if}}><i class="fa-solid fa-gauge-high fa-fw" aria-hidden="true"></i><span class="sidebar-label">Painel do veículo</span></a></li>
     </ul>
 
     {{#if (canManage user)}}

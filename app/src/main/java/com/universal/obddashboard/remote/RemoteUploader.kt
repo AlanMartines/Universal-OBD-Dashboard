@@ -62,6 +62,17 @@ class RemoteUploader(private val source: Source, private val send: (String) -> I
         const val INTERVAL_MS = 5_000L
         private const val MAX_BACKOFF_MS = 5 * 60_000L
 
+        const val LIVE_WATCHED_MS = 1_000L
+        const val LIVE_IDLE_MS = 10_000L
+        const val LIVE_ERROR_MS = 30_000L
+
+        /** Com alguém olhando, uma leitura por segundo; sem ninguém, economiza dados móveis. */
+        fun liveDelayMs(viewers: Int?): Long = when {
+            viewers == null -> LIVE_ERROR_MS
+            viewers > 0 -> LIVE_WATCHED_MS
+            else -> LIVE_IDLE_MS
+        }
+
         /** Espera entre tentativas: dobra a cada falha seguida, até 5 minutos. */
         fun backoffMs(failures: Int): Long {
             if (failures <= 0) return INTERVAL_MS

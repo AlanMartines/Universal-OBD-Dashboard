@@ -1,0 +1,24 @@
+<div class="vehicle-bar d-flex flex-wrap align-items-center gap-2 mb-2">
+  <h1 class="h5 mb-0 me-auto">Painel do veículo</h1>
+  {{#if devices.length}}
+  <form method="get" action="/painel-veiculo" class="d-flex align-items-center gap-2" data-vehicle-select>
+    <label class="visually-hidden" for="vehicle-device">Veículo</label>
+    <select class="form-select form-select-sm w-auto" id="vehicle-device" name="dispositivo">
+      {{#each devices}}<option value="{{id}}"{{#if selected}} selected{{/if}}>{{name}}</option>{{/each}}
+    </select>
+    <noscript><button class="btn btn-primary btn-sm" type="submit">Abrir</button></noscript>
+  </form>
+  <span id="vehicle-status" class="badge text-bg-secondary" role="status">Conectando…</span>
+  <button class="btn btn-outline-secondary btn-sm" type="button" id="vehicle-fullscreen" title="Tela cheia" aria-label="Tela cheia"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>
+  {{/if}}
+</div>
+{{#if deviceId}}
+<div id="vehicle-root" data-device-id="{{deviceId}}" data-sample="{{latestJson}}">
+  <div id="dash-host" class="cluster-host" aria-label="Painel de instrumentos"></div>
+</div>
+{{else}}
+<div class="card card-body text-center py-5">
+  <p class="mb-1">Nenhum veículo conectado ainda.</p>
+  <p class="text-body-secondary mb-0">Adicione um dispositivo para ver o painel em tempo real.</p>
+</div>
+{{/if}}

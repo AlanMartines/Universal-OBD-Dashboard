@@ -154,6 +154,7 @@ Em *Ajustes*, cada arquivo tem **Exportar .gz** (menu de compartilhar). Falhas f
 - **Só de saída:** a resposta do servidor nunca vira comando para o adaptador ou o carro.
 - **Sem sinal:** a telemetria continua na caixa preta do celular e sobe depois. O histórico anterior ao pareamento não é enviado.
 - **Quando envia:** durante a captura, ou ao tocar em *Enviar agora*.
+- **Painel do veículo:** durante a captura, o app também manda a última leitura para o painel web: uma por segundo com alguém olhando e uma a cada 10 s sem ninguém, para economizar dados. Essa leitura não fica guardada.
 - **Segurança:** apenas `https://`, sem seguir redirecionamentos. O token fica cifrado no Android Keystore.
 
 ### Console da rede (escuta CAN)

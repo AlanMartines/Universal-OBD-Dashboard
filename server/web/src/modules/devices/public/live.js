@@ -118,12 +118,38 @@
   select.addEventListener('change', loadChart);
   hoursEl.addEventListener('change', loadChart);
 
+  // O selo mostra se o carro está enviando, não se o navegador está ligado ao servidor.
+  var STALE_MS = 20000;
+  var lastTs = initial && initial.ts ? new Date(initial.ts).getTime() : 0;
+
+  function ago(ms) {
+    var seconds = Math.max(1, Math.round(ms / 1000));
+    if (seconds < 60) return seconds + ' s';
+    if (seconds < 3600) return Math.round(seconds / 60) + ' min';
+    if (seconds < 86400) return Math.round(seconds / 3600) + ' h';
+    return Math.round(seconds / 86400) + ' dias';
+  }
+
+  function tick() {
+    if (!lastTs) {
+      setStatus('Sem dados', 'text-bg-secondary');
+    } else if (Date.now() - lastTs <= STALE_MS) {
+      setStatus('Ao vivo', 'text-bg-success');
+    } else {
+      setStatus('Sem dados há ' + ago(Date.now() - lastTs), 'text-bg-warning');
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+
   var source = new EventSource('/dispositivos/' + encodeURIComponent(deviceId) + '/ao-vivo');
-  source.onopen = function () { setStatus('Conectado', 'text-bg-success'); };
-  source.onerror = function () { setStatus('Reconectando…', 'text-bg-warning'); };
   source.addEventListener('sample', function (event) {
     var hadChart = select.value;
-    render(JSON.parse(event.data));
+    var sample = JSON.parse(event.data);
+    render(sample);
+    var ts = new Date(sample.ts).getTime();
+    if (ts > lastTs) lastTs = ts;
+    tick();
     if (!hadChart && select.value) loadChart();
   });
 }());

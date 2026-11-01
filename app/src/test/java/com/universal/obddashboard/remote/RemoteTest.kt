@@ -146,6 +146,28 @@ class RemoteTest {
         assertEquals(300_000L, RemoteUploader.backoffMs(20))
     }
 
+    @Test fun leituraAoVivoSemSequenciaEComExtras() {
+        val text = RemotePayload.live(entity(5), false, listOf("P0301"), mapOf("dash.rpmMax" to 7000.0, "derived.x" to null, "ruim y" to 1.0, "nan" to Double.NaN))
+        assertFalse(text.contains("\"seq\""))
+        assertFalse(text.contains("tripId"))
+        assertFalse(text.contains("-10.5"))
+        assertTrue(text.contains("\"dash.rpmMax\":7000.0"))
+        assertFalse(text.contains("ruim"))
+        assertFalse(text.contains("nan"))
+        assertTrue(text.contains("P0301"))
+    }
+
+    @Test fun ritmoAoVivoSegueQuemEstaOlhando() {
+        assertEquals(1_000L, RemoteUploader.liveDelayMs(2))
+        assertEquals(10_000L, RemoteUploader.liveDelayMs(0))
+        assertEquals(30_000L, RemoteUploader.liveDelayMs(null))
+    }
+
+    @Test fun recusaDoServidorNaoViraErro() {
+        assertEquals(null, RemoteClient("https://a.test", { _, _, _, _ -> RemoteClient.Response(401, "{}") }).live("t", "{}"))
+        assertEquals(3, RemoteClient("https://a.test", { _, _, _, _ -> RemoteClient.Response(200, "{\"viewers\":3}") }).live("t", "{}"))
+    }
+
     /** Gera um pacote real para conferir contra a API do servidor. */
     @Test fun gravaAmostraParaConferirComOServidor() {
         val dir = File("build/remote-contract").apply { mkdirs() }

@@ -35,6 +35,9 @@ import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.R
 import com.universal.obddashboard.db.AppDatabase
+import com.universal.obddashboard.remote.RemoteClient
+import com.universal.obddashboard.remote.RemotePayload
+import com.universal.obddashboard.remote.RemoteSettings
 import com.universal.obddashboard.remote.RemoteSync
 import com.universal.obddashboard.remote.RemoteUploader
 import com.universal.obddashboard.db.DiagnosticTroubleCodeEntity
@@ -230,6 +233,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 launch { telemetryLogLoop(loaded) },
                 launch { statusNotificationLoop() },
                 launch { remoteUploadLoop() },
+                launch { remoteLiveLoop(loaded) },
                 recorder?.let { launch { diagnosticSnapshotLoop() } },
             )
             val r = connectionLoop(loaded)
@@ -486,6 +490,59 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             } catch (e: Exception) {
                 failures += 1
                 Log.w(TAG, "Falha no envio remoto: ${e.javaClass.simpleName}")
+            }
+        }
+    }
+
+    /** Última leitura para o Painel do veículo. Não guarda nada: se falhar, a próxima já é mais nova. */
+    private suspend fun remoteLiveLoop(loaded: LoadedProfile) {
+        val c = applicationContext
+        var wait = RemoteUploader.LIVE_IDLE_MS
+        while (true) {
+            delay(wait)
+            wait = RemoteUploader.LIVE_IDLE_MS
+            val t = trip ?: continue
+            if (!RemoteSettings.enabled(c)) continue
+            val token = RemoteSettings.token(c) ?: continue
+            val s = TelemetryHub.state.value
+            if (s.connection != ConnectionStatus.STREAMING) continue
+            wait = try {
+                val body = withContext(Dispatchers.Default) {
+                    val v = loaded.profile
+                    val d = s.derived
+                    RemotePayload.live(
+                        buildSample(loaded, t.tripId, s),
+                        RemoteSettings.sendGps(c),
+                        s.confirmedDtcs,
+                        mapOf(
+                            "derived.instantKmPerL" to d.instantKmPerL,
+                            "derived.tripKmPerL" to d.tripKmPerL,
+                            "derived.tripFuelUsedL" to d.tripFuelUsedL,
+                            "derived.fuelRemainingL" to d.fuelRemainingL,
+                            "derived.recommendedGear" to d.recommendedGear?.toDouble(),
+                            "derived.estimatedGear" to d.estimatedGear?.toDouble(),
+                            "trip_distance_km" to s.tripDistanceKm,
+                            "trip.startedAt" to s.tripStartedAt?.toDouble(),
+                            "dash.rpmMax" to v.dashboard.rpmMax.toDouble(),
+                            "dash.rpmRedline" to v.dashboard.rpmRedline.toDouble(),
+                            "dash.speedMax" to v.dashboard.speedMax.toDouble(),
+                            "dash.voltageMin" to v.dashboard.voltageMin,
+                            "dash.voltageMax" to v.dashboard.voltageMax,
+                            "dash.thermostatC" to v.thermal?.thermostatOpenC?.toDouble(),
+                            "dash.fan1C" to v.thermal?.fanStage1C?.toDouble(),
+                            "dash.fan2C" to v.thermal?.fanStage2C?.toDouble(),
+                            "dash.criticalC" to v.thermal?.criticalC?.toDouble(),
+                            "dash.tankL" to v.fuel?.tankCapacityL,
+                            "dash.reserveL" to v.fuel?.reserveMaxL,
+                        ),
+                    )
+                }
+                val viewers = withContext(Dispatchers.IO) { RemoteClient(RemoteSettings.baseUrl(c)).live(token, body) }
+                RemoteUploader.liveDelayMs(viewers)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                RemoteUploader.LIVE_ERROR_MS
             }
         }
     }

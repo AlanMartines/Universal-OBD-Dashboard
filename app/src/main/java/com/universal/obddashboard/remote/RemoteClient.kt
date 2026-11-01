@@ -53,8 +53,16 @@ class RemoteClient(baseUrl: String, private val transport: Transport = UrlTransp
     fun upload(token: String, batchJson: String): Int =
         transport.post("$base/api/v1/telemetry", JSON_HEADERS + ("Authorization" to "Bearer $token"), batchJson, TIMEOUT_MS).code
 
+    /** @return quantas pessoas assistem agora, ou null se o servidor recusou. @throws IOException sem rede */
+    fun live(token: String, json: String): Int? {
+        val res = transport.post("$base/api/v1/live", JSON_HEADERS + ("Authorization" to "Bearer $token"), json, LIVE_TIMEOUT_MS)
+        if (res.code !in 200..299) return null
+        return runCatching { Json.parseToJsonElement(res.body).jsonObject["viewers"]?.jsonPrimitive?.content?.toInt() }.getOrNull() ?: 0
+    }
+
     companion object {
         private const val TIMEOUT_MS = 20_000
+        private const val LIVE_TIMEOUT_MS = 5_000
         private val JSON_HEADERS = mapOf("Content-Type" to "application/json")
 
         /** Só https, sem usuário e senha no endereço. @throws IllegalArgumentException com texto para a tela */

@@ -1,4 +1,4 @@
-export const DEVICE_ROUTES = ['/api/v1/devices/register', '/api/v1/telemetry'];
+export const DEVICE_ROUTES = ['/api/v1/devices/register', '/api/v1/telemetry', '/api/v1/live'];
 
 export default function gatewayRoutes(app, { config }) {
   // Só estas duas rotas da API são públicas. Nada mais é encaminhado.

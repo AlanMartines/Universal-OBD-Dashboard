@@ -1,0 +1,24 @@
+/* Painel do veículo: os mostradores ocupam o espaço que sobra na tela. */
+#dash-host {
+  display: block;
+  width: 100%;
+  height: calc(100dvh - 7rem);
+  min-height: 300px;
+  overflow: hidden;
+  border-radius: var(--app-radius);
+}
+
+#vehicle-root:fullscreen {
+  background: #000;
+}
+
+#vehicle-root:fullscreen #dash-host {
+  height: 100dvh;
+  border-radius: 0;
+}
+
+@media (max-width: 991.98px) {
+  #dash-host {
+    height: calc(100dvh - 8.5rem);
+  }
+}

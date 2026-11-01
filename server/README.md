@@ -86,7 +86,7 @@ O app não usa IMEI nem MAC. O UUID só identifica a instalação; quem autentic
 
 ## API do aparelho
 
-Só estas duas rotas são públicas:
+Só estas três rotas são públicas:
 
 `POST /api/v1/devices/register`
 
@@ -114,6 +114,8 @@ Resposta: `{ "deviceId", "deviceName", "deviceToken" }`.
 ```
 
 Resposta: `{ "received", "stored", "rejected" }`.
+
+`POST /api/v1/live`, com o mesmo token: a última leitura para o **Painel do veículo** (`{ "ts", "metrics", "dtcs", "gps" }`). Não é gravada no banco. A resposta `{ "viewers", "accepted" }` só serve para o app reduzir o envio quando ninguém está olhando.
 
 - Cada pacote aceita até 500 amostras.
 - `seq` cresce por instalação; repetir um pacote não duplica dados.

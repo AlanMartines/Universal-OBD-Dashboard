@@ -255,6 +255,25 @@ describe('API', () => {
       assert.equal((await send(app, dev.deviceToken, samples)).statusCode, 400);
     });
 
+    test('leitura ao vivo: chega a quem assiste, não vai ao banco e não leva comandos', async () => {
+      const post = (token, payload) => app.inject({ method: 'POST', url: '/api/v1/live', headers: token ? { authorization: `Bearer ${token}` } : {}, payload });
+      assert.equal((await post(null, { ts: Date.now(), metrics: { rpm: 1 } })).statusCode, 401);
+      const before2 = (await pool.query('SELECT count(*)::int n FROM telemetry_samples WHERE device_id = $1', [dev.id])).rows[0].n;
+      const noOne = await post(dev.deviceToken, { ts: Date.now(), metrics: { rpm: 1000 } });
+      assert.deepEqual(noOne.json(), { viewers: 0, accepted: true });
+      const got = [];
+      const listener = (s) => got.push(s);
+      app.liveBus.on(dev.id, listener);
+      const one = await post(dev.deviceToken, { ts: Date.now(), metrics: { rpm: 1500, speed: 60 } });
+      app.liveBus.off(dev.id, listener);
+      assert.equal(one.json().viewers, 1);
+      assert.equal(got[0].metrics.rpm, 1500);
+      assert.equal((await pool.query('SELECT count(*)::int n FROM telemetry_samples WHERE device_id = $1', [dev.id])).rows[0].n, before2);
+      assert.equal((await post(dev.deviceToken, { ts: Date.now(), metrics: { rpm: 'x' } })).statusCode, 400);
+      assert.equal((await post(dev.deviceToken, { ts: Date.now(), metrics: {}, comando: 'x' })).statusCode, 400);
+      assert.equal((await post(dev.deviceToken, { ts: Date.now() - 3600000, metrics: { rpm: 1 } })).json().accepted, false);
+    });
+
     test('GPS e falhas são gravados', async () => {
       await send(app, dev.deviceToken, [sample(20, { dtcs: ['P0301'], gps: { lat: -10.5, lon: -20.5, speedKmh: 12, accuracyM: 5 } })]);
       const res = await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: alice });

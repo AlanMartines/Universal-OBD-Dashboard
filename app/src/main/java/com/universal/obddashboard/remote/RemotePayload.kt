@@ -68,6 +68,25 @@ object RemotePayload {
         }
     }
 
+    /**
+     * Última leitura para o Painel do veículo: a mesma lista fechada, sem número de sequência, e com
+     * os valores derivados e os limites dos mostradores. [extras] só aceita números finitos.
+     */
+    fun live(s: TelemetryLogEntity, sendGps: Boolean, dtcs: List<String>, extras: Map<String, Double?>): String {
+        val base = sample(s, sendGps, dtcs)
+        val metrics = linkedMapOf<String, JsonPrimitive>()
+        base["metrics"]?.jsonObject?.forEach { (k, v) -> metrics[k] = v.jsonPrimitive }
+        extras.forEach { (id, value) ->
+            if (value != null && value.isFinite() && metrics.size < MAX_METRICS && METRIC_ID.matches(id)) metrics[id] = JsonPrimitive(value)
+        }
+        return buildJsonObject {
+            put("ts", s.timestamp)
+            put("metrics", JsonObject(metrics))
+            base["dtcs"]?.let { put("dtcs", it) }
+            base["gps"]?.let { put("gps", it) }
+        }.toString()
+    }
+
     fun batch(samples: List<JsonObject>): String =
         buildJsonObject { put("samples", buildJsonArray { samples.forEach { add(it) } }) }.toString()
 }

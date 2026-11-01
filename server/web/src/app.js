@@ -16,13 +16,14 @@ import adminRoutes from './modules/admin/routes.js';
 import devicesRoutes from './modules/devices/routes.js';
 import gatewayRoutes, { DEVICE_ROUTES } from './modules/gateway/routes.js';
 import loginRoutes from './modules/login/routes.js';
+import vehicleRoutes from './modules/vehicle/routes.js';
 
 export { checkFormToken, isSameOriginRequest, issueFormToken } from './shared/protection.js';
 
 const SRC = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(SRC, '..');
 // Cada módulo publica seus próprios arquivos em /modules/<nome>/.
-const MODULES_WITH_ASSETS = ['account', 'admin', 'devices'];
+const MODULES_WITH_ASSETS = ['account', 'admin', 'devices', 'vehicle'];
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
@@ -47,6 +48,7 @@ export function createHandlebars() {
 
 /** Item do menu destacado em cada página. */
 function activePageOf(url) {
+  if (url.startsWith('/painel-veiculo')) return 'vehicle';
   if (url.startsWith('/admin')) return 'admin';
   if (url.startsWith('/conta')) return 'conta';
   return 'painel';
@@ -311,6 +313,7 @@ export async function buildApp({ config, logger }) {
   loginRoutes(app, shared);
   accountRoutes(app, shared);
   devicesRoutes(app, shared);
+  vehicleRoutes(app, shared);
   adminRoutes(app, shared);
 
   return app;

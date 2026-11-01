@@ -3,6 +3,8 @@ import { fail } from '../errors.js';
 import { FUTURE_TOLERANCE_MS, MAX_AGE_MS, sampleSchema } from '../schemas.js';
 import { normalizePairingCode, randomToken, sha256 } from '../security.js';
 
+const LIVE_MAX_AGE_MS = 5 * 60 * 1000;
+
 export default function deviceRoutes(app, { pool, live, limit }) {
   app.post('/api/v1/devices/register', {
     ...limit(10, '15 minutes'),
@@ -119,5 +121,37 @@ export default function deviceRoutes(app, { pool, live, limit }) {
     }
     await pool.query('UPDATE devices SET last_seen_at = now() WHERE id = $1', [request.device.id]);
     return { received: request.body.samples.length, stored: inserted, rejected };
+  });
+
+  // Última leitura, para quem está olhando agora. Não vai ao banco; quem guarda o histórico é /telemetry.
+  // A resposta só diz quantas pessoas assistem, para o app reduzir o envio: nunca leva comandos.
+  app.post('/api/v1/live', {
+    ...limit(240, '1 minute', (request) => sha256(String(request.headers.authorization ?? request.clientIp)).toString('hex')),
+    bodyLimit: 32 * 1024,
+    preValidation: requireDevice,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['ts', 'metrics'],
+        additionalProperties: false,
+        properties: {
+          ts: sampleSchema.properties.ts,
+          metrics: sampleSchema.properties.metrics,
+          dtcs: sampleSchema.properties.dtcs,
+          gps: sampleSchema.properties.gps,
+        },
+      },
+    },
+  }, async (request) => {
+    const { ts, metrics, dtcs, gps } = request.body;
+    const now = Date.now();
+    if (ts > now + FUTURE_TOLERANCE_MS || ts < now - LIVE_MAX_AGE_MS) return { viewers: live.listenerCount(request.device.id), accepted: false };
+    live.emit(request.device.id, {
+      ts: new Date(ts).toISOString(),
+      metrics,
+      dtcs: dtcs ?? [],
+      gps: gps ? { lat: gps.lat, lon: gps.lon, speedKmh: gps.speedKmh ?? null } : null,
+    });
+    return { viewers: live.listenerCount(request.device.id), accepted: true };
   });
 }
