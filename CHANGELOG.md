@@ -6,6 +6,16 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.4] - 2026-11-01
+
+### Adicionado
+- **Painel do veículo no servidor:** os mostradores Minimal, Cápsula e HUD do app, em tempo real no painel web.
+- **Leitura ao vivo no app:** durante a captura, envia uma leitura por segundo com alguém olhando e uma a cada 10 s sem ninguém. Ela não é gravada no servidor.
+- **Dispositivos:** adicionar em modal, que espera o app se conectar, e botão de visualizar nas ações.
+
+### Corrigido
+- **Selo do dispositivo:** agora mostra "Ao vivo" ou "Sem dados há X" pela idade da última leitura. Antes, "Conectado" indicava só a ligação do navegador com o servidor.
+
 ## [0.9.3] - 2026-11-01
 
 ### Adicionado
