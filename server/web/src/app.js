@@ -2,6 +2,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cookie from '@fastify/cookie';
 import formbody from '@fastify/formbody';
+import multipart from '@fastify/multipart';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
@@ -29,6 +30,12 @@ const dateFormat = new Intl.DateTimeFormat('pt-BR', {
 export function createHandlebars() {
   const hbs = Handlebars.create();
   hbs.registerHelper('eq', (a, b) => a === b);
+  hbs.registerHelper('initials', (name, fallback) => {
+    const text = String((typeof name === 'string' && name) || fallback || '').trim();
+    const parts = text.split(/\s+/).filter(Boolean);
+    const letters = parts.length > 1 ? [parts[0], parts[parts.length - 1]] : parts;
+    return letters.map((p) => [...p][0]).join('').toUpperCase() || '?';
+  });
   hbs.registerHelper('date', (value) => (value ? dateFormat.format(new Date(value)) : '—'));
   return hbs;
 }
@@ -84,6 +91,10 @@ export async function buildApp({ config, logger }) {
   });
   await app.register(cookie);
   await app.register(formbody);
+  await app.register(multipart, {
+    attachFieldsToBody: 'keyValues',
+    limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 4, parts: 5 },
+  });
   await app.register(rateLimit, {
     global: true,
     max: 300 * config.rateLimitFactor,
@@ -139,7 +150,7 @@ export async function buildApp({ config, logger }) {
   app.addHook('onSend', async (request, reply) => {
     reply.header('X-Robots-Tag', 'noindex, nofollow');
     reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()');
-    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/')) {
+    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/') && !request.url.startsWith('/conta/foto')) {
       reply.header('Cache-Control', 'no-store');
     }
   });
@@ -163,6 +174,19 @@ export async function buildApp({ config, logger }) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new ApiError(response.status, data.error ?? 'internal_error');
     return data;
+  }
+
+  async function apiBinary(request, path) {
+    const response = await fetch(`${config.apiUrl}${path}`, {
+      headers: {
+        'x-internal-key': config.internalKey,
+        'x-client-ip': request.ip,
+        'x-session-token': request.cookies[cookieName],
+      },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!response.ok) throw new ApiError(response.status, response.status === 404 ? 'not_found' : 'internal_error');
+    return Buffer.from(await response.arrayBuffer());
   }
 
   const clearSession = (reply) => reply.clearCookie(cookieName, { path: '/', secure: config.cookieSecure, sameSite: 'lax', httpOnly: true });
@@ -218,7 +242,7 @@ export async function buildApp({ config, logger }) {
     if (request.method === 'POST' && !safeEqualText(request.body?._csrf, session.csrf)) {
       throw new ApiError(403, 'bad_form');
     }
-    if (session.user.mustChangePassword && !['/conta/senha', '/logout'].includes(request.routeOptions.url)) {
+    if (session.user.mustChangePassword && !['/conta/senha', '/logout', '/conta/foto'].includes(request.routeOptions.url)) {
       return reply.redirect('/conta/senha');
     }
     return undefined;
@@ -244,7 +268,7 @@ export async function buildApp({ config, logger }) {
   app.get('/', async (request, reply) => reply.redirect(request.cookies[cookieName] ? '/painel' : '/login'));
 
   const shared = {
-    config, api, cookieName, cookieOptions, clearSession, renderError, pageLimit, requireUser, requireAdmin, context,
+    config, api, apiBinary, cookieName, cookieOptions, clearSession, renderError, pageLimit, requireUser, requireAdmin, context,
   };
   gatewayRoutes(app, shared);
   loginRoutes(app, shared);

@@ -48,11 +48,12 @@
 <h2 class="h5">Usuários</h2>
 <div class="table-responsive mb-4">
   <table class="table table-sm table-striped table-hover table-stack">
-    <thead class="table-dark"><tr><th>Usuário</th><th>Papel</th><th>Situação</th><th>Dispositivos</th><th>Criado em</th><th></th></tr></thead>
+    <thead class="table-dark"><tr><th>Usuário</th><th>E-mail</th><th>Papel</th><th>Situação</th><th>Dispositivos</th><th>Criado em</th><th></th></tr></thead>
     <tbody>
       {{#each users}}
       <tr>
         <td data-label="Usuário" class="text-break">{{username}}</td>
+        <td data-label="E-mail" class="text-break">{{email}}</td>
         <td data-label="Papel">{{role}}</td>
         <td data-label="Situação">
           {{#if disabled}}<span class="badge text-bg-secondary">Desativado</span>{{else}}<span class="badge text-bg-success">Ativo</span>{{/if}}

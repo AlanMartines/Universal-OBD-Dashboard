@@ -19,12 +19,9 @@
   {{#if user}}
   {{> sidebar}}
   <div class="app-main">
-    <header class="app-topbar">
-      <button class="btn btn-link sidebar-toggle" type="button" id="sidebar-toggle" aria-controls="app-sidebar" aria-expanded="true" aria-label="Mostrar ou esconder o menu">
-        <i class="fa-solid fa-bars" aria-hidden="true"></i>
-      </button>
-      <span class="app-topbar-title text-truncate">{{title}}</span>
-    </header>
+    <button class="btn sidebar-fab" type="button" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="Abrir menu">
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
     <main class="app-content">
       {{{body}}}
     </main>
@@ -38,6 +35,7 @@
   </main>
   {{/if}}
   <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  {{#if accountScript}}<script src="/static/js/account.js"></script>{{/if}}
   {{#if scripts}}
   <script src="/vendor/chartjs/chart.umd.min.js"></script>
   <script src="/static/js/live.js"></script>

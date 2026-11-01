@@ -10,7 +10,7 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
     type: 'object',
     required: ['username', 'password'],
     additionalProperties: false,
-    properties: { username: { type: 'string', minLength: 1, maxLength: 64 }, password: passwordField },
+    properties: { username: { type: 'string', minLength: 1, maxLength: 254 }, password: passwordField },
   };
 
   app.get('/internal/signup', async () => ({ open: await signupOpen() }));
@@ -19,7 +19,9 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
     const username = normalizeUsername(request.body.username);
     const { password } = request.body;
     const { rows } = await pool.query(
-      'SELECT id, password_hash, disabled, failed_logins, locked_until FROM users WHERE username = $1',
+      // Nome de usuário nunca tem @, então não há como confundir com um e-mail.
+      `SELECT id, username, password_hash, disabled, failed_logins, locked_until FROM users
+        WHERE ${username.includes('@') ? 'email' : 'username'} = $1`,
       [username],
     );
     const user = rows[0];
@@ -27,7 +29,7 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
     // Mesma resposta e custo parecido em todos os casos: não dá para descobrir contas.
     if (!user || user.disabled || locked) {
       await burnPasswordCheck(password);
-      await audit(pool, { actor: username.slice(0, 32), action: 'login_recusado', ip: request.clientIp });
+      await audit(pool, { actor: user?.username ?? '(desconhecido)', action: 'login_recusado', ip: request.clientIp });
       throw fail(401, 'invalid_credentials');
     }
     if (!(await verifyPassword(user.password_hash, password))) {
@@ -39,11 +41,11 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
           WHERE id = $1`,
         [user.id, failures, minutes],
       );
-      await audit(pool, { actor: username, action: 'login_recusado', ip: request.clientIp });
+      await audit(pool, { actor: user.username, action: 'login_recusado', ip: request.clientIp });
       throw fail(401, 'invalid_credentials');
     }
     await pool.query('UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = $1', [user.id]);
-    await audit(pool, { actor: username, action: 'login', ip: request.clientIp });
+    await audit(pool, { actor: user.username, action: 'login', ip: request.clientIp });
     return { token: await createSession(user.id) };
   });
 

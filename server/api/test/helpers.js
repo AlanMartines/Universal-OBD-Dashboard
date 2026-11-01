@@ -13,6 +13,7 @@ export function testConfig(extra = {}) {
     ADMIN_USERNAME: ADMIN.username,
     ADMIN_PASSWORD: ADMIN.password,
     RATE_LIMIT_FACTOR: '1000',
+    APP_URL: 'https://painel.exemplo.test',
     ...extra,
   });
 }

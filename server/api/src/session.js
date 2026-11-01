@@ -7,7 +7,8 @@ export function createAccess({ config, pool }) {
     if (typeof token !== 'string' || token.length < 20 || token.length > 128) return null;
     const hash = sha256(token);
     const { rows } = await pool.query(
-      `SELECT s.csrf_token, s.last_seen_at, u.id, u.username, u.role, u.must_change_password
+      `SELECT s.csrf_token, s.last_seen_at, u.id, u.username, u.role, u.must_change_password,
+              u.display_name, u.avatar_updated_at
          FROM sessions s JOIN users u ON u.id = s.user_id
         WHERE s.token_hash = $1 AND s.expires_at > now() AND NOT u.disabled
           AND s.last_seen_at > now() - make_interval(hours => $2)`,
@@ -21,7 +22,14 @@ export function createAccess({ config, pool }) {
     return {
       tokenHash: hash,
       csrf: row.csrf_token,
-      user: { id: row.id, username: row.username, role: row.role, mustChangePassword: row.must_change_password },
+      user: {
+        id: row.id,
+        username: row.username,
+        role: row.role,
+        mustChangePassword: row.must_change_password,
+        displayName: row.display_name,
+        avatarVersion: row.avatar_updated_at ? row.avatar_updated_at.getTime() : null,
+      },
     };
   }
 

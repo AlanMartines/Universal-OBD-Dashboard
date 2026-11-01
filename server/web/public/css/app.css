@@ -105,20 +105,45 @@ body {
 }
 
 .sidebar-close,
-.sidebar-toggle {
+.sidebar-expand,
+.sidebar-fab {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
   padding: 0;
-  color: var(--bs-body-color);
-  text-decoration: none;
+  border: 0;
 }
 
-.sidebar-toggle {
-  flex: none;
-  font-size: 1.5rem;
+.sidebar-close {
+  font-size: 1.25rem;
+  color: var(--bs-body-color);
+}
+
+.sidebar-expand {
+  display: none;
+}
+
+/* Sem a barra superior, é o único acesso ao menu no celular. */
+.sidebar-fab {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1020;
+  display: none;
+  font-size: 1.25rem;
+  color: #fff;
+  background: #1a1a1a;
+  border-radius: 5px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+}
+
+.sidebar-fab:hover,
+.sidebar-fab:focus-visible {
+  color: #fff;
+  background: #333;
 }
 
 .sidebar-user {
@@ -131,10 +156,41 @@ body {
   border-bottom: 1px solid var(--bs-border-color);
 }
 
-.sidebar-user > .fa-solid {
+.sidebar-avatar,
+.profile-avatar {
+  display: flex;
   flex: none;
-  font-size: 1.6rem;
-  line-height: 1;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-weight: 700;
+  color: #fff;
+  background: var(--bs-primary);
+}
+
+.sidebar-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+}
+
+.profile-avatar {
+  width: 88px;
+  height: 88px;
+  font-size: 1.75rem;
+  border-radius: 50%;
+}
+
+.sidebar-avatar img,
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-head {
+  flex: 1 1 14rem;
+  min-width: 0;
 }
 
 .sidebar-user > .sidebar-label {
@@ -218,25 +274,6 @@ body {
   transition: margin-left 0.2s ease;
 }
 
-.app-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 1020;
-  display: flex;
-  flex: none;
-  gap: 0.5rem;
-  align-items: center;
-  height: var(--topbar-height);
-  padding: 0 0.75rem;
-  background: var(--bs-body-bg);
-  border-bottom: 1px solid var(--bs-border-color);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
-}
-
-.app-topbar-title {
-  font-weight: 600;
-}
-
 .app-content {
   flex: 1;
   width: 100%;
@@ -264,6 +301,13 @@ body {
   .sidebar-collapsed .sidebar-brand {
     justify-content: center;
     padding: 0;
+  }
+  .sidebar-collapsed .sidebar-brand-link,
+  .sidebar-collapsed .sidebar-close {
+    display: none;
+  }
+  .sidebar-collapsed .sidebar-expand {
+    display: inline-flex;
   }
   .sidebar-collapsed .sidebar-user {
     justify-content: center;
@@ -293,7 +337,10 @@ body {
     margin-left: 0;
   }
   .app-content {
-    padding: 1rem;
+    padding: 4rem 1rem 1rem;
+  }
+  .sidebar-fab {
+    display: inline-flex;
   }
   .sidebar-open .app-sidebar {
     visibility: visible;

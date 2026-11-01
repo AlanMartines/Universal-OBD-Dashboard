@@ -6,7 +6,7 @@ import { generatePassword, hashPassword, isValidUsername, normalizeUsername } fr
 export default function adminRoutes(app, { pool, limit, requireAdmin, signupOpen }) {
   app.get('/internal/admin/overview', { preValidation: requireAdmin }, async () => {
     const users = await pool.query(
-      `SELECT u.id, u.username, u.role, u.disabled, u.must_change_password, u.created_at,
+      `SELECT u.id, u.username, u.email, u.role, u.disabled, u.must_change_password, u.created_at,
               (SELECT count(*)::int FROM devices d WHERE d.user_id = u.id AND d.revoked_at IS NULL AND d.paired_at IS NOT NULL) AS devices
          FROM users u ORDER BY u.created_at`,
     );

@@ -263,6 +263,47 @@ describe('fluxo pelo navegador', () => {
     await final.body.cancel();
   });
 
+  test('Meus Dados: foto por envio real, iniciais, e foto só com login', async () => {
+    const page = await web.inject({ method: 'GET', url: '/conta', headers: { cookie: adminCookie } });
+    assert.match(page.body, /sidebar-avatar[\s\S]*?<span aria-hidden="true">[A-Z?]+<\/span>/);
+    const csrf = field(page.body, '_csrf');
+    // PNG válido de 1 × 1.
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAEBgIApD5fRAAAAABJRU5ErkJggg==', 'base64');
+    const send2 = (content, filename) => {
+      const b = 'limite-do-teste';
+      const payload = Buffer.concat([
+        Buffer.from(`--${b}\r\nContent-Disposition: form-data; name="_csrf"\r\n\r\n${csrf}\r\n--${b}\r\nContent-Disposition: form-data; name="avatar"; filename="${filename}"\r\nContent-Type: image/png\r\n\r\n`),
+        content,
+        Buffer.from(`\r\n--${b}--\r\n`),
+      ]);
+      return web.inject({ method: 'POST', url: '/conta/foto', payload, headers: { ...browser(adminCookie), 'content-type': `multipart/form-data; boundary=${b}` } });
+    };
+    const fake = await send2(Buffer.from('<svg onload="alert(1)"/>'), 'foto.png');
+    assert.equal(fake.statusCode, 400);
+    assert.equal((await send2(png, 'foto.png')).statusCode, 303);
+    const after2 = await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } });
+    const src = /src="(\/conta\/foto\?v=\d+)"/.exec(after2.body)[1];
+    const img = await web.inject({ method: 'GET', url: src, headers: { cookie: adminCookie } });
+    assert.equal(img.headers['content-type'], 'image/webp');
+    assert.match(img.headers['cache-control'], /private/);
+    assert.equal((await web.inject({ method: 'GET', url: src })).headers.location, '/login');
+    const noCsrf = await post('/conta/foto/remover', {}, adminCookie);
+    assert.equal(noCsrf.statusCode, 403);
+    assert.equal((await post('/conta/foto/remover', { _csrf: csrf }, adminCookie)).statusCode, 303);
+  });
+
+  test('link de e-mail: abrir não altera nada; confirmar exige a mesma origem', async () => {
+    const opened = await web.inject({ method: 'GET', url: '/conta/email/confirmar?token=token-invalido-de-teste-1234567890' });
+    assert.equal(opened.statusCode, 200);
+    assert.match(opened.body, /name="token" value="token-invalido-de-teste-1234567890"/);
+    const cross = await post('/conta/email/confirmar', { token: 'token-invalido-de-teste-1234567890' }, null, { origin: 'https://mau.example', 'sec-fetch-site': 'cross-site' });
+    assert.equal(cross.statusCode, 403);
+    const bad = await post('/conta/email/confirmar', { token: 'token-invalido-de-teste-1234567890' });
+    assert.equal(bad.statusCode, 400);
+    const xss = await web.inject({ method: 'GET', url: `/conta/email/confirmar?token=${encodeURIComponent('"><script>alert(1)</script>')}` });
+    assert.ok(!xss.body.includes('<script>alert(1)'));
+  });
+
   test('não admin não entra na administração', async () => {
     const csrf = await csrfOf(adminCookie);
     const made = await post('/admin/usuarios', { _csrf: csrf, username: 'comum', role: 'user' }, adminCookie);

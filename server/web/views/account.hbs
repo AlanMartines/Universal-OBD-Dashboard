@@ -1,29 +1,128 @@
-<h1 class="h3 mb-4">Minha conta</h1>
-{{> formError}}
-<div class="row g-4">
-  <div class="col-md-6">
-    <div class="card h-100">
-      <div class="card-body">
-        <h2 class="h5">Senha</h2>
-        <p class="text-body-secondary">Trocar a senha encerra suas outras sessões.</p>
-        <a class="btn btn-outline-primary" href="/conta/senha">Trocar senha</a>
-      </div>
-    </div>
+<div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+  <div class="profile-avatar">
+    {{#if account.avatarVersion}}<img src="/conta/foto?v={{account.avatarVersion}}" alt="Sua foto de perfil">{{else}}<span aria-hidden="true">{{initials account.displayName account.username}}</span>{{/if}}
   </div>
-  {{#unless (eq user.role "admin")}}
-  <div class="col-md-6">
-    <div class="card h-100 border-danger-subtle">
-      <div class="card-body">
-        <h2 class="h5">Excluir conta</h2>
-        <p class="text-body-secondary">Apaga sua conta, seus dispositivos e toda a telemetria. Não tem como desfazer.</p>
-        <form method="post" action="/conta/excluir">
-          <input type="hidden" name="_csrf" value="{{csrf}}">
-          <label class="form-label" for="password">Confirme com sua senha</label>
-          <input class="form-control mb-3" id="password" name="password" type="password" autocomplete="current-password" required>
-          <button class="btn btn-danger" type="submit">Excluir minha conta</button>
-        </form>
-      </div>
-    </div>
+  <div class="profile-head">
+    <h1 class="h4 mb-0 text-break">{{#if account.displayName}}{{account.displayName}}{{else}}{{account.username}}{{/if}}</h1>
+    <p class="small text-body-secondary mb-2 text-break">{{#if account.email}}{{account.email}}{{else}}Sem e-mail cadastrado{{/if}}</p>
+    <span class="badge text-bg-primary">{{#if (eq account.role "admin")}}Superadmin{{else}}Usuário{{/if}}</span>
+    <span class="badge text-bg-success">Ativo</span>
   </div>
-  {{/unless}}
+  <div class="profile-actions d-flex flex-wrap align-items-center gap-2">
+    <form method="post" action="/conta/foto" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <label class="btn btn-outline-primary btn-sm mb-0" for="avatar"><i class="fa-solid fa-camera me-1" aria-hidden="true"></i>Alterar foto</label>
+      <input class="visually-hidden" id="avatar" name="avatar" type="file" accept="image/jpeg,image/png,image/webp">
+    </form>
+    {{#if account.avatarVersion}}
+    <form method="post" action="/conta/foto/remover">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fa-solid fa-trash me-1" aria-hidden="true"></i>Remover foto</button>
+    </form>
+    {{/if}}
+  </div>
 </div>
+<p class="small text-body-secondary">Foto em JPG, PNG ou WebP, com até 2 MB.</p>
+
+{{> formError}}
+{{#if notice}}<div class="alert alert-success" role="status">{{notice}}</div>{{/if}}
+
+<div class="card mb-4">
+  <div class="card-header fw-semibold"><i class="fa-solid fa-id-card me-2" aria-hidden="true"></i>Dados</div>
+  <div class="card-body">
+    <form method="post" action="/conta/perfil" class="row g-3">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" for="displayName">Nome</label>
+        <input class="form-control" id="displayName" name="displayName" value="{{account.displayName}}" autocomplete="name" maxlength="80">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" for="login-name">Usuário</label>
+        <input class="form-control" id="login-name" value="{{account.username}}" disabled>
+        <div class="form-text">O nome de usuário não pode ser alterado.</div>
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-success" type="submit"><i class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></i>Atualizar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header fw-semibold"><i class="fa-solid fa-envelope me-2" aria-hidden="true"></i>Trocar e-mail</div>
+  <div class="card-body">
+    {{#if account.pendingEmail}}<div class="alert alert-warning" role="status">Aguardando confirmação de <strong class="text-break">{{account.pendingEmail}}</strong>. Abra o link enviado para esse endereço.</div>{{/if}}
+    <form method="post" action="/conta/email" class="row g-3">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" for="newEmail">Novo e-mail</label>
+        <input class="form-control" id="newEmail" name="newEmail" type="email" autocomplete="email" maxlength="254" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" for="confirmEmail">Confirmar e-mail</label>
+        <input class="form-control" id="confirmEmail" name="confirmEmail" type="email" autocomplete="off" maxlength="254" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" for="emailPassword">Senha atual</label>
+        <div class="input-group">
+          <input class="form-control" id="emailPassword" name="currentPassword" type="password" autocomplete="current-password" required>
+          <button class="btn btn-outline-secondary" type="button" data-password-toggle="emailPassword" aria-label="Mostrar senha" aria-pressed="false"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-envelope me-1" aria-hidden="true"></i>Alterar e-mail</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header fw-semibold"><i class="fa-solid fa-lock me-2" aria-hidden="true"></i>Trocar senha</div>
+  <div class="card-body">
+    <form method="post" action="/conta/senha" class="row g-3">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div class="col-12">
+        <label class="form-label fw-semibold" for="currentPassword">Senha atual</label>
+        <div class="input-group">
+          <input class="form-control" id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required>
+          <button class="btn btn-outline-secondary" type="button" data-password-toggle="currentPassword" aria-label="Mostrar senha" aria-pressed="false"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" for="newPassword">Nova senha</label>
+        <div class="input-group">
+          <input class="form-control" id="newPassword" name="newPassword" type="password" autocomplete="new-password" minlength="15" required>
+          <button class="btn btn-outline-secondary" type="button" data-password-toggle="newPassword" aria-label="Mostrar senha" aria-pressed="false"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i></button>
+        </div>
+        <div class="form-text">Pelo menos 15 caracteres. Uma frase longa é uma boa opção.</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" for="confirm">Confirmar nova senha</label>
+        <div class="input-group">
+          <input class="form-control" id="confirm" name="confirm" type="password" autocomplete="new-password" required>
+          <button class="btn btn-outline-secondary" type="button" data-password-toggle="confirm" aria-label="Mostrar senha" aria-pressed="false"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-key me-1" aria-hidden="true"></i>Alterar senha</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{{#unless (eq account.role "admin")}}
+<div class="card border-danger-subtle mb-4">
+  <div class="card-header fw-semibold text-danger-emphasis"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>Excluir conta</div>
+  <div class="card-body">
+    <p class="text-body-secondary">Apaga sua conta, seus dispositivos e toda a telemetria. Não tem como desfazer.</p>
+    <form method="post" action="/conta/excluir" class="row g-3 align-items-end">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" for="deletePassword">Confirme com sua senha</label>
+        <input class="form-control" id="deletePassword" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="col-md-6 text-end"><button class="btn btn-danger" type="submit">Excluir minha conta</button></div>
+    </form>
+  </div>
+</div>
+{{/unless}}

@@ -9,9 +9,10 @@ Recebe do app Universal OBD os dados já tratados e mostra tudo em um painel web
 | `web` | Painel (Handlebars e Bootstrap locais) e única porta publicada | `edge`, `app` |
 | `api` | Regras, autenticação e gravação | `app`, `backend` |
 | `worker` | Limpeza periódica; se parar, o resto continua | `backend` |
+| `mailer` | Envio de e-mails por SMTP, a partir de uma fila no banco; se parar, só os envios ficam pendentes | `backend`, `mail` |
 | `db` | PostgreSQL, sem porta publicada | `backend` |
 
-A `web` não alcança o banco. A `api`, o `worker` e o `db` não têm saída para a internet. O HTTPS fica no seu proxy reverso.
+A `web` não alcança o banco. A `api`, o `worker` e o `db` não têm saída para a internet; só o `mailer` e a `web` têm. O HTTPS fica no seu proxy reverso.
 
 ## Instalação
 
@@ -30,9 +31,16 @@ Aponte o domínio de `APP_URL` para `http://IP_DO_SERVIDOR:HTTP_PORT` e configur
 - substituir `X-Forwarded-For` pelo IP real do cliente, sem aceitar o valor enviado por ele;
 - preservar o cabeçalho `Origin`;
 - não reter respostas `text/event-stream`, usadas no tempo real;
-- aceitar corpo de até 512 KB em `/api/v1/telemetry`.
+- aceitar corpo de pelo menos 3 MB, por causa da foto de perfil (por exemplo, `client_max_body_size 10M`).
 
 Com `HTTP_BIND=0.0.0.0`, libere `HTTP_PORT` no firewall só para o proxy. O Docker publica portas passando por cima de regras comuns do `ufw`, então confira a cadeia `DOCKER-USER`. Se a porta ficar aberta, é possível falsificar o IP de origem e escapar dos limites por IP. Se o proxy estiver em um IP público, informe esse IP em `TRUST_PROXY`.
+
+## Conta
+
+O login aceita usuário ou e-mail. Em **Meus Dados**, a pessoa altera nome, foto, e-mail e senha.
+
+- **E-mail:** o novo endereço só vale depois de abrir o link enviado a ele, válido por 1 hora. A troca pede a senha atual e avisa o endereço antigo.
+- **Foto:** JPG, PNG ou WebP de até 2 MB. A imagem é regravada em 256 × 256, sem metadados como GPS, e fica no banco, visível só com login.
 
 ## Reset de senha
 

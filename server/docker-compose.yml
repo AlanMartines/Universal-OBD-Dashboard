@@ -49,6 +49,7 @@ services:
       SIGNUP_DEFAULT: ${SIGNUP_DEFAULT:-closed}
       RETENTION_DAYS: ${RETENTION_DAYS:-90}
       MAX_DEVICES_PER_USER: ${MAX_DEVICES_PER_USER:-10}
+      APP_URL: ${APP_URL:?defina APP_URL no .env}
       SESSION_IDLE_HOURS: ${SESSION_IDLE_HOURS:-12}
       SESSION_MAX_DAYS: ${SESSION_MAX_DAYS:-7}
       RATE_LIMIT_FACTOR: ${RATE_LIMIT_FACTOR:-1}
@@ -127,7 +128,34 @@ services:
       retries: 3
       start_period: 30s
 
+  # Único serviço com saída para o SMTP. Se parar, só o envio de e-mails fica pendente.
+  mailer:
+    <<: *hardening
+    build: ./api
+    command: ["node", "src/mailer.js"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${APP_DB_USER:-obd_app}:${APP_DB_PASSWORD}@db:5432/${DB_NAME:-obd}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Telemetria OBD}
+      SMTP_TIMEOUT: ${SMTP_TIMEOUT:-10s}
+    networks: [backend, mail]
+    read_only: true
+    tmpfs:
+      - /tmp:size=4m
+    cap_drop: [ALL]
+    pids_limit: 64
+    mem_limit: 128m
+
 networks:
+  mail:
   # Só a web fica na rede com saída; API e banco ficam em redes internas.
   edge:
   app:

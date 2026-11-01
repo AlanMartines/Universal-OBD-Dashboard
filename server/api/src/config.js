@@ -27,6 +27,7 @@ function integer(env, name, fallback, min, max) {
 /** Lê e valida o ambiente. Falta de segredo interrompe a subida, sem valor padrão inseguro. */
 export function loadConfig(env = process.env) {
   return {
+    appUrl: (env.APP_URL || '').replace(/\/+$/, ''),
     port: integer(env, 'API_PORT', 28472, 1, 65535),
     host: env.API_HOST || '0.0.0.0',
     databaseUrl: required(env, 'DATABASE_URL'),

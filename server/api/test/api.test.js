@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import { after, before, describe, test } from 'node:test';
 import { loadConfig } from '../src/config.js';
 import { bootstrap } from '../src/db.js';
+import sharp from 'sharp';
 import { resetPassword } from '../bin/user-reset-password.js';
+import { setMailReady, sendPending, mailConfig, parseTimeout } from '../src/mailer.js';
+import { processAvatar } from '../src/routes/account.js';
+import { isValidEmail } from '../src/security.js';
 import { passwordProblem, sha256 } from '../src/security.js';
 import {
   ADMIN, adminToken, freshDb, internal, login, pairDevice, sample, send, startApi, testConfig, userToken, KEY, USER_PASSWORD,
@@ -322,6 +326,141 @@ describe('API', () => {
       const { rows } = await pool.query(`SELECT id FROM users WHERE username = $1`, [ADMIN.username]);
       const res = await internal(app, 'POST', `/internal/admin/users/${rows[0].id}/delete`, { token: admin });
       assert.equal(res.statusCode, 400);
+    });
+  });
+
+  describe('Meus Dados', () => {
+    let tok;
+    const PW = USER_PASSWORD;
+    const askEmail = (newEmail, currentPassword = PW, token = tok) => internal(app, 'POST', '/internal/account/email', { token, body: { newEmail, currentPassword } });
+    const tokenOf = (body) => /token=([A-Za-z0-9_-]+)/.exec(body)[1];
+    const lastMail = async (to) => (await pool.query('SELECT body FROM mail_outbox WHERE recipient = $1 ORDER BY id DESC LIMIT 1', [to])).rows[0]?.body;
+    const allowResend = () => pool.query(`UPDATE email_changes SET created_at = now() - interval '1 hour'`);
+
+    before(async () => { tok = await userToken(app, admin, 'perfil'); await setMailReady(pool, true); });
+
+    test('nome: salva e aparece na sessão', async () => {
+      await internal(app, 'POST', '/internal/account/profile', { token: tok, body: { displayName: '  Maria <b>Silva</b> ' } });
+      const s = await internal(app, 'GET', '/internal/auth/session', { token: tok });
+      assert.equal(s.json().user.displayName, 'Maria <b>Silva</b>');
+    });
+
+    test('e-mail só vale depois do link, e o token não fica em claro', async () => {
+      assert.equal((await askEmail('nova@exemplo.test', 'errada')).statusCode, 400);
+      assert.equal((await askEmail('invalido')).statusCode, 400);
+      assert.equal((await askEmail('nova@exemplo.test')).statusCode, 200);
+      const pending = await internal(app, 'GET', '/internal/account', { token: tok });
+      assert.equal(pending.json().email, null);
+      assert.equal(pending.json().pendingEmail, 'nova@exemplo.test');
+      assert.equal(await login(app, 'nova@exemplo.test', PW), null);
+      const token = tokenOf(await lastMail('nova@exemplo.test'));
+      assert.ok(!JSON.stringify((await pool.query('SELECT * FROM email_changes')).rows).includes(token));
+      assert.equal((await internal(app, 'POST', '/internal/account/email/confirm', { body: { token } })).statusCode, 200);
+      assert.equal((await internal(app, 'POST', '/internal/account/email/confirm', { body: { token } })).statusCode, 400);
+      assert.ok(await login(app, 'NOVA@exemplo.test', PW));
+      assert.ok(await login(app, 'perfil', PW));
+    });
+
+    test('login por e-mail: erro igual e sem injeção', async () => {
+      const a = await internal(app, 'POST', '/internal/auth/login', { body: { username: 'nova@exemplo.test', password: 'errada' } });
+      const b = await internal(app, 'POST', '/internal/auth/login', { body: { username: 'ninguem@exemplo.test', password: 'errada' } });
+      assert.equal(a.statusCode, b.statusCode);
+      assert.equal(a.body, b.body);
+      const sql = await internal(app, 'POST', '/internal/auth/login', { body: { username: "x@y' OR '1'='1", password: 'errada' } });
+      assert.equal(sql.statusCode, 401);
+      await pool.query(`UPDATE users SET failed_logins = 0, locked_until = NULL WHERE username = 'perfil'`);
+    });
+
+    test('e-mail em uso: mesma resposta e nada é enviado ao dono', async () => {
+      const outro = await userToken(app, admin, 'outro');
+      const before2 = (await pool.query(`SELECT count(*)::int AS n FROM mail_outbox WHERE recipient = 'nova@exemplo.test'`)).rows[0].n;
+      assert.equal((await askEmail('nova@exemplo.test', PW, outro)).statusCode, 200);
+      const after2 = (await pool.query(`SELECT count(*)::int AS n FROM mail_outbox WHERE recipient = 'nova@exemplo.test'`)).rows[0].n;
+      assert.equal(after2, before2);
+    });
+
+    test('nova troca avisa o endereço antigo; link vencido não vale', async () => {
+      assert.equal((await askEmail('terceira@exemplo.test')).statusCode, 200);
+      const token = tokenOf(await lastMail('terceira@exemplo.test'));
+      await pool.query(`UPDATE email_changes SET expires_at = now() - interval '1 minute' WHERE new_email = 'terceira@exemplo.test'`);
+      assert.equal((await internal(app, 'POST', '/internal/account/email/confirm', { body: { token } })).statusCode, 400);
+      await pool.query('DELETE FROM email_changes');
+      assert.equal((await askEmail('quarta@exemplo.test')).statusCode, 200);
+      await internal(app, 'POST', '/internal/account/email/confirm', { body: { token: tokenOf(await lastMail('quarta@exemplo.test')) } });
+      assert.match(await lastMail('nova@exemplo.test'), /foi alterado/);
+    });
+
+    test('pedidos seguidos são barrados', async () => {
+      assert.equal((await askEmail('quinta@exemplo.test')).statusCode, 200);
+      assert.equal((await askEmail('sexta@exemplo.test')).statusCode, 429);
+      await allowResend();
+    });
+
+    test('sem SMTP pronto, responde indisponível e não enfileira', async () => {
+      await setMailReady(pool, false);
+      const n = (await pool.query('SELECT count(*)::int AS n FROM mail_outbox')).rows[0].n;
+      assert.deepEqual((await askEmail('setima@exemplo.test')).json(), { error: 'mail_unavailable' });
+      assert.equal((await pool.query('SELECT count(*)::int AS n FROM mail_outbox')).rows[0].n, n);
+      await setMailReady(pool, true);
+    });
+
+    test('foto: regrava, tira metadados, serve só para o dono e aceita remover', async () => {
+      const jpg = await sharp({ create: { width: 900, height: 500, channels: 3, background: '#336699' } })
+        .withExif({ IFD3: { GPSLatitude: '10/1 0/1 0/1' } }).jpeg().toBuffer();
+      assert.ok((await sharp(jpg).metadata()).exif);
+      const up = await internal(app, 'POST', '/internal/account/avatar', { token: tok, body: { imageBase64: jpg.toString('base64') } });
+      assert.equal(up.statusCode, 200);
+      const got = await internal(app, 'GET', '/internal/account/avatar', { token: tok });
+      assert.equal(got.headers['content-type'], 'image/webp');
+      const meta = await sharp(got.rawPayload).metadata();
+      assert.equal(meta.width, 256);
+      assert.equal(meta.height, 256);
+      assert.equal(meta.exif, undefined);
+      assert.equal((await internal(app, 'GET', '/internal/account/avatar')).statusCode, 401);
+      const other = await login(app, 'bob', PW);
+      assert.equal((await internal(app, 'GET', '/internal/account/avatar', { token: other })).statusCode, 404);
+      await internal(app, 'POST', '/internal/account/avatar/delete', { token: tok });
+      assert.equal((await internal(app, 'GET', '/internal/account/avatar', { token: tok })).statusCode, 404);
+    });
+
+    test('arquivo disfarçado de imagem é recusado', async () => {
+      for (const fake of ['<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>', '<?php echo 1;', 'GIF89a']) {
+        const res = await internal(app, 'POST', '/internal/account/avatar', { token: tok, body: { imageBase64: Buffer.from(fake).toString('base64') } });
+        assert.deepEqual(res.json(), { error: 'image_invalid' });
+      }
+      await assert.rejects(processAvatar(Buffer.from('nada')));
+    });
+
+    test('mailer: envia e apaga da fila; falha tenta de novo sem perder', async () => {
+      await pool.query('DELETE FROM mail_outbox');
+      await pool.query(`INSERT INTO mail_outbox (recipient, subject, body) VALUES ('a@exemplo.test', 's', 'b')`);
+      const quiet = { error() {} };
+      assert.equal(await sendPending(pool, { sendMail: async () => { const e = new Error('x'); e.code = 'ECONNECTION'; throw e; } }, 'de@exemplo.test', quiet), 0);
+      const row = (await pool.query('SELECT attempts, next_try > now() AS later FROM mail_outbox')).rows[0];
+      assert.equal(row.attempts, 1);
+      assert.equal(row.later, true);
+      await pool.query('UPDATE mail_outbox SET next_try = now()');
+      const sent = [];
+      assert.equal(await sendPending(pool, { sendMail: async (m) => { sent.push(m); } }, 'de@exemplo.test', quiet), 1);
+      assert.equal(sent[0].to, 'a@exemplo.test');
+      assert.equal((await pool.query('SELECT 1 FROM mail_outbox')).rowCount, 0);
+    });
+
+    test('valores de exemplo do SMTP não contam como configurado', () => {
+      assert.equal(mailConfig({ SMTP_HOST: 'smtp.gmail.com', SMTP_USER: 'seuemail@gmail.com', SMTP_PASSWORD: 'sua_senha_de_app', SMTP_FROM: 'seuemail@gmail.com' }), null);
+      assert.equal(mailConfig({ SMTP_HOST: '', SMTP_USER: '', SMTP_PASSWORD: '', SMTP_FROM: '' }), null);
+      const ok = mailConfig({ SMTP_HOST: 'smtp.provedor.test', SMTP_USER: 'u@provedor.test', SMTP_PASSWORD: 'segredo', SMTP_FROM: 'u@provedor.test', SMTP_TIMEOUT: '30s' });
+      assert.equal(ok.transport.requireTLS, true);
+      assert.equal(ok.transport.connectionTimeout, 30000);
+      assert.equal(parseTimeout('500ms'), 500);
+      assert.equal(parseTimeout('1m'), 60000);
+      assert.equal(parseTimeout('15'), 15000);
+      assert.equal(parseTimeout('xyz'), 10000);
+    });
+
+    test('validação de e-mail', () => {
+      for (const good of ['a@b.co', 'nome.sobre+tag@sub.dominio.com']) assert.equal(isValidEmail(good), true, good);
+      for (const bad of ['a', 'a@b', 'a b@c.com', 'a@b.com\r\nBcc:x@y.com', '<a>@b.com', 'a@-b.com']) assert.equal(isValidEmail(bad), false, bad);
     });
   });
 

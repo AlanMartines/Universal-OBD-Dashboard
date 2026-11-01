@@ -1,0 +1,20 @@
+<div class="row justify-content-center">
+  <div class="col-sm-10 col-md-6 col-lg-5">
+    <div class="card">
+      <div class="card-body text-center py-4">
+        <h1 class="h4">{{#if confirmed}}E-mail confirmado{{else}}Confirmar e-mail{{/if}}</h1>
+        {{> formError}}
+        {{#if confirmed}}
+        <p>Agora você pode entrar com este endereço.</p>
+        <a class="btn btn-primary" href="/">Continuar</a>
+        {{else if token}}
+        <p>Clique no botão para concluir a troca de e-mail da sua conta.</p>
+        <form method="post" action="/conta/email/confirmar">
+          <input type="hidden" name="token" value="{{token}}">
+          <button class="btn btn-primary" type="submit">Confirmar</button>
+        </form>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</div>

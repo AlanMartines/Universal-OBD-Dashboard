@@ -4,6 +4,7 @@ import rateLimit from '@fastify/rate-limit';
 import { HttpError, fail } from './errors.js';
 import { safeEqual } from './security.js';
 import { createAccess } from './session.js';
+import accountRoutes from './routes/account.js';
 import adminRoutes from './routes/admin.js';
 import authRoutes from './routes/auth.js';
 import deviceRoutes from './routes/device.js';
@@ -80,6 +81,7 @@ export async function buildApp({ config, pool, logger }) {
   const context = { config, pool, live, limit, ...createAccess({ config, pool }) };
   deviceRoutes(app, context);
   authRoutes(app, context);
+  accountRoutes(app, context);
   devicesRoutes(app, context);
   adminRoutes(app, context);
 

@@ -9,6 +9,7 @@ export const PASSWORD_MIN = 15;
 export const PASSWORD_MAX = 256;
 export const USERNAME_PATTERN = '^[a-z0-9][a-z0-9._-]{2,31}$';
 const USERNAME_RE = new RegExp(USERNAME_PATTERN);
+const EMAIL_RE = /^[^\s@<>"'(),:;\\[\]]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
 
 const COMMON_PASSWORDS = new Set([
   '123456789012345', '1234567890123456', '111111111111111', '000000000000000',
@@ -19,6 +20,14 @@ const COMMON_PASSWORDS = new Set([
 
 export function normalizeUsername(value) {
   return String(value ?? '').trim().toLowerCase();
+}
+
+export function normalizeEmail(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+export function isValidEmail(value) {
+  return value.length <= 254 && EMAIL_RE.test(value);
 }
 
 export function isValidUsername(value) {

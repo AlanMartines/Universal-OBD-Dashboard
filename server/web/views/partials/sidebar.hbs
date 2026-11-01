@@ -1,17 +1,22 @@
 <nav class="app-sidebar" id="app-sidebar" data-bs-theme="dark" aria-label="Menu principal">
   <div class="sidebar-brand">
-    <a href="/painel" class="sidebar-link-plain" title="Telemetria OBD">
-      <img class="brand-logo" src="/assets/logos/eletroinfo.svg" alt=""><span class="sidebar-label">Telemetria OBD</span>
+    <a href="/painel" class="sidebar-link-plain sidebar-brand-link">
+      <img class="brand-logo" src="/assets/logos/eletroinfo.svg" alt=""><span>Telemetria OBD</span>
     </a>
-    <button class="btn btn-link sidebar-close d-lg-none" type="button" data-sidebar-close aria-label="Fechar menu">
+    <button class="btn sidebar-close" type="button" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="true" aria-label="Fechar menu" title="Fechar menu">
       <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+    <button class="btn sidebar-expand" type="button" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="Abrir menu" title="Abrir menu">
+      <img class="brand-logo" src="/assets/logos/eletroinfo.svg" alt="">
     </button>
   </div>
 
-  <div class="sidebar-user" title="{{user.username}}">
-    <i class="fa-solid fa-circle-user fa-fw" aria-hidden="true"></i>
+  <div class="sidebar-user" title="{{#if user.displayName}}{{user.displayName}}{{else}}{{user.username}}{{/if}}">
+    <div class="sidebar-avatar">
+      {{#if user.avatarVersion}}<img src="/conta/foto?v={{user.avatarVersion}}" alt="">{{else}}<span aria-hidden="true">{{initials user.displayName user.username}}</span>{{/if}}
+    </div>
     <div class="sidebar-label">
-      <div class="sidebar-user-name text-truncate">{{user.username}}</div>
+      <div class="sidebar-user-name text-truncate">{{#if user.displayName}}{{user.displayName}}{{else}}{{user.username}}{{/if}}</div>
       <div class="small text-body-secondary">{{#if (eq user.role "admin")}}Superadmin{{else}}Usuário{{/if}}</div>
     </div>
   </div>
@@ -31,7 +36,7 @@
 
     <p class="sidebar-group sidebar-label">Conta</p>
     <ul class="sidebar-nav">
-      <li><a href="/conta" title="Minha conta" class="{{#if (eq activePage "conta")}}active{{/if}}" {{#if (eq activePage "conta")}}aria-current="page"{{/if}}><i class="fa-solid fa-user fa-fw" aria-hidden="true"></i><span class="sidebar-label">Minha conta</span></a></li>
+      <li><a href="/conta" title="Meus Dados" class="{{#if (eq activePage "conta")}}active{{/if}}" {{#if (eq activePage "conta")}}aria-current="page"{{/if}}><i class="fa-solid fa-circle-user fa-fw" aria-hidden="true"></i><span class="sidebar-label">Meus Dados</span></a></li>
     </ul>
   </div>
 
