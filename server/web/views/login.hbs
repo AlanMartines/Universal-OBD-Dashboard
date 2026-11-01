@@ -2,18 +2,18 @@
   <div class="col-sm-10 col-md-6 col-lg-4">
     <h1 class="h3 mb-4">Entrar</h1>
     {{> formError}}
-    <form method="post" action="/login" autocomplete="on">
+    <form method="post" action="/login" autocomplete="on" data-validate>
       <input type="hidden" name="formToken" value="{{formToken}}">
       <div class="hp-field" aria-hidden="true">
         <label for="website">Não preencha</label>
         <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
       </div>
       <div class="mb-3">
-        <label class="form-label" for="username">Usuário ou e-mail</label>
+        <label class="form-label required-mark" for="username">Usuário ou e-mail</label>
         <input class="form-control" id="username" name="username" autocomplete="username" autocapitalize="none" maxlength="254" required autofocus>
       </div>
       <div class="mb-3">
-        <label class="form-label" for="password">Senha</label>
+        <label class="form-label required-mark" for="password">Senha</label>
         <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required>
       </div>
       <button class="btn btn-primary w-100" type="submit">Entrar</button>

@@ -31,7 +31,14 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
   };
   const clientError = (error) => error instanceof ApiError && error.status < 500 && error.status !== 401 && error.code !== 'password_change_required';
 
-  app.get('/conta', { preHandler: requireUser }, async (request, reply) => accountView(request, reply));
+  // Avisos só de uma lista fechada: o texto nunca vem da URL.
+  const NOTICES = { email: 'Se o endereço puder ser usado, enviamos um link de confirmação para ele.' };
+  const REDIRECT_ERRORS = ['image_too_large'];
+
+  app.get('/conta', { preHandler: requireUser }, async (request, reply) => accountView(request, reply, 200, {
+    notice: NOTICES[request.query.aviso],
+    error: REDIRECT_ERRORS.includes(request.query.erro) ? message(request.query.erro) : undefined,
+  }));
 
   app.post('/conta/perfil', { preHandler: requireUser }, async (request, reply) => {
     try {
@@ -52,7 +59,7 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
       await api(request, 'POST', '/internal/account/email', {
         body: { newEmail: String(newEmail ?? ''), currentPassword: String(currentPassword ?? '') },
       });
-      return accountView(request, reply, 200, { notice: 'Se o endereço puder ser usado, enviamos um link de confirmação para ele.' });
+      return reply.redirect('/conta?aviso=email', 303);
     } catch (error) {
       if (!clientError(error) && error.code !== 'mail_unavailable') throw error;
       return accountView(request, reply, error.status, { error: message(error.code) });
@@ -86,7 +93,7 @@ export default function accountRoutes(app, { api, apiBinary, clearSession, requi
     return reply.type('image/webp').send(image);
   });
 
-  app.post('/conta/foto', { preHandler: requireUser, bodyLimit: 3 * 1024 * 1024 }, async (request, reply) => {
+  app.post('/conta/foto', { preHandler: requireUser, bodyLimit: 6 * 1024 * 1024 }, async (request, reply) => {
     const file = request.body?.avatar;
     if (!Buffer.isBuffer(file) || !file.length) {
       return accountView(request, reply, 400, { error: message('image_invalid') });

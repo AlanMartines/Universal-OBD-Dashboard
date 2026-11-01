@@ -8,9 +8,10 @@ export function createAccess({ config, pool }) {
     const hash = sha256(token);
     const { rows } = await pool.query(
       `SELECT s.csrf_token, s.last_seen_at, u.id, u.username, u.role, u.must_change_password,
-              u.display_name, u.avatar_updated_at
+              u.display_name, u.avatar_updated_at, u.account_id
          FROM sessions s JOIN users u ON u.id = s.user_id
-        WHERE s.token_hash = $1 AND s.expires_at > now() AND NOT u.disabled
+         LEFT JOIN users owner ON owner.id = u.account_id
+        WHERE s.token_hash = $1 AND s.expires_at > now() AND NOT u.disabled AND NOT COALESCE(owner.disabled, false)
           AND s.last_seen_at > now() - make_interval(hours => $2)`,
       [hash, config.sessionIdleHours],
     );
@@ -26,6 +27,8 @@ export function createAccess({ config, pool }) {
         id: row.id,
         username: row.username,
         role: row.role,
+        // Conta cujos dados a pessoa enxerga: a própria ou aquela à qual está vinculada.
+        tenantId: row.account_id ?? row.id,
         mustChangePassword: row.must_change_password,
         displayName: row.display_name,
         avatarVersion: row.avatar_updated_at ? row.avatar_updated_at.getTime() : null,
@@ -43,9 +46,14 @@ export function createAccess({ config, pool }) {
     await requireSession(request);
     if (request.session.user.mustChangePassword) throw fail(403, 'password_change_required');
   };
-  const requireAdmin = async (request) => {
+  const requireSuperadmin = async (request) => {
     await requireReady(request);
-    if (request.session.user.role !== 'admin') throw fail(403, 'forbidden');
+    if (request.session.user.role !== 'superadmin') throw fail(403, 'forbidden');
+  };
+  // Super Admin e Admin. O perfil Usuário só visualiza.
+  const requireManager = async (request) => {
+    await requireReady(request);
+    if (request.session.user.role === 'user') throw fail(403, 'forbidden');
   };
 
   async function createSession(userId) {
@@ -72,7 +80,7 @@ export function createAccess({ config, pool }) {
               d.last_seen_at, d.revoked_at, u.username AS owner
          FROM devices d JOIN users u ON u.id = d.user_id
         WHERE d.id = $1 AND (d.user_id = $2 OR $3)`,
-      [request.params.id, user.id, user.role === 'admin'],
+      [request.params.id, user.tenantId, user.role === 'superadmin'],
     );
     if (!rows.length) throw fail(404, 'not_found');
     return rows[0];
@@ -90,5 +98,5 @@ export function createAccess({ config, pool }) {
     revokedAt: d.revoked_at,
   });
 
-  return { requireSession, requireReady, requireAdmin, createSession, signupOpen, loadDevice, publicDevice };
+  return { requireSession, requireReady, requireManager, requireSuperadmin, createSession, signupOpen, loadDevice, publicDevice };
 }

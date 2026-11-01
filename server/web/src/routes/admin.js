@@ -4,7 +4,10 @@ import { requireUuid } from './devices.js';
 export default function adminRoutes(app, { api, requireAdmin, context }) {
   const adminView = async (request, reply, status = 200, extra = {}) => {
     const data = await api(request, 'GET', '/internal/admin/overview');
-    return reply.code(status).view('admin.hbs', context(request, { title: 'Administração', ...data, ...extra }));
+    const isSuper = request.user.role === 'superadmin';
+    return reply.code(status).view('admin.hbs', context(request, {
+      title: isSuper ? 'Administração' : 'Usuários', isSuper, adminScript: isSuper, ...data, ...extra,
+    }));
   };
 
   app.get('/admin', { preHandler: requireAdmin }, async (request, reply) => adminView(request, reply));
@@ -17,7 +20,11 @@ export default function adminRoutes(app, { api, requireAdmin, context }) {
   app.post('/admin/usuarios', { preHandler: requireAdmin }, async (request, reply) => {
     try {
       const created = await api(request, 'POST', '/internal/admin/users', {
-        body: { username: String(request.body?.username ?? ''), role: request.body?.role === 'admin' ? 'admin' : 'user' },
+        body: {
+          username: String(request.body?.username ?? ''),
+          role: ['superadmin', 'admin'].includes(request.body?.role) ? request.body.role : 'user',
+          ...(request.body?.accountId ? { accountId: String(request.body.accountId) } : {}),
+        },
       });
       return adminView(request, reply, 200, { created });
     } catch (error) {

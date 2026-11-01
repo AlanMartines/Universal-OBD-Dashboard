@@ -60,7 +60,7 @@ async function seedSettings(client, config) {
 }
 
 async function seedAdmin(client, config, log) {
-  const { rowCount } = await client.query(`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`);
+  const { rowCount } = await client.query(`SELECT 1 FROM users WHERE role = 'superadmin' LIMIT 1`);
   if (rowCount) {
     if (config.adminPassword) {
       log.warn?.('Já existe administrador: ADMIN_PASSWORD foi ignorada e pode ser apagada do .env');
@@ -77,7 +77,7 @@ async function seedAdmin(client, config, log) {
   }
   const hash = await hashPassword(config.adminPassword);
   await client.query(
-    `INSERT INTO users (username, password_hash, role, must_change_password) VALUES ($1, $2, 'admin', true)`,
+    `INSERT INTO users (username, password_hash, role, must_change_password) VALUES ($1, $2, 'superadmin', true)`,
     [username, hash],
   );
   await client.query(`INSERT INTO audit_log (actor, action, target) VALUES ('sistema', 'admin_inicial_criado', $1)`, [username]);

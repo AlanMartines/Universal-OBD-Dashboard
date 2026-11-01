@@ -101,7 +101,7 @@ describe('API', () => {
     });
 
     test('bloqueia após tentativas erradas, mesmo com a senha certa, e a resposta é igual', async () => {
-      const t = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username: 'travado', role: 'user' } });
+      const t = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username: 'travado', role: 'admin' } });
       const { password } = t.json();
       for (let i = 0; i < 5; i += 1) await login(app, 'travado', 'errada');
       const res = await internal(app, 'POST', '/internal/auth/login', { body: { username: 'travado', password } });
@@ -118,7 +118,7 @@ describe('API', () => {
     });
 
     test('senha nova é obrigatória antes de usar o sistema', async () => {
-      const c = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username: 'novato', role: 'user' } });
+      const c = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username: 'novato', role: 'admin' } });
       const token = await login(app, 'novato', c.json().password);
       const res = await internal(app, 'GET', '/internal/devices', { token });
       assert.equal(res.statusCode, 403);
@@ -134,7 +134,7 @@ describe('API', () => {
     });
 
     test('trocar a senha encerra as outras sessões', async () => {
-      const c = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username: 'dupla', role: 'user' } });
+      const c = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username: 'dupla', role: 'admin' } });
       const a = await login(app, 'dupla', c.json().password);
       const b = await login(app, 'dupla', c.json().password);
       await internal(app, 'POST', '/internal/auth/password', { token: a, body: { currentPassword: c.json().password, newPassword: 'frase nova bem comprida aqui' } });
@@ -291,10 +291,13 @@ describe('API', () => {
       assert.equal((await send(app, dev.deviceToken, [sample(1)])).statusCode, 200);
     });
 
-    test('admin vê todos; usuário comum não entra na administração', async () => {
+    test('super admin vê todos; admin só a própria conta', async () => {
       const dev = await pairDevice(app, alice, '66666666-6666-4666-8666-666666666666');
       assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: admin })).statusCode, 200);
-      assert.equal((await internal(app, 'GET', '/internal/admin/overview', { token: alice })).statusCode, 403);
+      const own = await internal(app, 'GET', '/internal/admin/overview', { token: alice });
+      assert.equal(own.statusCode, 200);
+      assert.equal(own.json().audit, undefined);
+      assert.ok(own.json().users.every((u) => u.account === 'alice'));
     });
 
     test('revogar corta o envio na hora', async () => {
@@ -326,6 +329,89 @@ describe('API', () => {
       const { rows } = await pool.query(`SELECT id FROM users WHERE username = $1`, [ADMIN.username]);
       const res = await internal(app, 'POST', `/internal/admin/users/${rows[0].id}/delete`, { token: admin });
       assert.equal(res.statusCode, 400);
+    });
+  });
+
+  describe('perfis', () => {
+    let dono; let outroDono; let dev; let atendente; let donoId; let atendenteId;
+    const create = (token, body) => internal(app, 'POST', '/internal/admin/users', { token, body });
+    async function makeAttendant(creator, username, extra = {}) {
+      const res = await create(creator, { username, role: 'user', ...extra });
+      assert.equal(res.statusCode, 200, res.body);
+      const token = await login(app, username, res.json().password);
+      await internal(app, 'POST', '/internal/auth/password', { token, body: { currentPassword: res.json().password, newPassword: USER_PASSWORD } });
+      return token;
+    }
+
+    before(async () => {
+      dono = await userToken(app, admin, 'dono');
+      outroDono = await userToken(app, admin, 'outrodono');
+      dev = await pairDevice(app, dono, 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa');
+      donoId = (await pool.query(`SELECT id FROM users WHERE username = 'dono'`)).rows[0].id;
+      atendente = await makeAttendant(dono, 'atendente');
+      atendenteId = (await pool.query(`SELECT id FROM users WHERE username = 'atendente'`)).rows[0].id;
+    });
+
+    test('super admin precisa informar a conta ao criar Usuário', async () => {
+      assert.deepEqual((await create(admin, { username: 'semconta', role: 'user' })).json(), { error: 'account_required' });
+      const superId = (await pool.query(`SELECT id FROM users WHERE role = 'superadmin'`)).rows[0].id;
+      assert.deepEqual((await create(admin, { username: 'contaruim', role: 'user', accountId: superId })).json(), { error: 'account_invalid' });
+      assert.deepEqual((await create(admin, { username: 'admincomconta', role: 'admin', accountId: donoId })).json(), { error: 'account_invalid' });
+      await makeAttendant(admin, 'vinculado', { accountId: donoId });
+      const { rows } = await pool.query(`SELECT account_id FROM users WHERE username = 'vinculado'`);
+      assert.equal(rows[0].account_id, donoId);
+    });
+
+    test('admin só cria Usuário na própria conta', async () => {
+      assert.equal((await create(dono, { username: 'novoadmin', role: 'admin' })).statusCode, 403);
+      assert.equal((await create(dono, { username: 'novosuper', role: 'superadmin' })).statusCode, 403);
+      const outroId = (await pool.query(`SELECT id FROM users WHERE username = 'outrodono'`)).rows[0].id;
+      assert.equal((await create(dono, { username: 'infiltrado', role: 'user', accountId: outroId })).statusCode, 403);
+    });
+
+    test('Usuário visualiza a conta, mas não altera nada', async () => {
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: atendente })).statusCode, 200);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}/history?metric=rpm&hours=1`, { token: atendente })).statusCode, 200);
+      assert.ok((await internal(app, 'GET', '/internal/devices', { token: atendente })).body.includes(dev.id));
+      for (const [url, body] of [
+        ['/internal/devices', { name: 'Novo' }],
+        [`/internal/devices/${dev.id}/revoke`, undefined],
+        [`/internal/devices/${dev.id}/delete`, undefined],
+        ['/internal/admin/users', { username: 'sub', role: 'user' }],
+        ['/internal/admin/signup', { open: true }],
+        [`/internal/admin/users/${donoId}/delete`, undefined],
+      ]) {
+        assert.equal((await internal(app, 'POST', url, { token: atendente, body })).statusCode, 403, url);
+      }
+      assert.equal((await internal(app, 'GET', '/internal/admin/overview', { token: atendente })).statusCode, 403);
+      assert.equal((await internal(app, 'POST', '/internal/account/delete', { token: atendente, body: { password: USER_PASSWORD } })).statusCode, 400);
+    });
+
+    test('Usuário e Admin não enxergam outras contas', async () => {
+      const outroDev = await pairDevice(app, outroDono, 'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb');
+      assert.equal((await internal(app, 'GET', `/internal/devices/${outroDev.id}`, { token: atendente })).statusCode, 404);
+      assert.equal((await internal(app, 'POST', `/internal/admin/users/${atendenteId}/delete`, { token: outroDono })).statusCode, 404);
+      assert.equal((await internal(app, 'POST', `/internal/admin/users/${donoId}/disabled`, { token: outroDono, body: { disabled: true } })).statusCode, 404);
+      assert.equal((await internal(app, 'POST', '/internal/admin/signup', { token: dono, body: { open: true } })).statusCode, 403);
+    });
+
+    test('desativar o dono corta os usuários vinculados; excluir apaga junto', async () => {
+      const tempDono = await userToken(app, admin, 'tempdono');
+      const tempAt = await makeAttendant(tempDono, 'tempatendente');
+      const id = (await pool.query(`SELECT id FROM users WHERE username = 'tempdono'`)).rows[0].id;
+      await internal(app, 'POST', `/internal/admin/users/${id}/disabled`, { token: admin, body: { disabled: true } });
+      assert.equal((await internal(app, 'GET', '/internal/devices', { token: tempAt })).statusCode, 401);
+      assert.equal(await login(app, 'tempatendente', USER_PASSWORD), null);
+      await internal(app, 'POST', `/internal/admin/users/${id}/delete`, { token: admin });
+      assert.equal((await pool.query(`SELECT 1 FROM users WHERE username = 'tempatendente'`)).rowCount, 0);
+    });
+
+    test('cadastro público cria dono de conta, nunca super admin', async () => {
+      await internal(app, 'POST', '/internal/admin/signup', { token: admin, body: { open: true } });
+      await internal(app, 'POST', '/internal/auth/register', { body: { username: 'publico', password: 'uma frase longa para entrar' } });
+      await internal(app, 'POST', '/internal/admin/signup', { token: admin, body: { open: false } });
+      const { rows } = await pool.query(`SELECT role, account_id FROM users WHERE username = 'publico'`);
+      assert.deepEqual(rows[0], { role: 'admin', account_id: null });
     });
   });
 
@@ -421,6 +507,14 @@ describe('API', () => {
       assert.equal((await internal(app, 'GET', '/internal/account/avatar', { token: other })).statusCode, 404);
       await internal(app, 'POST', '/internal/account/avatar/delete', { token: tok });
       assert.equal((await internal(app, 'GET', '/internal/account/avatar', { token: tok })).statusCode, 404);
+    });
+
+    test('foto grande de celular (vários MB) é aceita', async () => {
+      const jpg = await sharp({ create: { width: 2500, height: 2000, channels: 3, background: "#808080", noise: { type: 'gaussian', mean: 128, sigma: 60 } } }).jpeg({ quality: 90 }).toBuffer();
+      assert.ok(jpg.length > 2 * 1024 * 1024 && jpg.length < 5 * 1024 * 1024, `tamanho ${jpg.length}`);
+      const up = await internal(app, 'POST', '/internal/account/avatar', { token: tok, body: { imageBase64: jpg.toString('base64') } });
+      assert.equal(up.statusCode, 200);
+      await internal(app, 'POST', '/internal/account/avatar/delete', { token: tok });
     });
 
     test('arquivo disfarçado de imagem é recusado', async () => {

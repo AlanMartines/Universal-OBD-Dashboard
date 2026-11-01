@@ -55,6 +55,18 @@ describe('arquivos', () => {
       assert.ok(!raw.includes('{{{'), file);
     }
   });
+  test('todo campo obrigatório tem rótulo com asterisco', () => {
+    for (const file of views) {
+      const raw = readFileSync(file, 'utf8');
+      for (const [tag] of raw.matchAll(/<(?:input|select|textarea)\b[^>]*>/g)) {
+        if (!/\srequired\b/.test(tag)) continue;
+        const id = /\sid="([^"]+)"/.exec(tag)?.[1];
+        assert.ok(id, `${file}: campo sem id: ${tag}`);
+        assert.match(raw, new RegExp(`<label class="[^"]*required-mark[^"]*" for="${id}">`), `${file}: ${id}`);
+      }
+    }
+  });
+
   test('sem CDN, script ou estilo embutido', () => {
     for (const file of [...views, ...collectFiles(join(HERE, '../public')).filter((f) => /\.(css|js)$/.test(f))]) {
       const raw = readFileSync(file, 'utf8');
@@ -292,6 +304,35 @@ describe('fluxo pelo navegador', () => {
     assert.equal((await post('/conta/foto/remover', { _csrf: csrf }, adminCookie)).statusCode, 303);
   });
 
+  test('foto acima do limite volta à tela com mensagem, sem página de erro', async () => {
+    const page = await web.inject({ method: 'GET', url: '/conta', headers: { cookie: adminCookie } });
+    const csrf = field(page.body, '_csrf');
+    const b = 'limite-grande';
+    const payload = Buffer.concat([
+      Buffer.from(`--${b}\r\nContent-Disposition: form-data; name="_csrf"\r\n\r\n${csrf}\r\n--${b}\r\nContent-Disposition: form-data; name="avatar"; filename="g.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`),
+      Buffer.alloc(5 * 1024 * 1024 + 10),
+      Buffer.from(`\r\n--${b}--\r\n`),
+    ]);
+    const res = await web.inject({ method: 'POST', url: '/conta/foto', payload, headers: { ...browser(adminCookie), 'content-type': `multipart/form-data; boundary=${b}` } });
+    assert.equal(res.statusCode, 303);
+    assert.equal(res.headers.location, '/conta?erro=image_too_large');
+    const shown = await web.inject({ method: 'GET', url: res.headers.location, headers: { cookie: adminCookie } });
+    assert.match(shown.body, /passa de 5 MB/);
+    const injected = await web.inject({ method: 'GET', url: `/conta?erro=${encodeURIComponent('<script>x</script>')}&aviso=${encodeURIComponent('<b>x</b>')}`, headers: { cookie: adminCookie } });
+    assert.ok(!injected.body.includes('<script>x') && !injected.body.includes('<b>x</b>'));
+  });
+
+  test('formulários carregam validação e medidor com arquivos locais', async () => {
+    const page = await web.inject({ method: 'GET', url: '/conta', headers: { cookie: adminCookie } });
+    assert.match(page.body, /data-password-meter="newPassword"/);
+    assert.match(page.body, /id="current-email"/);
+    for (const url of ['/vendor/jquery/jquery.min.js', '/vendor/jquery-validation/jquery.validate.min.js', '/static/js/forms.js']) {
+      assert.match(page.body, new RegExp(`src="${url}"`));
+      assert.equal((await web.inject({ method: 'GET', url })).statusCode, 200, url);
+    }
+    assert.notEqual((await web.inject({ method: 'GET', url: '/vendor/jquery/jquery.js' })).statusCode, 200);
+  });
+
   test('link de e-mail: abrir não altera nada; confirmar exige a mesma origem', async () => {
     const opened = await web.inject({ method: 'GET', url: '/conta/email/confirmar?token=token-invalido-de-teste-1234567890' });
     assert.equal(opened.statusCode, 200);
@@ -304,17 +345,41 @@ describe('fluxo pelo navegador', () => {
     assert.ok(!xss.body.includes('<script>alert(1)'));
   });
 
-  test('não admin não entra na administração', async () => {
+  test('perfis: tela do Admin e do Usuário; Super Admin escolhe a conta', async () => {
+    const enter = async (username, password, newPassword) => {
+      const cookie = cookieOf(await signIn(username, password));
+      const c = await csrfOf(cookie, '/conta/senha');
+      await post('/conta/senha', { _csrf: c, currentPassword: password, newPassword, confirm: newPassword }, cookie);
+      return cookie;
+    };
+    const senhaDe = (body) => /user-select-all[^"]*">([^<]+)</.exec(body)[1];
     const csrf = await csrfOf(adminCookie);
-    const made = await post('/admin/usuarios', { _csrf: csrf, username: 'comum', role: 'user' }, adminCookie);
-    const password = /user-select-all[^"]*">([^<]+)</.exec(made.body)[1];
-    const login = await signIn('comum', password);
-    const cookie = cookieOf(login);
-    const c2 = await csrfOf(cookie, '/conta/senha');
-    await post('/conta/senha', { _csrf: c2, currentPassword: password, newPassword: 'uma frase longa para esta conta', confirm: 'uma frase longa para esta conta' }, cookie);
+    const superPage = await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } });
+    assert.match(superPage.body, /name="accountId"/);
+    assert.match(superPage.body, /Auditoria recente/);
+    const semConta = await post('/admin/usuarios', { _csrf: csrf, username: 'semconta', role: 'user', accountId: '' }, adminCookie);
+    assert.equal(semConta.statusCode, 400);
+    assert.match(semConta.body, /Escolha a conta/);
+
+    const madeAdmin = await post('/admin/usuarios', { _csrf: csrf, username: 'contadono', role: 'admin' }, adminCookie);
+    const donoCookie = await enter('contadono', senhaDe(madeAdmin.body), 'uma frase longa para esta conta');
+    const donoPage = await web.inject({ method: 'GET', url: '/admin', headers: { cookie: donoCookie } });
+    assert.equal(donoPage.statusCode, 200);
+    assert.ok(!donoPage.body.includes('name="accountId"'));
+    assert.ok(!donoPage.body.includes('Auditoria recente'));
+    assert.ok(!donoPage.body.includes('Cadastro público'));
+
+    const donoCsrf = await csrfOf(donoCookie);
+    const madeUser = await post('/admin/usuarios', { _csrf: donoCsrf, username: 'atendimento', role: 'user' }, donoCookie);
+    const cookie = await enter('atendimento', senhaDe(madeUser.body), 'uma frase longa para esta conta');
     const denied = await web.inject({ method: 'GET', url: '/admin', headers: { cookie } });
     assert.equal(denied.statusCode, 403);
     assert.ok(!denied.body.includes('href="/admin"'));
+    const panel = await web.inject({ method: 'GET', url: '/painel', headers: { cookie } });
+    assert.ok(!panel.body.includes('action="/dispositivos"'));
+    assert.ok(!panel.body.includes('Revogar'));
+    const conta = await web.inject({ method: 'GET', url: '/conta', headers: { cookie } });
+    assert.ok(!conta.body.includes('action="/conta/excluir"'));
   });
 
   test('menu lateral: só com login, item ativo, por papel e com arquivos locais', async () => {

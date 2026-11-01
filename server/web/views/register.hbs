@@ -2,25 +2,26 @@
   <div class="col-sm-10 col-md-6 col-lg-4">
     <h1 class="h3 mb-4">Criar conta</h1>
     {{> formError}}
-    <form method="post" action="/cadastro">
+    <form method="post" action="/cadastro" data-validate>
       <input type="hidden" name="formToken" value="{{formToken}}">
       <div class="hp-field" aria-hidden="true">
         <label for="website">Não preencha</label>
         <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
       </div>
       <div class="mb-3">
-        <label class="form-label" for="username">Usuário</label>
-        <input class="form-control" id="username" name="username" autocomplete="username" autocapitalize="none" minlength="3" maxlength="32" required>
+        <label class="form-label required-mark" for="username">Usuário</label>
+        <input class="form-control" id="username" name="username" autocomplete="username" autocapitalize="none" minlength="3" maxlength="32" data-rule-username="true" required>
         <div class="form-text">Letras minúsculas, números, ponto, _ ou -.</div>
       </div>
       <div class="mb-3">
-        <label class="form-label" for="password">Senha</label>
-        <input class="form-control" id="password" name="password" type="password" autocomplete="new-password" minlength="15" required>
-        <div class="form-text">Pelo menos 15 caracteres. Uma frase longa é uma boa opção.</div>
+        <label class="form-label required-mark" for="password">Senha</label>
+        <input class="form-control" id="password" name="password" type="password" autocomplete="new-password" data-rule-strongpassword="true" data-rule-notusername="#username" required>
+        <div class="form-text">Uma frase longa é uma boa opção.</div>
+        {{> passwordStrength for="password"}}
       </div>
       <div class="mb-3">
-        <label class="form-label" for="confirm">Repita a senha</label>
-        <input class="form-control" id="confirm" name="confirm" type="password" autocomplete="new-password" required>
+        <label class="form-label required-mark" for="confirm">Repita a senha</label>
+        <input class="form-control" id="confirm" name="confirm" type="password" autocomplete="new-password" data-rule-equalto="#password" required>
       </div>
       <button class="btn btn-primary w-100" type="submit">Criar conta</button>
     </form>

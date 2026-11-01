@@ -7,13 +7,13 @@ import { normalizeEmail, isValidEmail, randomToken, sha256, verifyPassword } fro
 const EMAIL_LINK_HOURS = 1;
 const EMAIL_RESEND_SECONDS = 60;
 const AVATAR_SIZE = 256;
-const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 const MAIL_READY_MINUTES = 15;
 
 /** Regrava a imagem: aceita só formatos reais e elimina metadados, como o GPS de fotos de celular. */
 export async function processAvatar(input) {
   try {
-    const image = sharp(input, { limitInputPixels: 24_000_000, failOn: 'error' });
+    const image = sharp(input, { limitInputPixels: 110_000_000, failOn: 'error' });
     const { format } = await image.metadata();
     if (!['jpeg', 'png', 'webp'].includes(format)) throw new Error('formato');
     return await image.rotate().resize(AVATAR_SIZE, AVATAR_SIZE, { fit: 'cover' }).webp({ quality: 82 }).toBuffer();
@@ -182,7 +182,7 @@ export default function accountRoutes(app, {
 
   app.post('/internal/account/avatar', {
     ...limit(20, '1 hour', perUser),
-    bodyLimit: 3 * 1024 * 1024,
+    bodyLimit: 8 * 1024 * 1024,
     preValidation: requireReady,
     schema: {
       body: {

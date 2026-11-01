@@ -17,7 +17,7 @@
     </div>
     <div class="sidebar-label">
       <div class="sidebar-user-name text-truncate">{{#if user.displayName}}{{user.displayName}}{{else}}{{user.username}}{{/if}}</div>
-      <div class="small text-body-secondary">{{#if (eq user.role "admin")}}Superadmin{{else}}Usuário{{/if}}</div>
+      <div class="small text-body-secondary">{{roleLabel user.role}}</div>
     </div>
   </div>
 
@@ -27,10 +27,10 @@
       <li><a href="/painel" title="Dispositivos" class="{{#if (eq activePage "painel")}}active{{/if}}" {{#if (eq activePage "painel")}}aria-current="page"{{/if}}><i class="fa-solid fa-mobile-screen fa-fw" aria-hidden="true"></i><span class="sidebar-label">Dispositivos</span></a></li>
     </ul>
 
-    {{#if (eq user.role "admin")}}
+    {{#if (canManage user)}}
     <p class="sidebar-group sidebar-label">Administração</p>
     <ul class="sidebar-nav">
-      <li><a href="/admin" title="Configurações" class="{{#if (eq activePage "admin")}}active{{/if}}" {{#if (eq activePage "admin")}}aria-current="page"{{/if}}><i class="fa-solid fa-gear fa-fw" aria-hidden="true"></i><span class="sidebar-label">Configurações</span></a></li>
+      <li><a href="/admin" title="{{#if (eq user.role "superadmin")}}Configurações{{else}}Usuários{{/if}}" class="{{#if (eq activePage "admin")}}active{{/if}}" {{#if (eq activePage "admin")}}aria-current="page"{{/if}}><i class="fa-solid fa-gear fa-fw" aria-hidden="true"></i><span class="sidebar-label">{{#if (eq user.role "superadmin")}}Configurações{{else}}Usuários{{/if}}</span></a></li>
     </ul>
     {{/if}}
 

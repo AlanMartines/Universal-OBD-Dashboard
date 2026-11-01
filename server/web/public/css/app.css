@@ -430,10 +430,6 @@ html {
   .device-add {
     width: 100%;
   }
-  .device-add .form-control {
-    flex: 1;
-    min-width: 0;
-  }
   .chart-box {
     height: 240px;
   }
@@ -460,4 +456,29 @@ html {
     padding-top: 0.4rem;
     padding-bottom: 0.4rem;
   }
+}
+
+/* ---------- Medidor de senha ---------- */
+.password-meter .progress {
+  height: 6px;
+}
+
+.password-meter .progress-bar {
+  width: 0;
+  transition: width 0.15s ease;
+}
+
+.password-rules li {
+  color: var(--bs-secondary-color);
+}
+
+.password-rules li.rule-ok {
+  color: var(--bs-success-text-emphasis);
+}
+
+/* Campo obrigatório: asterisco vermelho depois do rótulo. */
+.required-mark::after {
+  margin-left: 0.25rem;
+  color: var(--bs-danger);
+  content: "*";
 }

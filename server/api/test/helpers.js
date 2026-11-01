@@ -59,9 +59,9 @@ export async function adminToken(app) {
   return token;
 }
 
-/** Cria usuário comum pronto e devolve o token de sessão. */
+/** Cria um Admin (dono de conta) pronto e devolve o token de sessão. */
 export async function userToken(app, admin, username) {
-  const created = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username, role: 'user' } });
+  const created = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username, role: 'admin' } });
   const { password } = created.json();
   const token = await login(app, username, password);
   await internal(app, 'POST', '/internal/auth/password', {

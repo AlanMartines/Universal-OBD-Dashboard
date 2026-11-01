@@ -1,4 +1,4 @@
-<h1 class="h3 mb-4">Administração</h1>
+<h1 class="h3 mb-4">{{#if isSuper}}Administração{{else}}Usuários{{/if}}</h1>
 {{> formError}}
 {{#if created}}
 <div class="alert alert-success" role="alert">
@@ -8,7 +8,8 @@
 {{/if}}
 
 <div class="row g-4 mb-4">
-  <div class="col-md-6">
+  {{#if isSuper}}
+  <div class="col-md-5">
     <div class="card h-100">
       <div class="card-body">
         <h2 class="h5">Cadastro público</h2>
@@ -21,24 +22,41 @@
       </div>
     </div>
   </div>
-  <div class="col-md-6">
+  {{/if}}
+  <div class="{{#if isSuper}}col-md-7{{else}}col-12{{/if}}">
     <div class="card h-100">
       <div class="card-body">
         <h2 class="h5">Novo usuário</h2>
-        <form method="post" action="/admin/usuarios" class="row g-2">
+        {{#unless isSuper}}<p class="small text-body-secondary">Usuários de atendimento só visualizam os dados da sua conta.</p>{{/unless}}
+        <form method="post" action="/admin/usuarios" class="row g-2" data-validate>
           <input type="hidden" name="_csrf" value="{{csrf}}">
-          <div class="col-sm-5">
-            <label class="visually-hidden" for="new-username">Usuário</label>
-            <input class="form-control" id="new-username" name="username" placeholder="Usuário" autocomplete="off" maxlength="32" required>
+          <div class="{{#if isSuper}}col-sm-6{{else}}col-sm-9{{/if}}">
+            <label class="form-label small fw-semibold required-mark" for="new-username">Usuário</label>
+            <input class="form-control" id="new-username" name="username" autocomplete="off" maxlength="32" data-rule-username="true" required>
           </div>
-          <div class="col-sm-4">
-            <label class="visually-hidden" for="new-role">Papel</label>
+          {{#if isSuper}}
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold" for="new-role">Perfil</label>
             <select class="form-select" id="new-role" name="role">
-              <option value="user">Usuário</option>
-              <option value="admin">Admin</option>
+              <option value="user">Usuário (atendimento)</option>
+              <option value="admin">Admin (dono de conta)</option>
+              <option value="superadmin">Super Admin</option>
             </select>
           </div>
-          <div class="col-sm-3"><button class="btn btn-primary w-100" type="submit">Criar</button></div>
+          <div class="col-12" id="new-account-box">
+            <label class="form-label small fw-semibold required-mark" for="new-account">Conta vinculada</label>
+            <select class="form-select" id="new-account" name="accountId" required>
+              <option value="">Selecione a conta</option>
+              {{#each accounts}}<option value="{{id}}">{{username}}</option>{{/each}}
+            </select>
+            {{#unless accounts.length}}<div class="form-text">Crie primeiro um usuário Admin: a conta é dele.</div>{{/unless}}
+          </div>
+          {{else}}
+          <input type="hidden" name="role" value="user">
+          {{/if}}
+          <div class="{{#if isSuper}}col-12 text-end{{else}}col-sm-3 d-flex align-items-end{{/if}}">
+            <button class="btn btn-primary {{#unless isSuper}}w-100{{/unless}}" type="submit">Criar</button>
+          </div>
         </form>
       </div>
     </div>
@@ -48,13 +66,14 @@
 <h2 class="h5">Usuários</h2>
 <div class="table-responsive mb-4">
   <table class="table table-sm table-striped table-hover table-stack">
-    <thead class="table-dark"><tr><th>Usuário</th><th>E-mail</th><th>Papel</th><th>Situação</th><th>Dispositivos</th><th>Criado em</th><th></th></tr></thead>
+    <thead class="table-dark"><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Conta</th><th>Situação</th><th>Dispositivos</th><th>Criado em</th><th></th></tr></thead>
     <tbody>
       {{#each users}}
       <tr>
         <td data-label="Usuário" class="text-break">{{username}}</td>
         <td data-label="E-mail" class="text-break">{{email}}</td>
-        <td data-label="Papel">{{role}}</td>
+        <td data-label="Perfil">{{roleLabel role}}</td>
+        <td data-label="Conta">{{account}}</td>
         <td data-label="Situação">
           {{#if disabled}}<span class="badge text-bg-secondary">Desativado</span>{{else}}<span class="badge text-bg-success">Ativo</span>{{/if}}
           {{#if must_change_password}}<span class="badge text-bg-warning">Trocar senha</span>{{/if}}
@@ -80,6 +99,7 @@
   </table>
 </div>
 
+{{#if isSuper}}
 <h2 class="h5">Auditoria recente</h2>
 <div class="table-responsive">
   <table class="table table-sm table-striped table-hover table-stack">
@@ -91,3 +111,4 @@
     </tbody>
   </table>
 </div>
+{{/if}}

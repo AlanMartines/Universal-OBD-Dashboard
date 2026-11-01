@@ -36,6 +36,8 @@ export function createHandlebars() {
     const letters = parts.length > 1 ? [parts[0], parts[parts.length - 1]] : parts;
     return letters.map((p) => [...p][0]).join('').toUpperCase() || '?';
   });
+  hbs.registerHelper('roleLabel', (role) => ({ superadmin: 'Super Admin', admin: 'Admin', user: 'Usuário' }[role] ?? ''));
+  hbs.registerHelper('canManage', (user) => Boolean(user) && user.role !== 'user');
   hbs.registerHelper('date', (value) => (value ? dateFormat.format(new Date(value)) : '—'));
   return hbs;
 }
@@ -93,7 +95,7 @@ export async function buildApp({ config, logger }) {
   await app.register(formbody);
   await app.register(multipart, {
     attachFieldsToBody: 'keyValues',
-    limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 4, parts: 5 },
+    limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 4, parts: 5 },
   });
   await app.register(rateLimit, {
     global: true,
@@ -112,6 +114,7 @@ export async function buildApp({ config, logger }) {
       partials: {
         formError: 'partials/form-error.hbs',
         sidebar: 'partials/sidebar.hbs',
+        passwordStrength: 'partials/password-strength.hbs',
       },
     },
   });
@@ -147,9 +150,24 @@ export async function buildApp({ config, logger }) {
     allowedPath: (path) => path === '/css/all.min.css' || /^\/webfonts\/fa-[a-z0-9-]+\.woff2$/.test(path),
   });
 
+  await app.register(fastifyStatic, {
+    root: join(ROOT, 'node_modules/jquery/dist'),
+    prefix: '/vendor/jquery/',
+    decorateReply: false,
+    maxAge: '7d',
+    allowedPath: (path) => path === '/jquery.min.js',
+  });
+  await app.register(fastifyStatic, {
+    root: join(ROOT, 'node_modules/jquery-validation/dist'),
+    prefix: '/vendor/jquery-validation/',
+    decorateReply: false,
+    maxAge: '7d',
+    allowedPath: (path) => path === '/jquery.validate.min.js',
+  });
+
   app.addHook('onSend', async (request, reply) => {
     reply.header('X-Robots-Tag', 'noindex, nofollow');
-    reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()');
+    reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
     if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/') && !request.url.startsWith('/conta/foto')) {
       reply.header('Cache-Control', 'no-store');
     }
@@ -204,6 +222,8 @@ export async function buildApp({ config, logger }) {
       const code = status === 429 ? 'too_many_requests' : status < 500 ? 'invalid_request' : 'unavailable';
       return reply.code(status).send({ error: code });
     }
+    // Foto grande demais: volta à tela com uma mensagem clara, em vez da página de erro.
+    if (error.code === 'FST_REQ_FILE_TOO_LARGE') return reply.redirect('/conta?erro=image_too_large', 303);
     if (error instanceof ApiError) {
       if (error.status === 401) {
         clearSession(reply);
@@ -250,7 +270,7 @@ export async function buildApp({ config, logger }) {
   const requireAdmin = async (request, reply) => {
     const result = await requireUser(request, reply);
     if (reply.sent || result) return result;
-    if (request.user.role !== 'admin') throw new ApiError(403, 'forbidden');
+    if (request.user.role === 'user') throw new ApiError(403, 'forbidden');
     return undefined;
   };
 

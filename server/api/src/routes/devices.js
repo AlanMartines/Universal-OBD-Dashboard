@@ -3,7 +3,7 @@ import { fail } from '../errors.js';
 import { deviceName, MAX_LIVE_PER_USER, PAIRING_MINUTES, uuidParam } from '../schemas.js';
 import { formatPairingCode, generatePairingCode, sha256 } from '../security.js';
 
-export default function devicesRoutes(app, { config, pool, live, limit, requireReady, loadDevice, publicDevice }) {
+export default function devicesRoutes(app, { config, pool, live, limit, requireReady, requireManager, loadDevice, publicDevice }) {
   app.get('/internal/devices', { preValidation: requireReady }, async (request) => {
     const { user } = request.session;
     const { rows } = await pool.query(
@@ -11,14 +11,14 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
          FROM devices d JOIN users u ON u.id = d.user_id
         WHERE (d.user_id = $1 OR $2) AND (d.paired_at IS NOT NULL OR d.pairing_expires_at > now())
         ORDER BY d.revoked_at NULLS FIRST, d.last_seen_at DESC NULLS LAST, d.created_at DESC`,
-      [user.id, user.role === 'admin'],
+      [user.tenantId, user.role === 'superadmin'],
     );
     return { devices: rows.map(publicDevice) };
   });
 
   app.post('/internal/devices', {
     ...limit(20, '1 hour'),
-    preValidation: requireReady,
+    preValidation: requireManager,
     schema: {
       body: { type: 'object', required: ['name'], additionalProperties: false, properties: { name: deviceName } },
     },
@@ -86,7 +86,7 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     return { points: rows.map((r) => ({ t: r.bucket, v: r.value })) };
   });
 
-  app.post('/internal/devices/:id/revoke', { preValidation: requireReady, schema: { params: uuidParam } }, async (request) => {
+  app.post('/internal/devices/:id/revoke', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
     const device = await loadDevice(request);
     await pool.query(
       `UPDATE devices SET revoked_at = COALESCE(revoked_at, now()), token_hash = NULL, pairing_code_hash = NULL WHERE id = $1`,
@@ -96,7 +96,7 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     return { ok: true };
   });
 
-  app.post('/internal/devices/:id/delete', { preValidation: requireReady, schema: { params: uuidParam } }, async (request) => {
+  app.post('/internal/devices/:id/delete', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
     const device = await loadDevice(request);
     await pool.query('DELETE FROM devices WHERE id = $1', [device.id]);
     await audit(pool, { actor: request.session.user.username, action: 'dispositivo_excluido', target: device.id, ip: request.clientIp });

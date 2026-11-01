@@ -31,7 +31,7 @@ Aponte o domínio de `APP_URL` para `http://IP_DO_SERVIDOR:HTTP_PORT` e configur
 - substituir `X-Forwarded-For` pelo IP real do cliente, sem aceitar o valor enviado por ele;
 - preservar o cabeçalho `Origin`;
 - não reter respostas `text/event-stream`, usadas no tempo real;
-- aceitar corpo de pelo menos 3 MB, por causa da foto de perfil (por exemplo, `client_max_body_size 10M`).
+- aceitar corpo de pelo menos 6 MB, por causa da foto de perfil (por exemplo, `client_max_body_size 10M`).
 
 Com `HTTP_BIND=0.0.0.0`, libere `HTTP_PORT` no firewall só para o proxy. O Docker publica portas passando por cima de regras comuns do `ufw`, então confira a cadeia `DOCKER-USER`. Se a porta ficar aberta, é possível falsificar o IP de origem e escapar dos limites por IP. Se o proxy estiver em um IP público, informe esse IP em `TRUST_PROXY`.
 
@@ -40,7 +40,7 @@ Com `HTTP_BIND=0.0.0.0`, libere `HTTP_PORT` no firewall só para o proxy. O Dock
 O login aceita usuário ou e-mail. Em **Meus Dados**, a pessoa altera nome, foto, e-mail e senha.
 
 - **E-mail:** o novo endereço só vale depois de abrir o link enviado a ele, válido por 1 hora. A troca pede a senha atual e avisa o endereço antigo.
-- **Foto:** JPG, PNG ou WebP de até 2 MB. A imagem é regravada em 256 × 256, sem metadados como GPS, e fica no banco, visível só com login.
+- **Foto:** JPG, PNG ou WebP de até 5 MB. A imagem é regravada em 256 × 256, sem metadados como GPS, e fica no banco, visível só com login.
 
 ## Reset de senha
 

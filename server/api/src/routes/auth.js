@@ -20,8 +20,10 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
     const { password } = request.body;
     const { rows } = await pool.query(
       // Nome de usuário nunca tem @, então não há como confundir com um e-mail.
-      `SELECT id, username, password_hash, disabled, failed_logins, locked_until FROM users
-        WHERE ${username.includes('@') ? 'email' : 'username'} = $1`,
+      `SELECT u.id, u.username, u.password_hash, u.failed_logins, u.locked_until,
+              u.disabled OR COALESCE(owner.disabled, false) AS disabled
+         FROM users u LEFT JOIN users owner ON owner.id = u.account_id
+        WHERE u.${username.includes('@') ? 'email' : 'username'} = $1`,
       [username],
     );
     const user = rows[0];
@@ -111,7 +113,8 @@ export default function authRoutes(app, { pool, limit, requireSession, requireRe
     },
   }, async (request) => {
     const { user } = request.session;
-    if (user.role === 'admin') throw fail(400, 'admin_cannot_self_delete');
+    // Só o dono apaga a própria conta. Usuário de atendimento é removido pelo Admin dele.
+    if (user.role !== 'admin') throw fail(400, 'admin_cannot_self_delete');
     const { rows } = await pool.query('SELECT password_hash FROM users WHERE id = $1', [user.id]);
     if (!(await verifyPassword(rows[0].password_hash, request.body.password))) throw fail(400, 'current_password_wrong');
     await pool.query('DELETE FROM users WHERE id = $1', [user.id]);

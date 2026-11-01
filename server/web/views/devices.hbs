@@ -1,24 +1,28 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
   <h1 class="h3 mb-0">Dispositivos</h1>
-  <form method="post" action="/dispositivos" class="device-add d-flex gap-2">
+  {{#if (canManage user)}}
+  <form method="post" action="/dispositivos" class="device-add" data-validate>
     <input type="hidden" name="_csrf" value="{{csrf}}">
-    <label class="visually-hidden" for="name">Nome do dispositivo</label>
-    <input class="form-control" id="name" name="name" placeholder="Ex.: celular do carro" maxlength="60" required>
-    <button class="btn btn-primary text-nowrap" type="submit">Adicionar</button>
+    <label class="form-label required-mark" for="name">Nome do dispositivo</label>
+    <div class="input-group">
+      <input class="form-control" id="name" name="name" placeholder="Ex.: celular do carro" maxlength="60" required>
+      <button class="btn btn-primary text-nowrap" type="submit">Adicionar</button>
+    </div>
   </form>
+  {{/if}}
 </div>
 {{> formError}}
 {{#if devices.length}}
 <div class="table-responsive">
   <table class="table table-sm table-striped table-hover table-stack">
     <thead class="table-dark">
-      <tr><th>Nome</th>{{#if (eq user.role "admin")}}<th>Conta</th>{{/if}}<th>Situação</th><th>Último envio</th><th>ID da instalação</th><th></th></tr>
+      <tr><th>Nome</th>{{#if (eq user.role "superadmin")}}<th>Conta</th>{{/if}}<th>Situação</th><th>Último envio</th><th>ID da instalação</th><th></th></tr>
     </thead>
     <tbody>
       {{#each devices}}
       <tr>
         <td data-label="Nome">{{#if pairedAt}}<a href="/dispositivos/{{id}}">{{name}}</a>{{else}}{{name}}{{/if}}</td>
-        {{#if (eq ../user.role "admin")}}<td data-label="Conta">{{owner}}</td>{{/if}}
+        {{#if (eq ../user.role "superadmin")}}<td data-label="Conta">{{owner}}</td>{{/if}}
         <td data-label="Situação">
           {{#if revokedAt}}<span class="badge text-bg-secondary">Revogado</span>
           {{else if pairedAt}}<span class="badge text-bg-success">Pareado</span>
@@ -27,6 +31,7 @@
         <td data-label="Último envio">{{date lastSeenAt}}</td>
         <td data-label="ID da instalação" class="small text-body-secondary font-monospace text-break">{{installationId}}</td>
         <td class="table-actions text-end">
+          {{#if (canManage ../user)}}
           {{#unless revokedAt}}
           <form method="post" action="/dispositivos/{{id}}/revogar" class="d-inline">
             <input type="hidden" name="_csrf" value="{{../csrf}}">
@@ -37,6 +42,7 @@
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <button class="btn btn-outline-danger btn-sm" type="submit">Excluir com dados</button>
           </form>
+        {{/if}}
         </td>
       </tr>
       {{/each}}
@@ -46,6 +52,6 @@
 {{else}}
 <div class="card card-body text-center py-5">
   <p class="mb-1">Nenhum dispositivo ainda.</p>
-  <p class="text-body-secondary mb-0">Dê um nome ao celular e clique em Adicionar para gerar o código de pareamento.</p>
+  {{#if (canManage user)}}<p class="text-body-secondary mb-0">Dê um nome ao celular e clique em Adicionar para gerar o código de pareamento.</p>{{/if}}
 </div>
 {{/if}}
