@@ -1,13 +1,6 @@
 {{#> pageHeader title="Dispositivos"}}
   {{#if (canManage user)}}
-  <form method="post" action="/dispositivos" class="device-add" data-validate>
-    <input type="hidden" name="_csrf" value="{{csrf}}">
-    <label class="form-label required-mark" for="name">Nome do dispositivo</label>
-    <div class="input-group">
-      <input class="form-control" id="name" name="name" placeholder="Ex.: celular do carro" maxlength="60" required>
-      <button class="btn btn-primary text-nowrap" type="submit">Adicionar</button>
-    </div>
-  </form>
+  <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#add-device-modal"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Adicionar dispositivo</button>
   {{/if}}
 {{/pageHeader}}
 {{> formError}}
@@ -19,7 +12,7 @@
     <tbody>
       {{#each devices}}
       <tr>
-        <td data-label="Nome">{{#if pairedAt}}<a href="/dispositivos/{{id}}">{{name}}</a>{{else}}{{name}}{{/if}}</td>
+        <td data-label="Nome" class="text-break">{{name}}</td>
         {{#if (eq ../user.role "superadmin")}}<td data-label="Conta">{{owner}}</td>{{/if}}
         <td data-label="Situação">
           {{#if revokedAt}}<span class="badge text-bg-secondary">Revogado</span>
@@ -29,6 +22,7 @@
         <td data-label="Último envio">{{date lastSeenAt}}</td>
         <td data-label="ID da instalação" class="small text-body-secondary font-monospace text-break">{{installationId}}</td>
         <td class="table-actions text-end">
+          {{#if pairedAt}}<a class="btn btn-primary btn-sm" href="/dispositivos/{{id}}" title="Visualizar" aria-label="Visualizar {{name}}"><i class="fa-solid fa-eye" aria-hidden="true"></i></a>{{/if}}
           {{#if (canManage ../user)}}
           {{#unless revokedAt}}
           <form method="post" action="/dispositivos/{{id}}/revogar" class="d-inline" data-confirm="Revogar {{name}}? O aparelho deixa de enviar dados." data-confirm-label="Revogar">
@@ -50,6 +44,56 @@
 {{else}}
 <div class="card card-body text-center py-5">
   <p class="mb-1">Nenhum dispositivo ainda.</p>
-  {{#if (canManage user)}}<p class="text-body-secondary mb-0">Dê um nome ao celular e clique em Adicionar para gerar o código de pareamento.</p>{{/if}}
+  {{#if (canManage user)}}<p class="text-body-secondary mb-0">Clique em Adicionar dispositivo para gerar o código de pareamento.</p>{{/if}}
+</div>
+{{/if}}
+
+{{#if (canManage user)}}
+<div class="modal fade" id="add-device-modal" tabindex="-1" aria-labelledby="add-device-title" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5" id="add-device-title">Adicionar dispositivo</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <div id="add-device-step-form">
+          <div class="alert alert-danger" id="add-device-error" role="alert" hidden></div>
+          <form method="post" action="/dispositivos" id="add-device-form" data-validate>
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <label class="form-label fw-semibold required-mark" for="name">Nome do dispositivo</label>
+            <input class="form-control" id="name" name="name" placeholder="Ex.: celular do carro" maxlength="60" required>
+          </form>
+        </div>
+        <div id="add-device-step-wait" class="text-center" hidden>
+          <p class="text-body-secondary mb-2">Código de pareamento</p>
+          <p class="pairing-code font-monospace mb-2" id="add-device-code"></p>
+          <p class="small text-body-secondary">Vale por <span id="add-device-minutes"></span> minutos, uma única vez.</p>
+          <ol class="text-start small">
+            <li>No app, abra <strong>Ajustes → Telemetria remota</strong>.</li>
+            <li>Informe o endereço <strong class="text-break">{{serverUrl}}</strong> e o código acima.</li>
+            <li>Toque em <strong>Parear</strong>.</li>
+          </ol>
+          <div class="d-flex justify-content-center align-items-center gap-2" role="status">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            <span>Aguardando o app se conectar…</span>
+          </div>
+        </div>
+        <div id="add-device-step-done" class="text-center" role="status" hidden>
+          <i class="fa-solid fa-circle-check fa-3x text-success mb-3" aria-hidden="true"></i>
+          <p class="mb-0 fw-semibold">Dispositivo conectado.</p>
+        </div>
+        <div id="add-device-step-expired" class="text-center" role="status" hidden>
+          <i class="fa-solid fa-clock fa-3x text-warning mb-3" aria-hidden="true"></i>
+          <p class="mb-0">O código venceu. Feche e adicione de novo.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" id="add-device-cancel" data-bs-dismiss="modal">Fechar</button>
+        <button type="submit" form="add-device-form" class="btn btn-primary" id="add-device-submit">Adicionar</button>
+        <button type="button" class="btn btn-success" id="add-device-ok" data-bs-dismiss="modal" hidden>OK</button>
+      </div>
+    </div>
+  </div>
 </div>
 {{/if}}

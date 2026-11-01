@@ -229,6 +229,30 @@ describe('fluxo pelo navegador', () => {
     assert.equal(hist.json().points.length, 1);
   });
 
+  test('modal de dispositivo: responde JSON, informa pareamento e lista tem botão de visualizar', async () => {
+    const csrf = await csrfOf(adminCookie);
+    const made = await web.inject({
+      method: 'POST', url: '/dispositivos', payload: new URLSearchParams({ _csrf: csrf, name: 'Pelo modal' }).toString(),
+      headers: { ...browser(adminCookie), 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+    });
+    assert.equal(made.statusCode, 200);
+    const { id, pairingCode } = made.json();
+    const state = () => web.inject({ method: 'GET', url: `/dispositivos/${id}/estado`, headers: { cookie: adminCookie } });
+    assert.deepEqual((await state()).json(), { paired: false });
+    await web.inject({ method: 'POST', url: '/api/v1/devices/register', payload: { code: pairingCode, installationId: 'abababab-abab-4bab-8bab-abababababab' } });
+    assert.deepEqual((await state()).json(), { paired: true });
+    const bad = await web.inject({
+      method: 'POST', url: '/dispositivos', payload: new URLSearchParams({ _csrf: csrf, name: '<b>x</b>' }).toString(),
+      headers: { ...browser(adminCookie), 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+    });
+    assert.equal(bad.statusCode, 400);
+    assert.ok(bad.json().error);
+    const panel = await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } });
+    assert.match(panel.body, /id="add-device-modal"/);
+    assert.ok(!panel.body.includes(`<a href="/dispositivos/${id}">`));
+    assert.match(panel.body, new RegExp(`btn btn-primary btn-sm" href="/dispositivos/${id}"`));
+  });
+
   test('corpo inválido na rota do aparelho responde JSON, sem HTML', async () => {
     const res = await web.inject({ method: 'POST', url: '/api/v1/telemetry', headers: { 'content-type': 'application/json' }, payload: '{quebrado' });
     assert.equal(res.statusCode, 400);

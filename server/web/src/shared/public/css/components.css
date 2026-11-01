@@ -135,3 +135,10 @@
   background: var(--bs-warning-bg-subtle);
   border-bottom: 2px solid var(--bs-warning);
 }
+
+/* Botões de ação na mesma linha, quando a tabela não vira cartões. */
+@media (min-width: 768px) {
+  .table-actions {
+    white-space: nowrap;
+  }
+}

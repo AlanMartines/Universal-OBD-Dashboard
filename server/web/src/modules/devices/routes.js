@@ -16,20 +16,29 @@ export default function devicesRoutes(app, { config, api, cookieName, requireUse
     const query = new URLSearchParams({ page: pageParam(request) });
     const { devices, pagination } = await api(request, 'GET', `/internal/devices?${query}`);
     return reply.code(status).view('modules/devices/views/devices.hbs', context(request, {
-      title: 'Dispositivos', devices, error, pager: pagerFor(pagination, request, { path: '/painel' }), ...DEVICE_ASSETS,
+      title: 'Dispositivos', devices, error, serverUrl: config.publicOrigin, pager: pagerFor(pagination, request, { path: '/painel' }), pageScripts: ['/modules/devices/devices.js'], ...DEVICE_ASSETS,
     }));
   };
 
   app.get('/painel', { preHandler: requireUser }, async (request, reply) => panelView(request, reply));
 
   app.post('/dispositivos', { preHandler: requireUser }, async (request, reply) => {
+    // O modal pede JSON. Sem JavaScript, o formulário cai na página de pareamento.
+    const wantsJson = String(request.headers.accept ?? '').includes('application/json');
     try {
       const created = await api(request, 'POST', '/internal/devices', { body: { name: String(request.body?.name ?? '').trim() } });
+      if (wantsJson) return created;
       return reply.view('modules/devices/views/pairing.hbs', context(request, { title: 'Parear dispositivo', ...created, ...DEVICE_ASSETS }));
     } catch (error) {
       if (!(error instanceof ApiError) || error.status >= 500 || error.status === 401) throw error;
+      if (wantsJson) return reply.code(error.status).send({ error: message(error.code) });
       return panelView(request, reply, error.status, message(error.code));
     }
+  });
+
+  app.get('/dispositivos/:id/estado', { preHandler: requireUser }, async (request) => {
+    const { device } = await api(request, 'GET', `/internal/devices/${requireUuid(request)}`);
+    return { paired: Boolean(device.pairedAt) };
   });
 
   app.get('/dispositivos/:id', { preHandler: requireUser }, async (request, reply) => {
