@@ -67,6 +67,15 @@ interface TripDao {
     @Query("SELECT MAX(timestamp) FROM telemetry_log WHERE trip_id = :tripId")
     suspend fun lastTelemetryAt(tripId: Long): Long?
 
+    @Query("SELECT * FROM telemetry_log WHERE id > :afterId ORDER BY id LIMIT :limit")
+    suspend fun telemetryAfter(afterId: Long, limit: Int): List<TelemetryLogEntity>
+
+    @Query("SELECT MAX(id) FROM telemetry_log")
+    suspend fun maxTelemetryId(): Long?
+
+    @Query("SELECT COUNT(*) FROM telemetry_log WHERE id > :afterId")
+    suspend fun countTelemetryAfter(afterId: Long): Int
+
     @Query("SELECT COUNT(*) FROM telemetry_log WHERE trip_id = :tripId")
     suspend fun telemetryCount(tripId: Long): Int
 

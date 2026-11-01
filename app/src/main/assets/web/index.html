@@ -284,6 +284,28 @@
         <p id="backup-result" class="small"></p>
       </div>
 
+      <div class="card form" id="remote-card">
+        <span class="label">Telemetria remota (opcional)</span>
+        <p class="muted small">Envia as leituras do carro para o seu painel na internet. Sai só o que os sensores medem, o horário e o número da viagem. VIN não é enviado, e o GPS só sai se você ligar a opção abaixo. O servidor nunca envia comandos ao carro.</p>
+        <div id="remote-pair">
+          <label>Endereço do servidor <input id="remote-url" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://…"></label>
+          <label>Código de pareamento <input id="remote-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="Gerado em Dispositivos, no painel"></label>
+          <div class="row"><button id="remote-pair-btn" class="btn btn-primary">Parear</button></div>
+        </div>
+        <div id="remote-paired" hidden>
+          <p class="small"><b id="remote-name"></b> em <span id="remote-server"></span></p>
+          <p class="small">Aguardando envio: <b id="remote-pending">0</b> · Último envio: <span id="remote-last">ainda não</span></p>
+          <label class="check"><input id="remote-enabled" type="checkbox"> Enviar durante a captura</label>
+          <label class="check"><input id="remote-gps" type="checkbox"> Incluir localização GPS</label>
+          <div class="row">
+            <button id="remote-send" class="btn">Enviar agora</button>
+            <button id="remote-unpair" class="btn btn-danger">Remover pareamento</button>
+          </div>
+        </div>
+        <p class="muted small">ID desta instalação: <span id="remote-install"></span></p>
+        <p id="remote-result" class="small"></p>
+      </div>
+
       <div class="card form" id="ai-card">
         <span class="label">Assistente IA (opcional)</span>
         <p class="muted small">Explica códigos de falha com a IA que você escolher. Só funciona com internet e usa créditos da sua conta no provedor. Envia apenas dados do veículo e da falha, nunca GPS, trajeto ou VIN.</p>
@@ -429,6 +451,7 @@
   <script src="app-console.js"></script>
   <script src="app-backup.js"></script>
   <script src="app-assistente.js"></script>
+  <script src="app-remoto.js"></script>
   <script src="app-dispositivo.js"></script>
   <script src="app-main.js"></script>
 </body>

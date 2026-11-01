@@ -19,6 +19,7 @@ class BridgeContractTest {
         "AndroidFuel" to FuelBridge::class.java,
         "AndroidDiag" to DiagnosticsBridge::class.java,
         "AndroidAi" to AiBridge::class.java,
+        "AndroidRemote" to RemoteBridge::class.java,
     )
 
     private val web = File("src/main/assets/web")

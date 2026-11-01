@@ -2,7 +2,7 @@
 /* Ponte nativa, utilitários e abas. Os arquivos app-*.js compartilham o escopo global e são carregados em ordem (index.html). */
 /* Ponte nativa: um objeto por assunto (pacote bridge do app). Cada chamada à `bridge` acha o método no objeto
    que o tem. Fora do app (navegador) usa um simulador para pré-visualização. */
-const NATIVE_BRIDGES = ['AndroidBridge', 'AndroidHistory', 'AndroidFuel', 'AndroidDiag', 'AndroidAi']
+const NATIVE_BRIDGES = ['AndroidBridge', 'AndroidHistory', 'AndroidFuel', 'AndroidDiag', 'AndroidAi', 'AndroidRemote']
   .map((n) => window[n]).filter(Boolean);
 const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   get: (_, name) => {
@@ -10,6 +10,9 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
     return target ? (...args) => target[name](...args) : undefined;
   },
 }) : {
+  getRemoteStatus: () => '{"paired":false,"installationId":"pré-visualização"}',
+  remotePair: () => '{"ok":false,"error":"Pareamento disponível só no app"}',
+  remoteSave: () => 'ok', remoteSendNow: () => '{"ok":true,"message":"Disponível só no app"}', remoteUnpair: () => 'ok',
   startCapture() {}, stopCapture() {}, requestPermissions() {},
   getPermissions: () => '{}',
   getProfileMeta: () => JSON.stringify({ vehicleName: 'Pré-visualização', outputs: [], dashboard: { rpmMax: 7000, rpmRedline: 6250 },

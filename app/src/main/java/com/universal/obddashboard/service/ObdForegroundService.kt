@@ -35,6 +35,8 @@ import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.R
 import com.universal.obddashboard.db.AppDatabase
+import com.universal.obddashboard.remote.RemoteSync
+import com.universal.obddashboard.remote.RemoteUploader
 import com.universal.obddashboard.db.DiagnosticTroubleCodeEntity
 import com.universal.obddashboard.db.TelemetryLogEntity
 import com.universal.obddashboard.db.TripEntity
@@ -227,6 +229,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 launch { derivedLoop(loaded) },
                 launch { telemetryLogLoop(loaded) },
                 launch { statusNotificationLoop() },
+                launch { remoteUploadLoop() },
                 recorder?.let { launch { diagnosticSnapshotLoop() } },
             )
             val r = connectionLoop(loaded)
@@ -466,6 +469,23 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Falha ao gravar telemetria", e)
+            }
+        }
+    }
+
+    /** Envio ao servidor, só se a pessoa pareou. Falha de rede nunca atrapalha a captura. */
+    private suspend fun remoteUploadLoop() {
+        var failures = 0
+        while (true) {
+            delay(RemoteUploader.backoffMs(failures))
+            try {
+                val result = RemoteSync.drain(this)
+                failures = if (result?.outcome == RemoteUploader.Outcome.RETRY) failures + 1 else 0
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                failures += 1
+                Log.w(TAG, "Falha no envio remoto: ${e.javaClass.simpleName}")
             }
         }
     }

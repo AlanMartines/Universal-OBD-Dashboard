@@ -145,6 +145,17 @@ Em *Ajustes*, cada arquivo tem **Exportar .gz** (menu de compartilhar). Falhas f
   - Em outro celular, um backup não a revela.
 - **Custo e rede:** cada consulta usa créditos da sua conta no provedor. Sem internet, o botão avisa e o resto do app funciona igual.
 
+### Telemetria remota (opcional)
+
+*Ajustes → Telemetria remota* envia as leituras para um servidor próprio ([server/](server/README.md)). Fica desligada até você parear.
+
+- **Pareamento:** no painel, crie o dispositivo e use o código de uso único no app. O app gera um identificador aleatório e não usa IMEI nem MAC.
+- **O que sai:** só as leituras dos sensores, o horário, o número da viagem e os códigos de falha ativos. VIN não é enviado. O GPS tem opção própria, desligada por padrão.
+- **Só de saída:** a resposta do servidor nunca vira comando para o adaptador ou o carro.
+- **Sem sinal:** a telemetria continua na caixa preta do celular e sobe depois. O histórico anterior ao pareamento não é enviado.
+- **Quando envia:** durante a captura, ou ao tocar em *Enviar agora*.
+- **Segurança:** apenas `https://`, sem seguir redirecionamentos. O token fica cifrado no Android Keystore.
+
 ### Console da rede (escuta CAN)
 
 *Ajustes → Console da rede* abre uma tela tipo terminal que escuta por 60 s o tráfego CAN dos pinos 6/14, somente ouvindo: o ELM327 fica em modo silencioso (`ATCSM1`) e só recebe comandos `AT`. Se o adaptador não aceitar o modo silencioso, a escuta é cancelada. Com *Velocidade: automática*, o app experimenta 500, 250, 125, 100, 83,3, 50 e 33,3 kbps por 4 s cada e escuta na que trouxe mais quadros. No fim, mostra um resumo por ID com os bytes que variaram.
