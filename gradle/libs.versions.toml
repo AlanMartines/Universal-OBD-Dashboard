@@ -1,6 +1,6 @@
 # Versões de plugins e bibliotecas num lugar só (o Dependabot atualiza este arquivo).
 [versions]
-agp = "9.4.1"
+agp = "9.5.0"
 kotlin = "2.4.21"
 ksp = "2.3.12"
 coreKtx = "1.19.1"
