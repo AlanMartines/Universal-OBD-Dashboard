@@ -9,7 +9,6 @@ A comunicação pelo ELM327 está em uso. Falta confirmar estes sinais da rede C
 | Quando | Equipamento | O que capturar | Sinal a confirmar |
 |---|---|---|---|
 | Na próxima ida ao posto | Só ESP32 | Parado no mesmo lugar plano, antes e depois de abastecer | Nível do tanque: `0x380` b5 |
-| No mesmo trajeto | Só ESP32 | 40 e 60 km/h constantes, e 80 km/h se possível, comparando com o velocímetro | Velocidade: `0x2A0` b0–b1 ÷ 16 |
 | Depois da captura com o ESP32 | Só ELM327 | Registro do abastecimento e conferência da versão instalada | Calibração do consumo |
 | Quando o cabo Y chegar | ELM327 + ESP32 | Marcha lenta, 2.000 e 3.000 RPM, motor frio até quente, e tensão parado e funcionando | RPM, temperatura e tensão em `0x281` e `0x3E0`; convivência dos dois adaptadores |
 
@@ -152,14 +151,21 @@ Para o receptor:
 | ID | Bytes | Sinal | Fórmula | Situação |
 |---|---|---|---|---|
 | `0x603` | b1–b3 | Hodômetro total | Inteiro em km. Ex.: `01 E2 40` = 123.456 km | **Confirmado** com o painel em duas leituras |
-| `0x643` | b5–b7 | Hodômetro parcial | Inteiro ÷ 160, em km. Ex.: `01 86 A0` = 625,0 km | **Confirmado** com o painel em duas leituras |
+| `0x643` | b5–b7 | Hodômetro parcial | Inteiro ÷ 160, em km. Ex.: `01 86 A0` = 625,0 km. Avança de 16 em 16 (100 m) | **Confirmado** com o painel em duas leituras |
+| `0x2A0` | b0–b1 | Velocidade | Inteiro big-endian ÷ 16, em km/h. Ex.: `03 80` = 56,0 km/h | **Confirmado** em 02/11/2026 com o velocímetro e o hodômetro parcial |
 | `0x380` e `0x3C3` | `0x380` b0 bit 3; `0x3C3` b2 bit 4 (invertido) | Luzes acesas | 1 em `0x380` e 0 em `0x3C3` com as luzes acesas | **Confirmado** com lanterna e faróis; o farol alto não tem sinal próprio |
 | `0x281` | b5–b6 | RPM | `(b6·256+b5)/8`, como na Ducato | Provável: dá cerca de 850 em marcha lenta; falta comparar com a linha K |
 | `0x281` | b3 | Temperatura do motor | `b3−40` °C, como na Ducato | Provável: sobe com o motor ligado; falta comparar com a linha K |
 | `0x3E0` | b1 | Tensão da bateria | `b1×0,16` V | Provável: cai na partida e sobe com o motor ligado; falta medir |
 | `0x380` | b5 | Combustível | Escala desconhecida | Candidato: só caiu; falta comparar em um abastecimento |
 
-Setas, pisca-alerta, portas, freio de mão, pedal de freio e cinto não mudam nenhum byte. Velocidade: ainda sem dados, nada foi gravado em movimento. Os IDs `0x040` e `0x041` aparecem a cada 180 s, sem relação com as ações.
+Setas, pisca-alerta, portas, freio de mão, pedal de freio e cinto não mudam nenhum byte. Os IDs `0x040` e `0x041` aparecem a cada 180 s, sem relação com as ações.
+
+**Velocidade em 02/11/2026** (ESP32 + TJA1050, só escuta, em trechos constantes):
+- **Velocímetro:** marca de 7% a 8% acima do `0x2A0` em 50, 60 e 80 km/h. É erro do próprio velocímetro, que costuma marcar a mais.
+- **Hodômetro parcial:** conta 2% a mais que a distância pela velocidade do `0x2A0`, de forma constante (1,7% a 2,3% em seis gravações). Bate com o `obd_speed_factor` de 1,026 do ELM327, então o `0x2A0` deve ser a mesma velocidade que a ECU informa pelo OBD.
+- **Divisor:** fica ÷ 16. Para o mostrador bater com o velocímetro ou com o GPS, use a correção em Ajustes → Mostradores.
+- **Diferença para a Ducato:** o ID e os bytes não são os da Ducato X250 (`0x286` b2–b3).
 
 **O que indicava que a escuta podia funcionar:**
 - Neste carro, os pinos 6/14 vão ao **painel de instrumentos**, e a ECU também está na rede CAN, pelos bornes B13/B14 (manual, pág. 162–163). A ECU faz o diagnóstico pela linha K (pino 7), então a rede dos pinos 6/14 é a da carroceria.
