@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Pasta `veiculos/`:** dados e ligações de cada carro ficam separados, com modelo para novos veículos. A ligação do Uno Vivace deixa de aparecer como padrão no guia de escuta CAN.
+
 ## [0.9.6] - 2026-11-01
 
 ### Adicionado

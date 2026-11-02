@@ -47,7 +47,7 @@ void startListening() {
   twai_general_config_t general = TWAI_GENERAL_CONFIG_DEFAULT(TX_PIN, RX_PIN, TWAI_MODE_LISTEN_ONLY);
   general.tx_queue_len = 0;  // sem fila, o driver recusa qualquer transmissão
   general.rx_queue_len = 64;
-  twai_timing_config_t timing = TWAI_TIMING_CONFIG_50KBITS();  // rede da carroceria do Uno
+  twai_timing_config_t timing = TWAI_TIMING_CONFIG_50KBITS();  // ajuste à rede do seu carro (veiculos/)
   twai_filter_config_t filter = TWAI_FILTER_CONFIG_ACCEPT_ALL();
   if (twai_driver_install(&general, &timing, &filter) != ESP_OK) halt("driver TWAI nao instalado");
   if (twai_start() != ESP_OK) halt("TWAI nao iniciou");

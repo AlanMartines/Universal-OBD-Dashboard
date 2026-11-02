@@ -22,7 +22,7 @@ output-metadata.json
 release.keystore
 
 # Manuais técnicos comerciais (direitos autorais): ficam só na máquina local
-docs/veiculos/*.pdf
+veiculos/**/*.pdf
 
 # Python
 __pycache__/

@@ -7,4 +7,4 @@ Escuta passiva da rede CAN com Arduino Uno + MCP2515 em modo **Listen-Only**: o 
 - Velocidade: começa em 50 kbit/s e busca 33,3/100/125/250/500 se não chegar nada
 - Saída: USB a 500000 baud, formato slcan (`t`/`T`/`r`/`R`), com estados em linhas `#`
 
-Ligação, roteiro e análise: [docs/can-escuta.md](../../docs/can-escuta.md).
+Roteiro e análise: [docs/can-escuta.md](../../docs/can-escuta.md). Ligação de cada carro: [veiculos/](../../veiculos/README.md).

@@ -220,13 +220,15 @@ Perfis embarcados ficam em `app/src/main/assets/profiles/`. Perfis importados pe
 
 ### Perfil Fiat Uno Vivace (IAW 7GF)
 
+É o primeiro carro mapeado, não uma regra para os demais. Cada veículo tem a sua pasta em [veiculos/](veiculos/README.md), e a ligação com ESP32 é específica de cada um.
+
 - ISO 14230-4 KWP FAST pela linha K (pino 7), confirmado em viagem; `ATSP5` fixa esse protocolo, sem busca automática que transmitiria na CAN da carroceria; RPM 0–7000 com redline em 6250 RPM e marcha lenta de 815 ± 50 RPM;
 - termostato 87 °C, eletroventilador 1ª 97 °C / 2ª 103 °C, crítico > 105 °C;
 - troca econômica 1→2 aos 14,8 km/h, 2→3 aos 28,2, 3→4 aos 43,8 e 4→5 aos 61,4 km/h;
 - tanque de 48 L, reserva entre 5,5 e 7,5 L (nível estimado por integração do consumo a partir do último "Tanque cheio");
 - consumo por *speed-density* (a 7GF não tem MAF), com `volumetric_efficiency` 0,99 calibrada em três abastecimentos reais (consumo medido de 12,5–13,2 km/l na estrada com gasolina).
 
-A luz **STOP** (pressão de óleo) do quadro é ligada direto ao pressostato e não é exposta via OBD. Especificações completas em [docs/veiculos/uno-vivace-7gf.md](docs/veiculos/uno-vivace-7gf.md).
+A luz **STOP** (pressão de óleo) do quadro é ligada direto ao pressostato e não é exposta via OBD. Especificações completas em [veiculos/fiat-uno-vivace-2012](veiculos/fiat-uno-vivace-2012/).
 
 ## Compilação
 

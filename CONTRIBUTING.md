@@ -9,7 +9,7 @@ O app **só lê** dados do veículo. Pull requests que façam qualquer uma desta
 - varrer endereços de módulos com pedidos de diagnóstico;
 - escutar a rede CAN sem um modo silencioso garantido pelo hardware (`ATCSM1` aceito pelo adaptador, MCP2515 ou ESP32 em listen-only).
 
-A escuta passiva e as regras dela estão em [docs/can-escuta.md](docs/can-escuta.md).
+A escuta passiva e as regras dela estão em [docs/can-escuta.md](docs/can-escuta.md). Dados e ligações de cada carro ficam em [veiculos/](veiculos/README.md).
 
 ## Dados pessoais
 

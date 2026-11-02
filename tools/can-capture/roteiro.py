@@ -109,7 +109,9 @@ VOLTAGE_SITUATIONS = [
     ("D", "Motor ligado"),
 ]
 
+# Ligação do Uno Vivace (veiculos/fiat-uno-vivace-2012/ligacao-can.md). Outro carro tem a sua própria.
 ASSEMBLY_CHECKS = [
+    "Ligação do Uno Vivace; em outro carro, siga a pasta dele em veiculos/",
     "Nada mais ligado ao carro (carregador de bateria, mantenedor)",
     "Notebook: carregador na tomada da casa (extensão), nunca em inversor do carro",
     "Jumper de 120 Ω do MCP2515 retirado",

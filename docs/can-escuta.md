@@ -1,114 +1,72 @@
-# Escuta passiva da rede CAN (Arduino + MCP2515)
+# Escuta passiva da rede CAN
 
-Serve para descobrir o que os módulos do carro transmitem entre si: nível do tanque, hodômetro, setas, portas, luzes do painel. Esses dados não passam pela ECU de motor, então o ELM327 não os lê por consulta OBD.
+Serve para descobrir o que os módulos do carro transmitem entre si, como nível do tanque, hodômetro e luzes do painel. Esses dados nem sempre passam pela ECU de motor, então o ELM327 pode não lê-los por consulta OBD.
 
-O projeto só faz **consulta** ao carro. A escuta só é usada com um controlador que garante no hardware que nada é transmitido. O MCP2515 em **modo Listen-Only** é um desses: o chip não envia quadros, ACK nem quadros de erro. O ELM327 clone não serve para isso, porque não tem o modo silencioso (`ATCSM`).
+**O ELM327 é a base do app em qualquer carro:** o conector OBD é padrão e o adaptador encontra o protocolo sozinho. **A escuta com ESP32 é um extra por modelo.** A rede, a ligação e os sinais mudam de um carro para outro, e cada veículo mapeado tem a sua pasta em [`veiculos/`](../veiculos/README.md).
 
-## Material
+O projeto só faz **consulta** ao carro. A escuta só é usada com um controlador que garante no hardware que nada é transmitido, como o MCP2515 em Listen-Only ou o ESP32 em listen-only com o TX do transceptor preso no nível recessivo. O ELM327 clone não serve para isso quando não tem o modo silencioso (`ATCSM`).
 
-- Arduino Uno e cabo USB
-- Módulo MCP2515 (o comum já traz o transceptor TJA1050). Anote o cristal, gravado no componente metálico: 8 MHz ou 16 MHz.
-- Um conector OBD2 macho com fios soltos (pigtail), ou um cabo Y OBD2 para manter o ELM327 ligado ao mesmo tempo
-- Notebook com Python 3 e a [Arduino IDE](https://www.arduino.cc/en/software)
+## 1. Identifique a rede
 
-## Ligação
+Com o carro desligado e nada conectado, meça a tensão dos pinos 6 e 14 em relação ao pino 5, o terra de sinal:
 
-![Ligação do Arduino com o MCP2515 ao conector OBD](img/ligacao-arduino-can.svg)
+| Pino 6 | Pino 14 | O que indica |
+|---|---|---|
+| Perto de 2,5 V | Perto de 2,5 V | CAN de alta velocidade |
+| Perto de 0–1 V | Perto de 4–5 V | CAN de baixa velocidade tolerante a falhas (ISO 11898-3), típica da carroceria |
+| Perto de 0 V | Na tensão da bateria | A mesma rede tolerante a falhas, dormindo. Volta para 4–5 V ao ligar a ignição |
 
-| Arduino Uno | MCP2515 |
+Repita com a ignição ligada. Se não houver terminal nesses pinos, esta escuta não se aplica ao conector, e a rede pode estar em outros pinos, como 1/9.
+
+## 2. Ligue conforme o seu carro
+
+Primeiro procure o seu modelo em [`veiculos/`](../veiculos/README.md). Se ele não estiver lá, a tentativa inicial é a ligação direta, em listen-only:
+
+| Conector OBD | Módulo transceptor |
 |---|---|
-| 5V | VCC |
-| GND | GND |
-| D10 | CS |
-| D11 | SI (MOSI) |
-| D12 | SO (MISO) |
-| D13 | SCK |
-| (não usado) | INT |
+| Pino 6 (CAN-H) | CANH |
+| Pino 14 (CAN-L) | CANL |
+| Pino 5 (terra de sinal) | GND comum com o microcontrolador |
 
-| Conector OBD do carro | Liga em |
-|---|---|
-| Pino 14 (CAN-L) | Borne CANL do módulo |
-| Pino 5 (terra de sinal) | O outro GND livre do Arduino (ao lado do 5V) |
-| Pino 6 (CAN-H) | Sem ligação |
-| (resistor de 1 kΩ) | Entre o borne CANH do módulo e o pino 3.3V do Arduino |
+Cuidados em qualquer carro:
+- **Terra comum é obrigatório.** Sem ele, a recepção falha ou chega com erros.
+- **Use o pino 5**, e não o 4, para o terra do sinal.
+- **Tire o resistor de 120 Ω do módulo.** A rede do carro já tem a terminação dela.
+- **Não ligue o pino 16 (+12 V)** em montagens alimentadas pelo USB.
+- **Nunca coloque a saída de 5 V do transceptor direto no ESP32**, que trabalha em 3,3 V.
+- Confira com o multímetro se o cabo liga mesmo os pinos usados. Cabos baratos às vezes pulam pinos.
 
-```
-OBD 14 ───────────── CANL ┐
-Arduino 3.3V ─ 1 kΩ ─ CANH ├ MCP2515
-Arduino GND (1) ──── GND  ┘
-Arduino GND (2) ──── OBD 5
-```
+Se a rede estiver silenciosa com a ligação certa, ligue a ignição ou abra uma porta para acordá-la. A rede da carroceria pode dormir.
 
-**Por que só o CAN-L:** no Uno Vivace, o pino 6 fica praticamente em 0 V e o sinal só aparece no pino 14. Ligando os dois fios ao TJA1050, um receptor diferencial, a diferença nunca passa do limite dele, e nenhum quadro chega. O resistor dá ao CANH uma referência fixa: a diferença fica em cerca de −1,2 V em repouso e +1,9 V nos bits dominantes. O módulo continua em listen-only. Em outro carro em que o pino 6 também tenha sinal, tente primeiro a ligação direta: pino 6 no CANH e pino 14 no CANL.
+## 3. Grave o firmware
 
-O **terra é obrigatório**, não serve só para o multímetro. O transceptor lê a diferença entre CAN-H e CAN-L, mas cada fio precisa estar dentro da faixa que ele aceita em relação ao GND dele. Sem o terra comum, o Arduino e o notebook ficam "flutuando" em relação ao carro, e a recepção falha ou chega com erros. Os pinos GND do Arduino são ligados entre si na placa, então qualquer um serve. O borne de parafuso do módulo normalmente só tem CANH e CANL.
+Faça isso com o módulo desligado do carro.
 
-Cuidados:
-- **Tire o jumper de 120 Ω** do módulo (às vezes marcado J1, perto dos bornes CANH/CANL). A rede do carro já tem a terminação dela. Na rede de carroceria tolerante a falhas não há resistor entre os fios, e um de 120 Ω derrubaria a tensão de repouso.
-- **Use o pino 5**, o terra de sinal. O pino 4 é o terra do chassi.
-- **Alimentação só pelo USB do notebook.** Nunca ligue o pino 16 (+12 V) nesta montagem.
-- **Notebook na bateria durante o teste**, sem o carregador na tomada. Assim o terra da casa não se liga ao terra do carro pelo cabo USB.
-- Confira com o multímetro que o pigtail ou o Y ligam de verdade os pinos 5, 6 e 14. Cabos baratos às vezes pulam pinos.
-- Com o carro desligado e o Arduino ainda desconectado, meça a tensão dos pinos 6 e 14 em relação ao pino 5:
-  - pino 6 perto de 0–1 V e pino 14 perto de 4–5 V: CAN de baixa velocidade tolerante a falhas (ISO 11898-3), típica da carroceria;
-  - pino 6 perto de 0 V e pino 14 na tensão da bateria (11–13 V): a mesma rede tolerante a falhas, **dormindo**. Com a ignição desligada, a terminação puxa o CAN-L até a bateria. Ao ligar a ignição, ele volta para 4–5 V;
-  - os dois perto de 2,5 V: CAN de alta velocidade.
+- [`firmware/arduino-can-listen`](../firmware/arduino-can-listen/README.md): Arduino Uno + MCP2515. Busca a velocidade sozinho.
+- [`firmware/esp32-can-listen`](../firmware/esp32-can-listen/README.md): ESP32 clássico. A velocidade é fixa no código.
 
-  Anote qual apareceu: isso define o transceptor do futuro adaptador ESP32.
-- Não estranhe se não der 60 Ω entre CAN-H e CAN-L, como mandam alguns tutoriais. Essa medida só vale para a CAN de alta velocidade.
+## 4. Capture
 
-Ordem de montagem:
-1. Meça as tensões com o multímetro.
-2. Tire o jumper de 120 Ω.
-3. Ligue os fios dos pinos 14 e 5 e o resistor.
-4. Conecte o USB do notebook.
-
-Rede deste projeto (Uno Vivace 2012): carroceria nos pinos 6/14, a 50 kbit/s ([notas do veículo](veiculos/uno-vivace-7gf.md)), tolerante a falhas. Medido em relação ao pino 5: pino 6 ≈ 0 V nas quatro situações; pino 14 ≈ 11,3 V com a ignição desligada (dormindo) e ≈ 4,5 V com a ignição ligada ou o motor funcionando.
-
-## Gravar o programa no Arduino
-
-1. Na Arduino IDE, instale a biblioteca **autowp-mcp2515** (*Ferramentas → Gerenciar bibliotecas*).
-2. Abra [`firmware/arduino-can-listen/arduino-can-listen.ino`](../firmware/arduino-can-listen/arduino-can-listen.ino).
-3. Se o cristal for de 16 MHz, troque `MCP_8MHZ` por `MCP_16MHZ` no topo do arquivo.
-4. Grave na placa. **Faça isso com o módulo desligado do carro.**
-5. No *Monitor serial* a 500000 baud deve aparecer `# listen-only 50 kbps`. Se aparecer `# ERRO`, o programa parou sem transmitir nada: confira a ligação SPI.
-
-O programa começa em 50 kbit/s. Se nenhum quadro chegar em 3 s, tenta 33,3, 100, 125, 250 e 500, sempre em listen-only, e fixa a primeira velocidade que receber quadros.
-
-## Capturar
-
-O jeito mais simples é a sessão guiada. Ela pede cada passo desta página na ordem, do multímetro à desmontagem, e grava tudo numa pasta:
+O jeito mais simples é a sessão guiada:
 
 ```bash
 python3 tools/can-capture/roteiro.py /dev/ttyACM0 --pasta ~/captura-can
 ```
 
-Nas ações, cada teste mostra claramente o início e o fim. A primeira etapa lê a situação inicial e as seguintes leem o carro depois de cada ação: você faz a ação (por exemplo, liga a seta), tecla Enter e o roteiro lê sozinho por 5 s antes de mostrar a etapa seguinte.
+A lista de conferência da montagem no roteiro descreve hoje a ligação do Uno Vivace. Em outro carro, siga a ligação do seu veículo.
 
 A porta pode ser `/dev/ttyUSB0` nos clones com chip CH340 (`ls /dev/ttyACM* /dev/ttyUSB*`). Se der erro de permissão, rode `sudo chmod a+rw /dev/ttyACM0`. Feche o Monitor serial da Arduino IDE antes, porque ele ocupa a porta.
 
-Para gravar à mão: com a montagem pronta, ligue a ignição e só então comece a gravar. Com a ignição desligada e as portas fechadas, a rede da carroceria pode adormecer e ficar muda. Nesse caso, "nada" em todas as velocidades não indica ligação errada: ligue a ignição ou abra uma porta para acordá-la.
+Para gravar à mão, ligue a ignição e só então comece:
 
 ```bash
 # Grava até Ctrl+C. Tecle Enter com um texto para marcar o momento de cada ação.
 python3 tools/can-capture/can_capture.py gravar /dev/ttyACM0 -o captura.log
 ```
 
-Roteiro sugerido, uma ação de cada vez, com uns 5 s entre elas:
+Faça uma ação de cada vez, com uns 5 s entre elas: setas, pisca-alerta, portas, faróis, freio de mão e partida do motor. Para o tanque e o hodômetro, grave alguns minutos andando e outros parado. Para o tanque, grave também logo antes e logo depois de um abastecimento.
 
-```
-seta esquerda    (Enter ao ligar; Enter de novo ao desligar)
-seta direita
-pisca-alerta
-porta do motorista abrir / fechar
-farol baixo / alto
-freio de mão
-partida do motor
-```
-
-Para o tanque e o hodômetro, grave alguns minutos andando e outros parado. Para o tanque, grave também logo antes e logo depois de um abastecimento.
-
-## Analisar
+## 5. Analise
 
 ```bash
 # Um ID por linha: frequência, tamanho e quais bytes mudam
@@ -124,93 +82,4 @@ python3 tools/can-capture/can_capture.py leituras acoes.log
 python3 tools/can-capture/can_capture.py comparar antes.log depois.log
 ```
 
-Os IDs encontrados vão para as [notas do veículo](veiculos/uno-vivace-7gf.md). No Uno, setas, portas, freio de mão e cinto não aparecem nesta rede; hodômetro e parcial, sim. O passo seguinte é levá-los ao perfil JSON, para o app ler com um adaptador de escuta (ESP32), ao lado do ELM327.
-
-As gravações podem conter o hodômetro e outros dados do carro: não as versione.
-
-## Próxima etapa: adaptador de escuta com ESP32 (em desenvolvimento)
-
-Depois do mapeamento, o plano é um segundo adaptador, fixo no carro, que manda ao app por Bluetooth o que a rede CAN transmite. O ELM327 continua com o motor, os códigos de falha e os monitores. Os dois ficam ligados ao mesmo tempo por um cabo Y.
-
-O ESP32 clássico tem um controlador CAN embutido (TWAI) com modo listen-only. Além disso, o pino de transmissão do transceptor fica preso em 3,3 V, então ele não consegue colocar nenhum bit na rede, mesmo com erro no firmware.
-
-### Lista de compras
-
-| Item | O que procurar | Para quê |
-|---|---|---|
-| ESP32 DevKit (30 pinos) | "ESP32 DOIT DevKit **ESP32-WROOM-32**", o simples | Lê a CAN e manda ao celular por Bluetooth clássico |
-| Módulo TJA1050 | "Módulo transceptor CAN TJA1050" | Liga o ESP32 ao CAN-L (pino 14), em 5 V. Aguenta ±27 V nos pinos da rede |
-| Resistores | Quatro de 1 kΩ | Polarização do CANH e divisor do RX |
-| Fusível | 1 A, com porta-fusível | Protege o fio do pino 16 |
-| Step-down 12 V → 5 V | "RT8272", "Mini-560 5V" (saída fixa) ou "LM2596" (ajustável) | Alimenta o ESP32 com os 12 V do pino 16 |
-| Cabo Y OBD2 | "Cabo extensor OBD2 Y 1 macho 2 fêmeas" | ELM327 e ESP32 ligados ao mesmo tempo |
-| Cabo OBD2 macho com fios soltos | "Pigtail OBD2 macho 16 pinos" | Liga a fêmea do Y ao ESP32 sem cortar nada |
-| Cabo micro-USB **de dados** | Cabos só de carga não servem | Gravar o firmware |
-| Protoboard, jumpers macho-fêmea e multímetro | — | Montagem de teste e conferência dos pinos do Y |
-
-Evite:
-- **ESP32-S3, C3 e C6:** não têm Bluetooth clássico.
-- **Placas com bateria 18650:** lítio dentro do carro no sol é risco de incêndio, e a energia já vem da tomada OBD.
-
-### Teste de recepção com TJA1050
-
-O programa é o [`firmware/esp32-can-listen`](../firmware/esp32-can-listen/README.md). Este teste usa um módulo TJA1050 sem resistor de 120 Ω (medindo em Ω entre CANH e CANL, deve dar bem acima de 120 Ω) e o ESP32 alimentado pelo USB. Ele ainda não foi feito no carro:
-
-| Módulo TJA1050 | Liga em |
-|---|---|
-| VCC | VIN do ESP32 (5 V do USB) |
-| GND | GND do ESP32 |
-| TX | VIN do ESP32 (trava física: nunca transmite) |
-| RX | Resistor de 1 kΩ até o D21 do ESP32 e dois de 1 kΩ em série do D21 ao GND |
-| CANL | Pino 14 do OBD |
-| CANH | Resistor de 1 kΩ até o 3V3 do ESP32 |
-
-O GND do ESP32 também vai ao pino 5 do OBD. O D22 e os pinos 6 e 16 do OBD ficam sem ligação. Nunca ligue o RX direto no D21: a saída de 5 V pode danificar o ESP32.
-
-Depois, grave pelo mesmo roteiro: `python3 tools/can-capture/roteiro.py /dev/ttyUSB0 --pasta ~/captura-can`, opção 4.
-
-### Ligação prevista
-
-No projeto final, o cabo Y mantém os dois adaptadores ligados: o ELM327 lê o motor e o ESP32 escuta a rede CAN. Cada um fala direto com o celular por Bluetooth. Esta ligação ainda não foi testada no carro, nem com o ELM327 no mesmo Y.
-
-![Ligação prevista do ELM327 e do ESP32 com o TJA1050](img/ligacao-esp32-can.svg)
-
-| Módulo TJA1050 | Liga em |
-|---|---|
-| VCC | OUT+ do conversor e VIN do ESP32 (5 V) |
-| GND | GND do ESP32 |
-| TX | **Fixo nos 5 V** (trava física: nunca transmite) |
-| RX | Resistor de 1 kΩ até o D21 do ESP32 e dois de 1 kΩ em série do D21 ao GND |
-| CANL | Pino 14 do OBD |
-| CANH | Resistor de 1 kΩ até o 3V3 do ESP32 |
-
-| Conector OBD | Liga em |
-|---|---|
-| Pino 16 (+12 V) | Fusível de 1 A e IN+ do conversor |
-| Pino 4 (chassi) | IN− do conversor |
-| Pino 5 (terra de sinal) | GND do ESP32 |
-| Pino 14 (CAN-L) | CANL do módulo |
-| Pino 6 (CAN-H) | Sem ligação |
-
-Cuidados:
-- Meça em Ω entre CANH e CANL: deve dar bem acima de 120 Ω. Se der cerca de 120 Ω, o módulo tem resistor de terminação, e ele precisa sair.
-- Solde a montagem. Um mau contato no divisor faz o D21 passar de 3,3 V. Depois de soldar, meça o D21: até 3,4 V, estável.
-- Regule o conversor em 5,0 V antes de ligar o ESP32, e deixe o EN dele sem ligação. Nunca ligue 12 V direto no ESP32.
-- O pino 16 tem energia com o carro desligado, e o programa ainda não tem modo de dormir: desconecte o adaptador ao estacionar.
-
-### Alternativa com SN65HVD230
-
-Este módulo funciona em 3,3 V, então dispensa o divisor do RX. Em troca, aceita menos tensão nos pinos da rede: −4 a 16 V, contra ±27 V do TJA1050. Esta ligação ainda não foi testada.
-
-![Ligação prevista do ESP32 com o SN65HVD230](img/ligacao-esp32-sn65hvd230.svg)
-
-| SN65HVD230 | Liga em |
-|---|---|
-| 3V3 | 3V3 do ESP32 |
-| GND | GND do ESP32 |
-| CTX | **Fixo no 3,3 V** (trava física: nunca transmite) |
-| CRX | D21 do ESP32, com fio direto |
-| CANL | Pino 14 do OBD |
-| CANH | Resistor de 1 kΩ até o 3V3 do ESP32 |
-
-A alimentação e os pinos do OBD são os mesmos da ligação com o TJA1050. Antes de ligar, retire o resistor de 120 Ω do módulo, marcado "121".
+Os sinais encontrados vão para a pasta do veículo. As gravações podem conter o hodômetro e outros dados do carro: não as versione.

@@ -31,4 +31,4 @@ Cada ação vira uma marca de nome fixo no momento do Enter. Um Enter a menos de
 
 Formato da gravação: uma linha por quadro slcan, com o horário do computador em milissegundos na frente (`1700000000123 t2808…`). Linhas `# …` são estados do adaptador, e `# MARCA …` são as marcas. Também aceita slcan puro, sem horário.
 
-Ligação e roteiro de captura: [docs/can-escuta.md](../../docs/can-escuta.md). Testes: `python3 -m unittest discover -s tools/can-capture -p 'test_*.py'`.
+Roteiro de captura: [docs/can-escuta.md](../../docs/can-escuta.md). Ligação de cada carro: [veiculos/](../../veiculos/README.md). Testes: `python3 -m unittest discover -s tools/can-capture -p 'test_*.py'`.

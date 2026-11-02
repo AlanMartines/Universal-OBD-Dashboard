@@ -1,8 +1,23 @@
 # Fiat Uno Vivace 1.0 Flex — IAW 7GF
 
+**Nesta pasta:** estas notas, a [ligação da escuta CAN](ligacao-can.md) e os diagramas em [`img/`](img/). O perfil do app fica em [`fiat_uno_vivace_7gf.json`](../../app/src/main/assets/profiles/fiat_uno_vivace_7gf.json), porque ele vai dentro do APK.
+
+## Capturas pendentes
+
+A comunicação pelo ELM327 está em uso. Falta confirmar estes sinais da rede CAN:
+
+| Quando | Equipamento | O que capturar | Sinal a confirmar |
+|---|---|---|---|
+| Na próxima ida ao posto | Só ESP32 | Parado no mesmo lugar plano, antes e depois de abastecer | Nível do tanque: `0x380` b5 |
+| No mesmo trajeto | Só ESP32 | 40 e 60 km/h constantes, e 80 km/h se possível, comparando com o velocímetro | Velocidade: `0x2A0` b0–b1 ÷ 16 |
+| Depois da captura com o ESP32 | Só ELM327 | Registro do abastecimento e conferência da versão instalada | Calibração do consumo |
+| Quando o cabo Y chegar | ELM327 + ESP32 | Marcha lenta, 2.000 e 3.000 RPM, motor frio até quente, e tensão parado e funcionando | RPM, temperatura e tensão em `0x281` e `0x3E0`; convivência dos dois adaptadores |
+
+Montagem final, depois dessas capturas: alimentação fixa, senha do Bluetooth e modo de descanso do ESP32.
+
 Especificações usadas pelo perfil [`fiat_uno_vivace_7gf.json`](../../app/src/main/assets/profiles/fiat_uno_vivace_7gf.json).
 
-Fonte: *Mecânica 2000 Automotive*, volume 54 (2011), "Uno Vivace 1.0 Flex – Injeção Magneti Marelli IAW 7GF". O PDF é material comercial com direitos autorais e não é versionado (`docs/veiculos/*.pdf` está no `.gitignore`). As páginas citadas abaixo são as do manual.
+Fonte: *Mecânica 2000 Automotive*, volume 54 (2011), "Uno Vivace 1.0 Flex – Injeção Magneti Marelli IAW 7GF". O PDF é material comercial com direitos autorais e não é versionado (`veiculos/fiat-uno-vivace-2012/*.pdf` está no `.gitignore`). As páginas citadas abaixo são as do manual.
 
 ## Comunicação OBD
 
@@ -114,7 +129,7 @@ No manual, as descrições de P0420 e P0443 parecem deslocadas em relação à S
 
 O nível do tanque não vem pela ECU: o PID `012F` não é anunciado. O caminho em estudo é escutar a rede CAN que liga o painel aos outros módulos. Para isso serve o console da rede da v0.5.0, que só escuta (`ATCSM1`).
 
-**Atualização de 26/10/2026:** o ELM327 clone deste carro responde `?` ao `ATCSM1`, então o console cancela a escuta. O mapeamento passa a ser feito com Arduino Uno + MCP2515 em modo Listen-Only (cristal de 8 MHz), que garante no hardware que nada é transmitido. Ligação e roteiro em [can-escuta.md](../can-escuta.md).
+**Atualização de 26/10/2026:** o ELM327 clone deste carro responde `?` ao `ATCSM1`, então o console cancela a escuta. O mapeamento passa a ser feito com Arduino Uno + MCP2515 em modo Listen-Only (cristal de 8 MHz), que garante no hardware que nada é transmitido. Ligação e roteiro em [can-escuta.md](../../docs/can-escuta.md).
 
 **Tensões medidas em 27/10/2026** (multímetro DC, em relação ao pino 5, sem nada conectado):
 
@@ -129,7 +144,7 @@ O nível do tanque não vem pela ECU: o PID `012F` não é anunciado. O caminho 
 
 Para o receptor:
 - Ligado direto aos pinos 6 e 14, o TJA1050 do módulo MCP2515 **não recebeu nenhum quadro** em nenhuma velocidade. O pino 6 não mostrou atividade útil, e o sinal só aparece no pino 14.
-- Com o CANH polarizado em 3,3 V por 1 kΩ e só o CAN-L ligado, a recepção funcionou a 50 kbit/s, sem perdas nem erros ([ligação](../can-escuta.md#ligação)).
+- Com o CANH polarizado em 3,3 V por 1 kΩ e só o CAN-L ligado, a recepção funcionou a 50 kbit/s, sem perdas nem erros ([ligação](ligacao-can.md)).
 - Os 11,3 V da rede dormindo estão dentro do limite dos pinos do TJA1050 (±27 V) e do SN65HVD230 (−4 a 16 V).
 
 **Mapa da rede em 31/10/2026** (só escuta, com ignição ligada; valores dos exemplos fictícios):

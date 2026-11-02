@@ -15,4 +15,6 @@ Faça isto com a placa desligada do carro.
 
 Se faltar memória ao compilar, escolha *Ferramentas → Partition Scheme → Huge APP*.
 
-Ligação e uso: [docs/can-escuta.md](../../docs/can-escuta.md).
+A velocidade é fixa em `TWAI_TIMING_CONFIG_50KBITS()`, a da rede do Uno Vivace. Em outro carro, ajuste esse valor e o aviso `# listen-only` logo abaixo.
+
+Uso geral: [docs/can-escuta.md](../../docs/can-escuta.md). Ligação de cada carro: [veiculos/](../../veiculos/README.md).

@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        O guia [Como criar o perfil do seu carro](https://github.com/AlanMartines/Universal-OBD-Dashboard/blob/master/docs/criar-perfil.md) mostra o passo a passo. Se você já tem o JSON, pode abrir um pull request direto.
+        O guia [Como criar o perfil do seu carro](https://github.com/AlanMartines/Universal-OBD-Dashboard/blob/master/docs/criar-perfil.md) mostra o passo a passo, e a [pasta de veículos](https://github.com/AlanMartines/Universal-OBD-Dashboard/blob/master/veiculos/README.md) explica como adicionar o seu carro. Se você já tem o JSON, pode abrir um pull request direto.
   - type: input
     id: vehicle
     attributes:

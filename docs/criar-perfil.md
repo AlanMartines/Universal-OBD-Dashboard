@@ -26,7 +26,7 @@ Ative *Ajustes → Gravação de diagnóstico* e faça uma captura curta. No arq
 
 Cada PID tem uma `formula` sobre os bytes da resposta: `A`, `B`, `C`… Exemplo: `((A*256)+B)/4` para a rotação. Há ECUs que fogem da norma.
 
-Por exemplo, a IAW 7GF do Fiat Uno manda o avanço de ignição sem o deslocamento de −64°, e o ajuste de curto prazo do combustível como byte com sinal. As fórmulas corrigidas e o porquê de cada uma estão em [`docs/veiculos/uno-vivace-7gf.md`](veiculos/uno-vivace-7gf.md).
+Por exemplo, a IAW 7GF do Fiat Uno manda o avanço de ignição sem o deslocamento de −64°, e o ajuste de curto prazo do combustível como byte com sinal. As fórmulas corrigidas e o porquê de cada uma estão em [`veiculos/fiat-uno-vivace-2012`](../veiculos/fiat-uno-vivace-2012/README.md).
 
 A ferramenta [`tools/trip-report`](../tools/trip-report/) recalcula uma gravação inteira com as fórmulas do perfil. Ela mostra faixas e médias, e assim fica fácil ver um valor absurdo antes de ir para o carro.
 
