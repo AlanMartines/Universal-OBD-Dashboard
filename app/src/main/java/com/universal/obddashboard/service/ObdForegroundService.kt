@@ -509,6 +509,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             wait = try {
                 val body = withContext(Dispatchers.Default) {
                     val v = loaded.profile
+                    val dash = AppSettings.dashboard(c, loaded)
                     val d = s.derived
                     RemotePayload.live(
                         buildSample(loaded, t.tripId, s),
@@ -523,11 +524,12 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                             "derived.estimatedGear" to d.estimatedGear?.toDouble(),
                             "trip_distance_km" to s.tripDistanceKm,
                             "trip.startedAt" to s.tripStartedAt?.toDouble(),
-                            "dash.rpmMax" to v.dashboard.rpmMax.toDouble(),
-                            "dash.rpmRedline" to v.dashboard.rpmRedline.toDouble(),
-                            "dash.speedMax" to v.dashboard.speedMax.toDouble(),
-                            "dash.voltageMin" to v.dashboard.voltageMin,
-                            "dash.voltageMax" to v.dashboard.voltageMax,
+                            "dash.rpmMax" to dash.rpmMax,
+                            "dash.rpmRedline" to dash.rpmRedline,
+                            "dash.speedMax" to dash.speedMax,
+                            "dash.speedCorrectionPct" to dash.speedCorrectionPct,
+                            "dash.voltageMin" to dash.voltageMin,
+                            "dash.voltageMax" to dash.voltageMax,
                             "dash.thermostatC" to v.thermal?.thermostatOpenC?.toDouble(),
                             "dash.fan1C" to v.thermal?.fanStage1C?.toDouble(),
                             "dash.fan2C" to v.thermal?.fanStage2C?.toDouble(),

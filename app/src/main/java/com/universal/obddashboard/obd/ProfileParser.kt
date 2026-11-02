@@ -124,6 +124,8 @@ data class PidDefinition(
     @SerialName("fallback_command") val fallbackCommand: String? = null,
     @SerialName("fallback_decoder") val fallbackDecoder: String? = null,
     @SerialName("fallback_formula") val fallbackFormula: String? = null,
+    /** Trata valor fora de min/max como leitura inválida (ex.: código especial da ECU), em vez de registrá-lo. */
+    @SerialName("discard_out_of_range") val discardOutOfRange: Boolean = false,
 )
 
 @Serializable
@@ -137,6 +139,7 @@ data class OutputDefinition(
     val max: Double? = null,
     /** Valor interno (ex.: bytes dos monitores de prontidão): não aparece na lista de sensores. */
     val hidden: Boolean = false,
+    @SerialName("discard_out_of_range") val discardOutOfRange: Boolean = false,
 )
 
 @Serializable
@@ -161,6 +164,8 @@ data class DashboardSettings(
     @SerialName("speed_max") val speedMax: Double = 200.0,
     @SerialName("voltage_min") val voltageMin: Double = 11.0,
     @SerialName("voltage_max") val voltageMax: Double = 15.5,
+    /** Só muda o número exibido; dados gravados, distância e consumo seguem com a velocidade da ECU. */
+    @SerialName("speed_correction_pct") val speedCorrectionPct: Double = 0.0,
 )
 
 @Serializable
@@ -267,7 +272,11 @@ data class OutputMeta(
     val max: Double?,
     val lane: String,
     val hidden: Boolean = false,
-)
+    val discardOutOfRange: Boolean = false,
+) {
+    fun rejects(value: Double): Boolean =
+        discardOutOfRange && ((min != null && value < min) || (max != null && value > max))
+}
 
 class LoadedProfile(
     val profile: VehicleProfile,
@@ -324,7 +333,7 @@ object ProfileParser {
 
                 val outputDefs = buildList {
                     if (pid.formula != null) add(
-                        OutputDefinition(pid.id, pid.name, pid.formula, pid.unit, pid.decimals, pid.min, pid.max)
+                        OutputDefinition(pid.id, pid.name, pid.formula, pid.unit, pid.decimals, pid.min, pid.max, discardOutOfRange = pid.discardOutOfRange)
                     )
                     addAll(pid.outputs)
                 }
@@ -333,7 +342,7 @@ object ProfileParser {
                 }
                 for (o in outputDefs) {
                     if (outputs.containsKey(o.id)) throw ProfileException("Saída '${o.id}' duplicada ($ctx)")
-                    outputs[o.id] = OutputMeta(o.id, o.name, o.unit, o.decimals, o.min, o.max, laneName, o.hidden)
+                    outputs[o.id] = OutputMeta(o.id, o.name, o.unit, o.decimals, o.min, o.max, laneName, o.hidden, o.discardOutOfRange)
                 }
 
                 val dtcKind = if (decoder == DecoderType.DTC) {

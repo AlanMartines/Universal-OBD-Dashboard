@@ -233,6 +233,28 @@
         <p class="muted small" id="profile-info"></p>
       </div>
 
+      <div class="card form" id="dash-card">
+        <span class="label">Mostradores</span>
+        <label>Velocidade máxima da escala
+          <select id="dash-speed-max"></select>
+        </label>
+        <label>RPM máximo da escala
+          <select id="dash-rpm-max"></select>
+        </label>
+        <label>Início da faixa vermelha (RPM)
+          <input id="dash-redline" type="number" min="500" max="20000" step="50" inputmode="numeric">
+        </label>
+        <label>Correção da velocidade
+          <select id="dash-correction"></select>
+        </label>
+        <p class="muted small">A correção só muda o número mostrado no app, no Android Auto e no Painel do veículo. O que é gravado, a distância e o consumo não mudam. Vale para este perfil.</p>
+        <div class="row">
+          <button id="dash-save" class="btn btn-primary">Salvar</button>
+          <button id="dash-reset" class="btn">Usar valores do perfil</button>
+        </div>
+        <p id="dash-result" class="small"></p>
+      </div>
+
       <div class="card form" id="fuel-form">
         <label>Etanol da bomba no tanque
           <select id="ethanol"></select>

@@ -105,7 +105,9 @@
         "unit": "°",
         "decimals": 1,
         "min": -20,
-        "max": 60
+        "max": 60,
+        "discard_out_of_range": true,
+        "_comment_discard": "A ECU devolve 7F (63,5°) em parte das leituras em baixa carga; não é avanço real"
       },
       {
         "id": "coolant_temp",

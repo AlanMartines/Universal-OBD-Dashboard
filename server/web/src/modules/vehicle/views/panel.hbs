@@ -13,7 +13,7 @@
   {{/if}}
 </div>
 {{#if deviceId}}
-<div id="vehicle-root" data-device-id="{{deviceId}}" data-sample="{{latestJson}}">
+<div id="vehicle-root" data-device-id="{{deviceId}}" data-sample="{{latestJson}}" data-limits="{{limitsJson}}">
   <div id="dash-host" class="cluster-host" aria-label="Painel de instrumentos"></div>
 </div>
 {{else}}

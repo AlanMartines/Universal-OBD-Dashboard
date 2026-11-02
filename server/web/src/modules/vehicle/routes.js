@@ -11,12 +11,18 @@ export default function vehicleRoutes(app, { api, requireUser, context }) {
     const wanted = String(request.query.dispositivo ?? '');
     const id = UUID.test(wanted) ? wanted : usable[0]?.id;
     let latest = null;
-    if (id) ({ latest } = await api(request, 'GET', `/internal/devices/${id}`));
+    let limits = null;
+    if (id) {
+      const data = await api(request, 'GET', `/internal/devices/${id}`);
+      latest = data.latest;
+      limits = data.device.dashLimits;
+    }
     return reply.view('modules/vehicle/views/panel.hbs', context(request, {
       title: 'Painel do veículo',
       devices: usable.map((d) => ({ ...d, selected: d.id === id })),
       deviceId: id,
       latestJson: JSON.stringify(latest),
+      limitsJson: JSON.stringify(limits),
       pageCss: ['/modules/vehicle/dash.css', '/modules/vehicle/vehicle.css'],
       pageScripts: ['/modules/vehicle/dash.js', '/modules/vehicle/vehicle.js'],
     }));

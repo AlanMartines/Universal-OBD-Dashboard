@@ -3,6 +3,9 @@ package com.universal.obddashboard
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.universal.obddashboard.obd.DashboardOverride
+import com.universal.obddashboard.obd.DashboardSettings
+import com.universal.obddashboard.obd.LoadedProfile
 import com.universal.obddashboard.obd.ProfileParser
 
 /** Preferências do usuário (perfil ativo, combustível, gatilhos Bluetooth). */
@@ -25,9 +28,24 @@ object AppSettings {
     private const val KEY_ODOMETER_SINCE = "odometer_ref_since"
     private const val KEY_FUEL_CORR_PREFIX = "fuel_correction_"
     private const val KEY_FUEL_CORR_SINCE_PREFIX = "fuel_correction_since_"
+    private const val KEY_DASHBOARD_PREFIX = "dashboard_"
 
     private fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+
+    /** Mostradores do perfil com o que o usuário ajustou para ele. */
+    fun dashboard(context: Context, loaded: LoadedProfile): DashboardSettings =
+        DashboardOverride.decode(prefs(context).getString(KEY_DASHBOARD_PREFIX + loaded.id, null))
+            ?.applyTo(loaded.profile.dashboard) ?: loaded.profile.dashboard
+
+    fun hasDashboardOverride(context: Context, profileId: String): Boolean =
+        prefs(context).contains(KEY_DASHBOARD_PREFIX + profileId)
+
+    fun setDashboardOverride(context: Context, profileId: String, override: DashboardOverride) =
+        prefs(context).edit { putString(KEY_DASHBOARD_PREFIX + profileId, override.encode()) }
+
+    fun clearDashboardOverride(context: Context, profileId: String) =
+        prefs(context).edit { remove(KEY_DASHBOARD_PREFIX + profileId) }
 
     fun selectedProfileId(context: Context): String =
         prefs(context).getString(KEY_PROFILE, null) ?: ProfileParser.DEFAULT_PROFILE_ID

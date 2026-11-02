@@ -31,7 +31,54 @@ function loadSettings() {
   $('ethanol').parentElement.style.display = meta.fuel && meta.fuel.flex ? '' : 'none';
   renderPermissions(parse(bridge.getPermissions(), {}));
   renderDiagnostics();
+  loadDashboardSettings();
 }
+
+/* ---------------------------------------------------------------- Mostradores */
+/* Listas em vez de texto livre: a escala sempre termina numa marca do mostrador. */
+const dashOptions = (id, values, label, current) => {
+  const sel = $(id);
+  sel.innerHTML = '';
+  values.forEach((v) => {
+    const o = document.createElement('option');
+    o.value = String(v);
+    o.textContent = label(v);
+    o.selected = v === current;
+    sel.appendChild(o);
+  });
+};
+const dashRange = (from, to, step) => Array.from({ length: Math.round((to - from) / step) + 1 }, (_, i) => from + i * step);
+const signedPct = (v) => (v > 0 ? '+' : '') + String(v).replace('.', ',') + '%';
+
+function loadDashboardSettings() {
+  const d = parse(bridge.getDashboardSettings(), {});
+  if (d.rpmMax == null) return;
+  const speedTop = Math.ceil(d.speedMax / 20) * 20;
+  const rpmTop = Math.ceil(d.rpmMax / 1000) * 1000;
+  const speeds = dashRange(100, 300, 20);
+  const rpms = dashRange(3000, 20000, 1000);
+  const corrections = dashRange(-10, 15, 0.5);
+  dashOptions('dash-speed-max', speeds.includes(speedTop) ? speeds : [speedTop, ...speeds], (v) => v + ' km/h', speedTop);
+  dashOptions('dash-rpm-max', rpms.includes(rpmTop) ? rpms : [rpmTop, ...rpms], (v) => v.toLocaleString('pt-BR') + ' RPM', rpmTop);
+  dashOptions('dash-correction', corrections, (v) => (v === 0 ? 'Sem correção' : signedPct(v)), d.speedCorrectionPct);
+  $('dash-redline').value = String(d.rpmRedline);
+}
+
+function dashboardChanged(res, message) {
+  $('dash-result').textContent = res === 'ok' ? message : res;
+  $('dash-result').style.color = res === 'ok' ? '' : 'var(--danger, #e5484d)';
+  if (res !== 'ok') return;
+  meta = parse(bridge.getProfileMeta(), meta);
+  setupGauge();
+  Dash.setMeta(meta);
+  loadDashboardSettings();
+}
+
+$('dash-save').addEventListener('click', () => {
+  const redline = $('dash-redline').value === '' ? NaN : Number($('dash-redline').value);
+  dashboardChanged(bridge.setDashboardSettings(Number($('dash-rpm-max').value), redline, Number($('dash-speed-max').value), Number($('dash-correction').value)), 'Salvo.');
+});
+$('dash-reset').addEventListener('click', () => dashboardChanged(bridge.resetDashboardSettings(), 'Voltou aos valores do perfil.'));
 
 /* ---------------------------------------------------------------- Sobre */
 const appInfo = parse(bridge.getAppInfo(), {});

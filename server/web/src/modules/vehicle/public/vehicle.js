@@ -25,8 +25,11 @@
   var lastDtcs = [];
   var lastGps = null;
   var metaKey = '';
+  var saved = {};
+  try { saved = JSON.parse(root.dataset.limits) || {}; } catch (e) { /* ainda sem escalas salvas */ }
 
-  function metaFrom(metrics) {
+  function metaFrom() {
+    var metrics = saved;
     var get = function (id, fallback) { return typeof metrics[id] === 'number' ? metrics[id] : fallback; };
     var meta = {
       roles: ROLES,
@@ -34,6 +37,7 @@
         rpmMax: get('dash.rpmMax', DEFAULT_DASH.rpmMax),
         rpmRedline: get('dash.rpmRedline', DEFAULT_DASH.rpmRedline),
         speedMax: get('dash.speedMax', DEFAULT_DASH.speedMax),
+        speedCorrectionPct: get('dash.speedCorrectionPct', 0),
         voltageMin: get('dash.voltageMin', DEFAULT_DASH.voltageMin),
         voltageMax: get('dash.voltageMax', DEFAULT_DASH.voltageMax),
       },
@@ -78,6 +82,8 @@
     Object.keys(sample.metrics).forEach(function (id) {
       var value = sample.metrics[id];
       if (typeof value !== 'number') return;
+      // A leitura mais nova vale: as gravadas no histórico não trazem escalas e não podem desfazê-las.
+      if (id.indexOf('dash.') === 0) saved[id] = value;
       if (id.indexOf('derived.') === 0) {
         if (DERIVED.indexOf(id.slice(8)) >= 0) derived[id.slice(8)] = value;
       } else {
@@ -86,9 +92,9 @@
     });
     lastDtcs = Array.isArray(sample.dtcs) ? sample.dtcs : [];
     lastGps = sample.gps && typeof sample.gps.speedKmh === 'number' ? { speedKmh: sample.gps.speedKmh, accuracyM: 5, ageMs: 0 } : null;
-    var meta = metaFrom(sample.metrics);
+    var meta = metaFrom();
     var key = JSON.stringify(meta);
-    if (key !== metaKey && (metaKey === '' || typeof sample.metrics['dash.rpmMax'] === 'number')) {
+    if (key !== metaKey) {
       metaKey = key;
       window.Dash.setMeta(meta);
     }
@@ -96,8 +102,8 @@
   }
 
   window.Dash.mount(document.getElementById('dash-host'));
-  window.Dash.setMeta(metaFrom({}));
-  metaKey = JSON.stringify(metaFrom({}));
+  window.Dash.setMeta(metaFrom());
+  metaKey = JSON.stringify(metaFrom());
 
   var initial = null;
   try { initial = JSON.parse(root.dataset.sample); } catch (e) { /* sem dados */ }

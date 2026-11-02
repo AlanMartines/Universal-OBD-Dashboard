@@ -6,6 +6,15 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.5] - 2026-11-01
+
+### Adicionado
+- **Ajustes → Mostradores:** velocidade máxima, RPM máximo, início da faixa vermelha e correção da velocidade exibida, salvos por perfil.
+- **Painel web:** guarda as escalas do dispositivo e abre com elas mesmo com o app fechado.
+
+### Corrigido
+- **Avanço de ignição (Uno Vivace):** a leitura de 63,5° enviada pela ECU em baixa carga deixa de ser registrada.
+
 ## [0.9.4] - 2026-11-01
 
 ### Adicionado

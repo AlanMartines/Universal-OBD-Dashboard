@@ -24,6 +24,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   deleteTrip: () => 'ok', deleteAllHistory: () => 'ok', openNotificationSettings() {},
   requestBackgroundLocation() {}, openAppSettings() {}, setIdleTimeoutMin() {}, setResumeWindowMin() {}, setDashMode() {},
   setOdometerKm: () => 'ok',
+  getDashboardSettings: () => '{"rpmMax":7000,"rpmRedline":6250,"speedMax":200,"speedCorrectionPct":0}', setDashboardSettings: () => 'ok', resetDashboardSettings: () => 'ok',
   getFuelUps: () => '{"items":[],"summary":{"count":0},"intervals":[]}', addFuelUp: () => 'ok', deleteFuelUp: () => 'ok',
   setFuelCorrection: () => 'ok',
   exportBackup: () => 'Backup disponível só no app', pickBackup() {},

@@ -1,3 +1,4 @@
+import { dashLimitsFrom } from '../dash-limits.js';
 import { audit } from '../db.js';
 import { fail } from '../errors.js';
 import { FUTURE_TOLERANCE_MS, MAX_AGE_MS, sampleSchema } from '../schemas.js';
@@ -146,6 +147,14 @@ export default function deviceRoutes(app, { pool, live, limit }) {
     const { ts, metrics, dtcs, gps } = request.body;
     const now = Date.now();
     if (ts > now + FUTURE_TOLERANCE_MS || ts < now - LIVE_MAX_AGE_MS) return { viewers: live.listenerCount(request.device.id), accepted: false };
+    const limits = dashLimitsFrom(metrics);
+    if (limits) {
+      // Só grava quando muda: esta rota recebe uma leitura por segundo.
+      await pool.query(
+        'UPDATE devices SET dash_limits = $2::jsonb WHERE id = $1 AND dash_limits IS DISTINCT FROM $2::jsonb',
+        [request.device.id, JSON.stringify(limits)],
+      );
+    }
     live.emit(request.device.id, {
       ts: new Date(ts).toISOString(),
       metrics,

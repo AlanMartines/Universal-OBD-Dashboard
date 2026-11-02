@@ -212,7 +212,8 @@ class CommandQueue(
             is CommandResult.Values -> {
                 slot.noDataStreak = 0
                 if (!v.isAtCommand) lastEcuResponseAt = clock()
-                if (result.values.isNotEmpty()) listener.onValues(result.values, timestamp)
+                val valid = result.values.filterNot { (id, value) -> profile.outputs[id]?.rejects(value) == true }
+                if (valid.isNotEmpty()) listener.onValues(valid, timestamp)
             }
             is CommandResult.Dtcs -> {
                 if (result.fromEcu) lastEcuResponseAt = clock()

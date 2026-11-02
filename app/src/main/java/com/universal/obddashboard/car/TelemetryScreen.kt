@@ -1,5 +1,6 @@
 package com.universal.obddashboard.car
 
+import com.universal.obddashboard.AppSettings
 import androidx.annotation.DrawableRes
 import androidx.car.app.CarContext
 import androidx.car.app.CarToast
@@ -57,7 +58,7 @@ class TelemetryScreen(carContext: CarContext) : Screen(carContext) {
         val s = TelemetryHub.state.value
         val profile = TelemetryHub.profile?.profile
         val roles = profile?.roles ?: Roles()
-        val dash = profile?.dashboard ?: DashboardSettings()
+        val dash = TelemetryHub.profile?.let { AppSettings.dashboard(carContext, it) } ?: DashboardSettings()
         val thermal = profile?.thermal
         val now = System.currentTimeMillis()
 
@@ -88,7 +89,7 @@ class TelemetryScreen(carContext: CarContext) : Screen(carContext) {
 
         // --- Velocidade (CAN + GPS) ---
         val speedText = buildString {
-            append(speed?.let { "${fmt(it, 0)} km/h" } ?: "--")
+            append(speed?.let { "${fmt(it * (1 + dash.speedCorrectionPct / 100), 0)} km/h" } ?: "--")
             gpsSpeed?.let { append(" • GPS ${fmt(it, 0)}") }
         }
         val speedItem = tile("Velocidade", speedText, R.drawable.ic_speed, CarColor.DEFAULT)

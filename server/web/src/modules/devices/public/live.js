@@ -40,6 +40,7 @@
   var status = document.getElementById('live-status');
   var lastUpdate = document.getElementById('last-update');
   var limits = {};
+  try { limits = JSON.parse(document.getElementById('latest-data').dataset.limits) || {}; } catch (e) { /* ainda sem escalas salvas */ }
   var cards = {};
   var rows = {};
   var groupBoxes = {};

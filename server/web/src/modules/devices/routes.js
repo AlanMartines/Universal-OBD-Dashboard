@@ -49,6 +49,7 @@ export default function devicesRoutes(app, {
       title: data.device.name,
       device: data.device,
       latestJson: JSON.stringify(data.latest),
+      limitsJson: JSON.stringify(data.device.dashLimits),
       ...DEVICE_ASSETS,
       pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/modules/devices/live.js', ...(data.locationAllowed ? ['/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js'] : [])],
       pageModules: data.locationAllowed ? ['/modules/devices/route.js'] : [],

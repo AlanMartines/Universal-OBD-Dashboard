@@ -102,11 +102,12 @@ window.Dash = (function () {
   const reading = (key) => {
     const id = roles()[key];
     const v = id && state && state.readings ? state.readings[id] : undefined;
-    return Number.isFinite(v) ? v : null;
+    if (!Number.isFinite(v)) return null;
+    return key === 'speed' ? v * (1 + dashCfg().speedCorrectionPct / 100) : v;
   };
-  const dashCfg = () => Object.assign({ rpmMax: 7000, rpmRedline: 6000, speedMax: 200 }, meta.dashboard || {});
+  const dashCfg = () => Object.assign({ rpmMax: 7000, rpmRedline: 6000, speedMax: 200, speedCorrectionPct: 0 }, meta.dashboard || {});
   const rpmTop = () => Math.ceil(dashCfg().rpmMax / 1000) * 1000;
-  const speedTop = () => { const m = dashCfg().speedMax; return m <= 160 ? 160 : m <= 200 ? 200 : 240; };
+  const speedTop = () => Math.ceil(dashCfg().speedMax / 20) * 20;
   const thermal = () => meta.thermal || null;
 
   /* ================================================================ Campos */
@@ -459,7 +460,7 @@ window.Dash = (function () {
       const d = dashCfg();
       this.scales = {
         rpm: this.scale(f, leftPoly, { max: rpmTop(), major: 1000, minor: 500, div: 1000, red: d.rpmRedline }, fs),
-        speed: this.scale(f, rightPoly, { max: speedTop(), major: 40, minor: 10, div: 1, red: null }, fs),
+        speed: this.scale(f, rightPoly, { max: speedTop(), major: speedTop() % 40 ? 20 : 40, minor: 10, div: 1, red: null }, fs),
       };
       // Posição dos blocos de texto
       const box = (e, left, top, width, height) => {

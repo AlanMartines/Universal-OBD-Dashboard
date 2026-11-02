@@ -274,6 +274,17 @@ describe('API', () => {
       assert.equal((await post(dev.deviceToken, { ts: Date.now() - 3600000, metrics: { rpm: 1 } })).json().accepted, false);
     });
 
+    test('escalas dos mostradores ficam salvas no dispositivo, sem dados fora da lista ou da faixa', async () => {
+      const post = (metrics) => app.inject({ method: 'POST', url: '/api/v1/live', headers: { authorization: `Bearer ${dev.deviceToken}` }, payload: { ts: Date.now(), metrics } });
+      const saved = async () => (await pool.query('SELECT dash_limits FROM devices WHERE id = $1', [dev.id])).rows[0].dash_limits;
+      await post({ rpm: 1000, 'dash.rpmMax': 7000, 'dash.rpmRedline': 6000, 'dash.speedMax': 180, 'dash.speedCorrectionPct': 3, 'dash.outro': 5, 'dash.tankL': 9999 });
+      assert.deepEqual(await saved(), { 'dash.rpmMax': 7000, 'dash.rpmRedline': 6000, 'dash.speedMax': 180, 'dash.speedCorrectionPct': 3 });
+      await post({ rpm: 1000 });
+      assert.equal((await saved())['dash.speedMax'], 180, 'leitura sem escalas não apaga as salvas');
+      await post({ 'dash.rpmMax': 8000 });
+      assert.deepEqual(await saved(), { 'dash.rpmMax': 8000 });
+    });
+
     test('GPS e falhas são gravados', async () => {
       await send(app, dev.deviceToken, [sample(20, { dtcs: ['P0301'], gps: { lat: -10.5, lon: -20.5, speedKmh: 12, accuracyM: 5 } })]);
       const res = await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: alice });

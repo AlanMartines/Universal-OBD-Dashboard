@@ -121,7 +121,8 @@ function onTelemetry(s) {
   else { gear.textContent = ''; }
 
   // Velocidade
-  $('speed').textContent = fmt(r[roles.speed || 'speed']);
+  const rawSpeed = r[roles.speed || 'speed'];
+  $('speed').textContent = fmt(Number.isFinite(rawSpeed) ? rawSpeed * (1 + (dash.speedCorrectionPct || 0) / 100) : rawSpeed);
   $('gps-speed').textContent = s.gps && s.gps.ageMs < 5000 ? fmt(s.gps.speedKmh) : '--';
   $('trip-line').textContent = `${fmt(s.tripDistanceKm, 1)} km nesta viagem`;
 

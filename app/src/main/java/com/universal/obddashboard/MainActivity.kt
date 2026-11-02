@@ -469,9 +469,11 @@ class MainActivity : ComponentActivity() {
             )
             .put(
                 "dashboard",
-                JSONObject().put("rpmMax", v.dashboard.rpmMax).put("rpmRedline", v.dashboard.rpmRedline)
-                    .put("speedMax", v.dashboard.speedMax).put("voltageMin", v.dashboard.voltageMin)
-                    .put("voltageMax", v.dashboard.voltageMax),
+                AppSettings.dashboard(this, p).let { d ->
+                    JSONObject().put("rpmMax", d.rpmMax).put("rpmRedline", d.rpmRedline)
+                        .put("speedMax", d.speedMax).put("speedCorrectionPct", d.speedCorrectionPct)
+                        .put("voltageMin", d.voltageMin).put("voltageMax", d.voltageMax)
+                },
             )
             .put(
                 "thermal",

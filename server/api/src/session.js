@@ -96,7 +96,7 @@ export function createAccess({ config, pool }) {
     const { user } = request.session;
     const { rows } = await pool.query(
       `SELECT d.id, d.user_id, d.name, d.installation_id, d.app_version, d.created_at, d.paired_at,
-              d.last_seen_at, d.revoked_at, u.username AS owner
+              d.last_seen_at, d.revoked_at, d.dash_limits, u.username AS owner
          FROM devices d JOIN users u ON u.id = d.user_id
         WHERE d.id = $1 AND (d.user_id = $2 OR $3)`,
       [request.params.id, user.tenantId, user.role === 'superadmin'],
@@ -119,6 +119,7 @@ export function createAccess({ config, pool }) {
     pairedAt: d.paired_at,
     lastSeenAt: d.last_seen_at,
     revokedAt: d.revoked_at,
+    dashLimits: d.dash_limits ?? null,
   });
 
   return { requireSession, requireReady, requireOwnSession, requireOwnReady, requireManager, requireSuperadmin, createSession, signupOpen, loadDevice, publicDevice, locationAllowed };

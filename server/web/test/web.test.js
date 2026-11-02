@@ -524,6 +524,7 @@ describe('fluxo pelo navegador', () => {
     const page = await web.inject({ method: 'GET', url: '/painel-veiculo', headers: { cookie: adminCookie } });
     assert.equal(page.statusCode, 200);
     assert.match(page.body, /data-device-id="[0-9a-f-]{36}"/);
+    assert.match(page.body, /data-limits="/);
     assert.match(page.body, /src="\/modules\/vehicle\/dash\.js"/);
     assert.match(page.body, /aria-current="page"[^>]*>|class="active"/);
     assert.equal((await web.inject({ method: 'GET', url: '/modules/vehicle/fonts/ChakraPetch-700.woff2' })).statusCode, 200);

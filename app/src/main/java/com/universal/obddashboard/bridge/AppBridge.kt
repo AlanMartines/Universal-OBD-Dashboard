@@ -13,6 +13,7 @@ import com.universal.obddashboard.AppSettings
 import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.obd.BluetoothSerialManager
+import com.universal.obddashboard.obd.DashboardOverride
 import com.universal.obddashboard.obd.ProfileParser
 import com.universal.obddashboard.orNull
 import com.universal.obddashboard.service.ObdForegroundService
@@ -88,6 +89,32 @@ class AppBridge(private val activity: MainActivity) {
             .put("resumeWindowMin", AppSettings.resumeWindowMin(ctx))
             .put("odometerKm", activity.totalKm.takeIf { AppSettings.odometerRef(ctx) != null }.orNull())
             .toString()
+    }
+
+    /** Ajustes → Mostradores: valores em uso no perfil ativo. */
+    @JavascriptInterface
+    fun getDashboardSettings(): String {
+        val p = activity.currentProfile()
+        val d = AppSettings.dashboard(activity, p)
+        return JSONObject()
+            .put("rpmMax", d.rpmMax).put("rpmRedline", d.rpmRedline)
+            .put("speedMax", d.speedMax).put("speedCorrectionPct", d.speedCorrectionPct)
+            .put("customized", AppSettings.hasDashboardOverride(activity, p.id))
+            .toString()
+    }
+
+    @JavascriptInterface
+    fun setDashboardSettings(rpmMax: Double, rpmRedline: Double, speedMax: Double, speedCorrectionPct: Double): String {
+        val override = DashboardOverride(rpmMax, rpmRedline, speedMax, speedCorrectionPct)
+        override.problem()?.let { return it }
+        AppSettings.setDashboardOverride(activity, activity.currentProfile().id, override)
+        return "ok"
+    }
+
+    @JavascriptInterface
+    fun resetDashboardSettings(): String {
+        AppSettings.clearDashboardOverride(activity, activity.currentProfile().id)
+        return "ok"
     }
 
     /** Ajustes → Sobre: versão instalada, para relatar problemas. */
