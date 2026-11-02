@@ -342,6 +342,8 @@ class MainActivity : ComponentActivity() {
                     // Sem captura não há estimativa ao vivo: mostra o último nível salvo (abastecimento ou Ajustes)
                     .put("fuelRemainingL", (d.fuelRemainingL ?: AppSettings.fuelLevel(this).takeIf { !ObdForegroundService.isRunning }).orNull())
                     .put("realKmPerL", realKmPerL.orNull())
+                    .put("estimatedLoadPct", d.estimatedLoadPct.orNull())
+                    .put("tripCost", d.tripCost.orNull())
                     .put("recommendedGear", d.recommendedGear ?: JSONObject.NULL)
                     .put("estimatedGear", d.estimatedGear ?: JSONObject.NULL)
                     .put("shiftUp", d.shiftUp),

@@ -6,6 +6,15 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.6] - 2026-11-01
+
+### Adicionado
+- **Carga estimada:** calculada pela pressão do coletor sobre a atmosférica, para ECUs cuja carga informada não acompanha o motor.
+- **Sugestão da correção da velocidade:** compara GPS e ECU em trechos estáveis do histórico e propõe o valor em Ajustes → Mostradores.
+- **Meus alarmes:** alarmes por sinal e limite, por perfil.
+- **Desempenho:** melhor e último tempo de 0–60, 0–100, 40–60, 60–80 e 80–120 km/h, medidos durante a captura.
+- **Custo da viagem:** estimado pelo combustível usado e o preço do último abastecimento.
+
 ## [0.9.5] - 2026-11-01
 
 ### Adicionado

@@ -23,11 +23,12 @@
     'derived.tripKmPerL': ['Média da viagem', 'km/L', 1], 'derived.tripFuelUsedL': ['Combustível usado', 'L', 2],
     'derived.fuelRemainingL': ['No tanque', 'L', 1], 'derived.tripDistanceKm': ['Distância', 'km', 1], 'derived.estimatedGear': ['Marcha', '', 0],
     'derived.recommendedGear': ['Marcha sugerida', '', 0],
+    'derived.estimatedLoadPct': ['Carga estimada', '%', 0], 'derived.tripCost': ['Custo da viagem', 'R$', 2],
   };
   var HIGHLIGHTS = ['speed', 'rpm', 'coolant_temp', 'battery_volts'];
   var GROUPS = [
-    ['Motor', ['engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear']],
-    ['Combustível', ['derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
+    ['Motor', ['derived.estimatedLoadPct', 'engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear']],
+    ['Combustível', ['derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
     ['Viagem', ['trip_distance_km', 'derived.tripDistanceKm', 'trip_km', 'odometer_km']],
     ['Ambiente', ['intake_temp']],
     ['Outros', []],

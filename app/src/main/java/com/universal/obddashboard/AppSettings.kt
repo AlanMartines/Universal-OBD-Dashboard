@@ -7,6 +7,13 @@ import com.universal.obddashboard.obd.DashboardOverride
 import com.universal.obddashboard.obd.DashboardSettings
 import com.universal.obddashboard.obd.LoadedProfile
 import com.universal.obddashboard.obd.ProfileParser
+import com.universal.obddashboard.obd.UserAlarm
+import com.universal.obddashboard.telemetry.TimedRun
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+@Serializable
+data class TimedRunRecord(val best: Double, val last: Double, val at: Long)
 
 /** Preferências do usuário (perfil ativo, combustível, gatilhos Bluetooth). */
 object AppSettings {
@@ -29,6 +36,9 @@ object AppSettings {
     private const val KEY_FUEL_CORR_PREFIX = "fuel_correction_"
     private const val KEY_FUEL_CORR_SINCE_PREFIX = "fuel_correction_since_"
     private const val KEY_DASHBOARD_PREFIX = "dashboard_"
+    private const val KEY_USER_ALARMS_PREFIX = "user_alarms_"
+    private const val KEY_TIMED_RUNS_PREFIX = "timed_runs_"
+    private const val KEY_ATMOSPHERIC_KPA = "atmospheric_kpa"
 
     private fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -46,6 +56,35 @@ object AppSettings {
 
     fun clearDashboardOverride(context: Context, profileId: String) =
         prefs(context).edit { remove(KEY_DASHBOARD_PREFIX + profileId) }
+
+    fun userAlarms(context: Context, profileId: String): List<UserAlarm> =
+        UserAlarm.decode(prefs(context).getString(KEY_USER_ALARMS_PREFIX + profileId, null))
+
+    fun setUserAlarms(context: Context, profileId: String, alarms: List<UserAlarm>) =
+        prefs(context).edit { putString(KEY_USER_ALARMS_PREFIX + profileId, UserAlarm.encode(alarms)) }
+
+    /** Última pressão atmosférica medida: vale ao ligar o app com o motor já em funcionamento. */
+    fun atmosphericKpa(context: Context): Double? =
+        prefs(context).getFloat(KEY_ATMOSPHERIC_KPA, Float.NaN).toDouble().takeUnless { it.isNaN() }
+
+    fun setAtmosphericKpa(context: Context, kpa: Double) {
+        if (atmosphericKpa(context) != kpa) prefs(context).edit { putFloat(KEY_ATMOSPHERIC_KPA, kpa.toFloat()) }
+    }
+
+    /** Melhor e último tempo por faixa, em JSON: {"0-100":{"best":14.2,"last":15.1,"at":0}}. */
+    fun timedRuns(context: Context, profileId: String): Map<String, TimedRunRecord> =
+        prefs(context).getString(KEY_TIMED_RUNS_PREFIX + profileId, null)
+            ?.let { runCatching { Json.decodeFromString<Map<String, TimedRunRecord>>(it) }.getOrNull() }.orEmpty()
+
+    fun recordTimedRun(context: Context, profileId: String, run: TimedRun, now: Long) {
+        val all = timedRuns(context, profileId).toMutableMap()
+        val best = minOf(all[run.band]?.best ?: run.seconds, run.seconds)
+        all[run.band] = TimedRunRecord(best, run.seconds, now)
+        prefs(context).edit { putString(KEY_TIMED_RUNS_PREFIX + profileId, Json.encodeToString(all.toMap())) }
+    }
+
+    fun clearTimedRuns(context: Context, profileId: String) =
+        prefs(context).edit { remove(KEY_TIMED_RUNS_PREFIX + profileId) }
 
     fun selectedProfileId(context: Context): String =
         prefs(context).getString(KEY_PROFILE, null) ?: ProfileParser.DEFAULT_PROFILE_ID

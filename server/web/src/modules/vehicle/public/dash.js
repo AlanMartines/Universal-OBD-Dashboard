@@ -149,7 +149,12 @@ window.Dash = (function () {
       note: () => { const m = reading('map'); return m == null ? '' : m < 40 ? 'vácuo alto' : m > 85 ? 'carga plena' : 'carga parcial'; },
       bar: () => { const m = reading('map'); return m == null ? null : { frac: m / 105 }; },
     },
-    load: { label: 'Carga', value: () => [num(reading('engineLoad')), '%'], bar: () => pct('engineLoad') },
+    load: {
+      label: 'Carga',
+      value: (s, d) => [num(d.estimatedLoadPct != null ? d.estimatedLoadPct : reading('engineLoad')), '%'],
+      note: (s, d) => (d.estimatedLoadPct != null ? 'estimada pelo coletor' : ''),
+      bar: (s, d) => (d.estimatedLoadPct != null ? { frac: d.estimatedLoadPct / 100 } : pct('engineLoad')),
+    },
     timing: { label: 'Avanço', value: () => [num(reading('timing'), 1), '°'] },
     lambda: {
       label: 'Sonda', value: () => [num(reading('lambda'), 2), 'V'],
@@ -166,7 +171,7 @@ window.Dash = (function () {
     },
     dist: { label: 'Distância', value: (s) => [num(s.tripDistanceKm, 1), 'km'] },
     time: { label: 'Tempo', value: (s) => [elapsed(s), 'h'] },
-    used: { label: 'Combustível', value: (s, d) => [num(d.tripFuelUsedL, 2), 'L'], note: () => 'usado na viagem' },
+    used: { label: 'Combustível', value: (s, d) => [num(d.tripFuelUsedL, 2), 'L'], note: (s, d) => (d.tripCost != null ? 'custo estimado R$ ' + num(d.tripCost, 2) : 'usado na viagem') },
     tank: {
       label: 'Tanque', value: (s, d) => [num(d.fuelRemainingL, 1), 'L'], state: (s, d) => reserve(d) ? 'warn' : null,
       note: (s, d) => reserve(d) ? 'reserva' : meta.fuel ? 'de ' + num(meta.fuel.tankCapacityL) + ' L' : '',

@@ -22,13 +22,29 @@ class TelemetryEngine(
     var fuelLevelL: Double?,
     /** Correção do consumo calibrada com abastecimentos reais (Abastecimentos → Calibração); 1 = perfil. */
     var fuelCorrection: Double = 1.0,
+    userAlerts: List<CompiledAlert> = emptyList(),
+    atmosphericKpa: Double? = null,
+    /** Preço do último abastecimento, para o custo da viagem. */
+    private val fuelPricePerL: Double? = null,
+    /** Correção escolhida em Mostradores: os cronômetros usam a mesma velocidade que a tela mostra. */
+    speedCorrectionPct: Double = 0.0,
 ) {
     private val roles = profile.profile.roles
     private val fuelCalc = profile.profile.fuel?.let { FuelCalculator(it) }
     private val shiftAdvisor = profile.profile.shiftIndicator?.let { ShiftAdvisor(it) }
-    private val alertEngine = AlertEngine(profile.alerts)
+    private val alertEngine = AlertEngine(profile.alerts + userAlerts)
+    private val estimatedLoad = EstimatedLoad(atmosphericKpa)
+    private val timers = PerformanceTimers()
+    private val speedFactor = 1 + speedCorrectionPct / 100
+    private var lastSpeedAt = 0L
 
-    class Result(val derived: DerivedMetrics, val alerts: List<ActiveAlert>, val newlyRaised: List<ActiveAlert>)
+    class Result(
+        val derived: DerivedMetrics,
+        val alerts: List<ActiveAlert>,
+        val newlyRaised: List<ActiveAlert>,
+        val timedRuns: List<TimedRun> = emptyList(),
+        val atmosphericKpa: Double? = null,
+    )
 
     fun compute(state: DashboardState, trip: TripAccumulator?, now: Long, dtS: Double): Result {
         val v = { id: String? -> state.value(id, now) }
@@ -65,6 +81,15 @@ class TelemetryEngine(
         val instantKmL = if (lph != null && lph > 0.05 && speed != null && speed > 5) speed / lph else null
         val tripKmL = trip?.let { if (it.fuelUsedL > 0.05) it.distanceKm / it.fuelUsedL else null }
         val advice = shiftAdvisor?.advise(speed, rpm, tps)
+        val loadPct = estimatedLoad.update(rpm, v(roles.map))
+        val fuelUsed = trip?.fuelUsedL ?: 0.0
+        val speedReading = state.readings[roles.speed]
+        val timedRuns = if (speedReading != null && speedReading.timestamp != lastSpeedAt) {
+            lastSpeedAt = speedReading.timestamp
+            timers.onSpeed(speedReading.timestamp, speedReading.value * speedFactor)
+        } else {
+            emptyList()
+        }
 
         val derived = DerivedMetrics(
             fuelLph = lph,
@@ -75,6 +100,8 @@ class TelemetryEngine(
             recommendedGear = advice?.recommendedGear,
             estimatedGear = advice?.estimatedGear,
             shiftUp = advice?.shiftUp ?: false,
+            estimatedLoadPct = loadPct,
+            tripCost = fuelPricePerL?.let { it * fuelUsed },
         )
 
         val vars = VariableResolver { name ->
@@ -93,7 +120,7 @@ class TelemetryEngine(
             val value = vars.resolve(id)
             if (value.isNaN()) "--" else formatValue(value, profile.outputs[id]?.decimals ?: 1)
         }
-        return Result(derived, alerts, raised)
+        return Result(derived, alerts, raised, timedRuns, estimatedLoad.atmosphericKpa)
     }
 
     companion object {

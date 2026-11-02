@@ -15,11 +15,14 @@ import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.obd.BluetoothSerialManager
 import com.universal.obddashboard.obd.DashboardOverride
 import com.universal.obddashboard.obd.ProfileParser
+import com.universal.obddashboard.obd.UserAlarm
+import com.universal.obddashboard.telemetry.PerformanceTimers
 import com.universal.obddashboard.orNull
 import com.universal.obddashboard.service.ObdForegroundService
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.UUID
 
 /**
  * Ponte JavaScript "AndroidBridge": captura, perfis, ajustes gerais, Bluetooth, permissões e modo do painel.
@@ -114,6 +117,62 @@ class AppBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun resetDashboardSettings(): String {
         AppSettings.clearDashboardOverride(activity, activity.currentProfile().id)
+        return "ok"
+    }
+
+    /** Ajustes → Alarmes: lista do perfil ativo, com nome e unidade do sinal. */
+    @JavascriptInterface
+    fun getUserAlarms(): String {
+        val p = activity.currentProfile()
+        return JSONArray().apply {
+            AppSettings.userAlarms(activity, p.id).forEach { a ->
+                val o = p.outputs[a.output]
+                put(
+                    JSONObject().put("id", a.id).put("name", o?.name ?: a.output).put("unit", o?.unit.orEmpty())
+                        .put("above", a.above).put("value", a.value).put("critical", a.critical),
+                )
+            }
+        }.toString()
+    }
+
+    @JavascriptInterface
+    fun addUserAlarm(output: String, above: Boolean, value: Double, critical: Boolean): String {
+        val p = activity.currentProfile()
+        val list = AppSettings.userAlarms(activity, p.id)
+        return when {
+            output !in p.outputs -> "Sinal inválido."
+            !value.isFinite() -> "Informe o valor do alarme."
+            list.size >= UserAlarm.MAX_ALARMS -> "Limite de ${UserAlarm.MAX_ALARMS} alarmes atingido."
+            else -> {
+                AppSettings.setUserAlarms(activity, p.id, list + UserAlarm(UUID.randomUUID().toString().take(8), output, above, value, critical))
+                "ok"
+            }
+        }
+    }
+
+    @JavascriptInterface
+    fun deleteUserAlarm(id: String): String {
+        val p = activity.currentProfile()
+        AppSettings.setUserAlarms(activity, p.id, AppSettings.userAlarms(activity, p.id).filterNot { it.id == id })
+        return "ok"
+    }
+
+    /** Ajustes → Desempenho: melhor e último tempo de cada faixa. */
+    @JavascriptInterface
+    fun getTimedRuns(): String {
+        val runs = AppSettings.timedRuns(activity, activity.currentProfile().id)
+        return JSONArray().apply {
+            PerformanceTimers.BANDS.forEach { (from, to) ->
+                val band = "${from.toInt()}-${to.toInt()}"
+                val r = runs[band]
+                put(JSONObject().put("band", band).put("best", r?.best.orNull()).put("last", r?.last.orNull()))
+            }
+        }.toString()
+    }
+
+    @JavascriptInterface
+    fun clearTimedRuns(): String {
+        AppSettings.clearTimedRuns(activity, activity.currentProfile().id)
         return "ok"
     }
 

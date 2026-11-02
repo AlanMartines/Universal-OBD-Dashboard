@@ -40,6 +40,8 @@ data class DerivedMetrics(
     val recommendedGear: Int? = null,
     val estimatedGear: Int? = null,
     val shiftUp: Boolean = false,
+    val estimatedLoadPct: Double? = null,
+    val tripCost: Double? = null,
 )
 
 data class DashboardState(

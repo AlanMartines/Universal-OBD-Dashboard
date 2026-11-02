@@ -147,7 +147,7 @@ function onTelemetry(s) {
   $('kml').textContent = d.instantKmPerL != null ? fmt(d.instantKmPerL, 1) + ' km/l' : (d.fuelLph === 0 && rpm > 300 ? 'corte' : '--');
   $('lph').textContent = `${fmt(d.fuelLph, 2)} L/h`;
   $('avg-kml').textContent = d.tripKmPerL != null ? fmt(d.tripKmPerL, 1) + ' km/l' : '--';
-  $('fuel-used').textContent = `${fmt(d.tripFuelUsedL, 2)} L usados`;
+  $('fuel-used').textContent = `${fmt(d.tripFuelUsedL, 2)} L usados` + (d.tripCost != null ? ` · R$ ${fmt(d.tripCost, 2)}` : '');
   $('fuel-left').textContent = fmt(d.fuelRemainingL, 1);
   $('volts').textContent = fmt(r[roles.voltage || 'battery_volts'], 1);
   $('tps').textContent = fmt(r[roles.throttle || 'throttle'], 0);

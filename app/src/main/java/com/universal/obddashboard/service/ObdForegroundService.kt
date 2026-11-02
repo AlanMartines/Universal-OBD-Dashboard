@@ -223,6 +223,12 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             ethanolPercent = AppSettings.ethanolPercent(this, loaded.profile.fuel?.defaultEthanolPct ?: 0.0),
             fuelLevelL = AppSettings.fuelLevel(this),
             fuelCorrection = AppSettings.fuelCorrection(this, loaded.id).factor,
+            userAlerts = ProfileParser.compileUserAlarms(loaded, AppSettings.userAlarms(this, loaded.id)),
+            atmosphericKpa = AppSettings.atmosphericKpa(this),
+            fuelPricePerL = AppDatabase.get(this).fuelUpDao().all().lastOrNull()?.let { f ->
+                f.pricePerLiter ?: f.totalPrice?.takeIf { f.liters > 0 }?.div(f.liters)
+            },
+            speedCorrectionPct = AppSettings.dashboard(this, loaded).speedCorrectionPct,
         )
         TelemetryHub.update { it.copy(tripId = tripId, tripStartedAt = acc.startTime, tripDistanceKm = acc.distanceKm) }
         startLocationUpdates(highAccuracy = true)
@@ -442,6 +448,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             }
 
             val result = eng.compute(state, trip, now, dtS)
+            result.timedRuns.forEach { AppSettings.recordTimedRun(this, loaded.id, it, now) }
+            result.atmosphericKpa?.let { AppSettings.setAtmosphericKpa(this, it) }
             val gpsAlert = gpsLostAlert(loaded, state, now, mono)
             TelemetryHub.update {
                 it.copy(derived = result.derived, alerts = result.alerts + listOfNotNull(gpsAlert), tripDistanceKm = trip?.distanceKm ?: 0.0)
@@ -521,6 +529,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                             "derived.tripFuelUsedL" to d.tripFuelUsedL,
                             "derived.fuelRemainingL" to d.fuelRemainingL,
                             "derived.recommendedGear" to d.recommendedGear?.toDouble(),
+                            "derived.estimatedLoadPct" to d.estimatedLoadPct,
+                            "derived.tripCost" to d.tripCost,
                             "derived.estimatedGear" to d.estimatedGear?.toDouble(),
                             "trip_distance_km" to s.tripDistanceKm,
                             "trip.startedAt" to s.tripStartedAt?.toDouble(),

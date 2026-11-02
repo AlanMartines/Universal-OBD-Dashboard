@@ -247,12 +247,43 @@
         <label>Correção da velocidade
           <select id="dash-correction"></select>
         </label>
+        <div id="dash-suggestion" hidden>
+          <p class="small" id="dash-suggestion-text"></p>
+          <button id="dash-suggestion-use" class="btn btn-small">Usar sugestão</button>
+        </div>
         <p class="muted small">A correção só muda o número mostrado no app, no Android Auto e no Painel do veículo. O que é gravado, a distância e o consumo não mudam. Vale para este perfil.</p>
         <div class="row">
           <button id="dash-save" class="btn btn-primary">Salvar</button>
           <button id="dash-reset" class="btn">Usar valores do perfil</button>
         </div>
         <p id="dash-result" class="small"></p>
+      </div>
+
+      <div class="card form" id="alarm-card">
+        <span class="label">Meus alarmes</span>
+        <div id="alarm-list"></div>
+        <label>Sinal
+          <select id="alarm-output"></select>
+        </label>
+        <div class="row">
+          <label class="grow">Condição
+            <select id="alarm-above"><option value="1">Acima de</option><option value="0">Abaixo de</option></select>
+          </label>
+          <label class="grow">Valor
+            <input id="alarm-value" type="number" step="any" inputmode="decimal">
+          </label>
+        </div>
+        <label class="check"><input id="alarm-critical" type="checkbox"> Alarme crítico</label>
+        <div class="row"><button id="alarm-add" class="btn">Adicionar</button></div>
+        <p class="muted small">Dispara depois de 3 s na condição. Alterações valem a partir da próxima captura.</p>
+        <p id="alarm-result" class="small"></p>
+      </div>
+
+      <div class="card form" id="timers-card">
+        <span class="label">Desempenho</span>
+        <div id="timer-list"></div>
+        <p class="muted small">Os tempos são medidos sozinhos durante a captura, pela velocidade do mostrador. São aproximados. Acelere só onde for seguro e permitido.</p>
+        <div class="row"><button id="timer-clear" class="btn">Zerar tempos</button></div>
       </div>
 
       <div class="card form" id="fuel-form">

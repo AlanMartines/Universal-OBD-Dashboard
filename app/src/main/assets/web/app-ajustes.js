@@ -32,7 +32,77 @@ function loadSettings() {
   renderPermissions(parse(bridge.getPermissions(), {}));
   renderDiagnostics();
   loadDashboardSettings();
+  loadSpeedSuggestion();
+  loadAlarms();
+  loadTimers();
 }
+
+/* ---------------------------------------------------------------- Sugestão, alarmes e tempos */
+let speedSuggestionPct = null;
+async function loadSpeedSuggestion() {
+  const s = parse(await nativeAsync((id) => bridge.getSpeedSuggestion(id)), {});
+  speedSuggestionPct = s.pct != null ? s.pct : null;
+  $('dash-suggestion').hidden = speedSuggestionPct == null;
+  if (speedSuggestionPct != null) {
+    $('dash-suggestion-text').textContent = `Pelo GPS, nos trechos estáveis gravados: ${signedPct(speedSuggestionPct)} (${fmt(s.samples)} leituras).`;
+  }
+}
+$('dash-suggestion-use').addEventListener('click', () => {
+  $('dash-correction').value = String(speedSuggestionPct);
+  $('dash-result').textContent = 'Toque em Salvar para aplicar.';
+});
+
+function loadAlarms() {
+  const sel = $('alarm-output');
+  const current = sel.value;
+  sel.innerHTML = '';
+  (meta.outputs || []).forEach((o) => {
+    const opt = document.createElement('option');
+    opt.value = o.id;
+    opt.textContent = o.unit ? `${o.name} (${o.unit})` : o.name;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;
+  const box = $('alarm-list');
+  box.innerHTML = '';
+  parse(bridge.getUserAlarms(), []).forEach((a) => {
+    const row = document.createElement('div');
+    row.className = 'item';
+    const text = document.createElement('span');
+    text.textContent = `${a.name} ${a.above ? 'acima de' : 'abaixo de'} ${fmt(a.value, Number.isInteger(a.value) ? 0 : 1)} ${a.unit}${a.critical ? ' · crítico' : ''}`;
+    const del = document.createElement('button');
+    del.className = 'btn btn-small btn-danger';
+    del.textContent = 'Apagar';
+    del.addEventListener('click', () => { bridge.deleteUserAlarm(a.id); loadAlarms(); });
+    row.append(text, del);
+    box.appendChild(row);
+  });
+}
+$('alarm-add').addEventListener('click', () => {
+  const raw = $('alarm-value').value;
+  const res = bridge.addUserAlarm($('alarm-output').value, $('alarm-above').value === '1', raw === '' ? NaN : Number(raw), $('alarm-critical').checked);
+  $('alarm-result').textContent = res === 'ok' ? 'Adicionado.' : res;
+  $('alarm-result').style.color = res === 'ok' ? '' : 'var(--danger, #e5484d)';
+  if (res === 'ok') { $('alarm-value').value = ''; loadAlarms(); }
+});
+
+function loadTimers() {
+  const box = $('timer-list');
+  box.innerHTML = '';
+  parse(bridge.getTimedRuns(), []).forEach((r) => {
+    const row = document.createElement('div');
+    row.className = 'kv';
+    const band = document.createElement('span');
+    band.textContent = `${r.band.replace('-', ' a ')} km/h`;
+    const time = document.createElement('span');
+    time.textContent = r.best != null ? `melhor ${fmt(r.best, 1)} s · último ${fmt(r.last, 1)} s` : 'sem medição';
+    row.append(band, time);
+    box.appendChild(row);
+  });
+}
+$('timer-clear').addEventListener('click', () => {
+  if (confirm('Zerar os tempos deste perfil?')) { bridge.clearTimedRuns(); loadTimers(); }
+});
 
 /* ---------------------------------------------------------------- Mostradores */
 /* Listas em vez de texto livre: a escala sempre termina numa marca do mostrador. */

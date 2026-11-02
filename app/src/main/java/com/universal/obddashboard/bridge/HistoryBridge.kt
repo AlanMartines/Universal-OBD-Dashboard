@@ -6,6 +6,7 @@ import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.db.AppDatabase
 import com.universal.obddashboard.export.TripExportFiles
 import com.universal.obddashboard.orNull
+import com.universal.obddashboard.telemetry.SpeedCalibration
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -15,6 +16,10 @@ import org.json.JSONObject
  * Tudo aqui consulta o banco, então responde de forma assíncrona ([MainActivity.answerAsync]).
  */
 class HistoryBridge(private val activity: MainActivity) {
+    private companion object {
+        const val SPEED_SAMPLE_LIMIT = 20_000
+    }
+
 
     @JavascriptInterface
     fun getTrips(requestId: String, limit: Int) = activity.answerAsync(requestId) {
@@ -64,6 +69,15 @@ class HistoryBridge(private val activity: MainActivity) {
         } catch (e: Exception) {
             "Falha ao apagar: ${e.message}"
         }
+    }
+
+    /** Ajustes → Mostradores: correção sugerida pela comparação entre GPS e ECU no histórico. */
+    @JavascriptInterface
+    fun getSpeedSuggestion(requestId: String) = activity.answerAsync(requestId) {
+        val samples = AppDatabase.get(activity).tripDao().speedSamples(SPEED_SAMPLE_LIMIT).asReversed()
+            .map { SpeedCalibration.Sample(it.timestamp, it.obd, it.gps, it.accuracy) }
+        SpeedCalibration.suggest(samples)
+            ?.let { JSONObject().put("pct", it.pct).put("samples", it.samples).toString() } ?: "{}"
     }
 
     /** Apaga viagens, telemetria e falhas registradas, preservando a viagem em andamento. */

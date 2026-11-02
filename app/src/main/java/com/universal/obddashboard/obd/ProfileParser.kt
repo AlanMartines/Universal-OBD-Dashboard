@@ -469,6 +469,15 @@ object ProfileParser {
         else -> throw ProfileException("$ctx: dtc_kind '$name' inválido")
     }
 
+    /** Alarmes de sinais que não existem mais no perfil são ignorados. */
+    fun compileUserAlarms(profile: LoadedProfile, alarms: List<UserAlarm>): List<CompiledAlert> =
+        alarms.mapNotNull { alarm ->
+            profile.outputs[alarm.output]?.let { meta ->
+                val rule = alarm.toRule(meta)
+                CompiledAlert(rule, if (alarm.critical) AlertLevel.CRITICAL else AlertLevel.WARNING, compileFormula(rule.condition, "alarme '${rule.id}'"))
+            }
+        }
+
     private fun compileFormula(source: String, ctx: String): Expr = try {
         FormulaEvaluator.compile(source)
     } catch (e: FormulaException) {

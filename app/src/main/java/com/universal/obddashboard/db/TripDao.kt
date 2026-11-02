@@ -38,6 +38,13 @@ interface TripDao {
     @Query("SELECT * FROM trips ORDER BY start_time DESC LIMIT 1")
     suspend fun lastTrip(): TripEntity?
 
+    /** Mais recentes primeiro, para limitar o trabalho em históricos longos. */
+    @Query(
+        """SELECT timestamp, speed_obd_kmh AS obd, speed_gps_kmh AS gps, gps_accuracy_m AS accuracy FROM telemetry_log
+           WHERE speed_obd_kmh IS NOT NULL AND speed_gps_kmh IS NOT NULL ORDER BY timestamp DESC LIMIT :limit""",
+    )
+    suspend fun speedSamples(limit: Int): List<SpeedSample>
+
     /** Reabre uma viagem encerrada para continuar gravando nela (retomada). */
     @Query("UPDATE trips SET end_time = NULL, end_reason = NULL WHERE id = :id")
     suspend fun reopenTrip(id: Long)
@@ -106,3 +113,6 @@ interface TripDao {
 
 /** Amostra de consumo instantâneo (L/h) da caixa preta. */
 data class FuelSample(val timestamp: Long, val lph: Double?)
+
+/** Velocidade da ECU e do GPS no mesmo instante da caixa preta. */
+data class SpeedSample(val timestamp: Long, val obd: Double, val gps: Double, val accuracy: Float?)
