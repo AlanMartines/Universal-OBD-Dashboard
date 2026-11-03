@@ -6,6 +6,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.Json
 import org.junit.Test
 import java.io.File
 import java.io.IOException
@@ -155,6 +159,16 @@ class RemoteTest {
         assertFalse(text.contains("ruim"))
         assertFalse(text.contains("nan"))
         assertTrue(text.contains("P0301"))
+        val withAlerts = Json.parseToJsonElement(
+            RemotePayload.live(entity(5), false, emptyList(), emptyMap(), listOf(
+                RemotePayload.LiveAlert("CRITICAL", "Rotação: 6500 RPM <script>"),
+                RemotePayload.LiveAlert("INFO", "não vai"),
+            )),
+        ).jsonObject
+        val alerts = withAlerts["alerts"]!!.jsonArray
+        assertEquals(1, alerts.size)
+        assertEquals("Rotação: 6500 RPM script", alerts[0].jsonObject["message"]!!.jsonPrimitive.content)
+        assertEquals(0, Json.parseToJsonElement(RemotePayload.live(entity(5), false, emptyList(), emptyMap())).jsonObject["alerts"]!!.jsonArray.size)
     }
 
     @Test fun ritmoAoVivoSegueQuemEstaOlhando() {

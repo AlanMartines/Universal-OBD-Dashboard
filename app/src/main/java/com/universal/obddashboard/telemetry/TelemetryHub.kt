@@ -61,6 +61,8 @@ data class DashboardState(
     val tripDistanceKm: Double = 0.0,
     val adapterVersion: String = "",
     val disabledPids: List<String> = emptyList(),
+    /** Alarmes de Ajustes carregados pela captura em andamento (null = sem captura). */
+    val userAlarmsLoaded: Int? = null,
 ) {
     /** Valor de uma saída, se lido há no máximo [maxAgeMs]. */
     fun value(id: String?, now: Long = System.currentTimeMillis(), maxAgeMs: Long = STALE_AFTER_MS): Double? {

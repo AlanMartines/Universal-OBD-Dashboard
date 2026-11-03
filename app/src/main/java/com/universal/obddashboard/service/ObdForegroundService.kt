@@ -225,19 +225,21 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         Log.i(TAG, if (gapS != null) "Retomando a viagem $tripId (pausa de ${gapS}s)" else "Nova viagem $tripId")
         openRecorder(loaded, trigger, tripId, gapS)
         synchronized(recordedDtcs) { recordedDtcs.clear() }
+        val userAlerts = ProfileParser.compileUserAlarms(loaded, AppSettings.userAlarms(this))
+        Log.i(TAG, "Alarmes do usuário nesta captura: ${userAlerts.size}")
         engine = TelemetryEngine(
             profile = loaded,
             ethanolPercent = AppSettings.ethanolPercent(this, loaded.profile.fuel?.defaultEthanolPct ?: 0.0),
             fuelLevelL = AppSettings.fuelLevel(this),
             fuelCorrection = AppSettings.fuelCorrection(this).factor,
-            userAlerts = ProfileParser.compileUserAlarms(loaded, AppSettings.userAlarms(this)),
+            userAlerts = userAlerts,
             atmosphericKpa = AppSettings.atmosphericKpa(this),
             fuelPricePerL = AppDatabase.get(this).fuelUpDao().all(vehicleId).lastOrNull()?.let { f ->
                 f.pricePerLiter ?: f.totalPrice?.takeIf { f.liters > 0 }?.div(f.liters)
             },
             speedCorrectionPct = AppSettings.dashboard(this, loaded).speedCorrectionPct,
         )
-        TelemetryHub.update { it.copy(tripId = tripId, tripStartedAt = acc.startTime, tripDistanceKm = acc.distanceKm) }
+        TelemetryHub.update { it.copy(tripId = tripId, tripStartedAt = acc.startTime, tripDistanceKm = acc.distanceKm, userAlarmsLoaded = userAlerts.size) }
         startLocationUpdates(highAccuracy = true)
 
         val reason = coroutineScope {
@@ -555,6 +557,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                             "dash.tankL" to v.fuel?.tankCapacityL,
                             "dash.reserveL" to v.fuel?.reserveMaxL,
                         ),
+                        s.alerts.map { RemotePayload.LiveAlert(it.level.name, it.message) },
                     )
                 }
                 val viewers = withContext(Dispatchers.IO) { RemoteClient(RemoteSettings.baseUrl(c)).live(token, body) }

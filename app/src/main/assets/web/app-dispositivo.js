@@ -45,14 +45,15 @@ function renderReadiness() {
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && $('tab-settings').classList.contains('active')) renderReadiness();
 });
-$('idle-timeout').addEventListener('change', (e) => bridge.setIdleTimeoutMin(Number(e.target.value)));
-$('resume-window').addEventListener('change', (e) => bridge.setResumeWindowMin(Number(e.target.value)));
+$('idle-timeout').addEventListener('change', (e) => { bridge.setIdleTimeoutMin(Number(e.target.value)); toast('Encerramento por inatividade salvo.'); });
+$('resume-window').addEventListener('change', (e) => { bridge.setResumeWindowMin(Number(e.target.value)); toast('Continuação da viagem salva.'); });
 $('save-odometer').addEventListener('click', () => {
   const v = parseFloat(String($('odometer').value).replace(',', '.'));
   bridge.setOdometerKm(Number.isFinite(v) ? v : 0);
   $('odometer-result').textContent = Number.isFinite(v) && v > 0
     ? `Salvo: o Total passa a acompanhar o hodômetro (${fmt(v)} km).`
     : 'Removido: o Total volta a somar só as viagens gravadas.';
+  toast(Number.isFinite(v) && v > 0 ? `Hodômetro salvo: ${fmt(v)} km.` : 'Hodômetro removido.');
 });
 
 /* ---------------------------------------------------------------- Bluetooth pareado */
@@ -137,4 +138,5 @@ $('save-bt').addEventListener('click', () => {
   bridge.setAdapterNames($('adapter-names').value);
   bridge.setExtraTriggers($('extra-triggers').value);
   $('bt-result').textContent = 'Salvo. Vale a partir da próxima captura.';
+  toast('Bluetooth salvo. Vale a partir da próxima captura.');
 });

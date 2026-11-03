@@ -121,6 +121,7 @@ $('fu-save').addEventListener('click', async () => {
   $('fu-save').disabled = false;
   const [status, info] = String(res).split('|');
   $('fu-result').textContent = status === 'ok' ? 'Abastecimento salvo.' + (info ? ' ' + info + '.' : '') : res;
+  toast(status === 'ok' ? 'Abastecimento salvo.' : res, status !== 'ok');
   if (status === 'ok') {
     ['fu-odo', 'fu-liters', 'fu-total', 'fu-ppl', 'fu-eth', 'fu-station'].forEach((id) => { $(id).value = ''; });
     fuWhenEdited = false;

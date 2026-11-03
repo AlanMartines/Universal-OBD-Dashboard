@@ -72,7 +72,13 @@ object RemotePayload {
      * Última leitura para o Painel do veículo: a mesma lista fechada, sem número de sequência, e com
      * os valores derivados e os limites dos mostradores. [extras] só aceita números finitos.
      */
-    fun live(s: TelemetryLogEntity, sendGps: Boolean, dtcs: List<String>, extras: Map<String, Double?>): String {
+    /** Alerta ativo no app, para o painel web mostrar o mesmo aviso. Só o nível e o texto. */
+    data class LiveAlert(val level: String, val message: String)
+
+    private const val MAX_ALERTS = 5
+    private const val MAX_ALERT_TEXT = 160
+
+    fun live(s: TelemetryLogEntity, sendGps: Boolean, dtcs: List<String>, extras: Map<String, Double?>, alerts: List<LiveAlert> = emptyList()): String {
         val base = sample(s, sendGps, dtcs)
         val metrics = linkedMapOf<String, JsonPrimitive>()
         base["metrics"]?.jsonObject?.forEach { (k, v) -> metrics[k] = v.jsonPrimitive }
@@ -84,6 +90,21 @@ object RemotePayload {
             put("metrics", JsonObject(metrics))
             base["dtcs"]?.let { put("dtcs", it) }
             base["gps"]?.let { put("gps", it) }
+            // Sempre presente, mesmo vazia: é ela que tira do painel um alerta que já passou
+            val shown = alerts.filter { it.level == "WARNING" || it.level == "CRITICAL" }.take(MAX_ALERTS)
+            run {
+                put(
+                    "alerts",
+                    buildJsonArray {
+                        shown.forEach { a ->
+                            add(buildJsonObject {
+                                put("level", a.level)
+                                put("message", a.message.filterNot { it.isISOControl() || it in "<>" }.take(MAX_ALERT_TEXT))
+                            })
+                        }
+                    },
+                )
+            }
         }.toString()
     }
 

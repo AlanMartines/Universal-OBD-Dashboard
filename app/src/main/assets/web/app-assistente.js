@@ -64,6 +64,7 @@ function aiSave(extra) {
     model: $('ai-model').value.trim(), apiKey: $('ai-key').value.trim(),
   }, extra || {})));
   $('ai-result').textContent = res === 'ok' ? 'Salvo.' : res;
+  okOrToast(res, 'Ajustes da IA salvos.');
   $('ai-result').style.color = res === 'ok' ? 'var(--accent)' : 'var(--red)';
   if (res === 'ok') loadAiSettings();
   return res === 'ok';
@@ -236,6 +237,7 @@ window.onPermissions = renderPermissions;
 $('profile-select').addEventListener('change', (e) => {
   const res = bridge.selectProfile(e.target.value);
   if (res !== 'ok') { alert(res); return; }
+  toast('Perfil do modelo salvo para este veículo.');
   meta = parse(bridge.getProfileMeta(), meta);
   setupGauge();
   Dash.setMeta(meta);
@@ -250,12 +252,14 @@ function setEthanolSelect(pct) {
   sel.innerHTML = values.map((x) => `<option value="${x}">${x}%${x === 0 ? ' (só gasolina)' : x === 100 ? ' (só etanol)' : ''}</option>`).join('');
   sel.value = String(v);
 }
-$('ethanol').addEventListener('change', (e) => bridge.setEthanolPercent(Number(e.target.value)));
+$('ethanol').addEventListener('change', (e) => { bridge.setEthanolPercent(Number(e.target.value)); toast('Etanol no tanque salvo.'); });
 $('save-fuel').addEventListener('click', () => {
   const v = parseFloat(String($('fuel-level').value).replace(',', '.'));
-  if (!Number.isNaN(v)) bridge.setFuelLevel(v);
+  if (Number.isNaN(v)) { toast('Informe o nível em litros.', true); return; }
+  bridge.setFuelLevel(v);
+  toast(`Nível do tanque salvo: ${fmt(v, 1)} L.`);
 });
 $('tank-full').addEventListener('click', () => {
   const cap = bridge.markTankFull();
-  if (cap > 0) $('fuel-level').value = cap.toFixed(1);
+  if (cap > 0) { $('fuel-level').value = cap.toFixed(1); toast(`Tanque cheio: ${fmt(cap, 1)} L.`); } else toast('O perfil não informa a capacidade do tanque.', true);
 });

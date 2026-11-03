@@ -23,6 +23,7 @@
   var derived = {};
   var lastTs = 0;
   var lastDtcs = [];
+  var lastAlerts = [];
   var lastGps = null;
   var metaKey = '';
   var saved = {};
@@ -65,7 +66,7 @@
       power: 'ACTIVE',
       readings: fresh ? readings : {},
       derived: fresh ? derived : {},
-      alerts: [],
+      alerts: fresh ? lastAlerts : [],
       confirmedDtcs: fresh ? lastDtcs : [],
       pendingDtcs: [],
       gps: fresh ? lastGps : null,
@@ -91,6 +92,10 @@
       }
     });
     lastDtcs = Array.isArray(sample.dtcs) ? sample.dtcs : [];
+    // Só a leitura ao vivo traz alertas; as do histórico não apagam um aviso ainda ativo
+    if (Array.isArray(sample.alerts)) {
+      lastAlerts = sample.alerts.filter(function (a) { return a && (a.level === 'WARNING' || a.level === 'CRITICAL') && typeof a.message === 'string'; });
+    }
     lastGps = sample.gps && typeof sample.gps.speedKmh === 'number' ? { speedKmh: sample.gps.speedKmh, accuracyM: 5, ageMs: 0 } : null;
     var meta = metaFrom();
     var key = JSON.stringify(meta);

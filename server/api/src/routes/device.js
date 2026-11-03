@@ -140,11 +140,24 @@ export default function deviceRoutes(app, { pool, live, limit }) {
           metrics: sampleSchema.properties.metrics,
           dtcs: sampleSchema.properties.dtcs,
           gps: sampleSchema.properties.gps,
+          alerts: {
+            type: 'array',
+            maxItems: 5,
+            items: {
+              type: 'object',
+              required: ['level', 'message'],
+              additionalProperties: false,
+              properties: {
+                level: { type: 'string', enum: ['WARNING', 'CRITICAL'] },
+                message: { type: 'string', minLength: 1, maxLength: 160, pattern: '^[^\\u0000-\\u001f<>]+$' },
+              },
+            },
+          },
         },
       },
     },
   }, async (request) => {
-    const { ts, metrics, dtcs, gps } = request.body;
+    const { ts, metrics, dtcs, gps, alerts } = request.body;
     const now = Date.now();
     if (ts > now + FUTURE_TOLERANCE_MS || ts < now - LIVE_MAX_AGE_MS) return { viewers: live.listenerCount(request.device.id), accepted: false };
     const limits = dashLimitsFrom(metrics);
@@ -159,6 +172,8 @@ export default function deviceRoutes(app, { pool, live, limit }) {
       ts: new Date(ts).toISOString(),
       metrics,
       dtcs: dtcs ?? [],
+      // Alertas só seguem ao vivo: não vão ao banco
+      alerts: alerts ?? [],
       gps: gps ? { lat: gps.lat, lon: gps.lon, speedKmh: gps.speedKmh ?? null } : null,
     });
     return { viewers: live.listenerCount(request.device.id), accepted: true };

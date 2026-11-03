@@ -272,6 +272,15 @@ describe('API', () => {
       assert.equal((await post(dev.deviceToken, { ts: Date.now(), metrics: { rpm: 'x' } })).statusCode, 400);
       assert.equal((await post(dev.deviceToken, { ts: Date.now(), metrics: {}, comando: 'x' })).statusCode, 400);
       assert.equal((await post(dev.deviceToken, { ts: Date.now() - 3600000, metrics: { rpm: 1 } })).json().accepted, false);
+      // Alertas do app seguem ao vivo, só com nível e texto conhecidos
+      const seen = [];
+      const onSample = (s) => seen.push(s);
+      app.liveBus.on(dev.id, onSample);
+      await post(dev.deviceToken, { ts: Date.now(), metrics: { rpm: 6600 }, alerts: [{ level: 'CRITICAL', message: 'Rotação: 6600 RPM' }] });
+      app.liveBus.off(dev.id, onSample);
+      assert.deepEqual(seen[0].alerts, [{ level: 'CRITICAL', message: 'Rotação: 6600 RPM' }]);
+      assert.equal((await post(dev.deviceToken, { ts: Date.now(), metrics: {}, alerts: [{ level: 'INFO', message: 'x' }] })).statusCode, 400);
+      assert.equal((await post(dev.deviceToken, { ts: Date.now(), metrics: {}, alerts: [{ level: 'WARNING', message: '<b>x</b>' }] })).statusCode, 400);
     });
 
     test('escalas dos mostradores ficam salvas no dispositivo, sem dados fora da lista ou da faixa', async () => {

@@ -28,10 +28,11 @@ $('remote-pair-btn').addEventListener('click', async () => {
   $('remote-code').value = '';
   await remoteRefresh();
   remoteMessage('Pareado. O envio começa na próxima captura.', false);
+  toast('Pareado. O envio começa na próxima captura.');
 });
 
 function remoteSaveOptions() {
-  bridge.remoteSave(JSON.stringify({ enabled: $('remote-enabled').checked, sendGps: $('remote-gps').checked }));
+  okOrToast(bridge.remoteSave(JSON.stringify({ enabled: $('remote-enabled').checked, sendGps: $('remote-gps').checked })), 'Telemetria remota salva.');
 }
 $('remote-enabled').addEventListener('change', remoteSaveOptions);
 $('remote-gps').addEventListener('change', remoteSaveOptions);
@@ -41,11 +42,12 @@ $('remote-send').addEventListener('click', async () => {
   const r = parse(await nativeAsync((id) => bridge.remoteSendNow(id)), {});
   await remoteRefresh();
   remoteMessage(r.message || '', false);
+  toast(r.message || '');
 });
 
 $('remote-unpair').addEventListener('click', () => {
-  if (!confirm('Parar de enviar e remover o pareamento deste celular?')) return;
-  bridge.remoteUnpair();
+  if (!confirm('Parar de enviar e remover o pareamento deste veículo?')) return;
+  okOrToast(bridge.remoteUnpair(), 'Pareamento removido.');
   remoteRefresh();
 });
 

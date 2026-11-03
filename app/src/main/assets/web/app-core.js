@@ -75,6 +75,20 @@ const nf = (d) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: d, max
 const fmt = (v, d = 0) => (v === null || v === undefined || Number.isNaN(v)) ? '--' : nf(d).format(v);
 const parse = (s, fallback) => { try { return JSON.parse(s); } catch (e) { return fallback; } };
 
+/** Aviso rápido na parte de baixo da tela, para confirmar que a ação foi feita. Some sozinho. */
+let toastTimer = null;
+function toast(text, isError) {
+  if (!text) return;
+  const el = $('toast');
+  el.textContent = text;
+  el.classList.toggle('toast-error', !!isError);
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), isError ? 5000 : 3000);
+}
+/** Mostra o resultado no cartão e no aviso. "ok" vira [okText]; qualquer outra resposta é erro. */
+const okOrToast = (res, okText) => { const ok = res === 'ok'; toast(ok ? okText : res, !ok); return ok; };
+
 let meta = parse(bridge.getProfileMeta(), {});
 let lastState = null;
 

@@ -193,6 +193,7 @@ function onTelemetry(s) {
   }
   lastDtcKey = dtcKey;
   renderFaultsNow(conf, pend, s);
+  renderAlarmStatus(s);
 
   renderMonitors(s.readiness);
 

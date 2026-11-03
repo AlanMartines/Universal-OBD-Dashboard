@@ -319,6 +319,7 @@
         <label class="check"><input id="alarm-critical" type="checkbox"> Alarme crítico</label>
         <div class="row"><button id="alarm-add" class="btn">Adicionar</button></div>
         <p class="muted small">Dispara depois de 3 s na condição. Alterações valem a partir da próxima captura.</p>
+        <p id="alarm-status" class="small"></p>
         <p id="alarm-result" class="small"></p>
       </div>
 
@@ -537,6 +538,7 @@
     </div>
   </div>
 
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="dash.js"></script>
   <!-- Ordem importa: app-core primeiro (ponte e utilitários), app-main por último (inicialização). -->
   <script src="app-core.js"></script>

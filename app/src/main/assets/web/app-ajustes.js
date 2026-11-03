@@ -36,6 +36,7 @@ function loadVehicles(profiles) {
 function vehicleMessage(text, isError) {
   $('vehicle-result').textContent = text;
   $('vehicle-result').style.color = isError ? 'var(--danger, #e5484d)' : '';
+  toast(text, isError);
 }
 
 /** Tudo o que a tela mostra muda com o veículo: perfil, mostradores, ajustes e telemetria remota. */
@@ -135,6 +136,7 @@ async function loadSpeedSuggestion() {
 $('dash-suggestion-use').addEventListener('click', () => {
   $('dash-correction').value = String(speedSuggestionPct);
   $('dash-result').textContent = 'Toque em Salvar para aplicar.';
+  toast('Sugestão escolhida. Toque em Salvar para aplicar.');
 });
 
 function loadAlarms() {
@@ -158,7 +160,7 @@ function loadAlarms() {
     const del = document.createElement('button');
     del.className = 'btn btn-small btn-danger';
     del.textContent = 'Apagar';
-    del.addEventListener('click', () => { bridge.deleteUserAlarm(a.id); loadAlarms(); });
+    del.addEventListener('click', () => { okOrToast(bridge.deleteUserAlarm(a.id), 'Alarme apagado.'); loadAlarms(); });
     row.append(text, del);
     box.appendChild(row);
   });
@@ -167,9 +169,24 @@ $('alarm-add').addEventListener('click', () => {
   const raw = $('alarm-value').value;
   const res = bridge.addUserAlarm($('alarm-output').value, $('alarm-above').value === '1', raw === '' ? NaN : Number(raw), $('alarm-critical').checked);
   $('alarm-result').textContent = res === 'ok' ? 'Adicionado.' : res;
+  okOrToast(res, 'Alarme adicionado. Vale a partir da próxima captura.');
   $('alarm-result').style.color = res === 'ok' ? '' : 'var(--danger, #e5484d)';
   if (res === 'ok') { $('alarm-value').value = ''; loadAlarms(); }
 });
+
+/** Mostra se a captura em andamento carregou os alarmes e quais estão disparados agora. */
+let lastAlarmStatus = '';
+function renderAlarmStatus(s) {
+  let text = '';
+  if (s && s.running && s.userAlarmsLoaded != null) {
+    const firing = (s.alerts || []).filter((a) => String(a.id).startsWith('user_')).length;
+    text = `Nesta captura: ${s.userAlarmsLoaded} ${s.userAlarmsLoaded === 1 ? 'alarme carregado' : 'alarmes carregados'}` +
+      (firing ? `, ${firing} ${firing === 1 ? 'disparado' : 'disparados'} agora.` : '.');
+  }
+  if (text === lastAlarmStatus) return;
+  lastAlarmStatus = text;
+  $('alarm-status').textContent = text;
+}
 
 function loadTimers() {
   const box = $('timer-list');
@@ -186,7 +203,7 @@ function loadTimers() {
   });
 }
 $('timer-clear').addEventListener('click', () => {
-  if (confirm('Zerar os tempos deste perfil?')) { bridge.clearTimedRuns(); loadTimers(); }
+  if (confirm('Zerar os tempos deste veículo?')) { okOrToast(bridge.clearTimedRuns(), 'Tempos zerados.'); loadTimers(); }
 });
 
 /* ---------------------------------------------------------------- Mostradores */
@@ -221,6 +238,7 @@ function loadDashboardSettings() {
 
 function dashboardChanged(res, message) {
   $('dash-result').textContent = res === 'ok' ? message : res;
+  okOrToast(res, message === 'Salvo.' ? 'Mostradores salvos.' : message);
   $('dash-result').style.color = res === 'ok' ? '' : 'var(--danger, #e5484d)';
   if (res !== 'ok') return;
   meta = parse(bridge.getProfileMeta(), meta);
