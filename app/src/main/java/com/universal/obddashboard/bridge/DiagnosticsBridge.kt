@@ -7,6 +7,8 @@ import com.universal.obddashboard.backup.BackupManager
 import com.universal.obddashboard.diagnostics.CanListener
 import com.universal.obddashboard.diagnostics.ConsoleSession
 import com.universal.obddashboard.diagnostics.DiagnosticFiles
+import com.universal.obddashboard.diagnostics.FaultScan
+import com.universal.obddashboard.obd.DtcKind
 import com.universal.obddashboard.export.TripExportFiles
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -36,6 +38,25 @@ class DiagnosticsBridge(private val activity: MainActivity) {
 
     @JavascriptInterface
     fun setDiagnosticRecording(enabled: Boolean) = AppSettings.setDiagnosticRecording(activity, enabled)
+
+    /**
+     * Aba Falhas → "Ler falhas agora": {ok, viaCapture, milOn, storedCount, confirmed, pending, permanent,
+     * freezeCode} ou {ok: false, error}. Uma lista null quer dizer que a injeção não respondeu àquele modo.
+     */
+    @JavascriptInterface
+    fun scanFaults(requestId: String) = activity.answerAsync(requestId) {
+        try {
+            val o = FaultScan.run(activity)
+            fun list(kind: DtcKind): Any = o.scan.codes[kind]?.let { JSONArray(it) } ?: JSONObject.NULL
+            JSONObject().put("ok", true).put("viaCapture", o.viaCapture)
+                .put("milOn", o.scan.milOn ?: JSONObject.NULL).put("storedCount", o.scan.storedCount ?: JSONObject.NULL)
+                .put("confirmed", list(DtcKind.CONFIRMED)).put("pending", list(DtcKind.PENDING)).put("permanent", list(DtcKind.PERMANENT))
+                .put("freezeCode", o.scan.freezeFrame?.code ?: JSONObject.NULL)
+                .toString()
+        } catch (e: FaultScan.ScanException) {
+            JSONObject().put("ok", false).put("error", e.message).toString()
+        }
+    }
 
     @JavascriptInterface
     fun exportDiagnostic(name: String): String = try {

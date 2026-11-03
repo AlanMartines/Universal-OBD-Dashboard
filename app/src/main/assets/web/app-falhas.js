@@ -12,7 +12,7 @@ function faultItem(code, kind) {
   title.textContent = code;
   const tag = document.createElement('span');
   tag.className = 'pill ' + (kind === 'pending' ? 'pill-warn' : 'pill-bad');
-  tag.textContent = kind === 'pending' ? 'Pendente' : 'Confirmada';
+  tag.textContent = { pending: 'Pendente', permanent: 'Permanente' }[kind] || 'Confirmada';
   head.append(title, tag);
   el.appendChild(head);
   const text = document.createElement('div');
@@ -67,3 +67,43 @@ document.querySelectorAll('[data-goto]').forEach((a) => a.addEventListener('clic
   const tab = document.querySelector(`.tab[data-tab="${a.dataset.goto}"]`);
   if (tab) tab.click();
 }));
+
+/* ---------------------------------------------------------------- Ler falhas agora */
+function scanLine(text, muted) {
+  const p = document.createElement('p');
+  p.className = muted ? 'muted small' : 'small';
+  p.textContent = text;
+  return p;
+}
+
+function renderScan(r) {
+  const box = $('fault-scan-result');
+  box.hidden = false;
+  box.innerHTML = '';
+  if (!r.ok) { box.appendChild(scanLine(r.error || 'Falha na leitura.')); return; }
+  const when = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const mil = r.milOn == null ? 'luz da injeção não informada' : r.milOn ? 'luz da injeção ACESA' : 'luz da injeção apagada';
+  const stored = r.storedCount != null ? ` · ${r.storedCount} ${r.storedCount === 1 ? 'código guardado' : 'códigos guardados'} pela injeção` : '';
+  box.appendChild(scanLine(`Leitura das ${when} (${r.viaCapture ? 'pela captura' : 'conexão avulsa'}): ${mil}${stored}.`));
+  let total = 0;
+  [['confirmed', 'confirmadas'], ['pending', 'pendentes'], ['permanent', 'permanentes']].forEach(([kind, label]) => {
+    const list = r[kind];
+    if (list == null) { box.appendChild(scanLine(`Falhas ${label}: a injeção não informou.`, true)); return; }
+    list.forEach((c) => box.appendChild(faultItem(c, kind)));
+    total += list.length;
+  });
+  if (!total) box.appendChild(scanLine('Nenhuma falha encontrada.'));
+  if (r.freezeCode) box.appendChild(scanLine(`A injeção guardou um freeze frame da falha ${r.freezeCode}.`, true));
+}
+
+$('fault-scan').addEventListener('click', async () => {
+  const btn = $('fault-scan');
+  btn.disabled = true;
+  btn.textContent = 'Lendo…';
+  const res = parse(await nativeAsync((id) => bridge.scanFaults(id)).catch((e) => JSON.stringify({ ok: false, error: e.message })), { ok: false });
+  btn.disabled = false;
+  btn.textContent = 'Ler falhas agora';
+  renderScan(res);
+  toast(res.ok ? 'Leitura de falhas concluída.' : res.error, !res.ok);
+  if (res.ok) loadHistory();
+});

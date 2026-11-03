@@ -82,6 +82,48 @@ class CommandQueue(
         oneShots += { onResult(readEcuFreezeFrame()) }
     }
 
+    /**
+     * Leitura completa das falhas, pedida pela pessoa (aba Falhas). Só consulta: 0101, 03, 07, 0A e,
+     * havendo falha, o congelamento de quadro (02). [codes] traz null no modo que a ECU não respondeu.
+     */
+    data class DtcScan(
+        val milOn: Boolean?,
+        val storedCount: Int?,
+        val codes: Map<DtcKind, List<String>?>,
+        val freezeFrame: EcuFreezeFrame?,
+    )
+
+    fun requestDtcScan(onResult: (DtcScan) -> Unit) {
+        oneShots += { onResult(scanDtcs()) }
+    }
+
+    suspend fun scanDtcs(): DtcScan {
+        val status = query("0101")?.takeIf { it.size >= 3 && it[0] == 0x41 && it[1] == 0x01 }
+        val codes = DtcKind.entries.associateWith { readDtcs(it) }
+        val timestamp = System.currentTimeMillis()
+        // A lista da tela e do histórico segue a mesma de sempre: só os modos que a captura já acompanha
+        codes.forEach { (kind, list) -> if (list != null && kind != DtcKind.PERMANENT) listener.onDtcs(kind, list, timestamp) }
+        val freeze = if (codes.values.any { !it.isNullOrEmpty() }) readEcuFreezeFrame() else null
+        return DtcScan(status?.let { (it[2] and 0x80) != 0 }, status?.let { it[2] and 0x7F }, codes, freeze)
+    }
+
+    private suspend fun readDtcs(kind: DtcKind): List<String>? {
+        val raw = try {
+            serial.sendRaw(kind.mode, adapter.dtcTimeoutMs)
+        } catch (_: ElmTimeoutException) {
+            return null
+        }
+        return when (val r = ElmResponseParser.parse(raw)) {
+            is ElmResult.Messages -> {
+                lastEcuResponseAt = clock()
+                DtcDecoder.decode(r.messages, kind, isCan)
+            }
+            // Na linha K, sem falhas a ECU responde NO DATA; em CAN uma ECU viva responde "43 00".
+            ElmResult.NoData -> if (isCan) null else emptyList()
+            is ElmResult.Error -> null
+        }
+    }
+
     /** Em modo ocioso (veículo parado) as esteiras com throttle_when_idle são desaceleradas. */
     @Volatile var idleMode: Boolean = false
 

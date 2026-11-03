@@ -108,6 +108,12 @@ interface TripDao {
     @Query("SELECT * FROM diagnostic_trouble_codes WHERE vehicle_id = :vehicleId ORDER BY detected_at DESC LIMIT :limit")
     suspend fun recentDtcs(limit: Int, vehicleId: String): List<DiagnosticTroubleCodeEntity>
 
+    @Query(
+        """SELECT COUNT(*) FROM diagnostic_trouble_codes
+           WHERE code = :code AND kind = :kind AND vehicle_id = :vehicleId AND detected_at >= :since""",
+    )
+    suspend fun countRecentDtc(code: String, kind: String, vehicleId: String, since: Long): Int
+
     @Query("SELECT * FROM diagnostic_trouble_codes WHERE trip_id = :tripId ORDER BY detected_at")
     suspend fun dtcsForTrip(tripId: Long): List<DiagnosticTroubleCodeEntity>
 

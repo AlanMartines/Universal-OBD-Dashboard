@@ -24,6 +24,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   deleteTrip: () => 'ok', deleteAllHistory: () => 'ok', openNotificationSettings() {},
   requestBackgroundLocation() {}, openAppSettings() {}, setIdleTimeoutMin() {}, setResumeWindowMin() {}, setDashMode() {},
   setOdometerKm: () => 'ok',
+  scanFaults: () => '{"ok":true,"viaCapture":false,"milOn":false,"storedCount":1,"confirmed":["P0171"],"pending":[],"permanent":null,"freezeCode":"P0171"}',
   getVehicles: () => '{"selected":"v1","capturing":false,"list":[{"id":"v1","name":"Pré-visualização","plate":"","profileId":"x","profileName":"Perfil"}]}',
   selectVehicle: () => 'ok', addVehicle: () => 'ok', renameVehicle: () => 'ok', deleteVehicle: () => 'ok',
   getSpeedSuggestion: () => '{"pct":4.5,"samples":320}', getUserAlarms: () => '[]', addUserAlarm: () => 'ok', deleteUserAlarm: () => 'ok',

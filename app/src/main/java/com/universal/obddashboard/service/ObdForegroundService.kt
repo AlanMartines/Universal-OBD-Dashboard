@@ -31,6 +31,10 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.universal.obddashboard.AppSettings
+import com.universal.obddashboard.diagnostics.FaultScan
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import com.universal.obddashboard.Vehicles
 import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.MainActivity
@@ -144,6 +148,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
+        current = this
         super.onCreate()
         isRunning = true
         serial = BluetoothSerialManager(this)
@@ -165,6 +170,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     }
 
     override fun onDestroy() {
+        if (current === this) current = null
         isRunning = false
         closeRecorder()
         scope.cancel()
@@ -1070,6 +1076,19 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
 
     companion object {
+        @Volatile private var current: ObdForegroundService? = null
+
+        /**
+         * Pede à captura em andamento a leitura completa das falhas. null se não há captura conectada
+         * ou se ela não respondeu em [timeoutMs].
+         */
+        suspend fun scanFaultsLive(timeoutMs: Long = 25_000): CommandQueue.DtcScan? {
+            val q = current?.queue ?: return null
+            return withTimeoutOrNull(timeoutMs) {
+                suspendCancellableCoroutine { cont -> q.requestDtcScan { r -> if (cont.isActive) cont.resume(r) } }
+            }
+        }
+
         private const val TAG = "ObdService"
 
         const val ACTION_START = "com.universal.obddashboard.action.START"
@@ -1134,8 +1153,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
          * @return false se o sistema bloqueou o início em segundo plano (Android 12+). Com o console
          * de diagnóstico em uso não inicia: o adaptador atende uma conexão por vez.
          */
-        fun start(context: Context, reason: String): Boolean = if (ConsoleSession.isActive) {
-            Log.i(TAG, "Captura não iniciada ($reason): console de diagnóstico em uso")
+        fun start(context: Context, reason: String): Boolean = if (ConsoleSession.isActive || FaultScan.isActive) {
+            Log.i(TAG, "Captura não iniciada ($reason): adaptador em uso pelo console ou pela leitura de falhas")
             true
         } else try {
             ContextCompat.startForegroundService(

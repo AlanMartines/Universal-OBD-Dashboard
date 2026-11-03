@@ -6,6 +6,14 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.8] - 2026-11-03
+
+### Adicionado
+- **Ler falhas agora (aba Falhas):** consulta na hora as falhas confirmadas, pendentes e permanentes, a luz da injeção e o freeze frame, com ou sem captura. Sem captura, conecta ao adaptador só para isso. Só leitura: nenhum comando apaga falhas.
+- **Aviso ao salvar:** toda ação de salvar mostra um aviso rápido na tela.
+- **Alertas no painel web:** a leitura ao vivo leva os alertas ativos do app, que aparecem no Painel do veículo. Eles não são guardados no servidor.
+- **Meus alarmes:** mostra quantos alarmes a captura em andamento carregou e quantos estão disparados.
+
 ## [0.9.7] - 2026-11-02
 
 ### Adicionado
