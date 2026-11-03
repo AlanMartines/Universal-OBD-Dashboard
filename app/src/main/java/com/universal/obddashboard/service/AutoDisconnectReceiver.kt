@@ -15,6 +15,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import com.universal.obddashboard.AppSettings
+import com.universal.obddashboard.Vehicles
 import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.R
 import com.universal.obddashboard.obd.ProfileParser
@@ -38,6 +39,13 @@ class AutoDisconnectReceiver : BroadcastReceiver() {
         val device = IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
             ?: return
         val name = deviceName(context, device)
+        // Cada carro tem o seu ELM327: conectar o adaptador de outro veículo troca o veículo antes da captura.
+        if (intent.action == BluetoothDevice.ACTION_ACL_CONNECTED && !ObdForegroundService.isRunning) {
+            Vehicles.byAdapter(context, name, device.address)?.takeIf { it.id != Vehicles.selectedId(context) }?.let {
+                Log.i(TAG, "Adaptador do veículo ${it.name}: selecionando")
+                Vehicles.select(context, it.id)
+            }
+        }
         val adapterNames = adapterNames(context)
         val isAdapter = matches(adapterNames, name, device.address)
         val isTrigger = isAdapter || matches(AppSettings.extraTriggerDevices(context), name, device.address)

@@ -87,6 +87,19 @@ class AiClientTest {
         assertTrue(runCatching { DtcPrompt.Request.fromJson(Json.parseToJsonElement("""{"code":"rm -rf"}""").jsonObject) }.isFailure)
     }
 
+    @Test fun genericDescriptionOnlyWhenProfileHasNone() {
+        val profile = ProfileParser.parse(File("src/main/assets/profiles/fiat_uno_vivace_7gf.json").readText()).profile
+        fun prompt(json: String) = DtcPrompt.messages(DtcPrompt.Request.fromJson(Json.parseToJsonElement(json).jsonObject), profile)
+            .joinToString("\n") { it.content }
+        // P0105 tem descrição no perfil do Uno: a da tela é ignorada
+        val own = prompt("""{"code":"P0105","kind":"CONFIRMED","description":"texto da tela"}""")
+        assertTrue(own.contains("Descrição no manual do veículo:"))
+        assertFalse(own.contains("texto da tela"))
+        // P0171 não está no perfil: entra a genérica, sem caracteres de marcação
+        val generic = prompt("""{"code":"P0171","kind":"PENDING","description":"Mistura pobre <b>(banco 1)</b>"}""")
+        assertTrue(generic, generic.contains("Descrição genérica do código (norma SAE): Mistura pobre b(banco 1)/b"))
+    }
+
     @Test fun listsTextModelsInOpenAiFormat() {
         val t = Fake(AiClient.HttpResponse(200, """{"object":"list","data":[{"id":"gpt-4o-mini"},{"id":"text-embedding-3-small"},
             {"id":"whisper-1"},{"id":"gpt-image-1"},{"id":"gpt-4o-realtime-preview"},{"id":"gpt-4.1"},{"id":"omni-moderation-latest"}]}"""))

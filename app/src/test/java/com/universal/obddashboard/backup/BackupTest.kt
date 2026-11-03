@@ -50,11 +50,12 @@ class BackupTest {
         val msg = runBlocking { BackupManager.restore(context, Uri.fromFile(zip)) }
         assertTrue(msg, msg.contains("1 viagens") && msg.contains("1 abastecimentos"))
         val restored = AppDatabase.get(context)
-        runBlocking { assertEquals(418.0, restored.tripDao().recentTrips(10).single().distanceKm, 0.0) }
-        assertEquals(24f, prefs.getFloat("fuel_level_l", 0f))
+        runBlocking { assertEquals(418.0, restored.tripDao().recentTrips(10, "v1").single().distanceKm, 0.0) }
+        // Backup de antes dos veículos: os ajustes gerais passam ao primeiro veículo
+        assertEquals(24f, prefs.getFloat("fuel_level_l@v1", 0f))
         assertEquals("fiat_uno_vivace_7gf", prefs.getString("selected_profile", null))
         assertEquals(setOf("a", "b"), prefs.getStringSet("x_set", null))
-        assertEquals(5L, prefs.getLong("odometer_ref_since", 0))
+        assertEquals(5L, prefs.getLong("odometer_ref_since@v1", 0))
         assertTrue(File(context.filesDir, "profiles/meu_carro.json").isFile)
     }
 

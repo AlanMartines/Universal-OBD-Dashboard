@@ -3,9 +3,11 @@ package com.universal.obddashboard.bridge
 import android.webkit.JavascriptInterface
 import androidx.room.withTransaction
 import com.universal.obddashboard.MainActivity
+import com.universal.obddashboard.Vehicles
 import com.universal.obddashboard.db.AppDatabase
 import com.universal.obddashboard.export.TripExportFiles
 import com.universal.obddashboard.orNull
+import com.universal.obddashboard.service.ObdForegroundService
 import com.universal.obddashboard.telemetry.SpeedCalibration
 import org.json.JSONArray
 import org.json.JSONObject
@@ -24,7 +26,7 @@ class HistoryBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun getTrips(requestId: String, limit: Int) = activity.answerAsync(requestId) {
         val arr = JSONArray()
-        AppDatabase.get(activity).tripDao().recentTrips(limit.coerceIn(1, 500)).forEach { t ->
+        AppDatabase.get(activity).tripDao().recentTrips(limit.coerceIn(1, 500), Vehicles.selectedId(activity)).forEach { t ->
             arr.put(
                 JSONObject().put("id", t.id).put("profileId", t.profileId).put("startTime", t.startTime)
                     .put("endTime", t.endTime ?: JSONObject.NULL).put("distanceKm", t.distanceKm)
@@ -74,10 +76,30 @@ class HistoryBridge(private val activity: MainActivity) {
     /** Ajustes → Mostradores: correção sugerida pela comparação entre GPS e ECU no histórico. */
     @JavascriptInterface
     fun getSpeedSuggestion(requestId: String) = activity.answerAsync(requestId) {
-        val samples = AppDatabase.get(activity).tripDao().speedSamples(SPEED_SAMPLE_LIMIT).asReversed()
+        val samples = AppDatabase.get(activity).tripDao().speedSamples(SPEED_SAMPLE_LIMIT, Vehicles.selectedId(activity)).asReversed()
             .map { SpeedCalibration.Sample(it.timestamp, it.obd, it.gps, it.accuracy) }
         SpeedCalibration.suggest(samples)
             ?.let { JSONObject().put("pct", it.pct).put("samples", it.samples).toString() } ?: "{}"
+    }
+
+    /** Exclui um veículo que não está selecionado, com viagens, falhas, abastecimentos e ajustes dele. */
+    @JavascriptInterface
+    fun deleteVehicle(requestId: String, id: String) = activity.answerAsync(requestId) {
+        when {
+            ObdForegroundService.isRunning -> "Encerre a captura antes de excluir um veículo."
+            Vehicles.selectedId(activity) == id -> "Selecione outro veículo antes de excluir este."
+            Vehicles.get(activity, id) == null -> "Veículo não encontrado."
+            else -> {
+                val db = AppDatabase.get(activity)
+                db.withTransaction {
+                    db.tripDao().deleteDtcsOfVehicle(id)
+                    db.tripDao().deleteTripsOfVehicle(id)
+                    db.fuelUpDao().deleteAll(id)
+                }
+                Vehicles.remove(activity, id)
+                "ok"
+            }
+        }
     }
 
     /** Apaga viagens, telemetria e falhas registradas, preservando a viagem em andamento. */
@@ -87,8 +109,8 @@ class HistoryBridge(private val activity: MainActivity) {
             val keep = activity.activeTripId() ?: -1L
             val db = AppDatabase.get(activity)
             db.withTransaction {
-                db.tripDao().deleteDtcsExcept(keep)
-                db.tripDao().deleteTripsExcept(keep)
+                db.tripDao().deleteDtcsExcept(keep, Vehicles.selectedId(activity))
+                db.tripDao().deleteTripsExcept(keep, Vehicles.selectedId(activity))
                 db.aiAnswerDao().deleteKindExcept("trip", keep.toString())
             }
             if (keep >= 0) "ok:keep" else "ok"
@@ -100,7 +122,7 @@ class HistoryBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun getDtcHistory(requestId: String, limit: Int) = activity.answerAsync(requestId) {
         val arr = JSONArray()
-        AppDatabase.get(activity).tripDao().recentDtcs(limit.coerceIn(1, 500)).forEach { d ->
+        AppDatabase.get(activity).tripDao().recentDtcs(limit.coerceIn(1, 500), Vehicles.selectedId(activity)).forEach { d ->
             arr.put(
                 JSONObject().put("code", d.code).put("kind", d.kind).put("detectedAt", d.detectedAt)
                     .put("tripId", d.tripId ?: JSONObject.NULL)

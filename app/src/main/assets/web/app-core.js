@@ -24,6 +24,8 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   deleteTrip: () => 'ok', deleteAllHistory: () => 'ok', openNotificationSettings() {},
   requestBackgroundLocation() {}, openAppSettings() {}, setIdleTimeoutMin() {}, setResumeWindowMin() {}, setDashMode() {},
   setOdometerKm: () => 'ok',
+  getVehicles: () => '{"selected":"v1","capturing":false,"list":[{"id":"v1","name":"Pré-visualização","plate":"","profileId":"x","profileName":"Perfil"}]}',
+  selectVehicle: () => 'ok', addVehicle: () => 'ok', renameVehicle: () => 'ok', deleteVehicle: () => 'ok',
   getSpeedSuggestion: () => '{"pct":4.5,"samples":320}', getUserAlarms: () => '[]', addUserAlarm: () => 'ok', deleteUserAlarm: () => 'ok',
   getTimedRuns: () => '[{"band":"0-60","best":null,"last":null}]', clearTimedRuns: () => 'ok',
   getDashboardSettings: () => '{"rpmMax":7000,"rpmRedline":6250,"speedMax":200,"speedCorrectionPct":0}', setDashboardSettings: () => 'ok', resetDashboardSettings: () => 'ok',
@@ -80,7 +82,7 @@ let lastState = null;
 document.querySelectorAll('.tab').forEach((btn) => btn.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b === btn));
   document.querySelectorAll('.tab-page').forEach((p) => p.classList.toggle('active', p.id === 'tab-' + btn.dataset.tab));
-  if (btn.dataset.tab === 'history') loadHistory();
+  if (btn.dataset.tab === 'history' || btn.dataset.tab === 'faults') loadHistory();
   if (btn.dataset.tab === 'settings') loadSettings();
   if (btn.dataset.tab === 'fuel') loadFuel();
   updateDashMode();

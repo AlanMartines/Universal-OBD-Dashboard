@@ -31,6 +31,7 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.universal.obddashboard.AppSettings
+import com.universal.obddashboard.Vehicles
 import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.R
@@ -137,6 +138,9 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
 
     private val dao by lazy { AppDatabase.get(this).tripDao() }
 
+    /** Veículo da captura em andamento. */
+    @Volatile private var vehicleId: String = Vehicles.FIRST_ID
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -202,15 +206,18 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
 
         // Retomada: uma captura que começa logo depois da anterior continua a mesma viagem.
         val now = System.currentTimeMillis()
-        val last = dao.lastTrip()
+        // O veículo não muda durante a captura (Ajustes bloqueia a troca): tudo o que ela grava é dele.
+        val vehicleId = Vehicles.selectedId(this)
+        this.vehicleId = vehicleId
+        val last = dao.lastTrip(vehicleId)
         val lastSampleAt = last?.let { dao.lastTelemetryAt(it.id) }
         val resumeId = CapturePolicy.tripToResume(last, lastSampleAt, loaded.id, now, AppSettings.resumeWindowMin(this) * 60_000L)
         dao.closeDanglingTrips(now)
         val acc = if (resumeId != null && last != null) {
             dao.reopenTrip(resumeId)
-            TripAccumulator(resumeId, last.startTime, loaded.id, loaded.profile.obdSpeedFactor).apply { restore(last) }
+            TripAccumulator(resumeId, last.startTime, loaded.id, loaded.profile.obdSpeedFactor, vehicleId).apply { restore(last) }
         } else {
-            TripAccumulator(dao.insertTrip(TripEntity(profileId = loaded.id, startTime = now)), now, loaded.id, loaded.profile.obdSpeedFactor)
+            TripAccumulator(dao.insertTrip(TripEntity(profileId = loaded.id, startTime = now, vehicleId = vehicleId)), now, loaded.id, loaded.profile.obdSpeedFactor, vehicleId)
         }
         trip = acc
         val tripId = acc.tripId
@@ -222,10 +229,10 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             profile = loaded,
             ethanolPercent = AppSettings.ethanolPercent(this, loaded.profile.fuel?.defaultEthanolPct ?: 0.0),
             fuelLevelL = AppSettings.fuelLevel(this),
-            fuelCorrection = AppSettings.fuelCorrection(this, loaded.id).factor,
-            userAlerts = ProfileParser.compileUserAlarms(loaded, AppSettings.userAlarms(this, loaded.id)),
+            fuelCorrection = AppSettings.fuelCorrection(this).factor,
+            userAlerts = ProfileParser.compileUserAlarms(loaded, AppSettings.userAlarms(this)),
             atmosphericKpa = AppSettings.atmosphericKpa(this),
-            fuelPricePerL = AppDatabase.get(this).fuelUpDao().all().lastOrNull()?.let { f ->
+            fuelPricePerL = AppDatabase.get(this).fuelUpDao().all(vehicleId).lastOrNull()?.let { f ->
                 f.pricePerLiter ?: f.totalPrice?.takeIf { f.liters > 0 }?.div(f.liters)
             },
             speedCorrectionPct = AppSettings.dashboard(this, loaded).speedCorrectionPct,
@@ -405,6 +412,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         val r = profile.profile.roles
         val gps = s.gps?.takeIf { timestamp - it.timestamp < 30_000 }
         return DiagnosticTroubleCodeEntity(
+            vehicleId = vehicleId,
             tripId = tripId,
             code = code,
             kind = kind.name,
@@ -448,7 +456,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             }
 
             val result = eng.compute(state, trip, now, dtS)
-            result.timedRuns.forEach { AppSettings.recordTimedRun(this, loaded.id, it, now) }
+            result.timedRuns.forEach { AppSettings.recordTimedRun(this, it, now) }
             result.atmosphericKpa?.let { AppSettings.setAtmosphericKpa(this, it) }
             val gpsAlert = gpsLostAlert(loaded, state, now, mono)
             TelemetryHub.update {
@@ -707,7 +715,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 put("gps_allowed", locationAllowed)
                 // Ajustes que mudam o consumo calculado: sem eles, a gravação não explica o km/l da viagem
                 put("ethanol_pct", AppSettings.ethanolPercent(this@ObdForegroundService, loaded.profile.fuel?.defaultEthanolPct ?: 0.0))
-                put("fuel_correction", AppSettings.fuelCorrection(this@ObdForegroundService, loaded.id).factor)
+                put("fuel_correction", AppSettings.fuelCorrection(this@ObdForegroundService).factor)
                 put("fuel_level_l", AppSettings.fuelLevel(this@ObdForegroundService))
                 putJsonArray("adapter_names") {
                     AppSettings.adapterNames(this@ObdForegroundService, loaded.profile.adapter.deviceNames)

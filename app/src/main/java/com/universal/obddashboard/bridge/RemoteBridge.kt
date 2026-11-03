@@ -3,6 +3,7 @@ package com.universal.obddashboard.bridge
 import android.webkit.JavascriptInterface
 import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.MainActivity
+import com.universal.obddashboard.Vehicles
 import com.universal.obddashboard.db.AppDatabase
 import com.universal.obddashboard.remote.RemoteClient
 import com.universal.obddashboard.remote.RemoteSettings
@@ -25,7 +26,8 @@ class RemoteBridge(private val activity: MainActivity) {
             .put("baseUrl", RemoteSettings.baseUrl(activity))
             .put("deviceName", RemoteSettings.deviceName(activity))
             .put("installationId", RemoteSettings.installationId(activity))
-            .put("pending", if (paired) dao.countTelemetryAfter(RemoteSettings.cursor(activity)) else 0)
+            .put("pending", if (paired) dao.countTelemetryAfter(RemoteSettings.cursor(activity), Vehicles.selectedId(activity)) else 0)
+            .put("vehicleName", Vehicles.selected(activity).name)
             .put("lastSentAt", RemoteSettings.lastSentAt(activity))
             .put("lastError", RemoteSettings.lastError(activity))
             .toString()
@@ -68,7 +70,7 @@ class RemoteBridge(private val activity: MainActivity) {
             RemoteUploader.Outcome.IDLE -> "Nada pendente."
             RemoteUploader.Outcome.SENT -> "${r.sent} leituras enviadas."
             RemoteUploader.Outcome.RETRY -> "Sem conexão com o servidor. ${r.sent} leituras enviadas antes da falha."
-            RemoteUploader.Outcome.REVOKED -> "Este celular foi revogado no painel."
+            RemoteUploader.Outcome.REVOKED -> "Este veículo foi revogado no painel."
         }
         JSONObject().put("ok", true).put("message", text).toString()
     }

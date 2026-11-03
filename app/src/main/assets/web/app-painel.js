@@ -185,13 +185,14 @@ function onTelemetry(s) {
       [...conf.map((c) => [c, 'confirmed']), ...pend.map((c) => [c, 'pending'])].forEach(([c, k]) => {
         const b = document.createElement('button');
         b.className = 'btn btn-small dtc-ai';
-        b.textContent = 'Explicar ' + c + ' com IA';
-        b.addEventListener('click', () => explainDtc({ code: c, kind: k }));
+        b.textContent = 'Analisar ' + c + ' com IA';
+        b.addEventListener('click', () => explainDtc({ code: c, kind: k, description: dtcText(c) }));
         dtcs.appendChild(b);
       });
     }
   }
   lastDtcKey = dtcKey;
+  renderFaultsNow(conf, pend, s);
 
   renderMonitors(s.readiness);
 
@@ -225,7 +226,7 @@ function renderMonitors(r) {
     `<span class="mon ${m.complete ? 'ok' : 'pending'}">${m.complete ? '✓' : '⏳'} ${esc(m.name)}</span>`).join('') : 'A ECU não informa monitores.';
 }
 
-const dtcText = (code) => (meta.dtcDescriptions || {})[String(code).toUpperCase()] || '';
+const dtcText = (code) => dtcDescribe(code, meta.dtcDescriptions).text;
 
 function chip(code, kind) {
   const el = document.createElement('span');

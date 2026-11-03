@@ -19,6 +19,7 @@ object DtcPrompt {
     private val CODE = Regex("^[PCBU][0-9A-F]{4}$")
     private val OUTPUT_ID = Regex("^[a-z][a-z0-9_]{0,40}$")
     private const val MAX_FRAME_VALUES = 20
+    private const val MAX_DESCRIPTION = 200
     private val HIDDEN_FROM_PROMPT = setOf("readiness_b", "readiness_c", "readiness_d")
 
     /** Congelamento de quadro opcional: as leituras gravadas quando a falha apareceu. */
@@ -31,6 +32,8 @@ object DtcPrompt {
         val coolantC: Double? = null,
         /** Congelamento de quadro gravado pela ECU (modo 02): saída do perfil → valor. */
         val ecuFrame: Map<String, Double> = emptyMap(),
+        /** Descrição genérica que a tela mostrou (norma SAE), usada quando o perfil não tem a dele. */
+        val description: String? = null,
     ) {
         companion object {
             /** @throws IllegalArgumentException com código fora do formato P/C/B/U + 4 dígitos */
@@ -43,7 +46,9 @@ object DtcPrompt {
                     .filter { OUTPUT_ID.matches(it.key) }
                     .mapNotNull { (k, v) -> (v as? JsonPrimitive)?.doubleOrNull?.takeIf { it.isFinite() }?.let { k to it } }
                     .take(MAX_FRAME_VALUES).toMap()
-                return Request(code, kind.equals("pending", true), num("rpm"), num("speedKmh"), num("engineLoadPct"), num("coolantC"), frame)
+                val description = o["description"]?.jsonPrimitive?.contentOrNull
+                    ?.filterNot { it.isISOControl() || it in "<>{}" }?.trim()?.take(MAX_DESCRIPTION)?.ifBlank { null }
+                return Request(code, kind.equals("pending", true), num("rpm"), num("speedKmh"), num("engineLoadPct"), num("coolantC"), frame, description)
             }
         }
     }
@@ -60,7 +65,9 @@ object DtcPrompt {
         if (profile.engine.isNotBlank()) appendLine("Motor: ${profile.engine}")
         if (profile.ecuModel.isNotBlank()) appendLine("Injeção/ECU: ${profile.ecuModel}")
         appendLine("Código de falha: ${r.code} (${if (r.pending) "pendente" else "confirmado"})")
-        profile.describeDtc(r.code)?.let { appendLine("Descrição no manual do veículo: $it") }
+        val own = profile.describeDtc(r.code)
+        if (own != null) appendLine("Descrição no manual do veículo: $own")
+        else r.description?.let { appendLine("Descrição genérica do código (norma SAE): $it") }
         val frame = listOfNotNull(
             r.rpm?.let { "rotação ${fmt(it, 0)} rpm" },
             r.speedKmh?.let { "velocidade ${fmt(it, 0)} km/h" },

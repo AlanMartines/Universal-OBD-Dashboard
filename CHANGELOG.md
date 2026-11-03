@@ -6,6 +6,17 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.7] - 2026-11-02
+
+### Adicionado
+- **Meus veículos (Ajustes → Veículo):** vários carros no mesmo celular, cada um com nome, placa opcional e perfil do modelo. Hodômetro, nível do tanque, etanol, adaptador, gatilhos Bluetooth, mostradores, alarmes, tempos, calibração do consumo, viagens, abastecimentos, falhas e telemetria remota ficam separados por veículo. Conectar o adaptador cadastrado em outro veículo troca o veículo antes da captura.
+- **Aba Falhas:** falhas ativas e pendentes com descrição e botão "Analisar com IA", monitores de prontidão e o histórico com freeze frame. Só leitura: o app não apaga falhas.
+- **Descrição de códigos genéricos:** tabela própria em português com cerca de 190 códigos da norma SAE e o grupo de qualquer outro código. A descrição do perfil do veículo continua com prioridade.
+
+### Alterado
+- **Banco v4:** viagens, falhas e abastecimentos ganham o veículo. O que já existe passa para o primeiro veículo, criado com os ajustes atuais.
+- **Telemetria remota por veículo:** cada carro tem o próprio pareamento com o servidor. O pareamento atual continua com o primeiro veículo.
+
 ### Alterado
 - **Pasta `veiculos/`:** dados e ligações de cada carro ficam separados, com modelo para novos veículos. A ligação do Uno Vivace deixa de aparecer como padrão no guia de escuta CAN.
 

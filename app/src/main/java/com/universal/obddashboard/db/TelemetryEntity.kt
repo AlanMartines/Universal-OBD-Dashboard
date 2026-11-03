@@ -21,6 +21,8 @@ data class TripEntity(
     @ColumnInfo(name = "fuel_used_l") val fuelUsedL: Double = 0.0,
     /** user_stop | bluetooth_disconnected | ignition_off | idle_timeout | adapter_unreachable | interrupted */
     @ColumnInfo(name = "end_reason") val endReason: String? = null,
+    /** Veículo dono do registro (ver Vehicles). Dados de antes da v4 ficam no primeiro veículo. */
+    @ColumnInfo(name = "vehicle_id", defaultValue = "'v1'") val vehicleId: String = "v1",
 )
 
 /**
@@ -95,4 +97,6 @@ data class DiagnosticTroubleCodeEntity(
     @ColumnInfo(name = "gps_accuracy_m") val gpsAccuracyM: Float? = null,
     /** Congelamento de quadro gravado pela própria ECU (modo 02): {"code": "...", "values": {saída: valor}}. */
     @ColumnInfo(name = "ecu_freeze_json") val ecuFreezeJson: String? = null,
+    /** Veículo dono do registro (ver Vehicles). Dados de antes da v4 ficam no primeiro veículo. */
+    @ColumnInfo(name = "vehicle_id", defaultValue = "'v1'") val vehicleId: String = "v1",
 )

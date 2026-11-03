@@ -28,6 +28,8 @@ data class FuelUpEntity(
     @ColumnInfo(name = "full_tank") val fullTank: Boolean = true,
     val station: String? = null,
     val notes: String? = null,
+    /** Veículo dono do registro (ver Vehicles). Dados de antes da v4 ficam no primeiro veículo. */
+    @ColumnInfo(name = "vehicle_id", defaultValue = "'v1'") val vehicleId: String = "v1",
 )
 
 @Dao
@@ -39,15 +41,18 @@ interface FuelUpDao {
     @Insert
     suspend fun insertAll(list: List<FuelUpEntity>): List<Long>
 
-    @Query("SELECT * FROM fuel_ups ORDER BY timestamp")
-    suspend fun all(): List<FuelUpEntity>
+    @Query("SELECT * FROM fuel_ups WHERE vehicle_id = :vehicleId ORDER BY timestamp")
+    suspend fun all(vehicleId: String): List<FuelUpEntity>
+
+    @Query("SELECT COUNT(*) FROM fuel_ups")
+    suspend fun count(): Int
 
     @Query("DELETE FROM fuel_ups WHERE id = :id")
     suspend fun delete(id: Long)
 
-    @Query("DELETE FROM fuel_ups")
-    suspend fun deleteAll()
+    @Query("DELETE FROM fuel_ups WHERE vehicle_id = :vehicleId")
+    suspend fun deleteAll(vehicleId: String)
 
-    @Query("SELECT COUNT(*) FROM fuel_ups WHERE timestamp = :timestamp AND liters = :liters")
-    suspend fun countSame(timestamp: Long, liters: Double): Int
+    @Query("SELECT COUNT(*) FROM fuel_ups WHERE timestamp = :timestamp AND liters = :liters AND vehicle_id = :vehicleId")
+    suspend fun countSame(timestamp: Long, liters: Double, vehicleId: String): Int
 }

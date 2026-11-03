@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.content.edit
 import com.universal.obddashboard.BuildConfig
+import com.universal.obddashboard.Vehicles
 import com.universal.obddashboard.db.AppDatabase
 import com.universal.obddashboard.diagnostics.ConsoleSession
 import com.universal.obddashboard.obd.ProfileParser
@@ -81,8 +82,10 @@ object BackupManager {
 
             // Reabre já migrando, se o backup for de uma versão anterior do banco
             val db = AppDatabase.get(context)
-            val trips = db.tripDao().recentTrips(100_000).size
-            val fuelUps = db.fuelUpDao().all().size
+            // Backup de antes dos veículos: os ajustes gerais vão para o veículo selecionado
+            Vehicles.ensure(context, force = true)
+            val trips = db.tripDao().tripCount()
+            val fuelUps = db.fuelUpDao().count()
             val date = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(Date(contents.manifest.createdAt))
             return "Backup de $date (app ${contents.manifest.appVersion}) restaurado: $trips viagens, $fuelUps abastecimentos."
         } finally {

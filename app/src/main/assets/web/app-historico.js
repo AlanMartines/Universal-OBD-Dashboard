@@ -66,9 +66,9 @@ async function loadHistory() {
     if (aiReady()) {
       const b = document.createElement('button');
       b.className = 'btn btn-small';
-      b.textContent = 'Explicar com IA';
+      b.textContent = 'Analisar com IA';
       // Só os campos da falha: o GPS do item não vai junto (o app também filtra do lado nativo).
-      b.addEventListener('click', () => explainDtc({ code: d.code, kind: d.kind, rpm: d.rpm, speedKmh: d.speedKmh, engineLoadPct: d.engineLoadPct, coolantC: d.coolantC, ecuFrame: d.ecuFrame }));
+      b.addEventListener('click', () => explainDtc({ code: d.code, kind: d.kind, description: dtcText(d.code), rpm: d.rpm, speedKmh: d.speedKmh, engineLoadPct: d.engineLoadPct, coolantC: d.coolantC, ecuFrame: d.ecuFrame }));
       const actions = document.createElement('div');
       actions.className = 'actions';
       actions.appendChild(b);

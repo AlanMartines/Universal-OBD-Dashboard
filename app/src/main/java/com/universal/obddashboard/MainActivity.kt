@@ -232,9 +232,10 @@ class MainActivity : ComponentActivity() {
         val dao = db.tripDao()
         totalKm = runCatching {
             val ref = AppSettings.odometerRef(this)
-            if (ref != null) ref.km + dao.distanceSinceKm(ref.since) else dao.totalDistanceKm()
+            val vehicleId = Vehicles.selectedId(this)
+            if (ref != null) ref.km + dao.distanceSinceKm(ref.since, vehicleId) else dao.totalDistanceKm(vehicleId)
         }.getOrNull()
-        realKmPerL = runCatching { FuelLog.summary(db.fuelUpDao().all()).avgKmPerL }.getOrNull()
+        realKmPerL = runCatching { FuelLog.summary(db.fuelUpDao().all(Vehicles.selectedId(this))).avgKmPerL }.getOrNull()
     }
 
     /** Consumo real médio dos abastecimentos (para a autonomia do painel), relido a cada minuto. */

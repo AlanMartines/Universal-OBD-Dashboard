@@ -3,6 +3,7 @@ package com.universal.obddashboard.bridge
 import android.webkit.JavascriptInterface
 import androidx.room.withTransaction
 import com.universal.obddashboard.AppSettings
+import com.universal.obddashboard.Vehicles
 import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.db.AppDatabase
 import com.universal.obddashboard.db.FuelUpEntity
@@ -26,16 +27,16 @@ class FuelBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun getFuelUps(requestId: String) = activity.answerAsync(requestId) {
         val db = AppDatabase.get(activity)
-        val list = db.fuelUpDao().all()
+        val list = db.fuelUpDao().all(Vehicles.selectedId(activity))
         val s = FuelLog.summary(list)
         val ve = runCatching { activity.currentProfile().profile.fuel?.volumetricEfficiency }.getOrNull()
         // Estimativa do app em cada intervalo: integral do consumo gravado entre os dois abastecimentos
         val checks = s.intervals.map { iv ->
             FuelCalibration.Check(iv.from.timestamp, iv.to.timestamp, iv.liters,
-                FuelCalibration.integrateLiters(db.tripDao().fuelSamples(iv.from.timestamp, iv.to.timestamp)))
+                FuelCalibration.integrateLiters(db.tripDao().fuelSamples(iv.from.timestamp, iv.to.timestamp, Vehicles.selectedId(activity))))
         }
         val profileId = runCatching { activity.currentProfile().id }.getOrDefault(AppSettings.selectedProfileId(activity))
-        val corr = AppSettings.fuelCorrection(activity, profileId)
+        val corr = AppSettings.fuelCorrection(activity)
         val cal = FuelCalibration.evaluate(checks, corr.factor, corr.since)
         JSONObject()
             .put("items", JSONArray().apply { list.asReversed().forEach { put(fuelUpJson(it)) } })
@@ -75,7 +76,7 @@ class FuelBridge(private val activity: MainActivity) {
     fun setFuelCorrection(factor: Double): String = try {
         require(factor in FuelCalibration.MIN_FACTOR..FuelCalibration.MAX_FACTOR) { "Fator fora da faixa" }
         val profileId = activity.currentProfile().id
-        AppSettings.setFuelCorrection(activity, profileId, factor)
+        AppSettings.setFuelCorrection(activity, factor)
         TelemetryHub.requestFuelOverride(TelemetryHub.FuelOverride(fuelCorrection = factor))
         "ok"
     } catch (e: Exception) {
@@ -94,6 +95,7 @@ class FuelBridge(private val activity: MainActivity) {
         val ppl = d("pricePerLiter") ?: total?.div(liters)
         val type = o.optString("fuelType", FuelLog.GASOLINE).takeIf { it in FuelLog.FUEL_TYPES } ?: FuelLog.GASOLINE
         val f = FuelUpEntity(
+            vehicleId = Vehicles.selectedId(activity),
             timestamp = o.optLong("timestamp", System.currentTimeMillis()),
             profileId = runCatching { activity.currentProfile().id }.getOrDefault(AppSettings.selectedProfileId(activity)),
             odometerKm = d("odometerKm"), liters = liters, totalPrice = total ?: ppl?.times(liters), pricePerLiter = ppl,
@@ -125,7 +127,7 @@ class FuelBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun exportFuelUps(requestId: String) = activity.answerAsync(requestId) {
         try {
-            val list = AppDatabase.get(activity).fuelUpDao().all()
+            val list = AppDatabase.get(activity).fuelUpDao().all(Vehicles.selectedId(activity))
             if (list.isEmpty()) throw IllegalStateException("Nenhum abastecimento registrado")
             val dir = java.io.File(activity.cacheDir, "exports").apply { mkdirs() }
             val stamp = java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US).format(java.util.Date())
@@ -153,9 +155,10 @@ class FuelBridge(private val activity: MainActivity) {
         if (parsed.isEmpty()) throw IllegalArgumentException("Nenhum abastecimento no CSV")
         val db = AppDatabase.get(activity)
         val dao = db.fuelUpDao()
+        val vehicleId = Vehicles.selectedId(activity)
         val (added, removed) = db.withTransaction {
-            val removed = if (replace) dao.all().size.also { dao.deleteAll() } else 0
-            val fresh = parsed.filter { dao.countSame(it.timestamp, it.liters) == 0 }
+            val removed = if (replace) dao.all(vehicleId).size.also { dao.deleteAll(vehicleId) } else 0
+            val fresh = parsed.map { it.copy(vehicleId = vehicleId) }.filter { dao.countSame(it.timestamp, it.liters, vehicleId) == 0 }
             dao.insertAll(fresh)
             fresh.size to removed
         }

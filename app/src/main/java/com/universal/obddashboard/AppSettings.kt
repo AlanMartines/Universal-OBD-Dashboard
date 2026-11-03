@@ -40,28 +40,33 @@ object AppSettings {
     private const val KEY_TIMED_RUNS_PREFIX = "timed_runs_"
     private const val KEY_ATMOSPHERIC_KPA = "atmospheric_kpa"
 
+    /** Chave do ajuste no veículo selecionado (ver [Vehicles]). */
+    private fun sk(context: Context, key: String) = Vehicles.scopedKey(key, vid(context))
+
+    private fun vid(context: Context) = Vehicles.selectedId(context)
+
     private fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     /** Mostradores do perfil com o que o usuário ajustou para ele. */
     fun dashboard(context: Context, loaded: LoadedProfile): DashboardSettings =
-        DashboardOverride.decode(prefs(context).getString(KEY_DASHBOARD_PREFIX + loaded.id, null))
+        DashboardOverride.decode(prefs(context).getString(KEY_DASHBOARD_PREFIX + vid(context), null))
             ?.applyTo(loaded.profile.dashboard) ?: loaded.profile.dashboard
 
-    fun hasDashboardOverride(context: Context, profileId: String): Boolean =
-        prefs(context).contains(KEY_DASHBOARD_PREFIX + profileId)
+    fun hasDashboardOverride(context: Context): Boolean =
+        prefs(context).contains(KEY_DASHBOARD_PREFIX + vid(context))
 
-    fun setDashboardOverride(context: Context, profileId: String, override: DashboardOverride) =
-        prefs(context).edit { putString(KEY_DASHBOARD_PREFIX + profileId, override.encode()) }
+    fun setDashboardOverride(context: Context, override: DashboardOverride) =
+        prefs(context).edit { putString(KEY_DASHBOARD_PREFIX + vid(context), override.encode()) }
 
-    fun clearDashboardOverride(context: Context, profileId: String) =
-        prefs(context).edit { remove(KEY_DASHBOARD_PREFIX + profileId) }
+    fun clearDashboardOverride(context: Context) =
+        prefs(context).edit { remove(KEY_DASHBOARD_PREFIX + vid(context)) }
 
-    fun userAlarms(context: Context, profileId: String): List<UserAlarm> =
-        UserAlarm.decode(prefs(context).getString(KEY_USER_ALARMS_PREFIX + profileId, null))
+    fun userAlarms(context: Context): List<UserAlarm> =
+        UserAlarm.decode(prefs(context).getString(KEY_USER_ALARMS_PREFIX + vid(context), null))
 
-    fun setUserAlarms(context: Context, profileId: String, alarms: List<UserAlarm>) =
-        prefs(context).edit { putString(KEY_USER_ALARMS_PREFIX + profileId, UserAlarm.encode(alarms)) }
+    fun setUserAlarms(context: Context, alarms: List<UserAlarm>) =
+        prefs(context).edit { putString(KEY_USER_ALARMS_PREFIX + vid(context), UserAlarm.encode(alarms)) }
 
     /** Última pressão atmosférica medida: vale ao ligar o app com o motor já em funcionamento. */
     fun atmosphericKpa(context: Context): Double? =
@@ -72,19 +77,19 @@ object AppSettings {
     }
 
     /** Melhor e último tempo por faixa, em JSON: {"0-100":{"best":14.2,"last":15.1,"at":0}}. */
-    fun timedRuns(context: Context, profileId: String): Map<String, TimedRunRecord> =
-        prefs(context).getString(KEY_TIMED_RUNS_PREFIX + profileId, null)
+    fun timedRuns(context: Context): Map<String, TimedRunRecord> =
+        prefs(context).getString(KEY_TIMED_RUNS_PREFIX + vid(context), null)
             ?.let { runCatching { Json.decodeFromString<Map<String, TimedRunRecord>>(it) }.getOrNull() }.orEmpty()
 
-    fun recordTimedRun(context: Context, profileId: String, run: TimedRun, now: Long) {
-        val all = timedRuns(context, profileId).toMutableMap()
+    fun recordTimedRun(context: Context, run: TimedRun, now: Long) {
+        val all = timedRuns(context).toMutableMap()
         val best = minOf(all[run.band]?.best ?: run.seconds, run.seconds)
         all[run.band] = TimedRunRecord(best, run.seconds, now)
-        prefs(context).edit { putString(KEY_TIMED_RUNS_PREFIX + profileId, Json.encodeToString(all.toMap())) }
+        prefs(context).edit { putString(KEY_TIMED_RUNS_PREFIX + vid(context), Json.encodeToString(all.toMap())) }
     }
 
-    fun clearTimedRuns(context: Context, profileId: String) =
-        prefs(context).edit { remove(KEY_TIMED_RUNS_PREFIX + profileId) }
+    fun clearTimedRuns(context: Context) =
+        prefs(context).edit { remove(KEY_TIMED_RUNS_PREFIX + vid(context)) }
 
     fun selectedProfileId(context: Context): String =
         prefs(context).getString(KEY_PROFILE, null) ?: ProfileParser.DEFAULT_PROFILE_ID
@@ -94,55 +99,55 @@ object AppSettings {
 
     /** % (em volume) de etanol hidratado no tanque — define a estequiometria do cálculo de consumo. */
     fun ethanolPercent(context: Context, default: Double): Double =
-        prefs(context).getFloat(KEY_ETHANOL_PCT, Float.NaN).toDouble().takeUnless { it.isNaN() } ?: default
+        prefs(context).getFloat(sk(context, KEY_ETHANOL_PCT), Float.NaN).toDouble().takeUnless { it.isNaN() } ?: default
 
     fun setEthanolPercent(context: Context, pct: Double) =
-        prefs(context).edit { putFloat(KEY_ETHANOL_PCT, pct.coerceIn(0.0, 100.0).toFloat()) }
+        prefs(context).edit { putFloat(sk(context, KEY_ETHANOL_PCT), pct.coerceIn(0.0, 100.0).toFloat()) }
 
     /**
      * Nomes/MACs do adaptador OBD. Vazio = usa adapter.device_names do perfil.
      */
     fun adapterNames(context: Context, profileDefaults: List<String>): List<String> =
-        csv(prefs(context).getString(KEY_ADAPTER_NAMES, null)).ifEmpty { profileDefaults }
+        csv(prefs(context).getString(sk(context, KEY_ADAPTER_NAMES), null)).ifEmpty { profileDefaults }
 
     fun setAdapterNames(context: Context, csv: String) =
-        prefs(context).edit { putString(KEY_ADAPTER_NAMES, csv) }
+        prefs(context).edit { putString(sk(context, KEY_ADAPTER_NAMES), csv) }
 
     /**
      * Dispositivos extras que, ao conectar, iniciam a captura (ex.: a central multimídia do carro).
      * Necessário porque o adaptador ELM327 é passivo: ele não "se conecta" sozinho ao telefone.
      */
     fun extraTriggerDevices(context: Context): List<String> =
-        csv(prefs(context).getString(KEY_EXTRA_TRIGGERS, null))
+        csv(prefs(context).getString(sk(context, KEY_EXTRA_TRIGGERS), null))
 
     fun setExtraTriggerDevices(context: Context, csv: String) =
-        prefs(context).edit { putString(KEY_EXTRA_TRIGGERS, csv) }
+        prefs(context).edit { putString(sk(context, KEY_EXTRA_TRIGGERS), csv) }
 
     /** Nível estimado de combustível (L), ou null se o usuário nunca informou um abastecimento. */
     fun fuelLevel(context: Context): Double? =
-        prefs(context).getFloat(KEY_FUEL_LEVEL, Float.NaN).toDouble().takeUnless { it.isNaN() }
+        prefs(context).getFloat(sk(context, KEY_FUEL_LEVEL), Float.NaN).toDouble().takeUnless { it.isNaN() }
 
     fun setFuelLevel(context: Context, liters: Double) =
         prefs(context).edit {
-            putFloat(KEY_FUEL_LEVEL, liters.coerceAtLeast(0.0).toFloat())
-            putLong(KEY_FUEL_LEVEL_AT, System.currentTimeMillis())
+            putFloat(sk(context, KEY_FUEL_LEVEL), liters.coerceAtLeast(0.0).toFloat())
+            putLong(sk(context, KEY_FUEL_LEVEL_AT), System.currentTimeMillis())
         }
 
     /** Fator sobre o consumo calculado pelo perfil, calibrado com abastecimentos; [since] = quando mudou. */
     data class FuelCorrection(val factor: Double, val since: Long)
 
-    fun fuelCorrection(context: Context, profileId: String): FuelCorrection {
+    fun fuelCorrection(context: Context): FuelCorrection {
         val p = prefs(context)
         return FuelCorrection(
-            p.getFloat(KEY_FUEL_CORR_PREFIX + profileId, 1f).toDouble(),
-            p.getLong(KEY_FUEL_CORR_SINCE_PREFIX + profileId, 0L),
+            p.getFloat(KEY_FUEL_CORR_PREFIX + vid(context), 1f).toDouble(),
+            p.getLong(KEY_FUEL_CORR_SINCE_PREFIX + vid(context), 0L),
         )
     }
 
-    fun setFuelCorrection(context: Context, profileId: String, factor: Double, now: Long = System.currentTimeMillis()) =
+    fun setFuelCorrection(context: Context, factor: Double, now: Long = System.currentTimeMillis()) =
         prefs(context).edit {
-            putFloat(KEY_FUEL_CORR_PREFIX + profileId, factor.toFloat())
-            putLong(KEY_FUEL_CORR_SINCE_PREFIX + profileId, now)
+            putFloat(KEY_FUEL_CORR_PREFIX + vid(context), factor.toFloat())
+            putLong(KEY_FUEL_CORR_SINCE_PREFIX + vid(context), now)
         }
 
     /** Grava tráfego OBD bruto, varredura da ECU e eventos em arquivos JSON Lines (ver DiagnosticRecorder). */
@@ -186,13 +191,13 @@ object AppSettings {
 
     fun odometerRef(context: Context): OdometerRef? {
         val p = prefs(context)
-        val km = p.getFloat(KEY_ODOMETER_KM, Float.NaN).toDouble()
-        return if (km.isNaN()) null else OdometerRef(km, p.getLong(KEY_ODOMETER_SINCE, 0))
+        val km = p.getFloat(sk(context, KEY_ODOMETER_KM), Float.NaN).toDouble()
+        return if (km.isNaN()) null else OdometerRef(km, p.getLong(sk(context, KEY_ODOMETER_SINCE), 0))
     }
 
     fun setOdometerRef(context: Context, ref: OdometerRef?) = prefs(context).edit {
-        if (ref == null) remove(KEY_ODOMETER_KM).remove(KEY_ODOMETER_SINCE)
-        else putFloat(KEY_ODOMETER_KM, ref.km.toFloat()).putLong(KEY_ODOMETER_SINCE, ref.since)
+        if (ref == null) remove(sk(context, KEY_ODOMETER_KM)).remove(sk(context, KEY_ODOMETER_SINCE))
+        else putFloat(sk(context, KEY_ODOMETER_KM), ref.km.toFloat()).putLong(sk(context, KEY_ODOMETER_SINCE), ref.since)
     }
 
     private fun csv(value: String?): List<String> =

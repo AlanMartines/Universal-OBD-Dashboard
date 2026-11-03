@@ -1,6 +1,7 @@
 package com.universal.obddashboard.remote
 
 import android.content.Context
+import com.universal.obddashboard.Vehicles
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -35,20 +36,23 @@ object RemoteSettings {
 
     private fun prefs(c: Context) = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    fun baseUrl(c: Context): String = prefs(c).getString(KEY_URL, null).orEmpty()
-    fun enabled(c: Context): Boolean = prefs(c).getBoolean(KEY_ENABLED, false)
-    fun setEnabled(c: Context, on: Boolean) = prefs(c).edit { putBoolean(KEY_ENABLED, on) }
-    fun sendGps(c: Context): Boolean = prefs(c).getBoolean(KEY_GPS, false)
-    fun setSendGps(c: Context, on: Boolean) = prefs(c).edit { putBoolean(KEY_GPS, on) }
-    fun deviceName(c: Context): String = prefs(c).getString(KEY_DEVICE_NAME, null).orEmpty()
-    fun cursor(c: Context): Long = prefs(c).getLong(KEY_CURSOR, 0L)
-    fun setCursor(c: Context, id: Long) = prefs(c).edit { putLong(KEY_CURSOR, id) }
-    fun lastSentAt(c: Context): Long = prefs(c).getLong(KEY_LAST_SENT, 0L)
-    fun lastError(c: Context): String = prefs(c).getString(KEY_LAST_ERROR, null).orEmpty()
+    /** Cada veículo tem o próprio pareamento: o servidor vê um dispositivo por carro. */
+    private fun k(key: String, v: String) = Vehicles.scopedKey(key, v)
 
-    fun recordResult(c: Context, sentNow: Boolean, error: String?) = prefs(c).edit {
-        if (sentNow) putLong(KEY_LAST_SENT, System.currentTimeMillis())
-        if (error == null) remove(KEY_LAST_ERROR) else putString(KEY_LAST_ERROR, error)
+    fun baseUrl(c: Context, v: String = Vehicles.selectedId(c)): String = prefs(c).getString(k(KEY_URL, v), null).orEmpty()
+    fun enabled(c: Context, v: String = Vehicles.selectedId(c)): Boolean = prefs(c).getBoolean(k(KEY_ENABLED, v), false)
+    fun setEnabled(c: Context, on: Boolean, v: String = Vehicles.selectedId(c)) = prefs(c).edit { putBoolean(k(KEY_ENABLED, v), on) }
+    fun sendGps(c: Context, v: String = Vehicles.selectedId(c)): Boolean = prefs(c).getBoolean(k(KEY_GPS, v), false)
+    fun setSendGps(c: Context, on: Boolean, v: String = Vehicles.selectedId(c)) = prefs(c).edit { putBoolean(k(KEY_GPS, v), on) }
+    fun deviceName(c: Context, v: String = Vehicles.selectedId(c)): String = prefs(c).getString(k(KEY_DEVICE_NAME, v), null).orEmpty()
+    fun cursor(c: Context, v: String = Vehicles.selectedId(c)): Long = prefs(c).getLong(k(KEY_CURSOR, v), 0L)
+    fun setCursor(c: Context, id: Long, v: String = Vehicles.selectedId(c)) = prefs(c).edit { putLong(k(KEY_CURSOR, v), id) }
+    fun lastSentAt(c: Context, v: String = Vehicles.selectedId(c)): Long = prefs(c).getLong(k(KEY_LAST_SENT, v), 0L)
+    fun lastError(c: Context, v: String = Vehicles.selectedId(c)): String = prefs(c).getString(k(KEY_LAST_ERROR, v), null).orEmpty()
+
+    fun recordResult(c: Context, sentNow: Boolean, error: String?, v: String = Vehicles.selectedId(c)) = prefs(c).edit {
+        if (sentNow) putLong(k(KEY_LAST_SENT, v), System.currentTimeMillis())
+        if (error == null) remove(k(KEY_LAST_ERROR, v)) else putString(k(KEY_LAST_ERROR, v), error)
     }
 
     /** Identificador aleatório desta instalação. Não usa IMEI, MAC nem ID do aparelho. */
@@ -57,29 +61,29 @@ object RemoteSettings {
     }
 
     /** Liga o envio a partir de agora: o histórico anterior ao pareamento não sobe. */
-    fun savePairing(c: Context, url: String, deviceName: String, token: String, cursor: Long) {
+    fun savePairing(c: Context, url: String, deviceName: String, token: String, cursor: Long, v: String = Vehicles.selectedId(c)) {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.ENCRYPT_MODE, secretKey()) }
         val enc = cipher.iv + cipher.doFinal(token.toByteArray(Charsets.UTF_8))
         prefs(c).edit {
-            putString(KEY_URL, url)
-            putString(KEY_DEVICE_NAME, deviceName)
-            putString(KEY_TOKEN, Base64.encodeToString(enc, Base64.NO_WRAP))
-            putLong(KEY_CURSOR, cursor)
-            putBoolean(KEY_ENABLED, true)
-            remove(KEY_LAST_ERROR)
-            remove(KEY_LAST_SENT)
+            putString(k(KEY_URL, v), url)
+            putString(k(KEY_DEVICE_NAME, v), deviceName)
+            putString(k(KEY_TOKEN, v), Base64.encodeToString(enc, Base64.NO_WRAP))
+            putLong(k(KEY_CURSOR, v), cursor)
+            putBoolean(k(KEY_ENABLED, v), true)
+            remove(k(KEY_LAST_ERROR, v))
+            remove(k(KEY_LAST_SENT, v))
         }
     }
 
-    fun clearPairing(c: Context, error: String? = null) = prefs(c).edit {
-        remove(KEY_TOKEN)
-        remove(KEY_DEVICE_NAME)
-        putBoolean(KEY_ENABLED, false)
-        if (error == null) remove(KEY_LAST_ERROR) else putString(KEY_LAST_ERROR, error)
+    fun clearPairing(c: Context, error: String? = null, v: String = Vehicles.selectedId(c)) = prefs(c).edit {
+        remove(k(KEY_TOKEN, v))
+        remove(k(KEY_DEVICE_NAME, v))
+        putBoolean(k(KEY_ENABLED, v), false)
+        if (error == null) remove(k(KEY_LAST_ERROR, v)) else putString(k(KEY_LAST_ERROR, v), error)
     }
 
-    fun token(c: Context): String? {
-        val stored = prefs(c).getString(KEY_TOKEN, null) ?: return null
+    fun token(c: Context, v: String = Vehicles.selectedId(c)): String? {
+        val stored = prefs(c).getString(k(KEY_TOKEN, v), null) ?: return null
         return try {
             val raw = Base64.decode(stored, Base64.NO_WRAP)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -87,7 +91,7 @@ object RemoteSettings {
             String(cipher.doFinal(raw, GCM_IV_BYTES, raw.size - GCM_IV_BYTES), Charsets.UTF_8)
         } catch (_: Exception) {
             Log.w(TAG, "Token ilegível neste aparelho; será preciso parear de novo")
-            clearPairing(c)
+            clearPairing(c, v = v)
             null
         }
     }

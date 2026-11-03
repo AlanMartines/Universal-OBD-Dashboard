@@ -6,12 +6,14 @@ import android.os.Build
 import android.provider.Settings
 import android.view.WindowManager
 import android.webkit.JavascriptInterface
+import androidx.lifecycle.lifecycleScope
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.universal.obddashboard.AppSettings
 import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.MainActivity
+import com.universal.obddashboard.Vehicles
 import com.universal.obddashboard.obd.BluetoothSerialManager
 import com.universal.obddashboard.obd.DashboardOverride
 import com.universal.obddashboard.obd.ProfileParser
@@ -60,10 +62,64 @@ class AppBridge(private val activity: MainActivity) {
         }
     }.toString()
 
+    /** Ajustes → Veículo: cadastrados e o selecionado. */
+    @JavascriptInterface
+    fun getVehicles(): String {
+        val selected = Vehicles.selectedId(activity)
+        val names = ProfileParser.listAvailable(activity).associate { it.id to it.vehicleName }
+        return JSONObject().put("selected", selected).put("capturing", ObdForegroundService.isRunning).put(
+            "list",
+            JSONArray().apply {
+                Vehicles.all(activity).forEach { v ->
+                    put(
+                        JSONObject().put("id", v.id).put("name", v.name).put("plate", v.plate ?: "")
+                            .put("profileId", v.profileId).put("profileName", names[v.profileId] ?: v.profileId),
+                    )
+                }
+            },
+        ).toString()
+    }
+
+    /** A captura grava no veículo em que começou: trocar no meio misturaria os dados. */
+    @JavascriptInterface
+    fun selectVehicle(id: String): String = when {
+        ObdForegroundService.isRunning -> "Encerre a captura antes de trocar de veículo."
+        Vehicles.get(activity, id) == null -> "Veículo não encontrado."
+        else -> {
+            Vehicles.select(activity, id)
+            // Hodômetro e consumo real mudam com o veículo: não espera a releitura de cada minuto
+            activity.lifecycleScope.launch { activity.refreshTotalKm() }
+            "ok"
+        }
+    }
+
+    @JavascriptInterface
+    fun addVehicle(name: String, profileId: String, plate: String): String = try {
+        when {
+            ObdForegroundService.isRunning -> throw IllegalStateException("Encerre a captura antes de trocar de veículo.")
+            name.isBlank() -> throw IllegalArgumentException("Informe o nome do veículo.")
+            Vehicles.all(activity).size >= MAX_VEHICLES -> throw IllegalStateException("Limite de $MAX_VEHICLES veículos atingido.")
+        }
+        ProfileParser.load(activity, profileId) // valida o perfil
+        val v = Vehicles.add(activity, name, profileId, plate)
+        Vehicles.select(activity, v.id)
+        activity.lifecycleScope.launch { activity.refreshTotalKm() }
+        "ok"
+    } catch (e: Exception) {
+        e.message ?: "erro"
+    }
+
+    @JavascriptInterface
+    fun renameVehicle(name: String, plate: String): String {
+        if (name.isBlank()) return "Informe o nome do veículo."
+        Vehicles.update(activity, Vehicles.selected(activity).copy(name = name, plate = plate))
+        return "ok"
+    }
+
     @JavascriptInterface
     fun selectProfile(id: String): String = try {
         ProfileParser.load(activity, id) // valida antes de selecionar
-        AppSettings.setSelectedProfileId(activity, id)
+        Vehicles.update(activity, Vehicles.selected(activity).copy(profileId = id))
         "ok"
     } catch (e: Exception) {
         e.message ?: "erro"
@@ -102,7 +158,7 @@ class AppBridge(private val activity: MainActivity) {
         return JSONObject()
             .put("rpmMax", d.rpmMax).put("rpmRedline", d.rpmRedline)
             .put("speedMax", d.speedMax).put("speedCorrectionPct", d.speedCorrectionPct)
-            .put("customized", AppSettings.hasDashboardOverride(activity, p.id))
+            .put("customized", AppSettings.hasDashboardOverride(activity))
             .toString()
     }
 
@@ -110,13 +166,13 @@ class AppBridge(private val activity: MainActivity) {
     fun setDashboardSettings(rpmMax: Double, rpmRedline: Double, speedMax: Double, speedCorrectionPct: Double): String {
         val override = DashboardOverride(rpmMax, rpmRedline, speedMax, speedCorrectionPct)
         override.problem()?.let { return it }
-        AppSettings.setDashboardOverride(activity, activity.currentProfile().id, override)
+        AppSettings.setDashboardOverride(activity, override)
         return "ok"
     }
 
     @JavascriptInterface
     fun resetDashboardSettings(): String {
-        AppSettings.clearDashboardOverride(activity, activity.currentProfile().id)
+        AppSettings.clearDashboardOverride(activity)
         return "ok"
     }
 
@@ -125,7 +181,7 @@ class AppBridge(private val activity: MainActivity) {
     fun getUserAlarms(): String {
         val p = activity.currentProfile()
         return JSONArray().apply {
-            AppSettings.userAlarms(activity, p.id).forEach { a ->
+            AppSettings.userAlarms(activity).forEach { a ->
                 val o = p.outputs[a.output]
                 put(
                     JSONObject().put("id", a.id).put("name", o?.name ?: a.output).put("unit", o?.unit.orEmpty())
@@ -138,13 +194,13 @@ class AppBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun addUserAlarm(output: String, above: Boolean, value: Double, critical: Boolean): String {
         val p = activity.currentProfile()
-        val list = AppSettings.userAlarms(activity, p.id)
+        val list = AppSettings.userAlarms(activity)
         return when {
             output !in p.outputs -> "Sinal inválido."
             !value.isFinite() -> "Informe o valor do alarme."
             list.size >= UserAlarm.MAX_ALARMS -> "Limite de ${UserAlarm.MAX_ALARMS} alarmes atingido."
             else -> {
-                AppSettings.setUserAlarms(activity, p.id, list + UserAlarm(UUID.randomUUID().toString().take(8), output, above, value, critical))
+                AppSettings.setUserAlarms(activity, list + UserAlarm(UUID.randomUUID().toString().take(8), output, above, value, critical))
                 "ok"
             }
         }
@@ -153,14 +209,14 @@ class AppBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun deleteUserAlarm(id: String): String {
         val p = activity.currentProfile()
-        AppSettings.setUserAlarms(activity, p.id, AppSettings.userAlarms(activity, p.id).filterNot { it.id == id })
+        AppSettings.setUserAlarms(activity, AppSettings.userAlarms(activity).filterNot { it.id == id })
         return "ok"
     }
 
     /** Ajustes → Desempenho: melhor e último tempo de cada faixa. */
     @JavascriptInterface
     fun getTimedRuns(): String {
-        val runs = AppSettings.timedRuns(activity, activity.currentProfile().id)
+        val runs = AppSettings.timedRuns(activity)
         return JSONArray().apply {
             PerformanceTimers.BANDS.forEach { (from, to) ->
                 val band = "${from.toInt()}-${to.toInt()}"
@@ -172,7 +228,7 @@ class AppBridge(private val activity: MainActivity) {
 
     @JavascriptInterface
     fun clearTimedRuns(): String {
-        AppSettings.clearTimedRuns(activity, activity.currentProfile().id)
+        AppSettings.clearTimedRuns(activity)
         return "ok"
     }
 
@@ -287,5 +343,9 @@ class AppBridge(private val activity: MainActivity) {
                 .putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
+    }
+
+    private companion object {
+        const val MAX_VEHICLES = 10
     }
 }

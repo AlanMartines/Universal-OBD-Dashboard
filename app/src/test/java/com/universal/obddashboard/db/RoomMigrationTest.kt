@@ -34,6 +34,7 @@ class RoomMigrationTest {
         // Valida cada passo contra o esquema exportado
         helper.runMigrationsAndValidate(name, 2, true, AppDatabase.MIGRATION_1_2).close()
         helper.runMigrationsAndValidate(name, 3, true, AppDatabase.MIGRATION_2_3).close()
+        helper.runMigrationsAndValidate(name, 4, true, AppDatabase.MIGRATION_3_4).close()
 
         // E o app abre o banco migrado com as migrações que usa de fato
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java, name)
@@ -48,7 +49,14 @@ class RoomMigrationTest {
                 val dtc = db.tripDao().dtcsForTrip(1).single()
                 assertEquals("P0420", dtc.code)
                 assertNull(dtc.ecuFreezeJson)
-                assertEquals(0, db.fuelUpDao().all().size)
+                // Dados de antes dos veículos ficam no primeiro veículo
+                assertEquals("v1", db.tripDao().getTrip(1)!!.vehicleId)
+                assertEquals("v1", db.tripDao().dtcsForTrip(1).single().vehicleId)
+                assertEquals(1, db.tripDao().recentTrips(10, "v1").size)
+                assertEquals(0, db.tripDao().recentTrips(10, "outro").size)
+                assertEquals(1, db.tripDao().telemetryAfter(0, "v1", 10).size)
+                assertEquals(0, db.tripDao().telemetryAfter(0, "outro", 10).size)
+                assertEquals(0, db.fuelUpDao().all("v1").size)
                 db.tripDao().setEcuFreeze(1, "P0420", "{\"code\":\"P0420\"}")
                 assertEquals("{\"code\":\"P0420\"}", db.tripDao().dtcsForTrip(1).single().ecuFreezeJson)
                 db.aiAnswerDao().save(AiAnswerEntity(kind = "trip", ref = "1", text = "a", createdAt = 1))

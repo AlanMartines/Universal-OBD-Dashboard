@@ -4,6 +4,7 @@ import android.webkit.JavascriptInterface
 import androidx.lifecycle.lifecycleScope
 import com.universal.obddashboard.AppSettings
 import com.universal.obddashboard.MainActivity
+import com.universal.obddashboard.Vehicles
 import com.universal.obddashboard.ai.AiClient
 import com.universal.obddashboard.ai.AiProvider
 import com.universal.obddashboard.ai.AiSettings
@@ -181,8 +182,9 @@ class AiBridge(private val activity: MainActivity) {
     private suspend fun askMessages(question: String, historyJson: String): List<AiClient.Message> {
         val db = AppDatabase.get(activity)
         val p = activity.currentProfile().profile
+        val vehicleId = Vehicles.selectedId(activity)
         val context = HistoryContext.text(
-            p, db.tripDao().recentTrips(MainActivity.MAX_TRIPS_FOR_TOTALS), db.fuelUpDao().all(), db.tripDao().recentDtcs(200),
+            p, db.tripDao().recentTrips(MainActivity.MAX_TRIPS_FOR_TOTALS, vehicleId), db.fuelUpDao().all(vehicleId), db.tripDao().recentDtcs(200, vehicleId),
             ethanolNow(p), activity.currentFuelLevel(), activity.totalKm.takeIf { AppSettings.odometerRef(activity) != null },
         )
         val arr = runCatching { JSONArray(historyJson) }.getOrDefault(JSONArray())

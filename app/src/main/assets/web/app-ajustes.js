@@ -1,15 +1,100 @@
 'use strict';
 /* Ajustes: perfil, combustível e arquivos de diagnóstico. Os arquivos app-*.js compartilham o escopo global e são carregados em ordem (index.html). */
 /* ---------------------------------------------------------------- Ajustes */
+/* ---------------------------------------------------------------- Veículo */
+let vehicles = { list: [], selected: '' };
+
+function profileLabel(p) {
+  return `${p.vehicleName} (${p.ecuModel})${p.source === 'user' ? ' • importado' : ''}`;
+}
+
+function loadVehicles(profiles) {
+  vehicles = parse(bridge.getVehicles(), { list: [], selected: '' });
+  const sel = $('vehicle-select');
+  sel.innerHTML = '';
+  vehicles.list.forEach((v) => {
+    const o = document.createElement('option');
+    o.value = v.id;
+    o.textContent = v.plate ? `${v.name} · ${v.plate}` : v.name;
+    o.selected = v.id === vehicles.selected;
+    sel.appendChild(o);
+  });
+  const cur = vehicles.list.find((v) => v.id === vehicles.selected) || {};
+  $('vehicle-name').value = cur.name || '';
+  $('vehicle-plate').value = cur.plate || '';
+  $('vehicle-delete').disabled = vehicles.list.length < 2;
+  const np = $('vehicle-new-profile');
+  np.innerHTML = '';
+  profiles.forEach((p) => {
+    const o = document.createElement('option');
+    o.value = p.id;
+    o.textContent = profileLabel(p);
+    np.appendChild(o);
+  });
+}
+
+function vehicleMessage(text, isError) {
+  $('vehicle-result').textContent = text;
+  $('vehicle-result').style.color = isError ? 'var(--danger, #e5484d)' : '';
+}
+
+/** Tudo o que a tela mostra muda com o veículo: perfil, mostradores, ajustes e telemetria remota. */
+function vehicleChanged(message) {
+  meta = parse(bridge.getProfileMeta(), meta);
+  setupGauge();
+  Dash.setMeta(meta);
+  loadSettings();
+  if (typeof remoteRefresh === 'function') remoteRefresh();
+  vehicleMessage(message, false);
+}
+
+$('vehicle-select').addEventListener('change', (e) => {
+  const res = bridge.selectVehicle(e.target.value);
+  if (res !== 'ok') { vehicleMessage(res, true); loadSettings(); return; }
+  vehicleChanged('Veículo trocado.');
+});
+$('vehicle-save').addEventListener('click', () => {
+  const res = bridge.renameVehicle($('vehicle-name').value, $('vehicle-plate').value);
+  if (res !== 'ok') { vehicleMessage(res, true); return; }
+  loadSettings();
+  vehicleMessage('Salvo.', false);
+});
+$('vehicle-new').addEventListener('click', () => {
+  $('vehicle-new-form').hidden = !$('vehicle-new-form').hidden;
+  if (!$('vehicle-new-form').hidden) $('vehicle-new-name').focus();
+});
+$('vehicle-new-add').addEventListener('click', () => {
+  const res = bridge.addVehicle($('vehicle-new-name').value, $('vehicle-new-profile').value, $('vehicle-new-plate').value);
+  if (res !== 'ok') { vehicleMessage(res, true); return; }
+  $('vehicle-new-form').hidden = true;
+  $('vehicle-new-name').value = '';
+  $('vehicle-new-plate').value = '';
+  vehicleChanged('Veículo adicionado e em uso. Informe o hodômetro, o nível do tanque e o adaptador dele abaixo.');
+});
+$('vehicle-delete').addEventListener('click', async () => {
+  const others = vehicles.list.filter((v) => v.id !== vehicles.selected);
+  if (!others.length) return;
+  const names = others.map((v, i) => `${i + 1}. ${v.name}`).join('\n');
+  const pick = prompt(`Qual veículo excluir? Digite o número.\n${names}\n\nO veículo em uso não pode ser excluído.`);
+  const target = others[Number(pick) - 1];
+  if (!target) return;
+  if (!confirm(`Excluir "${target.name}" com as viagens, falhas, abastecimentos e ajustes dele? Isso não pode ser desfeito.`)) return;
+  const res = await nativeAsync((id) => bridge.deleteVehicle(id, target.id)).catch((err) => err.message);
+  if (res !== 'ok') { vehicleMessage(res, true); return; }
+  loadSettings();
+  vehicleMessage('Veículo excluído.', false);
+});
+
 function loadSettings() {
   loadAiSettings();
   const profiles = parse(bridge.listProfiles(), []);
+  loadVehicles(profiles);
   const sel = $('profile-select');
   sel.innerHTML = '';
   profiles.forEach((p) => {
     const o = document.createElement('option');
     o.value = p.id;
-    o.textContent = `${p.vehicleName} (${p.ecuModel})${p.source === 'user' ? ' • importado' : ''}`;
+    o.textContent = profileLabel(p);
     o.selected = p.selected;
     sel.appendChild(o);
   });

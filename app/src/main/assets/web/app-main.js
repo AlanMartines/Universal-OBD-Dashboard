@@ -24,7 +24,7 @@ $('trips').addEventListener('click', async (e) => {
   if (res !== 'ok') alert(res);
 });
 $('clear-history').addEventListener('click', async () => {
-  if (!confirm('Apagar todas as viagens, a telemetria e as falhas registradas? Isso não pode ser desfeito.')) return;
+  if (!confirm('Apagar as viagens, a telemetria e as falhas deste veículo? Isso não pode ser desfeito.')) return;
   const res = await nativeAsync((id) => bridge.deleteAllHistory(id)).catch((err) => err.message);
   $('history-result').textContent = res === 'ok' ? 'Histórico apagado.'
     : res === 'ok:keep' ? 'Histórico apagado. A viagem em andamento foi mantida.' : res;

@@ -147,7 +147,7 @@ window.onFuelCsvPicked = (r) => {
 };
 $('fu-import').addEventListener('click', async () => {
   const replace = $('fu-replace').checked;
-  if (replace && !confirm('Apagar todos os abastecimentos registrados e ficar só com os do CSV?')) return;
+  if (replace && !confirm('Apagar os abastecimentos deste veículo e ficar só com os do CSV?')) return;
   const csv = $('fu-csv').value;
   $('fu-import').disabled = true;
   const r = parse(await nativeAsync((id) => bridge.importFuelUps(id, csv, replace)).catch(() => null), { ok: false, error: 'resposta inválida' });

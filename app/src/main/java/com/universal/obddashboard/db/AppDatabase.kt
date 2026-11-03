@@ -22,7 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         const val NAME = "obd_blackbox.db"
-        const val VERSION = 3
+        const val VERSION = 4
 
         @Volatile private var instance: AppDatabase? = null
 
@@ -53,7 +53,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+        /** v4: cada viagem, falha e abastecimento passa a ser de um veículo; o que já existe fica no primeiro. */
+        val MIGRATION_3_4_SQL = listOf("trips", "diagnostic_trouble_codes", "fuel_ups").map {
+            "ALTER TABLE `$it` ADD COLUMN `vehicle_id` TEXT NOT NULL DEFAULT 'v1'"
+        }
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) = MIGRATION_3_4_SQL.forEach { db.execSQL(it) }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 
         /** Fecha o banco para o backup ser restaurado; o próximo [get] reabre (e migra, se preciso). */
         fun closeForRestore() = synchronized(this) {

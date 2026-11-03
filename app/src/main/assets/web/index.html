@@ -22,6 +22,7 @@
     <button class="tab" data-tab="sensors">Sensores</button>
     <button class="tab" data-tab="fuel">Abastecimentos</button>
     <button class="tab" data-tab="history">Histórico</button>
+    <button class="tab" data-tab="faults">Falhas</button>
     <button class="tab" data-tab="settings">Ajustes</button>
   </nav>
 
@@ -90,12 +91,7 @@
       <div class="card">
         <div class="row-between"><span class="label">Falhas (DTC)</span><span id="mil" class="pill">MIL --</span></div>
         <div id="dtcs" class="dtc-list muted">Nenhuma falha lida ainda.</div>
-      </div>
-
-      <div class="card">
-        <div class="row-between"><span class="label">Monitores de prontidão</span><span id="monitors-pill" class="pill">--</span></div>
-        <div id="monitors" class="monitors muted small">Aparecem depois da primeira leitura de diagnóstico (até 30 s após conectar).</div>
-        <p class="muted small">Autodiagnósticos que a injeção roda sozinha ao dirigir. "Em teste" é normal depois de desligar a bateria ou apagar códigos; completam após alguns dias de uso.</p>
+        <p class="small"><a href="#" data-goto="faults">Ver na aba Falhas</a></p>
       </div>
       </div>
     </section>
@@ -168,22 +164,38 @@
         <label>Conteúdo (do arquivo ou colado)
           <textarea id="fu-csv" rows="4" placeholder="data_hora,hodometro_km,litros,valor_total,preco_litro,combustivel,etanol_pct,tanque_cheio,posto,observacao"></textarea>
         </label>
-        <label class="check"><input id="fu-replace" type="checkbox"> Substituir todos os abastecimentos pelos do CSV</label>
+        <label class="check"><input id="fu-replace" type="checkbox"> Substituir os abastecimentos deste veículo pelos do CSV</label>
         <button id="fu-import" class="btn">Importar</button>
         <p id="fu-import-result" class="small"></p>
       </div>
       </div>
     </section>
 
-    <section id="tab-history" class="tab-page split">
+    <section id="tab-history" class="tab-page">
       <div class="col">
       <div class="row-between history-head">
         <h2>Viagens</h2>
         <button id="ask-ai" class="btn btn-small" hidden>Perguntar à IA</button>
-        <button id="clear-history" class="btn btn-small btn-danger">Apagar todo o histórico</button>
+        <button id="clear-history" class="btn btn-small btn-danger">Apagar o histórico deste veículo</button>
       </div>
       <p id="history-result" class="small muted"></p>
       <div id="trips" class="list"></div>
+      </div>
+    </section>
+
+    <!-- ===================== FALHAS ===================== -->
+    <section id="tab-faults" class="tab-page split">
+      <div class="col">
+      <div class="card">
+        <div class="row-between"><span class="label">Falhas agora</span><span id="fault-mil" class="pill">MIL --</span></div>
+        <div id="fault-now" class="list muted small">Nenhuma falha lida ainda.</div>
+        <p class="muted small">Lidas da injeção durante a captura. O app só consulta: ele não apaga falhas. A descrição vem do perfil do veículo ou da norma SAE, e a análise com IA usa a sua conta configurada em Ajustes.</p>
+      </div>
+      <div class="card">
+        <div class="row-between"><span class="label">Monitores de prontidão</span><span id="monitors-pill" class="pill">--</span></div>
+        <div id="monitors" class="monitors muted small">Aparecem depois da primeira leitura de diagnóstico (até 30 s após conectar).</div>
+        <p class="muted small">Autodiagnósticos que a injeção roda sozinha ao dirigir. "Em teste" é normal depois de desligar a bateria ou apagar códigos; completam após alguns dias de uso.</p>
+      </div>
       </div>
       <div class="col">
       <h2>Falhas registradas (freeze frame)</h2>
@@ -226,11 +238,42 @@
         <p class="muted small">Desconexões automáticas (motor desligado, Bluetooth caiu, parada longa) continuam a mesma viagem e o mesmo arquivo de diagnóstico. Se você tocar em <b>Encerrar viagem</b>, a próxima captura começa uma viagem nova. Vale a partir da próxima captura.</p>
       </div>
 
-      <div class="card form">
-        <label>Perfil do veículo
+      <div class="card form" id="vehicle-card">
+        <span class="label">Veículo</span>
+        <label>Veículo em uso
+          <select id="vehicle-select"></select>
+        </label>
+        <div class="row">
+          <label class="grow">Nome
+            <input id="vehicle-name" type="text" maxlength="40" autocomplete="off">
+          </label>
+          <label class="grow">Placa (opcional)
+            <input id="vehicle-plate" type="text" maxlength="10" autocomplete="off" autocapitalize="characters">
+          </label>
+        </div>
+        <label>Perfil do modelo
           <select id="profile-select"></select>
         </label>
         <p class="muted small" id="profile-info"></p>
+        <div class="row">
+          <button id="vehicle-save" class="btn">Salvar nome</button>
+          <button id="vehicle-new" class="btn">Novo veículo</button>
+          <button id="vehicle-delete" class="btn btn-danger">Excluir</button>
+        </div>
+        <div id="vehicle-new-form" hidden>
+          <label>Nome do novo veículo
+            <input id="vehicle-new-name" type="text" maxlength="40" autocomplete="off">
+          </label>
+          <label>Perfil do modelo
+            <select id="vehicle-new-profile"></select>
+          </label>
+          <label>Placa (opcional)
+            <input id="vehicle-new-plate" type="text" maxlength="10" autocomplete="off" autocapitalize="characters">
+          </label>
+          <div class="row"><button id="vehicle-new-add" class="btn btn-primary">Adicionar e usar</button></div>
+        </div>
+        <p class="muted small">Hodômetro, tanque, etanol, adaptador, gatilhos, mostradores, alarmes, tempos, calibração, viagens, abastecimentos, falhas e telemetria remota ficam separados por veículo. Ao conectar o adaptador cadastrado em outro veículo, o app troca sozinho antes da captura.</p>
+        <p id="vehicle-result" class="small"></p>
       </div>
 
       <div class="card form" id="dash-card">
@@ -338,7 +381,7 @@
       </div>
 
       <div class="card form" id="remote-card">
-        <span class="label">Telemetria remota (opcional)</span>
+        <span class="label">Telemetria remota deste veículo (opcional)</span>
         <p class="muted small">Envia as leituras do carro para o seu painel na internet. Sai só o que os sensores medem, o horário e o número da viagem. VIN não é enviado, e o GPS só sai se você ligar a opção abaixo. O servidor nunca envia comandos ao carro.</p>
         <div id="remote-pair">
           <label>Endereço do servidor <input id="remote-url" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://…"></label>
@@ -497,6 +540,7 @@
   <script src="dash.js"></script>
   <!-- Ordem importa: app-core primeiro (ponte e utilitários), app-main por último (inicialização). -->
   <script src="app-core.js"></script>
+  <script src="dtc-sae.js"></script>
   <script src="app-painel.js"></script>
   <script src="app-historico.js"></script>
   <script src="app-abastecimentos.js"></script>
@@ -504,6 +548,7 @@
   <script src="app-console.js"></script>
   <script src="app-backup.js"></script>
   <script src="app-assistente.js"></script>
+  <script src="app-falhas.js"></script>
   <script src="app-remoto.js"></script>
   <script src="app-dispositivo.js"></script>
   <script src="app-main.js"></script>

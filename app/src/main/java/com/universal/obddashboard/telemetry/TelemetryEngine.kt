@@ -258,6 +258,7 @@ class TripAccumulator(
     val profileId: String,
     /** Ver VehicleProfile.obdSpeedFactor: só afeta a distância integrada pela velocidade da ECU. */
     private val obdSpeedFactor: Double = 1.0,
+    val vehicleId: String = "v1",
 ) {
 
     var distanceKm = 0.0; private set
@@ -328,6 +329,7 @@ class TripAccumulator(
         minVoltage = minVoltage,
         fuelUsedL = fuelUsedL,
         endReason = endReason,
+        vehicleId = vehicleId,
     )
 
     private companion object {
