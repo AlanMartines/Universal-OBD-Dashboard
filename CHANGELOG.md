@@ -6,6 +6,12 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Abastecimento cheio ou parcial:** a caixa "Tanque cheio" vinha marcada e um toque a mais a deixava marcada de novo. Agora a escolha entre "tanque cheio" e "parcial" é obrigatória, sem opção pronta, e o aviso confirma como ficou gravado.
+
+### Adicionado
+- **Editar abastecimento:** o botão Editar preenche o formulário com o registro, que é atualizado ao salvar. O nível estimado do tanque não muda, para o abastecimento não contar duas vezes.
+
 ## [0.9.8] - 2026-11-03
 
 ### Adicionado

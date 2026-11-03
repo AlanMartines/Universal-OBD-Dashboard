@@ -131,9 +131,16 @@
           </select>
         </label>
         <label id="fu-eth-wrap" hidden>% de etanol no que foi colocado <input id="fu-eth" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
-        <label class="check"><input id="fu-full" type="checkbox" checked> Tanque cheio (a bomba desarmou)</label>
+        <fieldset class="fu-fill" id="fu-fill">
+          <legend>Completou o tanque?</legend>
+          <label class="check"><input type="radio" name="fu-fill" id="fu-fill-full" value="full"> Sim, tanque cheio (a bomba desarmou)</label>
+          <label class="check"><input type="radio" name="fu-fill" id="fu-fill-partial" value="partial"> Não, abastecimento parcial</label>
+        </fieldset>
         <label>Posto / observação <input id="fu-station" type="text" placeholder="Auto Posto ..., cidade"></label>
-        <button id="fu-save" class="btn btn-primary">Salvar abastecimento</button>
+        <div class="row">
+          <button id="fu-save" class="btn btn-primary">Salvar abastecimento</button>
+          <button id="fu-cancel" class="btn" hidden>Cancelar edição</button>
+        </div>
         <p id="fu-result" class="small muted">Com tanque cheio registrado na hora, o nível do tanque e o hodômetro do app são atualizados.</p>
       </div>
       </div>

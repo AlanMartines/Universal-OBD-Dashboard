@@ -261,3 +261,6 @@ input[readonly] { opacity: .7; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast.toast-error { background: #9b2c2c; }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+
+.fu-fill { border: 1px solid var(--line, #2a3340); border-radius: 10px; padding: 8px 12px; margin: 8px 0; }
+.fu-fill legend { padding: 0 4px; font-size: 14px; }

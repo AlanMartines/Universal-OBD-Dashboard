@@ -7,6 +7,7 @@ import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Update
 
 /**
  * Abastecimento registrado pelo usuário (aba Abastecimentos). O consumo real sai do intervalo entre
@@ -49,6 +50,12 @@ interface FuelUpDao {
 
     @Query("DELETE FROM fuel_ups WHERE id = :id")
     suspend fun delete(id: Long)
+
+    @Query("SELECT * FROM fuel_ups WHERE id = :id AND vehicle_id = :vehicleId")
+    suspend fun get(id: Long, vehicleId: String): FuelUpEntity?
+
+    @Update
+    suspend fun update(f: FuelUpEntity)
 
     @Query("DELETE FROM fuel_ups WHERE vehicle_id = :vehicleId")
     suspend fun deleteAll(vehicleId: String)

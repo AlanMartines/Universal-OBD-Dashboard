@@ -87,14 +87,16 @@ class FuelBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun addFuelUp(requestId: String, json: String) = activity.answerAsync(requestId) { addFuelUp(json) }
 
-    private suspend fun addFuelUp(json: String): String = try {
+    /** Lê o formulário. @throws IllegalArgumentException sem litros. */
+    private fun fuelUpFrom(json: String, id: Long = 0): FuelUpEntity {
         val o = JSONObject(json)
         fun d(k: String) = o.optDouble(k, Double.NaN).takeIf { it.isFinite() }
         val liters = d("liters")?.takeIf { it > 0 } ?: throw IllegalArgumentException("Informe os litros")
         val total = d("totalPrice")
         val ppl = d("pricePerLiter") ?: total?.div(liters)
         val type = o.optString("fuelType", FuelLog.GASOLINE).takeIf { it in FuelLog.FUEL_TYPES } ?: FuelLog.GASOLINE
-        val f = FuelUpEntity(
+        return FuelUpEntity(
+            id = id,
             vehicleId = Vehicles.selectedId(activity),
             timestamp = o.optLong("timestamp", System.currentTimeMillis()),
             profileId = runCatching { activity.currentProfile().id }.getOrDefault(AppSettings.selectedProfileId(activity)),
@@ -102,6 +104,24 @@ class FuelBridge(private val activity: MainActivity) {
             fuelType = type, ethanolPct = d("ethanolPct"), fullTank = o.optBoolean("fullTank", true),
             station = o.optString("station").ifBlank { null }, notes = o.optString("notes").ifBlank { null },
         )
+    }
+
+    /** Corrige um registro (Editar). Nível e etanol do tanque não mudam: o abastecimento não conta duas vezes. */
+    @JavascriptInterface
+    fun updateFuelUp(requestId: String, id: Long, json: String) = activity.answerAsync(requestId) {
+        try {
+            val dao = AppDatabase.get(activity).fuelUpDao()
+            val vehicleId = Vehicles.selectedId(activity)
+            if (dao.get(id, vehicleId) == null) throw IllegalArgumentException("Abastecimento não encontrado neste veículo.")
+            dao.update(fuelUpFrom(json, id))
+            "ok"
+        } catch (e: Exception) {
+            e.message ?: "erro"
+        }
+    }
+
+    private suspend fun addFuelUp(json: String): String = try {
+        val f = fuelUpFrom(json)
         AppDatabase.get(activity).fuelUpDao().insert(f)
         if (System.currentTimeMillis() - f.timestamp < MainActivity.RECENT_FUEL_UP_MS) {
             f.odometerKm?.let { activity.applyOdometer(it) }
