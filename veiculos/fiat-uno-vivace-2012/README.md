@@ -8,7 +8,6 @@ A comunicação pelo ELM327 está em uso. Falta confirmar estes sinais da rede C
 
 | Quando | Equipamento | O que capturar | Sinal a confirmar |
 |---|---|---|---|
-| Na próxima ida ao posto | Só ESP32 | Parado no mesmo lugar plano, antes e depois de abastecer | Nível do tanque: `0x380` b5 |
 | Depois da captura com o ESP32 | Só ELM327 | Registro do abastecimento e conferência da versão instalada | Calibração do consumo |
 | Quando o cabo Y chegar | ELM327 + ESP32 | Marcha lenta, 2.000 e 3.000 RPM, motor frio até quente, e tensão parado e funcionando | RPM, temperatura e tensão em `0x281` e `0x3E0`; convivência dos dois adaptadores |
 
@@ -156,10 +155,16 @@ Para o receptor:
 | `0x380` e `0x3C3` | `0x380` b0 bit 3; `0x3C3` b2 bit 4 (invertido) | Luzes acesas | 1 em `0x380` e 0 em `0x3C3` com as luzes acesas | **Confirmado** com lanterna e faróis; o farol alto não tem sinal próprio |
 | `0x281` | b5–b6 | RPM | `(b6·256+b5)/8`, como na Ducato | Provável: dá cerca de 850 em marcha lenta; falta comparar com a linha K |
 | `0x281` | b3 | Temperatura do motor | `b3−40` °C, como na Ducato | Provável: sobe com o motor ligado; falta comparar com a linha K |
-| `0x3E0` | b1 | Tensão da bateria | `b1×0,16` V | Provável: cai na partida e sobe com o motor ligado; falta medir |
-| `0x380` | b5 | Combustível | Escala desconhecida | Candidato: só caiu; falta comparar em um abastecimento |
+| `0x3E0` | b1 | Tensão da bateria | `b1×0,16` V | Provável: 12,5 V com o motor desligado e 14,2 V funcionando (03/11/2026); falta comparar com o ELM327 |
+| `0x380` | b5 | Nível do tanque | Inteiro em % do tanque de 48 L. Ex.: `32` = 50% ≈ 24 L | **Confirmado** em 03/11/2026 com um abastecimento e o marcador do painel |
 
 Setas, pisca-alerta, portas, freio de mão, pedal de freio e cinto não mudam nenhum byte. Os IDs `0x040` e `0x041` aparecem a cada 180 s, sem relação com as ações.
+
+**Tanque em 03/11/2026** (ESP32 + TJA1050, só escuta, parado no mesmo lugar antes e depois de abastecer):
+- **Abastecimento:** 7,47 L, que são 15,6% do tanque de 48 L. O `0x380` b5 subiu 16 pontos.
+- **Marcador do painel:** 4 palitinhos antes (≈ 12 L) e 6 depois (≈ 18 L), com cerca de 3 L cada. O byte deu 23% (≈ 11 L) e 39% (≈ 19 L), dentro da resolução do marcador.
+- **Escala:** % do tanque, de 0 a 100. A medida foi feita parada: andando, o valor varia com a inclinação e o balanço do combustível.
+- **Candidato:** o `0x380` b2 bit 3 apagou depois do abastecimento. Pode ser o aviso de reserva, mas o motor também foi ligado entre as duas leituras.
 
 **Velocidade em 02/11/2026** (ESP32 + TJA1050, só escuta, em trechos constantes):
 - **Velocímetro:** marca de 7% a 8% acima do `0x2A0` em 50, 60 e 80 km/h. É erro do próprio velocímetro, que costuma marcar a mais.
