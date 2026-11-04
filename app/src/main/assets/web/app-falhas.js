@@ -43,7 +43,36 @@ function faultItem(code, kind) {
   return el;
 }
 
+/* O botão só fica ativo quando a leitura pode acontecer de fato. */
+const SCAN_WAIT = {
+  CONNECTING: 'Conectando ao adaptador…', INITIALIZING: 'Inicializando o adaptador…', RECONNECTING: 'Reconectando ao adaptador…',
+};
+let scanBusy = false;
+let lastScanKey = '';
+let lastReadinessAt = 0;
+function updateScanButton(s, force) {
+  let ready;
+  let hint;
+  if (s && s.running) {
+    ready = s.connection === 'STREAMING';
+    hint = ready ? 'Lê pela captura em andamento.' : (SCAN_WAIT[s.connection] || 'Aguardando a conexão com a injeção.');
+  } else {
+    // A tela atualiza várias vezes por segundo; o Bluetooth basta conferir a cada 3 s.
+    if (!force && Date.now() - lastReadinessAt < 3000) return;
+    lastReadinessAt = Date.now();
+    const r = parse(bridge.faultScanReadiness(), { ready: false, reason: '' });
+    ready = r.ready;
+    hint = r.reason;
+  }
+  const key = (ready && !scanBusy) + '|' + hint;
+  if (key === lastScanKey) return;
+  lastScanKey = key;
+  $('fault-scan').disabled = !ready || scanBusy;
+  $('fault-scan-hint').textContent = hint;
+}
+
 function renderFaultsNow(conf, pend, s) {
+  updateScanButton(s);
   const mil = $('mil');
   $('fault-mil').textContent = mil.textContent;
   $('fault-mil').className = mil.className;
@@ -98,12 +127,21 @@ function renderScan(r) {
 
 $('fault-scan').addEventListener('click', async () => {
   const btn = $('fault-scan');
+  if (btn.disabled) return;
+  scanBusy = true;
   btn.disabled = true;
   btn.textContent = 'Lendo…';
   const res = parse(await nativeAsync((id) => bridge.scanFaults(id)).catch((e) => JSON.stringify({ ok: false, error: e.message })), { ok: false });
-  btn.disabled = false;
+  scanBusy = false;
   btn.textContent = 'Ler falhas agora';
+  lastScanKey = '';
+  updateScanButton(lastState, true);
   renderScan(res);
   toast(res.ok ? 'Leitura de falhas concluída.' : res.error, !res.ok);
   if (res.ok) loadHistory();
 });
+
+// Sem captura a tela não recebe atualizações: confere ao abrir a aba e quando o app volta à frente.
+document.querySelector('.tab[data-tab="faults"]').addEventListener('click', () => { lastScanKey = ''; updateScanButton(lastState, true); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { lastScanKey = ''; updateScanButton(lastState, true); } });
+updateScanButton(lastState, true);

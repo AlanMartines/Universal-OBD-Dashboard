@@ -63,6 +63,9 @@ class BluetoothSerialManager(private val context: Context) : ElmMonitorTransport
             ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) ==
             PackageManager.PERMISSION_GRANTED
 
+    /** Bluetooth do celular ligado (false sem Bluetooth no aparelho). */
+    fun isBluetoothOn(): Boolean = adapter?.isEnabled == true
+
     data class BondedDevice(val name: String?, val address: String)
 
     /** Dispositivos pareados no celular, por nome; null sem permissão BLUETOOTH_CONNECT ou sem Bluetooth. */

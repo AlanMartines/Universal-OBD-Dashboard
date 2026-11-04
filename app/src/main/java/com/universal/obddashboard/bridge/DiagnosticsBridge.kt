@@ -8,6 +8,7 @@ import com.universal.obddashboard.diagnostics.CanListener
 import com.universal.obddashboard.diagnostics.ConsoleSession
 import com.universal.obddashboard.diagnostics.DiagnosticFiles
 import com.universal.obddashboard.diagnostics.FaultScan
+import com.universal.obddashboard.obd.BluetoothSerialManager
 import com.universal.obddashboard.obd.DtcKind
 import com.universal.obddashboard.export.TripExportFiles
 import kotlinx.coroutines.launch
@@ -43,6 +44,25 @@ class DiagnosticsBridge(private val activity: MainActivity) {
      * Aba Falhas → "Ler falhas agora": {ok, viaCapture, milOn, storedCount, confirmed, pending, permanent,
      * freezeCode} ou {ok: false, error}. Uma lista null quer dizer que a injeção não respondeu àquele modo.
      */
+    /**
+     * Sem captura, a leitura conecta ao adaptador: só faz sentido com Bluetooth ligado e o adaptador
+     * do veículo pareado. {ready, reason}. Com captura, quem decide é o estado da conexão (na tela).
+     */
+    @JavascriptInterface
+    fun faultScanReadiness(): String {
+        val serial = BluetoothSerialManager(activity)
+        val names = runCatching { AppSettings.adapterNames(activity, activity.currentProfile().profile.adapter.deviceNames) }.getOrDefault(emptyList())
+        val reason = when {
+            ConsoleSession.isActive -> "Feche o console para ler as falhas."
+            FaultScan.isActive -> "Leitura em andamento."
+            !serial.hasConnectPermission() -> "Permita o Bluetooth para o app."
+            !serial.isBluetoothOn() -> "Ligue o Bluetooth do celular."
+            serial.findBondedDevice(names) == null -> "Pareie o adaptador OBD deste veículo no Bluetooth."
+            else -> null
+        }
+        return JSONObject().put("ready", reason == null).put("reason", reason ?: "Com a ignição ligada, o app conecta, lê e desconecta.").toString()
+    }
+
     @JavascriptInterface
     fun scanFaults(requestId: String) = activity.answerAsync(requestId) {
         try {

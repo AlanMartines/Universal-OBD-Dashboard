@@ -195,7 +195,8 @@
       <div class="col">
       <div class="card">
         <div class="row-between"><span class="label">Falhas agora</span><span id="fault-mil" class="pill">MIL --</span></div>
-        <div class="row"><button id="fault-scan" class="btn btn-primary">Ler falhas agora</button></div>
+        <div class="row"><button id="fault-scan" class="btn btn-primary" disabled>Ler falhas agora</button></div>
+        <p id="fault-scan-hint" class="muted small"></p>
         <div id="fault-scan-result" class="list small" hidden></div>
         <div id="fault-now" class="list muted small">Nenhuma falha lida ainda.</div>
         <p class="muted small">Durante a captura, a injeção é lida a cada 30 s. "Ler falhas agora" consulta na hora as confirmadas, pendentes e permanentes, inclusive sem captura, com a ignição ligada. O app só consulta: ele não apaga falhas. A descrição vem do perfil do veículo ou da norma SAE, e a análise com IA usa a sua conta configurada em Ajustes.</p>

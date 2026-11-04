@@ -6,6 +6,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.10] - 2026-11-03
+
+### Alterado
+- **Ler falhas agora:** o botão só fica ativo quando a leitura pode acontecer. Durante a captura, com o adaptador conectado à injeção. Sem captura, com o Bluetooth ligado e o adaptador do veículo pareado. Ao lado, um texto diz o que falta.
+
 ## [0.9.9] - 2026-11-03
 
 ### Adicionado
