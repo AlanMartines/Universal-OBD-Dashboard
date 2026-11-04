@@ -6,73 +6,87 @@ Placa perfurada de ilhas soltas, 5 × 7 cm (grade de 2,54 mm), com o ESP32 DevKi
 
 ## Desenho
 
-| Vista de cima (componentes) | Vista de baixo (solda, espelhada) |
-|---|---|
-| ![Vista de cima da placa: ESP32, porta-fusível, resistores, módulos e fios F1 a F11](cima-2x.svg) | ![Vista de baixo da placa: pontes de solda coloridas](baixo-2x.svg) |
+**Esquema de ligação** (fora de escala):
 
-Cores: vermelho 12 V e 5 V, preto GND, laranja 3V3, amarelo RX/D21, azul CAN. Furos indicados como (coluna, linha), na numeração das bordas do desenho.
+![Esquema: OBD, fusível, RT8272, ESP32 e TJA1050 com os resistores](esquema.svg)
 
-## Arquivos
+**Etapa 1: antes de encaixar o ESP32 e os módulos** (vista de cima). Barras fêmea do ESP32, resistores, fios isolados J1 e J2 e as ilhas de cada módulo:
 
-| Arquivo | O que é |
-|---|---|
-| [`cima.svg`](cima.svg) e [`baixo.svg`](baixo.svg) | Vistas em tamanho real (1:1). A de baixo é espelhada, como se vê ao virar a placa para soldar. Imprima em 100%, sem "ajustar à página". |
-| [`cima-2x.svg`](cima-2x.svg) e [`baixo-2x.svg`](baixo-2x.svg) | As mesmas vistas ampliadas, para ler os nomes. |
-| [`gerar_placa.py`](gerar_placa.py) | Gera os quatro SVG: `python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py`. |
+![Etapa 1: barras do ESP32, resistores R1 a R4, fios J1 e J2 e ilhas dos módulos](etapa1.svg)
+
+**Etapa 2: placa montada** (vista de cima). O ESP32 fica deitado, com a antena para fora da placa à esquerda e o USB à direita:
+
+![Etapa 2: ESP32, TJA1050, RT8272 e porta-fusível montados](etapa2.svg)
+
+**Vista de baixo** (lado da solda, espelhada). Trilhas de fio estanhado, sempre em linha reta:
+
+![Vista de baixo: trilhas de GND, 5 V, 12 V, CAN-L e sinais](baixo.svg)
+
+Cores: vermelho 12 V e 5 V, roxo 12 V depois do fusível, preto GND, laranja 3V3, amarelo RX e D21, azul CAN. Furos indicados como (coluna, linha), na numeração das bordas. Em tamanho real (1:1), para imprimir em 100%: [`etapa1-real.svg`](etapa1-real.svg), [`etapa2-real.svg`](etapa2-real.svg) e [`baixo-real.svg`](baixo-real.svg).
+
+Para gerar de novo: `python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py`.
 
 ## Montagem prevista
 
-- **ESP32:** em barras de pinos fêmea, colunas 2 e 12 (10 furos entre fileiras), linhas 3 a 17, com o USB para a borda de cima. A área embaixo da antena (linhas 18 a 20) fica sem fios nem componentes.
+- **ESP32:** em barras de pinos fêmea, nas linhas 2 e 12, colunas 2 a 16. A antena fica para fora da borda esquerda, longe dos fios. Pinos usados: D21 (6,2), 3V3 (16,2), GND (15,12) e VIN (16,12).
 - **Resistores de 1 kΩ, embaixo do ESP32:**
-  - R4 liga o 3V3 ao CANH;
-  - R1 vai do RX do TJA1050 ao D21;
-  - R2 e R3, em série, vão do D21 ao GND. É o divisor que leva os 5 V do RX a 3,3 V.
-- **Porta-fusível 5 × 20 mm de 1 A** na faixa da direita, entre o pino 16 e o IN+ do RT8272.
-- **TJA1050 e RT8272:** presos com fita dupla-face e ligados por fios curtos (F1 a F11 no desenho). Assim o desenho serve para qualquer formato de módulo.
-- **Cabo OBD:** fios soldados nas ilhas da borda de cima: 16 (+12 V), 4 (chassi), 5 (terra de sinal) e 14 (CAN-L).
+  - R1 vai do D21 ao RX do TJA1050, pelo fio J1;
+  - R2 e R3, em série, vão do D21 ao GND. É o divisor que leva os 5 V do RX a 3,3 V;
+  - R4 vai do 3V3 ao CANH, pelo fio J2.
+- **TJA1050:** preso com fita dupla-face nas linhas 15 a 19, à direita. Os pinos vão às ilhas da linha 14 por fios curtos (ou por barra de pinos, se a ordem bater).
+- **RT8272:** preso com fita à esquerda, nas linhas 15 a 20. Os quatro fios dele vão às ilhas da linha 21.
+- **Porta-fusível 5 × 20 mm de 1 A:** na parte de baixo, com os clipes nas colunas 2 e 11.
+- **Cabo OBD:** pino 16 na borda esquerda (1,22); pinos 4, 5 e 14 embaixo, à direita.
 
-Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio F3 (OUT+ → VIN) ainda solto.
+Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio OUT+ ainda solto.
 
-## Pontes, resistores e fios
+## Ilhas, trilhas, resistores e fios
 
-**Pontes de solda (lado de baixo)**
+**Ilhas de ligação**
+
+| Onde | Furos |
+|---|---|
+| TJA1050 | RX (11,14) · CANH (12,14) · GND (15,14) · VCC (16,14) · TX (17,14) · CANL (18,14) |
+| RT8272 | IN+ (12,21) · IN− (14,21) · OUT− (15,21) · OUT+ (16,21) |
+| Cabo OBD | 16 (1,22) · 4 (16,24) · 5 (17,24) · 14 (18,24) |
+| Porta-fusível | clipe A (2,22) e (2,24) · clipe B (11,22) e (11,24) |
+
+**Trilhas de solda (lado de baixo)**
 
 | Ligação | Furos |
 |---|---|
-| Pino 16 (+12 V) → porta-fusível | (15,1) – (15,2) – (15,3) |
-| 5 V: VIN do ESP32 | (12,3) – (13,3) – (13,2) |
-| GND do ESP32 (direita) | (12,4) – (13,4) – (13,5) – (14,5) |
-| 3V3 do ESP32 → R4 | (2,3) – (3,3) – (4,3) |
-| GND do ESP32 (esquerda) | (2,4) – (3,4) |
-| D21 → R1 e R2 | (2,13) – (3,13) – (4,13) – (5,13) |
-| R2 → R3 | (9,13) – (10,13) |
+| D21 → R1 e R2 | (6,2) – (6,3) – (7,3) e (6,3) – (6,4) |
+| R2 → R3 | (6,8) – (7,8) |
+| GND | (11,8) → (15,8) → (15,24) → (17,24). Passa pelo GND do ESP32 (15,12), pelo GND do TJA1050 (15,14), pelo OUT− (15,21) e chega aos pinos 4 e 5 do OBD |
+| IN− no GND | (14,21) – (15,21) |
+| 3V3 → R4 | (16,2) – (16,3) |
+| 5 V | (16,12) → (16,21). Passa pelo VCC do TJA1050 (16,14) e chega ao OUT+ |
+| TX preso no 5 V | (16,14) – (17,14) |
+| RX (fim do J1) | (11,13) – (11,14) |
+| CANH (fim do J2) | (12,13) – (12,14) |
+| 12 V do OBD → fusível | (1,22) – (2,22) |
+| 12 V com fusível → IN+ | (11,22) – (11,21) – (12,21) |
+| CAN-L | (18,14) → (18,24) |
 
-**Resistores (1 kΩ, 1/4 W)**
+As trilhas de GND (coluna 15) e de 5 V (coluna 16) correm lado a lado nas linhas 12 a 21: confira com lupa e com o multímetro que não encostam.
+
+**Resistores (1 kΩ, 1/4 W: marrom, preto, vermelho)**
 
 | | Furos | Função |
 |---|---|---|
-| R1 | (4,9) – (4,13) | RX do TJA1050 → D21 |
-| R2 | (5,13) – (9,13) | D21 → R3 (divisor) |
-| R3 | (10,13) – (10,9) | R2 → GND (divisor) |
-| R4 | (4,3) – (8,3) | 3V3 → CANH |
+| R1 | (7,3) – (11,3) | D21 → J1 → RX do TJA1050 |
+| R2 | (6,4) – (6,8) | D21 → R3 (divisor) |
+| R3 | (7,8) – (11,8) | R2 → GND (divisor) |
+| R4 | (16,3) – (16,7) | 3V3 → J2 → CANH |
 
-**Fios (isolados, curtos)**
+**Fios isolados (por cima da placa, embaixo do ESP32)**
 
-| | De | Para |
+| | Caminho | Função |
 |---|---|---|
-| F1 | Porta-fusível, clipe de baixo (15,12) | RT8272 IN+ |
-| F2 | Ilha do pino 4 (16,1) | RT8272 IN− |
-| F3 | 5 V (13,2) | RT8272 OUT+, **só depois de regular 5,0 V** |
-| F4 | GND (13,5) | RT8272 OUT− |
-| F5 | 5 V (13,3) | TJA1050 VCC; no módulo, ligue também o TX ao VCC |
-| F6 | GND (13,4) | TJA1050 GND |
-| F7 | R1 (4,9) | TJA1050 RX |
-| F8 | R4 (8,3) | TJA1050 CANH |
-| F9 | Ilha do pino 14 (18,1) | TJA1050 CANL |
-| F10 | Ilha do pino 5 (17,1) | GND (14,5) |
-| F11 | R3 (10,9) | GND esquerdo (3,4) |
+| J1 | (11,3) → coluna 17 → (11,13) | R1 → RX do TJA1050 |
+| J2 | (16,7) → coluna 18 → (12,13) | R4 → CANH do TJA1050 |
 
-**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre (15,1) e GND, nem entre (13,2) e GND. Com o ESP32 fora das barras e o F3 solto, regule o OUT+ do RT8272 em 5,0 V. Depois de soldar o F3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
+**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,22), (12,21) ou (16,12). Com o ESP32 fora das barras e o OUT+ do RT8272 solto, regule a saída em 5,0 V. Depois de ligar o OUT+ e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
 
 ## Medidas dos componentes
 
