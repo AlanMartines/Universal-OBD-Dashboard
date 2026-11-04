@@ -31,6 +31,7 @@ import androidx.webkit.WebViewClientCompat
 import com.universal.obddashboard.backup.BackupArchive
 import com.universal.obddashboard.backup.BackupManager
 import com.universal.obddashboard.bridge.AiBridge
+import com.universal.obddashboard.bridge.CaptureBridge
 import com.universal.obddashboard.bridge.RemoteBridge
 import com.universal.obddashboard.bridge.AppBridge
 import com.universal.obddashboard.bridge.DiagnosticsBridge
@@ -192,6 +193,7 @@ class MainActivity : ComponentActivity() {
             addJavascriptInterface(DiagnosticsBridge(this@MainActivity), "AndroidDiag")
             addJavascriptInterface(AiBridge(this@MainActivity), "AndroidAi")
             addJavascriptInterface(RemoteBridge(this@MainActivity), "AndroidRemote")
+            addJavascriptInterface(CaptureBridge(this@MainActivity), "AndroidCapture")
             loadUrl(APP_URL)
         }
 

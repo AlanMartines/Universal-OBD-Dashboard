@@ -8,7 +8,8 @@ let dashMode = '';
 function updateDashMode() {
   const onDash = $('tab-dash').classList.contains('active');
   const full = onDash && landscape.matches;
-  const keepOn = onDash && !!(lastState && lastState.running);
+  // O roteiro de captura também mantém a tela ligada: os passos são conduzidos por ela.
+  const keepOn = (onDash && !!(lastState && lastState.running)) || window.scriptPanelOpen === true;
   $('tab-dash').parentElement.classList.toggle('dash-active', onDash);
   document.body.classList.toggle('dash-fullscreen', full);
   const key = full + '/' + keepOn;

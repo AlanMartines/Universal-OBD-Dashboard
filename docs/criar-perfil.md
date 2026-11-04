@@ -82,6 +82,14 @@ Só para carros com a rede CAN mapeada, com um adaptador de escuta ESP32 (veja [
 - **Só sinais confirmados:** um sinal ainda provável não deve entrar, porque o app passa a mostrá-lo como real.
 - **Velocidade da rede:** fica no firmware do adaptador. `bitrate_kbps` é só informativo.
 
+Para mapear a rede de um carro novo, use o **Roteiro de captura** do app ([can-escuta.md](can-escuta.md#com-o-app-e-o-esp32-roteiro-de-captura)). O roteiro genérico serve a qualquer perfil. Se o carro precisar de passos próprios, crie `app/src/main/assets/capture-scripts/<profile_id>.json` no mesmo formato do [`generic.json`](../app/src/main/assets/capture-scripts/generic.json): ele substitui o genérico para esse perfil. Cada passo tem um formato só:
+
+- **`pattern`:** alterna `on` e `off` (`on_s`, `off_s`, `repeat`);
+- **`phases`:** sequência de instruções com duração (`say`, `s`);
+- **`events`:** botões para tocar quando algo acontece, até `max_s`.
+
+`choices` acrescenta botões opcionais durante o passo, e `engine` (`on`, `off`, `any`) só avisa se o motor está no estado esperado. Os textos são falados pelo app: escreva como uma instrução curta ("Abra a porta do motorista").
+
 ## 8. Só consulta
 
 O app foi feito para **ler**. O perfil deve conter apenas pedidos de consulta:

@@ -383,6 +383,10 @@
           Gravar tráfego OBD bruto, varredura da ECU, eventos e GPS (1×/s) para análise</label>
         <p class="muted small">Vale a partir da próxima captura. Cerca de 5–10 MB por hora; arquivos com mais de 30 dias são apagados. Exporte em .gz pelo botão de cada arquivo.</p>
         <div id="diag-files" class="list"></div>
+        <div id="script-entry" hidden>
+          <p class="muted small">Roteiro de captura: passos guiados por voz (portas, luzes, pedais, ventilação…) que marcam no arquivo de diagnóstico o instante exato de cada ação, para mapear a rede do carro. Só marca e lê: nada é enviado ao carro.</p>
+          <button id="script-open" class="btn">Abrir roteiro de captura</button>
+        </div>
       </div>
 
       <div class="card form">
@@ -539,6 +543,48 @@
     <pre id="console-out" class="console-out"></pre>
     <div id="console-history" class="console-history list" hidden></div>
   </div>
+  <div id="script-panel" class="ai-panel" hidden role="dialog" aria-label="Roteiro de captura">
+    <div class="console-bar">
+      <b id="script-title">Roteiro de captura</b>
+      <span id="script-status" class="small muted"></span>
+      <button id="script-close" class="btn btn-small" aria-label="Fechar">✕</button>
+    </div>
+    <div class="ai-body">
+      <p id="script-ready" class="script-ready small"></p>
+      <div id="script-list"></div>
+      <div id="script-run" hidden>
+        <button id="script-back" class="btn btn-small">← Lista de passos</button>
+        <h3 id="script-step-title" class="script-step-title"></h3>
+        <p id="script-step-before" class="muted"></p>
+        <p id="script-step-warn" class="script-warn small" hidden></p>
+        <div id="script-live" class="script-live" hidden>
+          <div id="script-say" class="script-say"></div>
+          <div id="script-count" class="script-count"></div>
+          <div id="script-phase" class="small muted"></div>
+          <div id="script-choices" class="script-buttons" hidden></div>
+          <div id="script-events" class="script-buttons" hidden></div>
+          <div id="script-event-log" class="small muted"></div>
+        </div>
+        <div class="row script-actions">
+          <button id="script-start" class="btn btn-primary">Iniciar passo</button>
+          <button id="script-stop" class="btn btn-danger" hidden>Parar passo</button>
+          <button id="script-skip" class="btn">Pular</button>
+        </div>
+        <div id="script-summary" class="script-summary" hidden>
+          <p id="script-result" class="script-result"></p>
+          <p id="script-step-after" class="muted"></p>
+          <div id="script-readings" class="list small"></div>
+          <label>Observação (opcional)
+            <input id="script-note" type="text" maxlength="300" placeholder="Ex.: o carro não tem esse item">
+          </label>
+          <div class="row">
+            <button id="script-note-save" class="btn">Salvar observação</button>
+            <button id="script-next" class="btn btn-primary">Próximo passo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="ai-panel" class="ai-panel" hidden role="dialog" aria-label="Assistente IA">
     <div class="console-bar">
       <b id="ai-title">Assistente IA</b>
@@ -580,6 +626,7 @@
   <script src="app-falhas.js"></script>
   <script src="app-remoto.js"></script>
   <script src="app-dispositivo.js"></script>
+  <script src="app-roteiro.js"></script>
   <script src="app-main.js"></script>
 </body>
 </html>

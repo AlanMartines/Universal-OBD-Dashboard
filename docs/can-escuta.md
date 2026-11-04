@@ -47,6 +47,27 @@ Faça isso com o módulo desligado do carro.
 
 ## 4. Capture
 
+### Com o app e o ESP32: Roteiro de captura
+
+Com o ESP32 escolhido em Ajustes → Escuta CAN e a **Gravação de diagnóstico** ligada, o app tem uma tela guiada: Ajustes → Gravação de diagnóstico → **Abrir roteiro de captura**. Ela serve a qualquer veículo:
+
+- **Passos comuns a quase todo carro:** portas, porta-malas, capô, cintos, pedais, freio de mão, ré, luzes, setas, limpadores, travas, vidros, ventilação, ar-condicionado, desembaçador, direção, rotações fixas, indicador de economia e eletroventilador. O que o carro não tiver, pule.
+- **Ritmo:** início manual; depois o app fala e vibra a cada "liga" e "desliga" (em geral 10 s cada, 3 vezes) e encerra o passo sozinho.
+- **Marcas:** cada mudança vira uma marca no arquivo de diagnóstico, no mesmo relógio dos quadros do ESP32 e do ELM327. No fim do passo, a tela mostra a hora e as leituras do momento, e aceita uma observação.
+- **Segurança:** os passos só rodam com o carro parado e a captura gravando. A tela mantém a captura viva (o aviso de parada longa não interrompe o passo) e a tela do celular ligada.
+
+O roteiro genérico fica em [`capture-scripts/generic.json`](../app/src/main/assets/capture-scripts/generic.json). Um perfil pode trazer o próprio roteiro em `capture-scripts/<profile_id>.json` (ver [criar-perfil.md](criar-perfil.md)).
+
+Para analisar, exporte o .gz em Ajustes → Gravação de diagnóstico e rode:
+
+```bash
+python3 tools/can-capture/roteiro_app.py diag_….jsonl.gz [--passo door_driver]
+```
+
+Para cada passo, a análise mostra os bits que acompanharam todas as vezes "liga" e "desliga", os bytes que mudaram entre as fases (rotações) e o que mudou em volta de cada toque (eletroventilador).
+
+### Com o notebook e o Arduino
+
 O jeito mais simples é a sessão guiada:
 
 ```bash

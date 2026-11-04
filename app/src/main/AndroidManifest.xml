@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Roteiro de captura: vibra a cada "liga" e "desliga" -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Só o assistente IA opcional (Ajustes → Assistente IA) usa a internet. -->
     <uses-permission android:name="android.permission.INTERNET" />
