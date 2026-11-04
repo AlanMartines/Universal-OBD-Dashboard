@@ -142,3 +142,130 @@
     white-space: nowrap;
   }
 }
+
+/* ---------- Acabamento geral ---------- */
+.card {
+  border-color: var(--bs-border-color-translucent);
+  box-shadow: var(--app-shadow-sm);
+}
+
+.btn {
+  transition: color var(--app-dur) var(--app-ease), background-color var(--app-dur) var(--app-ease),
+    border-color var(--app-dur) var(--app-ease), box-shadow var(--app-dur) var(--app-ease), transform var(--app-dur) var(--app-ease);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
+
+:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 2px;
+}
+
+.form-control,
+.form-select {
+  transition: border-color var(--app-dur) var(--app-ease), box-shadow var(--app-dur) var(--app-ease);
+}
+
+.modal-content {
+  border: 1px solid var(--bs-border-color-translucent);
+  border-radius: var(--app-radius-lg);
+  box-shadow: var(--app-shadow-lg);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .modal-backdrop.show {
+    opacity: 1;
+    background: rgb(0 0 0 / 45%);
+    backdrop-filter: blur(3px);
+  }
+}
+
+.table > :not(caption) > * > * {
+  padding-block: 0.55rem;
+}
+
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Carregando: bloco com brilho que corre, no lugar de "Carregando…". */
+.skeleton {
+  display: block;
+  min-height: 1em;
+  background: linear-gradient(90deg, var(--bs-tertiary-bg) 25%, var(--bs-secondary-bg) 50%, var(--bs-tertiary-bg) 75%);
+  background-size: 200% 100%;
+  border-radius: var(--app-radius);
+  animation: skeleton 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton {
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+  .btn:active:not(:disabled) { transform: none; }
+}
+
+/* ---------- Telas sem sessão: entrar, cadastro, senha ---------- */
+.auth-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: calc(100dvh - var(--topbar-height));
+  padding: var(--space-6) var(--space-4);
+}
+
+@media (min-height: 700px) {
+  .auth-main {
+    align-items: center;
+  }
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  padding: var(--space-6) var(--space-5);
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color-translucent);
+  border-radius: var(--app-radius-lg);
+  box-shadow: var(--app-shadow-lg);
+}
+
+.auth-card .row {
+  margin: 0;
+}
+
+.auth-card .row > [class*="col-"] {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  text-align: center;
+}
+
+.auth-logo {
+  width: 56px;
+  height: 56px;
+}
+
+.auth-card h1 {
+  text-align: center;
+}
+
+@media (max-width: 575.98px) {
+  .auth-card {
+    padding: var(--space-5) var(--space-4);
+  }
+}

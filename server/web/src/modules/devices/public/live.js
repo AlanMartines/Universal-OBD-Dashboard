@@ -10,8 +10,10 @@
   var SPARK_MINUTES = 15;
   var SPARK_POINTS = 60;
   var COLORS = ['#0d6efd', '#fd7e14'];
-  var INK = '#495057';
-  var GRID = 'rgba(73,80,87,.1)';
+  // Texto e grade do gráfico acompanham o tema do painel.
+  function dark() { return document.documentElement.getAttribute('data-bs-theme') === 'dark'; }
+  function ink() { return dark() ? '#adb5bd' : '#495057'; }
+  function grid() { return dark() ? 'rgba(173,181,189,.12)' : 'rgba(73,80,87,.1)'; }
 
   var LABELS = {
     rpm: ['Rotação', 'RPM', 0], speed: ['Velocidade', 'km/h', 0], coolant_temp: ['Arrefecimento', '°C', 0],
@@ -98,6 +100,7 @@
         addOption(id);
         select.value = id;
         loadChart();
+        if (window.showTab) window.showTab('historico');
       });
       col.append(card);
       box.append(col);
@@ -272,6 +275,9 @@
     };
   }
 
+  // Trocar o tema redesenha o gráfico com as cores novas.
+  document.addEventListener('app-theme', function () { if (chart) loadChart(); });
+
   function loadChart() {
     var metric = select.value;
     var second = compare.value && compare.value !== metric ? compare.value : '';
@@ -294,7 +300,7 @@
           normalized: true,
           interaction: { mode: 'nearest', axis: 'x', intersect: false },
           plugins: {
-            legend: { display: !!second, position: 'top', align: 'end', labels: { boxWidth: 12, boxHeight: 2, color: INK } },
+            legend: { display: !!second, position: 'top', align: 'end', labels: { boxWidth: 12, boxHeight: 2, color: ink() } },
             tooltip: {
               callbacks: {
                 title: function (items) { return items.length ? new Date(items[0].parsed.x).toLocaleString('pt-BR') : ''; },
@@ -312,13 +318,13 @@
               min: now - minutes * 60000,
               max: now,
               grid: { display: false },
-              border: { color: GRID },
-              ticks: { color: INK, maxTicksLimit: 6, maxRotation: 0, callback: tickLabel },
+              border: { color: grid() },
+              ticks: { color: ink(), maxTicksLimit: 6, maxRotation: 0, callback: tickLabel },
             },
             y: {
-              grid: { color: GRID },
+              grid: { color: grid() },
               border: { display: false },
-              ticks: { color: INK, maxTicksLimit: 5, callback: function (v) { return v.toLocaleString('pt-BR'); } },
+              ticks: { color: ink(), maxTicksLimit: 5, callback: function (v) { return v.toLocaleString('pt-BR'); } },
             },
             y2: {
               display: !!second,

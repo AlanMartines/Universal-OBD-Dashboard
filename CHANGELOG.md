@@ -6,6 +6,17 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Painel web: modo escuro.** Claro, escuro ou automático (segue o sistema), escolhido pelo botão no menu ou na barra superior e lembrado no navegador. O gráfico do histórico e o mapa do percurso acompanham o tema.
+- **Painel web: página inicial com um cartão por veículo,** com a situação (ao vivo ou há quanto tempo chegou a última leitura), as falhas ativas, o consumo real, o gasto do mês, o hodômetro e atalhos para os detalhes, o Painel do veículo e as falhas.
+- **Painel web: tela do dispositivo em abas,** Visão geral, Histórico, Percurso, Viagens, Abastecimentos e Falhas, com o endereço de cada aba (ex.: `#falhas`).
+- **Painel web: aba Viagens,** montada das leituras enviadas: duração, distância, combustível, consumo, velocidade e temperatura máximas, com atalho para ver a viagem no mapa.
+- **Painel web: aba Falhas,** com cada código enviado pelo app, a descrição genérica da norma SAE (a mesma tabela do app), se ainda está ativo e quando apareceu.
+
+### Alterado
+- **Painel web no celular:** uma barra superior com o menu, o título da página e o tema substitui o botão flutuante, que cobria o conteúdo ao rolar.
+- **Painel web: acabamento,** com escala de espaçamento e sombras nos tokens, cantos mais arredondados, transições curtas (desligadas com movimento reduzido), estados vazios com ícone e as telas de entrar, cadastro e senha num cartão centralizado.
+
 ## [0.9.13] - 2026-11-04
 
 ### Adicionado

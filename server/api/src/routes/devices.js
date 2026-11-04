@@ -77,6 +77,85 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     };
   });
 
+  // Resumo de cada veículo para a página inicial: situação, falhas e abastecimentos do mês.
+  app.get('/internal/devices/overview', { preValidation: requireReady }, async (request) => {
+    const { user } = request.session;
+    const { rows } = await pool.query(
+      `SELECT d.id, d.name, d.last_seen_at, u.username AS owner,
+              s.ts AS latest_ts, coalesce(s.dtcs, '{}') AS dtcs,
+              (s.metrics->>'odometer_km')::float AS odometer_km
+         FROM devices d JOIN users u ON u.id = d.user_id
+         LEFT JOIN LATERAL (
+           SELECT ts, dtcs, metrics FROM telemetry_samples t WHERE t.device_id = d.id ORDER BY ts DESC LIMIT 1
+         ) s ON true
+        WHERE (d.user_id = $1 OR $2) AND d.paired_at IS NOT NULL AND d.revoked_at IS NULL
+        ORDER BY d.last_seen_at DESC NULLS LAST LIMIT 24`,
+      [user.tenantId, user.role === 'superadmin'],
+    );
+    const ids = rows.map((r) => r.id);
+    const fuel = ids.length ? (await pool.query(
+      `SELECT device_id, local_id, ts, odometer_km, liters, total_price, fuel_type, full_tank
+         FROM fuel_ups WHERE device_id = ANY($1::uuid[]) AND removed_at IS NULL ORDER BY ts`,
+      [ids],
+    )).rows : [];
+    const month = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit' }).format(new Date());
+    return {
+      month,
+      vehicles: rows.map((r) => {
+        const items = fuel.filter((f) => f.device_id === r.id).map((f) => ({
+          ts: f.ts.getTime(), odometerKm: f.odometer_km, liters: f.liters, totalPrice: f.total_price, fuelType: f.fuel_type, fullTank: f.full_tank,
+        }));
+        const summary = fuelSummary(items);
+        return {
+          id: r.id, name: r.name, owner: r.owner, lastSeenAt: r.last_seen_at, latestTs: r.latest_ts,
+          dtcs: r.dtcs, odometerKm: r.odometer_km, avgKmPerL: summary.avgKmPerL, monthCost: summary.costByMonth[month] ?? 0,
+        };
+      }),
+    };
+  });
+
+  // Viagens montadas a partir das amostras guardadas (90 dias): distância e combustível somados no tempo.
+  app.get('/internal/devices/:id/trips', { preValidation: requireReady, schema: { params: uuidParam } }, async (request) => {
+    const device = await loadDevice(request);
+    const { rows } = await pool.query(
+      `WITH s AS (
+         SELECT trip_id, ts, (metrics->>'speed')::float AS speed, (metrics->>'derived.fuelLph')::float AS lph,
+                (metrics->>'coolant_temp')::float AS coolant,
+                extract(epoch FROM ts - lag(ts) OVER (PARTITION BY trip_id ORDER BY ts)) AS dt
+           FROM telemetry_samples WHERE device_id = $1 AND trip_id IS NOT NULL)
+       SELECT trip_id, min(ts) AS started, max(ts) AS ended, max(speed) AS max_speed, max(coolant) AS max_coolant,
+              sum(CASE WHEN dt <= 30 THEN coalesce(speed, 0) * dt / 3600 END) AS km,
+              sum(CASE WHEN dt <= 30 THEN coalesce(lph, 0) * dt / 3600 END) AS liters
+         FROM s GROUP BY trip_id ORDER BY started DESC LIMIT 50`,
+      [device.id],
+    );
+    return {
+      trips: rows.map((r) => {
+        const km = r.km ?? 0;
+        const liters = r.liters ?? 0;
+        return {
+          id: Number(r.trip_id), start: r.started, end: r.ended,
+          minutes: Math.round((r.ended - r.started) / 60000), km, liters,
+          kmPerL: liters > 0.05 && km > 0.5 ? km / liters : null, maxSpeed: r.max_speed, maxCoolant: r.max_coolant,
+        };
+      }),
+    };
+  });
+
+  // Códigos de falha que o app enviou: quando apareceram e se ainda estão na leitura mais recente.
+  app.get('/internal/devices/:id/faults', { preValidation: requireReady, schema: { params: uuidParam } }, async (request) => {
+    const device = await loadDevice(request);
+    const { rows } = await pool.query(
+      `SELECT code, min(ts) AS first_seen, max(ts) AS last_seen, count(*)::int AS readings
+         FROM telemetry_samples, unnest(dtcs) AS code
+        WHERE device_id = $1 GROUP BY code ORDER BY last_seen DESC LIMIT 100`,
+      [device.id],
+    );
+    const latest = (await pool.query('SELECT dtcs FROM telemetry_samples WHERE device_id = $1 ORDER BY ts DESC LIMIT 1', [device.id])).rows[0];
+    const active = new Set(latest?.dtcs ?? []);
+    return { faults: rows.map((r) => ({ code: r.code, firstSeen: r.first_seen, lastSeen: r.last_seen, readings: r.readings, active: active.has(r.code) })) };
+  });
+
   app.get('/internal/devices/:id/fuel-ups', { preValidation: requireReady, schema: { params: uuidParam } }, async (request) => {
     const device = await loadDevice(request);
     const { rows } = await pool.query(

@@ -75,6 +75,8 @@ describe('arquivos', () => {
     for (const name of ['dash.js', 'dash.css', 'fonts/ChakraPetch-700.woff2', 'fonts/BarlowSemiCondensed-400.woff2']) {
       assert.ok(readFileSync(join(HERE, '../src/modules/vehicle/public', name)).equals(readFileSync(join(app, name))), name);
     }
+    // A tabela de códigos de falha do site é a mesma do app
+    assert.ok(readFileSync(join(HERE, '../src/shared/public/js/dtc-sae.js')).equals(readFileSync(join(app, 'dtc-sae.js'))), 'dtc-sae.js');
   });
 
   test('cada módulo publica o próprio JS e CSS', async () => {
@@ -234,6 +236,9 @@ describe('fluxo pelo navegador', () => {
 
     const page = await web.inject({ method: 'GET', url: `/dispositivos/${deviceId}`, headers: { cookie: adminCookie } });
     assert.match(page.body, /id="fuel-title"/);
+    assert.match(page.body, /data-hash="viagens"/);
+    assert.match(page.body, /data-hash="falhas"/);
+    assert.match(page.body, /src="\/static\/js\/theme\.js"/);
     assert.match(page.body, /Nenhum abastecimento enviado ainda/);
     assert.equal(page.statusCode, 200);
     // A leitura inicial fica em atributo: dentro de <script>, o escape impediria o JSON.parse.

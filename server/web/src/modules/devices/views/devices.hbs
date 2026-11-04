@@ -4,6 +4,39 @@
   {{/if}}
 {{/pageHeader}}
 {{> formError}}
+{{#if vehicles.length}}
+<section class="mb-4" aria-labelledby="fleet-title">
+  <h2 class="visually-hidden" id="fleet-title">Veículos</h2>
+  <div class="row row-cols-1 row-cols-md-2 row-cols-xxl-3 g-3">
+    {{#each vehicles}}
+    <div class="col">
+      <article class="vehicle-card h-100">
+        <header class="vehicle-card-head">
+          <span class="vehicle-card-icon" aria-hidden="true"><i class="fa-solid fa-car-side"></i></span>
+          <div class="min-w-0 me-auto">
+            <h3 class="h6 mb-0 text-truncate">{{name}}</h3>
+            {{#if (eq ../user.role "superadmin")}}<p class="small text-body-secondary mb-0 text-truncate">{{owner}}</p>{{/if}}
+          </div>
+          <span class="badge text-bg-{{status.tone}}">{{#if status.live}}<span class="live-dot" aria-hidden="true"></span>{{/if}}{{status.label}}</span>
+        </header>
+        <dl class="vehicle-card-stats">
+          <div><dt>Falhas ativas</dt><dd class="{{#if dtcCount}}text-danger{{/if}}">{{dtcCount}}</dd></div>
+          <div><dt>Consumo real</dt><dd>{{#if avgKmPerL}}{{num avgKmPerL 1}} <small>km/l</small>{{else}}—{{/if}}</dd></div>
+          <div><dt>Gasto em {{../monthLabel}}</dt><dd>{{brl monthCost}}</dd></div>
+          <div><dt>Hodômetro</dt><dd>{{#if odometerKm}}{{num odometerKm 0}} <small>km</small>{{else}}—{{/if}}</dd></div>
+        </dl>
+        <footer class="vehicle-card-actions">
+          <a class="btn btn-primary btn-sm" href="/dispositivos/{{id}}"><i class="fa-solid fa-eye me-1" aria-hidden="true"></i>Detalhes</a>
+          <a class="btn btn-outline-primary btn-sm" href="/painel-veiculo?dispositivo={{id}}"><i class="fa-solid fa-gauge-high me-1" aria-hidden="true"></i>Painel do veículo</a>
+          {{#if dtcCount}}<a class="btn btn-outline-danger btn-sm" href="/dispositivos/{{id}}#falhas"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Falhas</a>{{/if}}
+        </footer>
+      </article>
+    </div>
+    {{/each}}
+  </div>
+</section>
+<h2 class="h6 text-body-secondary mb-2">Todos os dispositivos</h2>
+{{/if}}
 {{#if devices.length}}
 {{#> dataTable}}
     <thead class="table-dark">

@@ -3,10 +3,19 @@ html,
 body {
   padding: 0;
   margin: 0;
+  background-color: var(--bs-body-bg);
   background-image: url('/assets/images/body/bg01.png');
   background-repeat: repeat;
   background-position: top left;
   background-size: auto;
+}
+
+/* No escuro, a textura clara do fundo dá lugar a um degradê discreto. */
+[data-bs-theme="dark"] body,
+html[data-bs-theme="dark"] {
+  background-image: radial-gradient(1200px 600px at 100% -10%, rgb(13 110 253 / 10%), transparent 60%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 html {
@@ -69,8 +78,7 @@ html {
 }
 
 .sidebar-close,
-.sidebar-expand,
-.sidebar-fab {
+.sidebar-expand {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -90,24 +98,52 @@ html {
   display: none;
 }
 
-/* Sem a barra superior, é o único acesso ao menu no celular. */
-.sidebar-fab {
-  position: fixed;
-  top: 8px;
-  left: 8px;
+/* Barra superior do celular e do tablet: menu, título da página e tema. Não cobre o conteúdo ao rolar. */
+.app-topbar {
+  position: sticky;
+  top: 0;
   z-index: 1020;
   display: none;
-  font-size: 1.25rem;
-  color: #fff;
-  background: var(--app-dark);
-  border-radius: var(--app-radius);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--topbar-height);
+  padding: 0 var(--space-2);
+  padding-top: env(safe-area-inset-top);
+  background: var(--app-surface-glass);
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+  box-shadow: var(--app-shadow-sm);
 }
 
-.sidebar-fab:hover,
-.sidebar-fab:focus-visible {
-  color: #fff;
-  background: #333;
+@supports (backdrop-filter: blur(1px)) {
+  .app-topbar {
+    backdrop-filter: blur(12px) saturate(140%);
+  }
+}
+
+.topbar-title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.topbar-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 1.15rem;
+  color: var(--bs-body-color);
+  border: 0;
+  border-radius: var(--app-radius);
+  transition: background-color var(--app-dur) var(--app-ease);
+}
+
+.topbar-btn:hover,
+.topbar-btn:focus-visible {
+  background: var(--bs-tertiary-bg);
 }
 
 .sidebar-user {
@@ -174,6 +210,7 @@ html {
 
 .sidebar-nav a,
 .sidebar-footer button {
+  transition: background-color var(--app-dur) var(--app-ease), color var(--app-dur) var(--app-ease);
   display: flex;
   align-items: center;
   gap: 0.85rem;
@@ -284,10 +321,10 @@ html {
     margin-left: 0;
   }
   .app-content {
-    padding: 4rem 1rem 1rem;
+    padding: 1rem;
   }
-  .sidebar-fab {
-    display: inline-flex;
+  .app-topbar {
+    display: flex;
   }
   .sidebar-open .app-sidebar {
     visibility: visible;

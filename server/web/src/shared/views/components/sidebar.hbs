@@ -41,9 +41,12 @@
     </ul>
   </div>
 
-  <form method="post" action="/logout" class="sidebar-footer">
-    <input type="hidden" name="_csrf" value="{{csrf}}">
-    <button type="submit" title="Sair"><i class="fa-solid fa-right-from-bracket fa-fw" aria-hidden="true"></i><span class="sidebar-label">Sair</span></button>
-  </form>
+  <div class="sidebar-footer">
+    <button type="button" data-theme-toggle aria-label="Tema"><i class="fa-solid fa-fw fa-circle-half-stroke" data-theme-icon aria-hidden="true"></i><span class="sidebar-label" data-theme-label>Tema automático</span></button>
+    <form method="post" action="/logout" class="m-0">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" title="Sair"><i class="fa-solid fa-right-from-bracket fa-fw" aria-hidden="true"></i><span class="sidebar-label">Sair</span></button>
+    </form>
+  </div>
 </nav>
 <div class="sidebar-backdrop" data-sidebar-close></div>

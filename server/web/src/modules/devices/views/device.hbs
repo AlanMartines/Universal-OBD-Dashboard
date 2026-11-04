@@ -16,8 +16,32 @@
     <i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i><strong>Códigos de falha:</strong> <span id="dtc-list"></span>
   </div>
 
+
+  <ul class="nav nav-tabs device-tabs mb-3" role="tablist" data-tabs>
+    <li class="nav-item" role="presentation"><button class="nav-link active" id="tab-overview" data-bs-toggle="tab" data-bs-target="#pane-overview" data-hash="visao-geral" type="button" role="tab" aria-controls="pane-overview" aria-selected="true"><i class="fa-solid fa-gauge me-1" aria-hidden="true"></i>Visão geral</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-history" data-bs-toggle="tab" data-bs-target="#pane-history" data-hash="historico" type="button" role="tab" aria-controls="pane-history" aria-selected="false"><i class="fa-solid fa-chart-line me-1" aria-hidden="true"></i>Histórico</button></li>
+    {{#if locationAllowed}}<li class="nav-item" role="presentation"><button class="nav-link" id="tab-route" data-bs-toggle="tab" data-bs-target="#pane-route" data-hash="percurso" type="button" role="tab" aria-controls="pane-route" aria-selected="false"><i class="fa-solid fa-route me-1" aria-hidden="true"></i>Percurso</button></li>{{/if}}
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-trips" data-bs-toggle="tab" data-bs-target="#pane-trips" data-hash="viagens" type="button" role="tab" aria-controls="pane-trips" aria-selected="false"><i class="fa-solid fa-road me-1" aria-hidden="true"></i>Viagens</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-fuel" data-bs-toggle="tab" data-bs-target="#pane-fuel" data-hash="abastecimentos" type="button" role="tab" aria-controls="pane-fuel" aria-selected="false"><i class="fa-solid fa-gas-pump me-1" aria-hidden="true"></i>Abastecimentos</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-faults" data-bs-toggle="tab" data-bs-target="#pane-faults" data-hash="falhas" type="button" role="tab" aria-controls="pane-faults" aria-selected="false"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Falhas{{#if faultsActive}} <span class="badge text-bg-danger">{{faultsActive}}</span>{{/if}}</button></li>
+  </ul>
+
+  <div class="tab-content">
+  <div class="tab-pane fade show active" id="pane-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
   <div class="row row-cols-2 row-cols-lg-4 g-3 mb-3" id="highlights"></div>
 
+  <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3" id="groups"></div>
+
+  <div id="gps-box" class="d-none">
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="gps-toggle" aria-expanded="false"><i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i>Ver localização</button>
+    <span id="gps-text" class="small text-body-secondary ms-2" hidden></span>
+  </div>
+  {{#unless locationAllowed}}
+  <p class="small text-body-secondary"><i class="fa-solid fa-lock me-1" aria-hidden="true"></i>A localização de outras contas só fica disponível no modo suporte, registrado na auditoria.</p>
+  {{/unless}}
+  </div>
+
+  <div class="tab-pane fade" id="pane-history" role="tabpanel" aria-labelledby="tab-history" tabindex="0">
   <section class="stat-panel mb-3" aria-labelledby="history-title">
     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
       <h2 class="h6 mb-0 me-auto" id="history-title">Histórico</h2>
@@ -36,8 +60,10 @@
     </div>
     <div class="chart-box"><canvas id="history-chart" aria-label="Gráfico do sinal escolhido" role="img"></canvas></div>
   </section>
+  </div>
 
   {{#if locationAllowed}}
+  <div class="tab-pane fade" id="pane-route" role="tabpanel" aria-labelledby="tab-route" tabindex="0">
   <section class="stat-panel mb-3" id="route-card" data-device-id="{{device.id}}" data-has-map="{{hasMap}}" aria-labelledby="route-title">
     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
       <h2 class="h6 mb-0 me-auto" id="route-title">Percurso <span class="small fw-normal text-body-secondary" id="route-summary"></span></h2>
@@ -55,12 +81,33 @@
       <span class="route-dot route-slow"></span>até 30 km/h <span class="route-dot route-mid"></span>até 60 <span class="route-dot route-fast"></span>até 90 <span class="route-dot route-top"></span>acima de 90
     </p>
   </section>
-  {{else}}
-  <p class="small text-body-secondary"><i class="fa-solid fa-lock me-1" aria-hidden="true"></i>A localização de outras contas só fica disponível no modo suporte, registrado na auditoria.</p>
+  </div>
   {{/if}}
 
-  <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3" id="groups"></div>
+  <div class="tab-pane fade" id="pane-trips" role="tabpanel" aria-labelledby="tab-trips" tabindex="0">
+  <section class="stat-panel mb-3" aria-labelledby="trips-title">
+    <h2 class="h6 mb-3" id="trips-title"><i class="fa-solid fa-road me-1" aria-hidden="true"></i>Viagens</h2>
+    {{#if trips.length}}
+    <p class="small text-body-secondary mb-2">Montadas a partir das leituras enviadas pelo app. Distância e combustível são estimados pela velocidade e pelo consumo instantâneo.</p>
+    <div class="table-responsive">
+      <table class="table table-sm table-striped table-hover table-stack align-middle mb-0">
+        <thead class="table-dark">
+          <tr><th scope="col">Início</th><th scope="col" class="text-end">Duração</th><th scope="col" class="text-end">Distância</th><th scope="col" class="text-end">Combustível</th><th scope="col" class="text-end">km/l</th><th scope="col" class="text-end">Vel. máx.</th><th scope="col" class="text-end">Temp. máx.</th>{{#if ../locationAllowed}}<th scope="col"></th>{{/if}}</tr>
+        </thead>
+        <tbody>
+          {{#each trips}}
+          <tr><td data-label="Início">{{date start}}</td><td data-label="Duração" class="text-end">{{minutes}} min</td><td data-label="Distância" class="text-end">{{num km 1}} km</td><td data-label="Combustível" class="text-end">{{num liters 2}} L</td><td data-label="km/l" class="text-end">{{num kmPerL 1}}</td><td data-label="Vel. máx." class="text-end">{{num maxSpeed 0}} km/h</td><td data-label="Temp. máx." class="text-end">{{num maxCoolant 0}} °C</td>{{#if ../locationAllowed}}<td class="table-actions text-end"><button class="btn btn-outline-primary btn-sm" type="button" data-show-trip="{{id}}" title="Ver no mapa" aria-label="Ver a viagem no mapa"><i class="fa-solid fa-route" aria-hidden="true"></i></button></td>{{/if}}</tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <div class="empty-state"><i class="fa-solid fa-road" aria-hidden="true"></i><p class="mb-0">Nenhuma viagem enviada ainda. Elas aparecem quando o app grava uma captura com a telemetria remota ligada.</p></div>
+    {{/if}}
+  </section>
+  </div>
 
+  <div class="tab-pane fade" id="pane-fuel" role="tabpanel" aria-labelledby="tab-fuel" tabindex="0">
   <section class="stat-panel mb-3" aria-labelledby="fuel-title">
     <h2 class="h6 mb-3" id="fuel-title"><i class="fa-solid fa-gas-pump me-1" aria-hidden="true"></i>Abastecimentos</h2>
     {{#if fuel.items.length}}
@@ -103,9 +150,29 @@
     <p class="small text-body-secondary mb-0">Nenhum abastecimento enviado ainda. Os registrados no app chegam aqui com a telemetria remota ligada.</p>
     {{/if}}
   </section>
+  </div>
 
-  <div id="gps-box" class="d-none">
-    <button type="button" class="btn btn-outline-secondary btn-sm" id="gps-toggle" aria-expanded="false"><i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i>Ver localização</button>
-    <span id="gps-text" class="small text-body-secondary ms-2" hidden></span>
+  <div class="tab-pane fade" id="pane-faults" role="tabpanel" aria-labelledby="tab-faults" tabindex="0">
+  <section class="stat-panel mb-3" aria-labelledby="faults-title">
+    <h2 class="h6 mb-3" id="faults-title"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Falhas</h2>
+    {{#if faults.length}}
+    <p class="small text-body-secondary mb-2">Códigos enviados pelo app. A descrição é a genérica da norma SAE; a análise detalhada e a do fabricante ficam no app.</p>
+    <div class="table-responsive">
+      <table class="table table-sm table-striped table-hover table-stack align-middle mb-0">
+        <thead class="table-dark">
+          <tr><th scope="col">Código</th><th scope="col">Descrição</th><th scope="col">Situação</th><th scope="col">Primeira vez</th><th scope="col">Última vez</th></tr>
+        </thead>
+        <tbody>
+          {{#each faults}}
+          <tr><td data-label="Código" class="font-monospace fw-semibold">{{code}}</td><td data-label="Descrição" data-dtc-describe="{{code}}">—</td><td data-label="Situação">{{#if active}}<span class="badge text-bg-danger">Ativa</span>{{else}}<span class="badge text-bg-secondary">Não aparece mais</span>{{/if}}</td><td data-label="Primeira vez">{{date firstSeen}}</td><td data-label="Última vez">{{date lastSeen}}</td></tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <div class="empty-state"><i class="fa-solid fa-circle-check text-success" aria-hidden="true"></i><p class="mb-0">Nenhum código de falha enviado por este veículo.</p></div>
+    {{/if}}
+  </section>
+  </div>
   </div>
 </div>

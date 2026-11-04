@@ -5,6 +5,47 @@
   --sidebar-gap: 5px;
   --topbar-height: 56px;
   --app-dark: #1a1a1a;
-  --app-radius: 5px;
-  --app-radius-lg: 10px;
+  --app-radius: 8px;
+  --app-radius-lg: 14px;
+
+  /* Espaçamento */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  /* Sombras e superfícies */
+  --app-shadow-sm: 0 1px 2px rgb(16 24 40 / 6%);
+  --app-shadow: 0 1px 3px rgb(16 24 40 / 8%), 0 4px 12px rgb(16 24 40 / 6%);
+  --app-shadow-lg: 0 8px 24px rgb(16 24 40 / 12%);
+  --app-surface-glass: rgb(255 255 255 / 82%);
+
+  /* Movimento */
+  --app-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --app-dur: 160ms;
+
+  /* Cantos um pouco mais arredondados em todo o Bootstrap */
+  --bs-border-radius: 0.5rem;
+  --bs-border-radius-sm: 0.375rem;
+  --bs-border-radius-lg: 0.75rem;
+  --bs-border-radius-xl: 1rem;
+}
+
+[data-bs-theme="dark"] {
+  --app-shadow-sm: 0 1px 2px rgb(0 0 0 / 35%);
+  --app-shadow: 0 1px 3px rgb(0 0 0 / 40%), 0 4px 12px rgb(0 0 0 / 30%);
+  --app-shadow-lg: 0 8px 24px rgb(0 0 0 / 45%);
+  --app-surface-glass: rgb(33 37 41 / 78%);
+  --bs-body-bg: #0f1419;
+  --bs-body-bg-rgb: 15, 20, 25;
+  --bs-tertiary-bg: #1b2229;
+  --bs-secondary-bg: #161c22;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --app-dur: 0ms;
+  }
 }

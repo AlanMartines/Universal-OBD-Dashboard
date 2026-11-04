@@ -10,6 +10,8 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16x16.png">
   <link rel="icon" type="image/png" sizes="96x96" href="/assets/favicons/favicon-96x96.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-icon-180x180.png">
+  <meta name="color-scheme" content="light dark">
+  <script src="/static/js/theme.js"></script>
   <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
   <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
   <link rel="stylesheet" href="/static/css/tokens.css">
@@ -25,9 +27,15 @@
   {{#if user}}
   {{> sidebar}}
   <div class="app-main">
-    <button class="btn sidebar-fab" type="button" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="Abrir menu">
-      <i class="fa-solid fa-bars" aria-hidden="true"></i>
-    </button>
+    <header class="app-topbar">
+      <button class="btn topbar-btn" type="button" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="Abrir menu">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      </button>
+      <span class="topbar-title text-truncate">{{title}}</span>
+      <button class="btn topbar-btn" type="button" data-theme-toggle aria-label="Tema">
+        <i class="fa-solid fa-fw fa-circle-half-stroke" data-theme-icon aria-hidden="true"></i>
+      </button>
+    </header>
     {{#if user.impersonatedBy}}
     <div class="impersonation-bar d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2" role="status">
       <span class="small"><i class="fa-solid fa-user-secret me-2" aria-hidden="true"></i><strong>Modo suporte:</strong> vendo como {{user.username}}. Dados pessoais e de segurança ficam bloqueados.</span>
@@ -45,9 +53,18 @@
   {{else}}
   <header class="auth-header">
     <a class="sidebar-link-plain" href="/"><img class="brand-logo" src="/assets/logos/eletroinfo.svg" alt=""><span>Telemetria OBD</span></a>
+    <button class="btn topbar-btn ms-auto" type="button" data-theme-toggle aria-label="Tema">
+      <i class="fa-solid fa-fw fa-circle-half-stroke" data-theme-icon aria-hidden="true"></i>
+    </button>
   </header>
-  <main class="container-xl py-4">
-    {{{body}}}
+  <main class="auth-main">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <img class="auth-logo" src="/assets/logos/eletroinfo.svg" alt="">
+        <p class="small text-body-secondary mb-0">Telemetria do seu veículo, em tempo real</p>
+      </div>
+      {{{body}}}
+    </div>
   </main>
   {{/if}}
   <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>

@@ -321,6 +321,29 @@ describe('API', () => {
       assert.equal((await read()).summary.count, 0, 'lista vazia marca todos como removidos');
     });
 
+    test('visão geral, viagens e falhas montadas das amostras', async () => {
+      const t0 = Date.now() - 60 * 60000;
+      const samples = Array.from({ length: 31 }, (_, i) => sample(5000 + i, {
+        ts: t0 + i * 2000, tripId: 77,
+        metrics: { rpm: 2000, speed: 36, 'derived.fuelLph': 3.6, coolant_temp: 80 + (i === 15 ? 10 : 0) },
+        ...(i >= 29 ? { dtcs: ['P0171'] } : {}),
+      }));
+      assert.equal((await send(app, dev.deviceToken, samples)).statusCode, 200);
+      const { trips } = (await internal(app, 'GET', `/internal/devices/${dev.id}/trips`, { token: alice })).json();
+      const trip = trips.find((t) => t.id === 77);
+      // 60 s a 36 km/h = 0,6 km; 3,6 L/h por 60 s = 0,06 L
+      assert.ok(Math.abs(trip.km - 0.6) < 1e-6, String(trip.km));
+      assert.ok(Math.abs(trip.liters - 0.06) < 1e-6, String(trip.liters));
+      assert.equal(trip.maxCoolant, 90);
+      assert.equal(trip.minutes, 1);
+      const { faults } = (await internal(app, 'GET', `/internal/devices/${dev.id}/faults`, { token: alice })).json();
+      const p0171 = faults.find((f) => f.code === 'P0171');
+      assert.equal(p0171.readings, 2);
+      const overview = (await internal(app, 'GET', '/internal/devices/overview', { token: alice })).json();
+      assert.ok(overview.vehicles.some((v) => v.id === dev.id));
+      assert.match(overview.month, /^\d{4}-\d{2}$/);
+    });
+
     test('escalas dos mostradores ficam salvas no dispositivo, sem dados fora da lista ou da faixa', async () => {
       const post = (metrics) => app.inject({ method: 'POST', url: '/api/v1/live', headers: { authorization: `Bearer ${dev.deviceToken}` }, payload: { ts: Date.now(), metrics } });
       const saved = async () => (await pool.query('SELECT dash_limits FROM devices WHERE id = $1', [dev.id])).rows[0].dash_limits;
