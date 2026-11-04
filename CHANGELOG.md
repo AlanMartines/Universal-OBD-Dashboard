@@ -6,6 +6,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.12] - 2026-11-04
+
+### Adicionado
+- **Quadros brutos do ESP32 na gravação de diagnóstico:** com a gravação ligada, cada linha recebida da escuta CAN vai para o mesmo arquivo do tráfego do ELM327, no mesmo relógio, junto com o estado da conexão. Uma única captura permite comparar as duas fontes.
+
 ## [0.9.11] - 2026-11-04
 
 ### Adicionado

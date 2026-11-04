@@ -552,7 +552,13 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                     }
                 }
             },
-            onStatus = { text -> TelemetryHub.update { it.copy(canStatus = text) } },
+            onStatus = { text ->
+                TelemetryHub.update { it.copy(canStatus = text) }
+                recorder?.event("esp32_status") { put("text", text) }
+            },
+            // Com a gravação de diagnóstico ligada, os quadros brutos do ESP32 vão ao mesmo arquivo do ELM327,
+            // no mesmo relógio: dá para comparar as duas fontes depois.
+            onRaw = recorder?.let { rec -> { line -> rec.event("esp32") { put("l", line) } } },
         )
         link.run(names)
     }

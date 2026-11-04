@@ -17,6 +17,8 @@ class CanListenLink(
     private val signals: List<CompiledCanSignal>,
     private val onValues: (Map<String, Double>, Long) -> Unit,
     private val onStatus: (String) -> Unit = {},
+    /** Cada linha recebida, como chegou (gravação de diagnóstico). */
+    private val onRaw: ((String) -> Unit)? = null,
 ) {
     private val decoder = CanDecoder(signals)
 
@@ -26,6 +28,7 @@ class CanListenLink(
         private set
 
     private fun handle(line: String) {
+        onRaw?.invoke(line)
         val frame = Slcan.parse(line) ?: return
         frames++
         val values = decoder.decode(frame)
