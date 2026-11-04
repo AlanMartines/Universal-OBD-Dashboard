@@ -260,7 +260,10 @@
       { "id": "can_speed", "name": "Velocidade (painel)", "frame": "2A0", "start": 0, "length": 2, "formula": "((A*256)+B)/16", "unit": "km/h", "decimals": 0, "min": 0, "max": 250 },
       { "id": "fuel_level_pct", "name": "Nível do tanque", "frame": "380", "start": 5, "length": 1, "formula": "A", "unit": "%", "decimals": 0, "min": 0, "max": 100 },
       { "id": "odometer_km", "name": "Hodômetro", "frame": "603", "start": 1, "length": 3, "formula": "(A*65536)+(B*256)+C", "unit": "km", "decimals": 0, "min": 0, "max": 2000000 },
-      { "id": "trip_km", "name": "Parcial do painel", "frame": "643", "start": 5, "length": 3, "formula": "((A*65536)+(B*256)+C)/160", "unit": "km", "decimals": 1, "min": 0, "max": 100000 }
+      { "id": "trip_km", "name": "Parcial do painel", "frame": "643", "start": 5, "length": 3, "formula": "((A*65536)+(B*256)+C)/160", "unit": "km", "decimals": 1, "min": 0, "max": 100000 },
+      { "id": "can_rpm", "name": "Rotação (painel)", "frame": "281", "start": 5, "length": 2, "formula": "((B*256)+A)/8", "unit": "RPM", "decimals": 0, "min": 0, "max": 8000 },
+      { "id": "can_coolant_temp", "name": "Temperatura do motor (painel)", "frame": "281", "start": 3, "length": 1, "formula": "A-40", "unit": "°C", "decimals": 0, "min": -40, "max": 150 },
+      { "id": "can_voltage", "name": "Tensão da bateria (painel)", "frame": "3E0", "start": 1, "length": 1, "formula": "A*0.16", "unit": "V", "decimals": 1, "min": 0, "max": 20 }
     ]
   },
 

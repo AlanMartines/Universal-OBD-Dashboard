@@ -6,6 +6,14 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.15] - 2026-11-04
+
+### Adicionado
+- **Escuta CAN do Uno Vivace: rotação, temperatura do motor e tensão da bateria** (`can_rpm`, `can_coolant_temp` e `can_voltage`, dos quadros `0x281` e `0x3E0`). Confirmados contra o ELM327 em duas viagens com os dois adaptadores ligados juntos. Aparecem no "Testar (15 s)", em Sensores e nas exportações, sem substituir as leituras do ELM327.
+
+### Documentação
+- **Notas do Uno:** comparação entre o ESP32 e o ELM327 (diferenças, atraso de 400–500 ms da linha K) e a ligação por pinos que deixa os dois adaptadores juntos sem cabo Y.
+
 ## [0.9.14] - 2026-11-04
 
 ### Adicionado

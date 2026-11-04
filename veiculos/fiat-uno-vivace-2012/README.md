@@ -4,12 +4,11 @@
 
 ## Capturas pendentes
 
-A comunicação pelo ELM327 está em uso. Falta confirmar estes sinais da rede CAN:
+O ELM327 e a escuta CAN pelo ESP32 estão em uso, e os sinais do mapa abaixo estão confirmados. Falta:
 
 | Quando | Equipamento | O que capturar | Sinal a confirmar |
 |---|---|---|---|
 | Depois da captura com o ESP32 | Só ELM327 | Registro do abastecimento e conferência da versão instalada | Calibração do consumo |
-| Quando o cabo Y chegar | ELM327 + ESP32 | Marcha lenta, 2.000 e 3.000 RPM, motor frio até quente, e tensão parado e funcionando | RPM, temperatura e tensão em `0x281` e `0x3E0`; convivência dos dois adaptadores |
 
 Montagem final, depois dessas capturas: alimentação fixa, senha do Bluetooth e modo de descanso do ESP32.
 
@@ -153,14 +152,27 @@ Para o receptor:
 | `0x643` | b5–b7 | Hodômetro parcial | Inteiro ÷ 160, em km. Ex.: `01 86 A0` = 625,0 km. Avança de 16 em 16 (100 m) | **Confirmado** com o painel em duas leituras |
 | `0x2A0` | b0–b1 | Velocidade | Inteiro big-endian ÷ 16, em km/h. Ex.: `03 80` = 56,0 km/h | **Confirmado** em 02/11/2026 com o velocímetro e o hodômetro parcial |
 | `0x380` e `0x3C3` | `0x380` b0 bit 3; `0x3C3` b2 bit 4 (invertido) | Luzes acesas | 1 em `0x380` e 0 em `0x3C3` com as luzes acesas | **Confirmado** com lanterna e faróis; o farol alto não tem sinal próprio |
-| `0x281` | b5–b6 | RPM | `(b6·256+b5)/8`, como na Ducato | Provável: dá cerca de 850 em marcha lenta; falta comparar com a linha K |
-| `0x281` | b3 | Temperatura do motor | `b3−40` °C, como na Ducato | Provável: sobe com o motor ligado; falta comparar com a linha K |
-| `0x3E0` | b1 | Tensão da bateria | `b1×0,16` V | Provável: 12,5 V com o motor desligado e 14,2 V funcionando (03/11/2026); falta comparar com o ELM327 |
+| `0x281` | b5–b6 | RPM | `(b6·256+b5)/8`, como na Ducato. Ex.: `08 25` = 1.185 rpm | **Confirmado** em 04/11/2026 com a linha K (ELM327) |
+| `0x281` | b3 | Temperatura do motor | `b3−40` °C, como na Ducato. Ex.: `75` = 77 °C | **Confirmado** em 04/11/2026 com a linha K (ELM327) |
+| `0x3E0` | b1 | Tensão da bateria | `b1×0,16` V. Ex.: `58` = 14,08 V | **Confirmado** em 04/11/2026 com o `ATRV` do ELM327 |
 | `0x380` | b5 | Nível do tanque | Inteiro em % do tanque de 48 L. Ex.: `32` = 50% ≈ 24 L | **Confirmado** em 03/11/2026 com um abastecimento e o marcador do painel |
 
 Setas, pisca-alerta, portas, freio de mão, pedal de freio e cinto não mudam nenhum byte. Os IDs `0x040` e `0x041` aparecem a cada 180 s, sem relação com as ações.
 
-**No app:** velocidade, nível do tanque, hodômetro e parcial estão na seção `can_listen` do perfil. Basta escolher o ESP32 em Ajustes → Escuta CAN. Rotação, temperatura e tensão só entram depois da comparação com o ELM327.
+**No app:** velocidade, nível do tanque, hodômetro e parcial estão na seção `can_listen` do perfil. Basta escolher o ESP32 em Ajustes → Escuta CAN. Rotação, temperatura e tensão entram como `can_rpm`, `can_coolant_temp` e `can_voltage`: aparecem no "Testar (15 s)", em Sensores e nas exportações, sem substituir as leituras do ELM327.
+
+**Comparação com o ELM327 em 04/11/2026** (duas viagens com os dois adaptadores ligados juntos, ~1.350 leituras pareadas pelo relógio da gravação de diagnóstico):
+
+| Sinal | Diferença ESP32 − ELM327 | Observação |
+|---|---|---|
+| Temperatura | média −0,3 e −0,1 °C; máximo 2 °C | Resolução de 1 °C nas duas fontes |
+| Tensão | média +0,12 e +0,09 V; 95% até 0,24 V | O CAN anda em passos de 0,16 V e o `ATRV` arredonda para 0,1 V |
+| RPM | média +3 e −4 rpm; mediana ~0 | Diferença típica de 21–25 rpm, depois de alinhar o atraso |
+| Velocidade (`0x2A0`) | mediana +0,6 km/h | Continua batendo |
+
+- **Atraso do ELM327:** a leitura pela linha K chega 400–500 ms depois do quadro CAN. Nas acelerações e trocas de marcha isso dá diferenças de algumas centenas de rpm, que não são erro da fórmula.
+- **Frequência:** o `0x281` passa cerca de 20 vezes por segundo, contra uma leitura de RPM a cada 200 ms ou mais pelo ELM327.
+- **Convivência:** os dois adaptadores funcionaram juntos nas duas viagens, sem cabo Y, com a ligação por pinos de [ligacao-can.md](ligacao-can.md).
 
 **Tanque em 03/11/2026** (ESP32 + TJA1050, só escuta, parado no mesmo lugar antes e depois de abastecer):
 - **Abastecimento:** 7,47 L, que são 15,6% do tanque de 48 L. O `0x380` b5 subiu 16 pontos.

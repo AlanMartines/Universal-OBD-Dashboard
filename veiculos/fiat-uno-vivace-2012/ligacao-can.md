@@ -2,7 +2,10 @@
 
 Esta ligação vale **só para este carro**. A explicação geral da escuta, a gravação do firmware e a análise estão em [docs/can-escuta.md](../../docs/can-escuta.md). Em outro veículo, comece pelo [guia da pasta de veículos](../README.md).
 
-Situação em 01/11/2026: a recepção foi confirmada no carro com o Arduino + MCP2515 e com o ESP32 + TJA1050, usando só o pino 14. A montagem final com o cabo Y e o SN65HVD230 ainda não foi testada.
+Situação em 04/11/2026:
+- A recepção foi confirmada no carro com o Arduino + MCP2515 e com o ESP32 + TJA1050, usando só o pino 14.
+- O ELM327 e o ESP32 funcionaram juntos em duas viagens, sem cabo Y, pela [ligação por pinos](#elm327-e-esp32-juntos-sem-cabo-y).
+- A montagem final (alimentação fixa pelo conversor) e o SN65HVD230 ainda não foram testados.
 
 ## Teste com Arduino Uno + MCP2515
 
@@ -97,7 +100,20 @@ Depois, grave pelo mesmo roteiro: `python3 tools/can-capture/roteiro.py /dev/tty
 
 ## Ligação prevista
 
-No projeto final, o cabo Y mantém os dois adaptadores ligados: o ELM327 lê o motor e o ESP32 escuta a rede CAN. Cada um fala direto com o celular por Bluetooth. Esta ligação ainda não foi testada no carro, nem com o ELM327 no mesmo Y.
+No projeto final, o cabo Y mantém os dois adaptadores ligados: o ELM327 lê o motor e o ESP32 escuta a rede CAN. Cada um fala direto com o celular por Bluetooth. A alimentação do ESP32 pelo pino 16 ainda não foi testada no carro.
+
+### ELM327 e ESP32 juntos sem cabo Y
+
+Testado em 04/11/2026, com o ESP32 alimentado pelo USB:
+
+| Adaptador | Pinos ligados ao carro | Pinos isolados |
+|---|---|---|
+| ELM327 | 4, 5, 7 e 16 | 6 e 14: clones costumam ter 120 Ω entre eles |
+| ESP32 + TJA1050 | 14 (CAN-L) e 5 (terra de sinal) | todos os outros |
+
+- O app conecta os dois ao mesmo tempo: o ELM327 em Ajustes → Adaptador e o ESP32 em Ajustes → Escuta CAN.
+- O ESP32 aceita um cliente Bluetooth por vez. Feche outros apps de terminal antes de capturar.
+- Resultado da comparação entre as duas fontes: [notas do carro](README.md#rede-do-painel-pinos-614-pesquisa-de-24102026).
 
 ![Ligação prevista do ELM327 e do ESP32 com o TJA1050](img/ligacao-esp32-can.svg)
 
