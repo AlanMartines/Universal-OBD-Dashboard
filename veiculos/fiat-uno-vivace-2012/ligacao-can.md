@@ -42,7 +42,7 @@ Arduino GND (2) ──── OBD 5
 O **terra é obrigatório**, não serve só para o multímetro. O transceptor lê a diferença entre CAN-H e CAN-L, mas cada fio precisa estar dentro da faixa que ele aceita em relação ao GND dele. Sem o terra comum, o Arduino e o notebook ficam "flutuando" em relação ao carro, e a recepção falha ou chega com erros. Os pinos GND do Arduino são ligados entre si na placa, então qualquer um serve. O borne de parafuso do módulo normalmente só tem CANH e CANL.
 
 Cuidados:
-- **Tire o jumper de 120 Ω** do módulo (às vezes marcado J1, perto dos bornes CANH/CANL). A rede do carro já tem a terminação dela. Na rede de carroceria tolerante a falhas não há resistor entre os fios, e um de 120 Ω derrubaria a tensão de repouso.
+- **Confira a terminação de 120 Ω** do módulo (às vezes um jumper J1, perto dos bornes CANH/CANL, ou um resistor marcado "121"). A rede do carro já tem a terminação dela. Meça antes, com o módulo fora do carro e o multímetro em Ω entre CANH e CANL. Só retire se der cerca de 120 Ω. Se der bem mais, ou circuito aberto, o resistor "121" que aparece na placa não está ligado entre os dois bornes e deve ficar onde está: tirá-lo à toa pode danificar a placa. Na rede de carroceria tolerante a falhas não há resistor entre os fios, e um de 120 Ω derrubaria a tensão de repouso.
 - **Use o pino 5**, o terra de sinal. O pino 4 é o terra do chassi.
 - **Alimentação só pelo USB do notebook.** Nunca ligue o pino 16 (+12 V) nesta montagem.
 - **Notebook na bateria durante o teste**, sem o carregador na tomada. Assim o terra da casa não se liga ao terra do carro pelo cabo USB.
@@ -57,7 +57,7 @@ Cuidados:
 
 Ordem de montagem:
 1. Meça as tensões com o multímetro.
-2. Tire o jumper de 120 Ω.
+2. Meça entre CANH e CANL. Só se der cerca de 120 Ω, abra o jumper ou retire o resistor.
 3. Ligue os fios dos pinos 14 e 5 e o resistor.
 4. Conecte o USB do notebook.
 
@@ -135,7 +135,7 @@ Testado em 04/11/2026, com o ESP32 alimentado pelo USB:
 | Pino 6 (CAN-H) | Sem ligação |
 
 Cuidados:
-- Meça em Ω entre CANH e CANL: deve dar bem acima de 120 Ω. Se der cerca de 120 Ω, o módulo tem resistor de terminação, e ele precisa sair.
+- Meça em Ω entre CANH e CANL: deve dar bem acima de 120 Ω. Se der cerca de 120 Ω, o resistor de terminação está ligado e precisa sair. Se der bem mais, não mexa no módulo, mesmo que haja um resistor "121" na placa.
 - Solde a montagem. Um mau contato no divisor faz o D21 passar de 3,3 V. Depois de soldar, meça o D21: até 3,4 V, estável.
 - Regule o conversor em 5,0 V antes de ligar o ESP32, e deixe o EN dele sem ligação. Nunca ligue 12 V direto no ESP32.
 - O pino 16 tem energia com o carro desligado, e o programa ainda não tem modo de dormir: desconecte o adaptador ao estacionar.
@@ -155,4 +155,4 @@ Este módulo funciona em 3,3 V, então dispensa o divisor do RX. Em troca, aceit
 | CANL | Pino 14 do OBD |
 | CANH | Resistor de 1 kΩ até o 3V3 do ESP32 |
 
-A alimentação e os pinos do OBD são os mesmos da ligação com o TJA1050. Antes de ligar, retire o resistor de 120 Ω do módulo, marcado "121".
+A alimentação e os pinos do OBD são os mesmos da ligação com o TJA1050. Antes de ligar, meça em Ω entre CANH e CANL. O módulo costuma ter um resistor marcado "121" (120 Ω), mas ele só precisa sair se a medida der cerca de 120 Ω. Se der bem mais, ele não está ligado entre os bornes e fica onde está.

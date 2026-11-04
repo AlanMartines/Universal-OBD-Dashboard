@@ -223,7 +223,7 @@ Setas, pisca-alerta, portas, freio de mão, pedal de freio e cinto não mudam ne
   - Por isso, ligar os pinos 1/9 direto no PIC não funciona. Ligá-los em paralelo com 6/14 junta duas redes do carro e não deve ser feito.
 - **Melhor opção: chave DPDT ON-ON dentro do adaptador.**
   - Os fios do transceptor vão aos terminais do meio da chave; um lado vai aos pinos 6/14 e o outro aos pinos 1/9. O pino 7 (motor) continua ligado nas duas posições.
-  - Retire o resistor de 120 Ω ("121") entre CAN-H e CAN-L, se houver.
+  - Meça em Ω entre CAN-H e CAN-L. Só retire o resistor de 120 Ω ("121") se a medida der cerca de 120 Ω. Se der bem mais, ele não está ligado entre os dois fios e fica onde está.
   - Confira a continuidade antes de fechar a caixa: 6 e 1 = alto, 14 e 9 = baixo, e o plugue do adaptador é espelhado.
   - Troque de posição só com a ignição desligada.
 - **Alternativa sem abrir o adaptador:** o cabo amarelo, mas ele desliga o pino 7 do carro.

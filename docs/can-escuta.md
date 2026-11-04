@@ -31,7 +31,7 @@ Primeiro procure o seu modelo em [`veiculos/`](../veiculos/README.md). Se ele n�
 Cuidados em qualquer carro:
 - **Terra comum é obrigatório.** Sem ele, a recepção falha ou chega com erros.
 - **Use o pino 5**, e não o 4, para o terra do sinal.
-- **Tire o resistor de 120 Ω do módulo.** A rede do carro já tem a terminação dela.
+- **Confira se o módulo tem terminação de 120 Ω ligada.** A rede do carro já tem a terminação dela. Meça antes, com o módulo fora do carro e o multímetro em Ω entre CANH e CANL. Só retire se der cerca de 120 Ω. Se der bem mais, ou circuito aberto, o resistor "121" que aparece na placa não está ligado entre os dois bornes e deve ficar onde está: tirá-lo à toa pode danificar a placa.
 - **Não ligue o pino 16 (+12 V)** em montagens alimentadas pelo USB.
 - **Nunca coloque a saída de 5 V do transceptor direto no ESP32**, que trabalha em 3,3 V.
 - Confira com o multímetro se o cabo liga mesmo os pinos usados. Cabos baratos às vezes pulam pinos.
