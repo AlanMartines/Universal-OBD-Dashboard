@@ -33,8 +33,21 @@ const dateFormat = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'America/Sao_Paulo',
 });
 
+/**
+ * Versão dos arquivos do próprio painel (CSS e JS), mudada a cada subida do serviço: o endereço muda
+ * e o navegador busca o arquivo novo, sem precisar de Ctrl+F5 depois de uma atualização.
+ */
+export const ASSET_VERSION = Date.now().toString(36);
+
 export function createHandlebars() {
   const hbs = Handlebars.create();
+  hbs.registerHelper('asset', (url) => {
+    const text = String(url ?? '');
+    // Só os arquivos do painel; as bibliotecas em /vendor/ já mudam de endereço com a versão do pacote.
+    if (!text.startsWith('/static/') && !text.startsWith('/modules/')) return text;
+    // O endereço vem do código, não de quem usa; mesmo assim é escapado, e só a versão é acrescentada.
+    return new hbs.SafeString(`${Handlebars.escapeExpression(text)}${text.includes('?') ? '&amp;' : '?'}v=${ASSET_VERSION}`);
+  });
   hbs.registerHelper('eq', (a, b) => a === b);
   hbs.registerHelper('initials', (name, fallback) => {
     const text = String((typeof name === 'string' && name) || fallback || '').trim();

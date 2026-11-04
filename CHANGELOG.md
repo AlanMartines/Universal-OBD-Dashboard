@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Painel web depois de uma atualização:** os endereços dos CSS e JS do painel ganham a versão da publicação. O navegador busca os arquivos novos sozinho, sem precisar de Ctrl+F5, e a página não aparece mais com o estilo antigo.
+
 ### Adicionado
 - **Painel web: modo escuro.** Claro, escuro ou automático (segue o sistema), escolhido pelo botão no menu ou na barra superior e lembrado no navegador. O gráfico do histórico e o mapa do percurso acompanham o tema.
 - **Painel web: página inicial com um cartão por veículo,** com a situação (ao vivo ou há quanto tempo chegou a última leitura), as falhas ativas, o consumo real, o gasto do mês, o hodômetro e atalhos para os detalhes, o Painel do veículo e as falhas.

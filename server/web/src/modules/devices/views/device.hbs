@@ -92,11 +92,11 @@
     <div class="table-responsive">
       <table class="table table-sm table-striped table-hover table-stack align-middle mb-0">
         <thead class="table-dark">
-          <tr><th scope="col">Início</th><th scope="col" class="text-end">Duração</th><th scope="col" class="text-end">Distância</th><th scope="col" class="text-end">Combustível</th><th scope="col" class="text-end">km/l</th><th scope="col" class="text-end">Vel. máx.</th><th scope="col" class="text-end">Temp. máx.</th>{{#if ../locationAllowed}}<th scope="col"></th>{{/if}}</tr>
+          <tr><th scope="col">Início</th><th scope="col" class="text-end">Duração</th><th scope="col" class="text-end">Distância</th><th scope="col" class="text-end">Combustível</th><th scope="col" class="text-end">km/l</th><th scope="col" class="text-end">Vel. máx.</th><th scope="col" class="text-end">Temp. máx.</th>{{#if ../locationAllowed}}<th scope="col" class="text-end">Mapa</th>{{/if}}</tr>
         </thead>
         <tbody>
           {{#each trips}}
-          <tr><td data-label="Início">{{date start}}</td><td data-label="Duração" class="text-end">{{minutes}} min</td><td data-label="Distância" class="text-end">{{num km 1}} km</td><td data-label="Combustível" class="text-end">{{num liters 2}} L</td><td data-label="km/l" class="text-end">{{num kmPerL 1}}</td><td data-label="Vel. máx." class="text-end">{{num maxSpeed 0}} km/h</td><td data-label="Temp. máx." class="text-end">{{num maxCoolant 0}} °C</td>{{#if ../locationAllowed}}<td class="table-actions text-end"><button class="btn btn-outline-primary btn-sm" type="button" data-show-trip="{{id}}" title="Ver no mapa" aria-label="Ver a viagem no mapa"><i class="fa-solid fa-route" aria-hidden="true"></i></button></td>{{/if}}</tr>
+          <tr><td data-label="Início">{{date start}}</td><td data-label="Duração" class="text-end">{{minutes}} min</td><td data-label="Distância" class="text-end">{{num km 1}} km</td><td data-label="Combustível" class="text-end">{{num liters 2}} L</td><td data-label="km/l" class="text-end">{{num kmPerL 1}}</td><td data-label="Vel. máx." class="text-end">{{num maxSpeed 0}} km/h</td><td data-label="Temp. máx." class="text-end">{{num maxCoolant 0}} °C</td>{{#if ../locationAllowed}}<td data-label="Mapa" class="table-actions text-end"><button class="btn btn-outline-primary btn-sm" type="button" data-show-trip="{{id}}" title="Ver no mapa" aria-label="Ver a viagem no mapa"><i class="fa-solid fa-route" aria-hidden="true"></i></button></td>{{/if}}</tr>
           {{/each}}
         </tbody>
       </table>

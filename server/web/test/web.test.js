@@ -238,7 +238,10 @@ describe('fluxo pelo navegador', () => {
     assert.match(page.body, /id="fuel-title"/);
     assert.match(page.body, /data-hash="viagens"/);
     assert.match(page.body, /data-hash="falhas"/);
-    assert.match(page.body, /src="\/static\/js\/theme\.js"/);
+    // Arquivos do painel com versão no endereço: depois de atualizar, o navegador busca o novo
+    assert.match(page.body, /src="\/static\/js\/theme\.js\?v=[0-9a-z]+"/);
+    assert.match(page.body, /href="\/modules\/devices\/devices\.css\?v=[0-9a-z]+"/);
+    assert.match(page.body, /src="\/vendor\/chartjs\/chart\.umd\.min\.js"/);
     assert.match(page.body, /Nenhum abastecimento enviado ainda/);
     assert.equal(page.statusCode, 200);
     // A leitura inicial fica em atributo: dentro de <script>, o escape impediria o JSON.parse.
@@ -389,7 +392,7 @@ describe('fluxo pelo navegador', () => {
     assert.match(page.body, /data-password-meter="newPassword"/);
     assert.match(page.body, /id="current-email"/);
     for (const url of ['/vendor/jquery/jquery.min.js', '/vendor/jquery-validation/jquery.validate.min.js', '/static/js/forms.js']) {
-      assert.match(page.body, new RegExp(`src="${url}"`));
+      assert.match(page.body, new RegExp(`src="${url}(\\?v=[0-9a-z]+)?"`));
       assert.equal((await web.inject({ method: 'GET', url })).statusCode, 200, url);
     }
     assert.notEqual((await web.inject({ method: 'GET', url: '/vendor/jquery/jquery.js' })).statusCode, 200);
@@ -532,7 +535,7 @@ describe('fluxo pelo navegador', () => {
     assert.equal(page.statusCode, 200);
     assert.match(page.body, /data-device-id="[0-9a-f-]{36}"/);
     assert.match(page.body, /data-limits="/);
-    assert.match(page.body, /src="\/modules\/vehicle\/dash\.js"/);
+    assert.match(page.body, /src="\/modules\/vehicle\/dash\.js\?v=[0-9a-z]+"/);
     assert.match(page.body, /aria-current="page"[^>]*>|class="active"/);
     assert.equal((await web.inject({ method: 'GET', url: '/modules/vehicle/fonts/ChakraPetch-700.woff2' })).statusCode, 200);
     assert.equal((await web.inject({ method: 'GET', url: '/painel-veiculo' })).headers.location, '/login');

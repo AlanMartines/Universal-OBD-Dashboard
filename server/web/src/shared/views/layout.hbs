@@ -11,15 +11,15 @@
   <link rel="icon" type="image/png" sizes="96x96" href="/assets/favicons/favicon-96x96.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-icon-180x180.png">
   <meta name="color-scheme" content="light dark">
-  <script src="/static/js/theme.js"></script>
+  <script src="{{asset "/static/js/theme.js"}}"></script>
   <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
   <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
-  <link rel="stylesheet" href="/static/css/tokens.css">
-  <link rel="stylesheet" href="/static/css/layout.css">
-  <link rel="stylesheet" href="/static/css/components.css">
-  {{#each pageCss}}<link rel="stylesheet" href="{{this}}">
+  <link rel="stylesheet" href="{{asset "/static/css/tokens.css"}}">
+  <link rel="stylesheet" href="{{asset "/static/css/layout.css"}}">
+  <link rel="stylesheet" href="{{asset "/static/css/components.css"}}">
+  {{#each pageCss}}<link rel="stylesheet" href="{{asset this}}">
   {{/each}}
-  {{#if user}}<script src="/static/js/shell.js"></script>{{/if}}
+  {{#if user}}<script src="{{asset "/static/js/shell.js"}}"></script>{{/if}}
 </head>
 <body>
   <div class="toast-container position-fixed top-0 end-0 p-3 app-toasts" id="app-toasts" aria-live="polite"></div>
@@ -70,12 +70,12 @@
   <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="/vendor/jquery/jquery.min.js"></script>
   <script src="/vendor/jquery-validation/jquery.validate.min.js"></script>
-  <script src="/static/js/forms.js"></script>
-  <script src="/static/js/toast.js"></script>
-  {{#if user}}<script src="/static/js/confirm.js"></script>{{/if}}
-  {{#each pageScripts}}<script src="{{this}}"></script>
+  <script src="{{asset "/static/js/forms.js"}}"></script>
+  <script src="{{asset "/static/js/toast.js"}}"></script>
+  {{#if user}}<script src="{{asset "/static/js/confirm.js"}}"></script>{{/if}}
+  {{#each pageScripts}}<script src="{{asset this}}"></script>
   {{/each}}
-  {{#each pageModules}}<script type="module" src="{{this}}"></script>
+  {{#each pageModules}}<script type="module" src="{{asset this}}"></script>
   {{/each}}
 </body>
 </html>
