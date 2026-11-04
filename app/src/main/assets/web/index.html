@@ -391,6 +391,19 @@
         <p id="backup-result" class="small"></p>
       </div>
 
+      <div class="card form" id="can-card" hidden>
+        <span class="label">Escuta CAN (ESP32) deste veículo</span>
+        <p class="muted small">Lê do painel do carro o nível do tanque, o hodômetro e a velocidade, ao lado do ELM327. Só escuta: o app não envia nada ao adaptador. Os sinais vêm do perfil do veículo.</p>
+        <label>Adaptador de escuta
+          <select id="can-adapter"></select>
+        </label>
+        <div class="row">
+          <button id="can-save" class="btn btn-primary">Salvar</button>
+          <button id="can-test" class="btn">Testar (15 s)</button>
+        </div>
+        <div id="can-result" class="list small"></div>
+      </div>
+
       <div class="card form" id="remote-card">
         <span class="label">Telemetria remota deste veículo (opcional)</span>
         <p class="muted small">Envia as leituras do carro para o seu painel na internet. Sai só o que os sensores medem, o horário e o número da viagem. VIN não é enviado, e o GPS só sai se você ligar a opção abaixo. O servidor nunca envia comandos ao carro.</p>

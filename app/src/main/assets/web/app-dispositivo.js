@@ -140,3 +140,67 @@ $('save-bt').addEventListener('click', () => {
   $('bt-result').textContent = 'Salvo. Vale a partir da próxima captura.';
   toast('Bluetooth salvo. Vale a partir da próxima captura.');
 });
+
+/* ---------------------------------------------------------------- Escuta CAN (ESP32) */
+function loadCanCard(s) {
+  $('can-card').hidden = !(s && s.canSignals > 0);
+  if ($('can-card').hidden) return;
+  const sel = $('can-adapter');
+  const current = s.canAdapterNames || '';
+  sel.innerHTML = '';
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = 'Sem escuta CAN';
+  sel.appendChild(none);
+  bonded.forEach((d) => {
+    const o = document.createElement('option');
+    o.value = d.address;
+    o.textContent = `${d.name || 'Sem nome'} — ${d.address}`;
+    sel.appendChild(o);
+  });
+  const match = bonded.find((d) => sameDevice(current, d));
+  if (match) sel.value = match.address;
+  else if (current) {
+    const o = document.createElement('option');
+    o.value = current;
+    o.textContent = `Digitado: ${current}`;
+    sel.appendChild(o);
+    sel.value = current;
+  }
+  if (lastState && lastState.running && lastState.canStatus) $('can-result').textContent = 'Nesta captura: ' + lastState.canStatus + '.';
+}
+
+$('can-save').addEventListener('click', () => {
+  if ($('can-adapter').value === $('adapter-select').value && $('can-adapter').value) {
+    toast('O adaptador de escuta não pode ser o mesmo do ELM327.', true);
+    return;
+  }
+  okOrToast(bridge.setCanAdapter($('can-adapter').value), $('can-adapter').value ? 'Escuta CAN salva. Vale a partir da próxima captura.' : 'Escuta CAN desligada.');
+});
+
+$('can-test').addEventListener('click', async () => {
+  const btn = $('can-test');
+  btn.disabled = true;
+  btn.textContent = 'Ouvindo…';
+  const box = $('can-result');
+  box.textContent = 'Conectando ao adaptador e ouvindo a rede por 15 s, com a ignição ligada…';
+  const r = parse(await nativeAsync((id) => bridge.testCanListen(id, 15)).catch((e) => JSON.stringify({ ok: false, error: e.message })), { ok: false });
+  btn.disabled = false;
+  btn.textContent = 'Testar (15 s)';
+  box.innerHTML = '';
+  if (!r.ok) { box.textContent = r.error || 'Falha no teste.'; toast(r.error || 'Falha no teste.', true); return; }
+  const head = document.createElement('p');
+  head.textContent = `${fmt(r.frames)} quadros recebidos.`;
+  box.appendChild(head);
+  (r.values || []).forEach((v) => {
+    const row = document.createElement('div');
+    row.className = 'kv';
+    const name = document.createElement('span');
+    name.textContent = v.name;
+    const val = document.createElement('b');
+    val.textContent = v.value == null ? 'sem leitura' : `${fmt(v.value, v.decimals)} ${v.unit}`;
+    row.append(name, val);
+    box.appendChild(row);
+  });
+  toast('Teste da escuta CAN concluído.');
+});

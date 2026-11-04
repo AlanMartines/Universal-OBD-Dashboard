@@ -63,6 +63,8 @@ data class DashboardState(
     val disabledPids: List<String> = emptyList(),
     /** Alarmes de Ajustes carregados pela captura em andamento (null = sem captura). */
     val userAlarmsLoaded: Int? = null,
+    /** Estado da escuta CAN (ESP32) nesta captura; null se ela não está configurada. */
+    val canStatus: String? = null,
 ) {
     /** Valor de uma saída, se lido há no máximo [maxAgeMs]. */
     fun value(id: String?, now: Long = System.currentTimeMillis(), maxAgeMs: Long = STALE_AFTER_MS): Double? {

@@ -6,6 +6,12 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.11] - 2026-11-04
+
+### Adicionado
+- **Escuta CAN no app (ESP32):** em Ajustes → Escuta CAN, cada veículo pode ter um adaptador de escuta, que roda ao lado do ELM327 durante a captura. Os sinais vêm da nova seção `can_listen` do perfil e aparecem como as outras leituras, em Sensores, na gravação e nos alarmes. O nível do tanque, medido com o carro parado, corrige a estimativa de combustível restante, e o hodômetro do painel vira a referência do Total. O botão "Testar (15 s)" mostra o que chega, sem captura. Só leitura: o app não envia nada ao adaptador.
+- **Perfil do Uno Vivace:** velocidade, nível do tanque, hodômetro e parcial pela rede CAN.
+
 ## [0.9.10] - 2026-11-03
 
 ### Alterado

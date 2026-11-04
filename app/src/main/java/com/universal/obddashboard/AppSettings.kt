@@ -39,6 +39,7 @@ object AppSettings {
     private const val KEY_USER_ALARMS_PREFIX = "user_alarms_"
     private const val KEY_TIMED_RUNS_PREFIX = "timed_runs_"
     private const val KEY_ATMOSPHERIC_KPA = "atmospheric_kpa"
+    private const val KEY_CAN_ADAPTER = "can_adapter_names"
 
     /** Chave do ajuste no veículo selecionado (ver [Vehicles]). */
     private fun sk(context: Context, key: String) = Vehicles.scopedKey(key, vid(context))
@@ -90,6 +91,12 @@ object AppSettings {
 
     fun clearTimedRuns(context: Context) =
         prefs(context).edit { remove(KEY_TIMED_RUNS_PREFIX + vid(context)) }
+
+    /** Adaptador de escuta CAN (ESP32) do veículo: nome ou MAC. Vazio = sem escuta. */
+    fun canAdapterNames(context: Context): List<String> = csv(prefs(context).getString(sk(context, KEY_CAN_ADAPTER), null))
+
+    fun setCanAdapterNames(context: Context, csv: String) =
+        prefs(context).edit { putString(sk(context, KEY_CAN_ADAPTER), csv.trim()) }
 
     fun selectedProfileId(context: Context): String =
         prefs(context).getString(KEY_PROFILE, null) ?: ProfileParser.DEFAULT_PROFILE_ID

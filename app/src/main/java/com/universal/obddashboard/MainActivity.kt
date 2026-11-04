@@ -369,6 +369,7 @@ class MainActivity : ComponentActivity() {
                 },
             )
             .put("userAlarmsLoaded", s.userAlarmsLoaded ?: JSONObject.NULL)
+            .put("canStatus", s.canStatus ?: JSONObject.NULL)
             .put("confirmedDtcs", JSONArray(s.confirmedDtcs))
             .put("pendingDtcs", JSONArray(s.pendingDtcs))
             .put("tripId", s.tripId ?: JSONObject.NULL)

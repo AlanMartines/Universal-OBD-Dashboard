@@ -3,6 +3,8 @@ package com.universal.obddashboard.bridge
 import android.webkit.JavascriptInterface
 import com.universal.obddashboard.AppSettings
 import com.universal.obddashboard.MainActivity
+import com.universal.obddashboard.service.ObdForegroundService
+import com.universal.obddashboard.can.CanListenLink
 import com.universal.obddashboard.backup.BackupManager
 import com.universal.obddashboard.diagnostics.CanListener
 import com.universal.obddashboard.diagnostics.ConsoleSession
@@ -61,6 +63,37 @@ class DiagnosticsBridge(private val activity: MainActivity) {
             else -> null
         }
         return JSONObject().put("ready", reason == null).put("reason", reason ?: "Com a ignição ligada, o app conecta, lê e desconecta.").toString()
+    }
+
+    /**
+     * Ajustes → Escuta CAN → Testar: conecta ao ESP32 por [seconds] e devolve os últimos valores de cada
+     * sinal do perfil. Só lê. Com captura em andamento o adaptador já está em uso por ela.
+     */
+    @JavascriptInterface
+    fun testCanListen(requestId: String, seconds: Int) = activity.answerAsync(requestId) {
+        val loaded = activity.currentProfile()
+        val names = AppSettings.canAdapterNames(activity)
+        when {
+            ObdForegroundService.isRunning -> JSONObject().put("ok", false).put("error", "Durante a captura, veja os valores em Sensores.").toString()
+            loaded.canSignals.isEmpty() -> JSONObject().put("ok", false).put("error", "O perfil deste veículo não tem sinais CAN mapeados.").toString()
+            names.isEmpty() -> JSONObject().put("ok", false).put("error", "Escolha o adaptador de escuta e salve.").toString()
+            else -> {
+                val latest = java.util.concurrent.ConcurrentHashMap<String, Double>()
+                var status = ""
+                val link = CanListenLink(activity, loaded.canSignals, { v, _ -> latest.putAll(v) }, { status = it })
+                link.run(names, seconds.coerceIn(5, 60) * 1000L)
+                val values = JSONArray()
+                loaded.canSignals.forEach { s ->
+                    values.put(
+                        JSONObject().put("id", s.def.id).put("name", s.def.name).put("unit", s.def.unit)
+                            .put("decimals", s.def.decimals).put("value", latest[s.def.id] ?: JSONObject.NULL),
+                    )
+                }
+                JSONObject().put("ok", link.frames > 0).put("frames", link.frames).put("values", values)
+                    .put("error", if (link.frames > 0) JSONObject.NULL else status.ifEmpty { "Nenhum quadro recebido. Confira se a ignição está ligada." })
+                    .toString()
+            }
+        }
     }
 
     @JavascriptInterface

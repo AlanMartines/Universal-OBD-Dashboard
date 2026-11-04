@@ -24,6 +24,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   deleteTrip: () => 'ok', deleteAllHistory: () => 'ok', openNotificationSettings() {},
   requestBackgroundLocation() {}, openAppSettings() {}, setIdleTimeoutMin() {}, setResumeWindowMin() {}, setDashMode() {},
   setOdometerKm: () => 'ok',
+  setCanAdapter: () => 'ok', testCanListen: () => '{"ok":true,"frames":1234,"values":[{"id":"can_speed","name":"Velocidade (painel)","unit":"km/h","decimals":0,"value":0},{"id":"fuel_level_pct","name":"Nível do tanque","unit":"%","decimals":0,"value":39}]}',
   faultScanReadiness: () => '{"ready":true,"reason":"Com a ignição ligada, o app conecta, lê e desconecta."}',
   scanFaults: () => '{"ok":true,"viaCapture":false,"milOn":false,"storedCount":1,"confirmed":["P0171"],"pending":[],"permanent":null,"freezeCode":"P0171"}',
   getVehicles: () => '{"selected":"v1","capturing":false,"list":[{"id":"v1","name":"Pré-visualização","plate":"","profileId":"x","profileName":"Perfil"}]}',

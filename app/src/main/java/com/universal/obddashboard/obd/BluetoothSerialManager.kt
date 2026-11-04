@@ -175,6 +175,29 @@ class BluetoothSerialManager(private val context: Context) : ElmMonitorTransport
         }
     }
 
+    /**
+     * Só leitura, para o adaptador de escuta (ESP32): entrega cada linha a [onLine] até o link cair.
+     * Nada é escrito no socket. [onLine] roda na thread de leitura: deve ser rápido.
+     * @throws IOException quando o link cai
+     */
+    suspend fun listenLines(onLine: (String) -> Unit) {
+        if (socket == null) throw IOException("Bluetooth desconectado")
+        val done = CompletableDeferred<String>()
+        synchronized(lock) {
+            rxBuffer.setLength(0)
+            pending = done
+            lineSink = onLine
+        }
+        try {
+            done.await()
+        } finally {
+            synchronized(lock) {
+                lineSink = null
+                if (pending === done) pending = null
+            }
+        }
+    }
+
     private suspend fun write(text: String) {
         val out = output ?: throw IOException("Bluetooth desconectado")
         withContext(Dispatchers.IO) {

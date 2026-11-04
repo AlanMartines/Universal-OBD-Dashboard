@@ -113,6 +113,7 @@ function loadSettings() {
   renderReadiness();
   $('bt-result').textContent = '';
   loadBluetooth(s);
+  loadCanCard(s);
   $('fuel-form').style.display = meta.fuel ? '' : 'none';
   $('ethanol').parentElement.style.display = meta.fuel && meta.fuel.flex ? '' : 'none';
   renderPermissions(parse(bridge.getPermissions(), {}));

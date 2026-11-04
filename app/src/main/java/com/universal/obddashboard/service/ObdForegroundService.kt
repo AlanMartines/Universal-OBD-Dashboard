@@ -31,6 +31,8 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.universal.obddashboard.AppSettings
+import com.universal.obddashboard.can.TankAnchor
+import com.universal.obddashboard.can.CanListenLink
 import com.universal.obddashboard.diagnostics.FaultScan
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -255,6 +257,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 launch { statusNotificationLoop() },
                 launch { remoteUploadLoop() },
                 launch { remoteLiveLoop(loaded) },
+                launch { canListenLoop(loaded) },
                 recorder?.let { launch { diagnosticSnapshotLoop() } },
             )
             val r = connectionLoop(loaded)
@@ -519,6 +522,41 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     }
 
     /** Última leitura para o Painel do veículo. Não guarda nada: se falhar, a próxima já é mais nova. */
+    /**
+     * Escuta CAN (ESP32), em paralelo ao ELM327: só lê. As leituras entram como as demais saídas do
+     * perfil; o nível do tanque ancora a estimativa de combustível e o hodômetro do painel vira a
+     * referência do Total. Sem sinais no perfil ou sem adaptador escolhido, não faz nada.
+     */
+    private suspend fun canListenLoop(loaded: LoadedProfile) {
+        val names = AppSettings.canAdapterNames(this)
+        if (loaded.canSignals.isEmpty() || names.isEmpty()) return
+        val roles = loaded.profile.roles
+        val tank = loaded.profile.fuel?.tankCapacityL?.let { TankAnchor(it) }
+        var odometerApplied = false
+        val link = CanListenLink(
+            this, loaded.canSignals,
+            onValues = { values, ts ->
+                TelemetryHub.mergeValues(values, ts)
+                val s = TelemetryHub.state.value
+                val speed = s.value(roles.speed, ts) ?: s.value(roles.canSpeed, ts)
+                roles.fuelLevelPct?.let { values[it] }?.let { pct ->
+                    tank?.onReading(pct, speed, ts, engine?.fuelLevelL)?.let { liters ->
+                        TelemetryHub.requestFuelOverride(TelemetryHub.FuelOverride(fuelLevelL = liters))
+                    }
+                }
+                roles.odometer?.let { values[it] }?.let { km ->
+                    if (!odometerApplied && s.tripStartedAt != null) {
+                        odometerApplied = true
+                        // O Total passa a ser o hodômetro do painel: viagens desde o início desta contam a partir daí.
+                        AppSettings.setOdometerRef(this, AppSettings.OdometerRef(km - s.tripDistanceKm, s.tripStartedAt))
+                    }
+                }
+            },
+            onStatus = { text -> TelemetryHub.update { it.copy(canStatus = text) } },
+        )
+        link.run(names)
+    }
+
     private suspend fun remoteLiveLoop(loaded: LoadedProfile) {
         val c = applicationContext
         var wait = RemoteUploader.LIVE_IDLE_MS

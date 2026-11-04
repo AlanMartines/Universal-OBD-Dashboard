@@ -45,7 +45,10 @@
     "ltft": null,
     "lambda_voltage": null,
     "mil_on": "mil_on",
-    "dtc_count": "dtc_count"
+    "dtc_count": "dtc_count",
+    "fuel_level_pct": "fuel_level_pct",
+    "odometer": "odometer_km",
+    "can_speed": "can_speed"
   },
 
   "pids": {
@@ -250,6 +253,17 @@
   },
 
   "_comment_speed": "Velocidade da ECU 2,6% abaixo do hodômetro do carro (406,6 km × 418 km num trecho de teste); o GPS ficou 1,8% acima do hodômetro. O fator só entra na distância quando não há GPS.",
+  "_comment_can": "Escuta CAN com ESP32 (veiculos/fiat-uno-vivace-2012): só os sinais confirmados. Rotação, temperatura e tensão entram depois da comparação com o ELM327.",
+  "can_listen": {
+    "bitrate_kbps": 50,
+    "signals": [
+      { "id": "can_speed", "name": "Velocidade (painel)", "frame": "2A0", "start": 0, "length": 2, "formula": "((A*256)+B)/16", "unit": "km/h", "decimals": 0, "min": 0, "max": 250 },
+      { "id": "fuel_level_pct", "name": "Nível do tanque", "frame": "380", "start": 5, "length": 1, "formula": "A", "unit": "%", "decimals": 0, "min": 0, "max": 100 },
+      { "id": "odometer_km", "name": "Hodômetro", "frame": "603", "start": 1, "length": 3, "formula": "(A*65536)+(B*256)+C", "unit": "km", "decimals": 0, "min": 0, "max": 2000000 },
+      { "id": "trip_km", "name": "Parcial do painel", "frame": "643", "start": 5, "length": 3, "formula": "((A*65536)+(B*256)+C)/160", "unit": "km", "decimals": 1, "min": 0, "max": 100000 }
+    ]
+  },
+
   "obd_speed_factor": 1.026,
 
   "telemetry_log_interval_ms": 2000,

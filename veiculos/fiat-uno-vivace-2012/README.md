@@ -160,6 +160,8 @@ Para o receptor:
 
 Setas, pisca-alerta, portas, freio de mão, pedal de freio e cinto não mudam nenhum byte. Os IDs `0x040` e `0x041` aparecem a cada 180 s, sem relação com as ações.
 
+**No app:** velocidade, nível do tanque, hodômetro e parcial estão na seção `can_listen` do perfil. Basta escolher o ESP32 em Ajustes → Escuta CAN. Rotação, temperatura e tensão só entram depois da comparação com o ELM327.
+
 **Tanque em 03/11/2026** (ESP32 + TJA1050, só escuta, parado no mesmo lugar antes e depois de abastecer):
 - **Abastecimento:** 7,47 L, que são 15,6% do tanque de 48 L. O `0x380` b5 subiu 16 pontos.
 - **Marcador do painel:** 4 palitinhos antes (≈ 12 L) e 6 depois (≈ 18 L), com cerca de 3 L cada. O byte deu 23% (≈ 11 L) e 39% (≈ 19 L), dentro da resolução do marcador.

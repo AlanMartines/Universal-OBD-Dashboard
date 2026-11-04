@@ -147,6 +147,8 @@ class AppBridge(private val activity: MainActivity) {
             .put("idleTimeoutMin", AppSettings.idleTimeoutMin(ctx))
             .put("resumeWindowMin", AppSettings.resumeWindowMin(ctx))
             .put("odometerKm", activity.totalKm.takeIf { AppSettings.odometerRef(ctx) != null }.orNull())
+            .put("canAdapterNames", AppSettings.canAdapterNames(ctx).joinToString(", "))
+            .put("canSignals", p?.canSignals?.size ?: 0)
             .toString()
     }
 
@@ -293,6 +295,13 @@ class AppBridge(private val activity: MainActivity) {
 
     @JavascriptInterface
     fun setAdapterNames(csv: String) = AppSettings.setAdapterNames(activity, csv)
+
+    /** Ajustes → Escuta CAN: adaptador ESP32 deste veículo. Vale a partir da próxima captura. */
+    @JavascriptInterface
+    fun setCanAdapter(csv: String): String {
+        AppSettings.setCanAdapterNames(activity, csv)
+        return "ok"
+    }
 
     @JavascriptInterface
     fun setExtraTriggers(csv: String) = AppSettings.setExtraTriggerDevices(activity, csv)

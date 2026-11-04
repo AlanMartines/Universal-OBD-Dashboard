@@ -2,6 +2,8 @@ package com.universal.obddashboard.obd
 
 import android.content.Context
 import com.universal.obddashboard.AppSettings
+import com.universal.obddashboard.can.CanListenSettings
+import com.universal.obddashboard.can.CompiledCanSignal
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -43,6 +45,8 @@ data class VehicleProfile(
      * (pneus fora da medida original ou calibração do sensor de velocidade). Não muda a velocidade exibida.
      */
     @SerialName("obd_speed_factor") val obdSpeedFactor: Double = 1.0,
+    /** Sinais da rede CAN lidos por um adaptador de escuta (ESP32), se o veículo foi mapeado. */
+    @SerialName("can_listen") val canListen: CanListenSettings? = null,
     /** Descrição de códigos de falha específicos do veículo/ECU, ex.: {"P0130": "Sonda lambda pré-catalisador"}. */
     @SerialName("dtc_descriptions") val dtcDescriptions: Map<String, String> = emptyMap(),
 ) {
@@ -94,6 +98,12 @@ data class Roles(
     @SerialName("coolant_temp") val coolantTemp: String? = "coolant_temp",
     @SerialName("intake_temp") val intakeTemp: String? = "intake_temp",
     @SerialName("battery_volts") val batteryVolts: String? = "battery_volts",
+    /** Nível do tanque em % (escuta CAN): ancora a estimativa de combustível restante. */
+    @SerialName("fuel_level_pct") val fuelLevelPct: String? = null,
+    /** Hodômetro do painel em km (escuta CAN): dispensa informar o hodômetro à mão. */
+    val odometer: String? = null,
+    /** Velocidade pela escuta CAN: vale para "carro parado" quando o ELM327 não informa. */
+    @SerialName("can_speed") val canSpeed: String? = null,
     @SerialName("timing_advance") val timingAdvance: String? = "timing_advance",
     @SerialName("engine_load") val engineLoad: String? = "engine_load",
     val stft: String? = "stft_b1",
@@ -283,6 +293,8 @@ class LoadedProfile(
     val commands: List<CompiledCommand>,
     val alerts: List<CompiledAlert>,
     val outputs: Map<String, OutputMeta>,
+    /** Sinais da escuta CAN; vazio se o perfil não tem [VehicleProfile.canListen]. */
+    val canSignals: List<CompiledCanSignal> = emptyList(),
 ) {
     val id: String get() = profile.profileId
 
@@ -303,6 +315,8 @@ object ProfileParser {
 
     const val ASSET_DIR = "profiles"
     const val DEFAULT_PROFILE_ID = "fiat_uno_vivace_7gf"
+    /** Esteira das saídas que vêm da escuta CAN, não de consulta ao ELM327. */
+    const val CAN_LANE = "can"
 
     private val json = Json {
         ignoreUnknownKeys = true   // permite chaves "_comment" e extensões futuras
@@ -391,7 +405,16 @@ object ProfileParser {
 
         profile.fuel?.decelFuelCutCondition?.let { compileFormula(it, "fuel.decel_fuel_cut_condition") }
 
-        return LoadedProfile(profile, commands, alerts, outputs)
+        val canSignals = profile.canListen?.signals.orEmpty().map { s ->
+            val ctx = "Sinal CAN '${s.id}'"
+            val frameId = s.frame.trim().takeIf { Regex("^[0-9A-Fa-f]{1,8}$").matches(it) }?.toInt(16)
+                ?: throw ProfileException("$ctx: frame deve ser o ID em hexadecimal")
+            if (s.start !in 0..7 || s.length !in 1..8 || s.start + s.length > 8) throw ProfileException("$ctx: start/length fora dos 8 bytes do quadro")
+            if (outputs.containsKey(s.id)) throw ProfileException("Saída '${s.id}' duplicada ($ctx)")
+            outputs[s.id] = OutputMeta(s.id, s.name, s.unit, s.decimals, s.min, s.max, CAN_LANE)
+            CompiledCanSignal(s, frameId, compileFormula(s.formula, ctx))
+        }
+        return LoadedProfile(profile, commands, alerts, outputs, canSignals)
     }
 
     /** Lista os perfis disponíveis: embarcados (assets) + importados pelo usuário (filesDir, com precedência). */

@@ -63,7 +63,26 @@ Não precisa acertar `volumetric_efficiency` de primeira. Registre os abastecime
 - `alerts`: condições sobre os ids das saídas, com tempo mínimo (`sustain_ms`) e mensagem com valores (`{coolant_temp}`).
 - `dtc_descriptions`: textos dos códigos de falha específicos do seu carro.
 
-## 7. Só consulta
+## 7. Escuta CAN (opcional)
+
+Só para carros com a rede CAN mapeada, com um adaptador de escuta ESP32 (veja [`veiculos/`](../veiculos/README.md)). A seção `can_listen` diz de qual quadro sai cada sinal:
+
+```json
+"can_listen": {
+  "bitrate_kbps": 50,
+  "signals": [
+    { "id": "fuel_level_pct", "name": "Nível do tanque", "frame": "380", "start": 5, "length": 1, "formula": "A", "unit": "%", "min": 0, "max": 100 }
+  ]
+}
+```
+
+- **`frame`:** ID do quadro em hexadecimal. **`start`** e **`length`:** os bytes usados, que viram `A`, `B`, `C`… na fórmula.
+- **`min` e `max`:** leituras fora da faixa são descartadas.
+- **Papéis:** `fuel_level_pct` ancora o combustível restante, `odometer` vira o hodômetro do Total e `can_speed` diz se o carro está parado quando o ELM327 não informa.
+- **Só sinais confirmados:** um sinal ainda provável não deve entrar, porque o app passa a mostrá-lo como real.
+- **Velocidade da rede:** fica no firmware do adaptador. `bitrate_kbps` é só informativo.
+
+## 8. Só consulta
 
 O app foi feito para **ler**. O perfil deve conter apenas pedidos de consulta:
 - modo `01` (dados atuais), `03`/`07`/`0A` (códigos de falha), `09` (identificação);
