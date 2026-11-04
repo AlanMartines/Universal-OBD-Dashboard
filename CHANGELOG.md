@@ -6,6 +6,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Roteiro de captura (Ajustes → Gravação de diagnóstico):** passos guiados por voz e vibração para mapear a rede de qualquer carro, com o ESP32: portas, cintos, pedais, freio de mão, ré, luzes, limpadores, ventilação, ar-condicionado, rotações fixas, indicador de economia e eletroventilador. Início manual, fim automático, e cada "liga" e "desliga" vira uma marca no arquivo de diagnóstico, no mesmo relógio dos quadros. Só roda com o carro parado e a captura gravando, mantém a captura e a tela ligadas, e não envia nada ao carro. Roteiro genérico em `capture-scripts/generic.json`; um perfil pode trazer o próprio.
+- **`tools/can-capture/roteiro_app.py`:** lê o .gz exportado e mostra, para cada passo, os bits que acompanharam a ação.
+
 ## [0.9.16] - 2026-11-04
 
 ### Adicionado

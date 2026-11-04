@@ -12,6 +12,14 @@ python3 tools/can-capture/can_capture.py comparar antes.log depois.log
 python3 tools/can-capture/can_capture.py marcas captura.log --janela 2
 ```
 
+## Roteiro de captura do app
+
+O app grava as marcas do Roteiro de captura no arquivo de diagnóstico, junto dos quadros do ESP32. Para ver o que mudou em cada passo:
+
+```bash
+python3 tools/can-capture/roteiro_app.py diag_….jsonl.gz [--passo door_driver]
+```
+
 ## Sessão guiada no carro
 
 ```bash

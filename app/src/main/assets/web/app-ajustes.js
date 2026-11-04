@@ -268,6 +268,7 @@ const mb = (bytes) => fmt(bytes / 1048576, bytes < 10485760 ? 1 : 0) + ' MB';
 function renderDiagnostics() {
   const d = parse(bridge.getDiagnostics(), { enabled: false, files: [] });
   $('diag-enabled').checked = !!d.enabled;
+  $('script-entry').hidden = !d.enabled;
   const box = $('diag-files');
   box.innerHTML = d.files.length ? '' : '<p class="muted small">Nenhum arquivo gravado.</p>';
   d.files.forEach((f) => {
@@ -290,7 +291,7 @@ function renderDiagnostics() {
   });
 }
 
-$('diag-enabled').addEventListener('change', (e) => bridge.setDiagnosticRecording(e.target.checked));
+$('diag-enabled').addEventListener('change', (e) => { bridge.setDiagnosticRecording(e.target.checked); $('script-entry').hidden = !e.target.checked; });
 $('diag-files').addEventListener('click', (e) => {
   const exp = e.target.closest('[data-diag-export]');
   const del = e.target.closest('[data-diag-delete]');

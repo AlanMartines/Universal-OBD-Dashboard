@@ -1206,6 +1206,21 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         @Volatile var isRunning = false
             private set
 
+        /** Captura em andamento com gravação de diagnóstico: as marcas do roteiro têm onde ir. */
+        val isRecording: Boolean get() = current?.recorder?.isActive == true
+
+        /**
+         * Grava uma marca do roteiro de captura no arquivo de diagnóstico, no mesmo relógio dos quadros.
+         * false se não há captura gravando.
+         */
+        fun mark(fields: Map<String, Any>): Boolean {
+            val rec = current?.recorder?.takeIf { it.isActive } ?: return false
+            rec.event("mark") {
+                fields.forEach { (k, v) -> if (v is Int) put(k, v) else put(k, v.toString()) }
+            }
+            return true
+        }
+
         /**
          * @return false se o sistema bloqueou o início em segundo plano (Android 12+). Com o console
          * de diagnóstico em uso não inicia: o adaptador atende uma conexão por vez.

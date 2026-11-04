@@ -2,7 +2,7 @@
 /* Ponte nativa, utilitários e abas. Os arquivos app-*.js compartilham o escopo global e são carregados em ordem (index.html). */
 /* Ponte nativa: um objeto por assunto (pacote bridge do app). Cada chamada à `bridge` acha o método no objeto
    que o tem. Fora do app (navegador) usa um simulador para pré-visualização. */
-const NATIVE_BRIDGES = ['AndroidBridge', 'AndroidHistory', 'AndroidFuel', 'AndroidDiag', 'AndroidAi', 'AndroidRemote']
+const NATIVE_BRIDGES = ['AndroidBridge', 'AndroidHistory', 'AndroidFuel', 'AndroidDiag', 'AndroidAi', 'AndroidRemote', 'AndroidCapture']
   .map((n) => window[n]).filter(Boolean);
 const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   get: (_, name) => {
@@ -52,6 +52,10 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   aiExplainDtc() {}, aiTest() {}, aiSavedAnswer: () => 'null', aiPreviewTrip: () => '{"ok":true,"text":"(pré-visualização)"}', aiAnalyzeTrip() {},
   aiPreviewAsk: () => '{"ok":true,"text":"(pré-visualização)"}', aiAsk() {},
   consolePoll: () => '{"running":false,"seq":0,"lines":[]}', readDiagnostic: () => '{"lines":[]}',
+  getCaptureScript: () => JSON.stringify({ ok: true, diagEnabled: true, recording: true, script: { title: 'Mapeamento da rede do carro', groups: [
+    { id: 'ignition', title: 'Ignição ligada, motor desligado', place: 'stopped', steps: [
+      { id: 'door_driver', title: 'Porta do motorista', priority: true, engine: 'off', pattern: { on: 'Abra a porta', off: 'Feche a porta', on_s: 3, off_s: 3, repeat: 2 } }] }] } }),
+  captureMark: () => 'ok', captureSpeak() {}, captureVibrate() {}, captureKeepAlive() {},
 };
 
 /* Consultas ao banco respondem depois, em window.onBridgeResult, para não prender a tela enquanto o banco trabalha.

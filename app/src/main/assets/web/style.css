@@ -265,3 +265,29 @@ input[readonly] { opacity: .7; }
 .fu-fill { border: 1px solid var(--line, #2a3340); border-radius: 10px; padding: 8px 12px; margin: 8px 0; }
 .fu-fill legend { padding: 0 4px; font-size: 14px; }
 .fu-sync { gap: 8px; margin: 4px 0 8px; flex-wrap: wrap; }
+
+/* ---------------------------------------------------------------- Roteiro de captura */
+#script-status { flex: 1; min-width: 0; }
+.script-ready { padding: 8px 10px; border-radius: 10px; background: var(--card-2); color: var(--muted); }
+.script-ready.ok { background: rgba(61, 220, 132, .12); color: var(--accent); }
+.script-ready.bad { background: rgba(255, 201, 64, .14); color: var(--yellow); }
+.script-group { margin: 14px 0 6px; }
+.script-group h3 { margin: 0 0 2px; font-size: 0.95rem; }
+.script-group p { margin: 0 0 6px; }
+.script-step { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; margin-bottom: 6px; }
+.script-step .st-title { flex: 1; min-width: 0; }
+.script-step .st-mark { flex: none; font-size: 0.8rem; color: var(--muted); }
+.script-step.done .st-mark { color: var(--accent); }
+.script-step.skipped .st-mark { color: var(--yellow); }
+.script-step-title { margin: 12px 0 4px; }
+.script-warn { color: var(--yellow); }
+.script-live { margin: 12px 0; padding: 16px; border-radius: var(--radius); background: var(--card); text-align: center; }
+.script-say { font-size: 1.5rem; font-weight: 700; line-height: 1.25; min-height: 2.5em; display: flex; align-items: center; justify-content: center; }
+.script-live.on .script-say { color: var(--accent); }
+.script-live.off .script-say { color: var(--blue); }
+.script-count { font-size: 3.2rem; font-weight: 700; font-variant-numeric: tabular-nums; margin: 6px 0; }
+.script-buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+.script-buttons .label { width: 100%; }
+.script-actions { margin: 8px 0; }
+.script-summary { margin-top: 12px; }
+.script-result { font-weight: 700; }
