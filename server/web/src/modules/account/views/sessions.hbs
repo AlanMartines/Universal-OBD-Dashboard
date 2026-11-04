@@ -5,7 +5,7 @@
   </form>
 {{/pageHeader}}
 {{#> dataTable}}
-  <thead class="table-dark"><tr><th>Dispositivo</th><th>IP</th><th>Início</th><th>Último acesso</th><th></th></tr></thead>
+  <thead class="table-dark"><tr><th>Dispositivo</th><th>IP</th><th>Início</th><th>Último acesso</th><th scope="col" class="text-center">Ação</th></tr></thead>
   <tbody>
     {{#each sessions}}
     <tr>
@@ -15,7 +15,7 @@
       <td data-label="IP" class="text-break">{{ip}}</td>
       <td data-label="Início">{{date created_at}}</td>
       <td data-label="Último acesso">{{date last_seen_at}}</td>
-      <td class="table-actions text-end">
+      <td class="table-actions text-center">
         {{#unless current}}
         <form method="post" action="/conta/sessoes/{{id}}/encerrar" class="d-inline" data-confirm="Encerrar esta sessão?" data-confirm-label="Encerrar">
           <input type="hidden" name="_csrf" value="{{../csrf}}">

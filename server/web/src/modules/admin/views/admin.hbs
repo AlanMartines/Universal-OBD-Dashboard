@@ -65,7 +65,7 @@
 
 <h2 class="h5">Usuários</h2>
 {{#> dataTable}}
-    <thead class="table-dark"><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Conta</th><th>Situação</th><th>Dispositivos</th><th>Criado em</th><th></th></tr></thead>
+    <thead class="table-dark"><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Conta</th><th>Situação</th><th>Dispositivos</th><th>Criado em</th><th scope="col" class="text-center">Ação</th></tr></thead>
     <tbody>
       {{#each users}}
       <tr>
@@ -79,7 +79,7 @@
         </td>
         <td data-label="Dispositivos">{{devices}}</td>
         <td data-label="Criado em">{{date created_at}}</td>
-        <td class="table-actions text-end">
+        <td class="table-actions text-center">
           {{#unless (eq id ../user.id)}}
           {{#if ../isSuper}}{{#unless (eq role "superadmin")}}{{#unless disabled}}
           <form method="post" action="/admin/usuarios/{{id}}/personificar" class="d-inline" data-confirm="Entrar como {{username}}? A sessão de suporte dura 1 hora e fica registrada na auditoria." data-confirm-label="Entrar">

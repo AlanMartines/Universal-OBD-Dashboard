@@ -40,7 +40,7 @@
 {{#if devices.length}}
 {{#> dataTable}}
     <thead class="table-dark">
-      <tr><th>Nome</th>{{#if (eq user.role "superadmin")}}<th>Conta</th>{{/if}}<th>Situação</th><th>Último envio</th><th>ID da instalação</th><th></th></tr>
+      <tr><th>Nome</th>{{#if (eq user.role "superadmin")}}<th>Conta</th>{{/if}}<th>Situação</th><th>Último envio</th><th>ID da instalação</th><th scope="col" class="text-center">Ação</th></tr>
     </thead>
     <tbody>
       {{#each devices}}
@@ -54,7 +54,7 @@
         </td>
         <td data-label="Último envio">{{date lastSeenAt}}</td>
         <td data-label="ID da instalação" class="small text-body-secondary font-monospace text-break">{{installationId}}</td>
-        <td class="table-actions text-end">
+        <td class="table-actions text-center">
           {{#if pairedAt}}<a class="btn btn-primary btn-sm" href="/dispositivos/{{id}}" title="Visualizar" aria-label="Visualizar {{name}}"><i class="fa-solid fa-eye" aria-hidden="true"></i></a>
           <a class="btn btn-outline-primary btn-sm" href="/painel-veiculo?dispositivo={{id}}" title="Painel do veículo" aria-label="Painel do veículo de {{name}}"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></a>{{/if}}
           {{#if (canManage ../user)}}
