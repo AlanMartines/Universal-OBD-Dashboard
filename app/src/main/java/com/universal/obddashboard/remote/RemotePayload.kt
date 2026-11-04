@@ -79,7 +79,17 @@ object RemotePayload {
     private const val MAX_ALERTS = 5
     private const val MAX_ALERT_TEXT = 160
 
-    fun live(s: TelemetryLogEntity, sendGps: Boolean, dtcs: List<String>, extras: Map<String, Double?>, alerts: List<LiveAlert> = emptyList()): String {
+    private val APP_VERSION = Regex("^[A-Za-z0-9._+-]{1,32}$")
+
+    fun live(
+        s: TelemetryLogEntity,
+        sendGps: Boolean,
+        dtcs: List<String>,
+        extras: Map<String, Double?>,
+        alerts: List<LiveAlert> = emptyList(),
+        /** Versão instalada: o painel mostra a atual, não só a do pareamento. */
+        appVersion: String? = null,
+    ): String {
         val base = sample(s, sendGps, dtcs)
         val metrics = linkedMapOf<String, JsonPrimitive>()
         base["metrics"]?.jsonObject?.forEach { (k, v) -> metrics[k] = v.jsonPrimitive }
@@ -88,6 +98,7 @@ object RemotePayload {
         }
         return buildJsonObject {
             put("ts", s.timestamp)
+            appVersion?.takeIf { APP_VERSION.matches(it) }?.let { put("appVersion", it) }
             put("metrics", JsonObject(metrics))
             base["dtcs"]?.let { put("dtcs", it) }
             base["gps"]?.let { put("gps", it) }

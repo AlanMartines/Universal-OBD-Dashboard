@@ -203,6 +203,7 @@ export default function deviceRoutes(app, { pool, live, limit }) {
         additionalProperties: false,
         properties: {
           ts: sampleSchema.properties.ts,
+          appVersion: { type: 'string', maxLength: 32, pattern: '^[A-Za-z0-9._+-]+$' },
           metrics: sampleSchema.properties.metrics,
           dtcs: sampleSchema.properties.dtcs,
           gps: sampleSchema.properties.gps,
@@ -223,9 +224,21 @@ export default function deviceRoutes(app, { pool, live, limit }) {
       },
     },
   }, async (request) => {
-    const { ts, metrics, dtcs, gps, alerts } = request.body;
+    const { ts, metrics, dtcs, gps, alerts, appVersion } = request.body;
+    if (appVersion) {
+      // O pareamento grava a versão uma vez; daqui em diante, ela acompanha as atualizações do app.
+      await pool.query('UPDATE devices SET app_version = $2 WHERE id = $1 AND app_version IS DISTINCT FROM $2', [request.device.id, appVersion]);
+    }
     const now = Date.now();
     if (ts > now + FUTURE_TOLERANCE_MS || ts < now - LIVE_MAX_AGE_MS) return { viewers: live.listenerCount(request.device.id), accepted: false };
+    // Hodômetro: o do painel (escuta CAN) vale mais que o Total calculado pelo app.
+    const odometer = [metrics.odometer_km, metrics['app.odometer_km']].find((v) => typeof v === 'number' && v >= 0 && v <= 10000000);
+    if (odometer !== undefined) {
+      await pool.query(
+        'UPDATE devices SET odometer_km = $2, odometer_at = now() WHERE id = $1 AND odometer_km IS DISTINCT FROM $2',
+        [request.device.id, odometer],
+      );
+    }
     const limits = dashLimitsFrom(metrics);
     if (limits) {
       // Só grava quando muda: esta rota recebe uma leitura por segundo.

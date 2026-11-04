@@ -339,8 +339,17 @@ describe('API', () => {
       const { faults } = (await internal(app, 'GET', `/internal/devices/${dev.id}/faults`, { token: alice })).json();
       const p0171 = faults.find((f) => f.code === 'P0171');
       assert.equal(p0171.readings, 2);
-      const overview = (await internal(app, 'GET', '/internal/devices/overview', { token: alice })).json();
+      let overview = (await internal(app, 'GET', '/internal/devices/overview', { token: alice })).json();
       assert.ok(overview.vehicles.some((v) => v.id === dev.id));
+      // O Total do app chega pela leitura ao vivo e fica guardado no dispositivo
+      const live = await app.inject({ method: 'POST', url: '/api/v1/live', headers: { authorization: `Bearer ${dev.deviceToken}` }, payload: { ts: Date.now(), appVersion: '9.9.9', metrics: { 'app.odometer_km': 123456.7 } } });
+      assert.equal(live.statusCode, 200);
+      // A versão do app acompanha as atualizações, não fica a do pareamento
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: alice })).json().device.appVersion, '9.9.9');
+      overview = (await internal(app, 'GET', '/internal/devices/overview', { token: alice })).json();
+      const mine = overview.vehicles.find((v) => v.id === dev.id);
+      assert.equal(mine.odometerKm, 123456.7);
+      assert.equal(mine.odometerFromFuelUp, false);
       assert.match(overview.month, /^\d{4}-\d{2}$/);
     });
 

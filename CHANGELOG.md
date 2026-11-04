@@ -6,8 +6,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
-### Corrigido
-- **Painel web depois de uma atualização:** os endereços dos CSS e JS do painel ganham a versão da publicação. O navegador busca os arquivos novos sozinho, sem precisar de Ctrl+F5, e a página não aparece mais com o estilo antigo.
+## [0.9.14] - 2026-11-04
 
 ### Adicionado
 - **Painel web: modo escuro.** Claro, escuro ou automático (segue o sistema), escolhido pelo botão no menu ou na barra superior e lembrado no navegador. O gráfico do histórico e o mapa do percurso acompanham o tema.
@@ -19,6 +18,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ### Alterado
 - **Painel web no celular:** uma barra superior com o menu, o título da página e o tema substitui o botão flutuante, que cobria o conteúdo ao rolar.
 - **Painel web: acabamento,** com escala de espaçamento e sombras nos tokens, cantos mais arredondados, transições curtas (desligadas com movimento reduzido), estados vazios com ícone e as telas de entrar, cadastro e senha num cartão centralizado.
+
+### Corrigido
+- **Versão do app no painel web:** o app envia a versão instalada na leitura ao vivo, e o cabeçalho do dispositivo deixa de mostrar a versão do dia do pareamento.
+- **Hodômetro no cartão do veículo (painel web):** o app passa a enviar o Total (hodômetro informado em Ajustes mais as viagens desde então) na leitura ao vivo, e o servidor guarda o último valor. O hodômetro do painel do carro, pela escuta CAN, tem prioridade. Sem nenhum dos dois, o cartão mostra o do último abastecimento, marcado como tal. Migração 008.
+- **Painel web depois de uma atualização:** os endereços dos CSS e JS do painel ganham a versão da publicação. O navegador busca os arquivos novos sozinho, sem precisar de Ctrl+F5, e a página não aparece mais com o estilo antigo.
 
 ## [0.9.13] - 2026-11-04
 

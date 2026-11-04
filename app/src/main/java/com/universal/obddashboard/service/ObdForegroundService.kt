@@ -563,6 +563,15 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         link.run(names)
     }
 
+    /**
+     * Total do app: hodômetro informado em Ajustes + distância das viagens desde então (a viagem em
+     * andamento conta até a última gravação). null se o hodômetro nunca foi informado.
+     */
+    private suspend fun appOdometerKm(): Double? {
+        val ref = AppSettings.odometerRef(this) ?: return null
+        return runCatching { ref.km + dao.distanceSinceKm(ref.since, vehicleId) }.getOrNull()
+    }
+
     private suspend fun remoteLiveLoop(loaded: LoadedProfile) {
         val c = applicationContext
         var wait = RemoteUploader.LIVE_IDLE_MS
@@ -575,6 +584,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             val s = TelemetryHub.state.value
             if (s.connection != ConnectionStatus.STREAMING) continue
             wait = try {
+                val odometerNow = appOdometerKm()
                 val body = withContext(Dispatchers.Default) {
                     val v = loaded.profile
                     val dash = AppSettings.dashboard(c, loaded)
@@ -606,8 +616,11 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                             "dash.criticalC" to v.thermal?.criticalC?.toDouble(),
                             "dash.tankL" to v.fuel?.tankCapacityL,
                             "dash.reserveL" to v.fuel?.reserveMaxL,
+                            // Total do app (hodômetro informado + viagens desde então), para o painel web
+                            "app.odometer_km" to odometerNow,
                         ),
                         s.alerts.map { RemotePayload.LiveAlert(it.level.name, it.message) },
+                        BuildConfig.VERSION_NAME,
                     )
                 }
                 val viewers = withContext(Dispatchers.IO) { RemoteClient(RemoteSettings.baseUrl(c)).live(token, body) }

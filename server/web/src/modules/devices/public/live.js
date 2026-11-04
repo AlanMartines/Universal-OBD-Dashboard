@@ -55,7 +55,7 @@
   var chartRequest = 0;
 
   // Limites dos mostradores e dados internos da viagem não são sinais para exibir.
-  function isInternal(id) { return id.indexOf('dash.') === 0 || id.indexOf('trip.') === 0; }
+  function isInternal(id) { return id.indexOf('dash.') === 0 || id.indexOf('trip.') === 0 || id.indexOf('app.') === 0; }
 
   function info(id) {
     if (LABELS[id]) return LABELS[id];

@@ -23,7 +23,7 @@
           <div><dt>Falhas ativas</dt><dd class="{{#if dtcCount}}text-danger{{/if}}">{{dtcCount}}</dd></div>
           <div><dt>Consumo real</dt><dd>{{#if avgKmPerL}}{{num avgKmPerL 1}} <small>km/l</small>{{else}}—{{/if}}</dd></div>
           <div><dt>Gasto em {{../monthLabel}}</dt><dd>{{brl monthCost}}</dd></div>
-          <div><dt>Hodômetro</dt><dd>{{#if odometerKm}}{{num odometerKm 0}} <small>km</small>{{else}}—{{/if}}</dd></div>
+          <div><dt>Hodômetro{{#if odometerFromFuelUp}} <span class="fw-normal">(no último abastecimento)</span>{{/if}}</dt><dd>{{#if odometerKm}}{{num odometerKm 0}} <small>km</small>{{else}}—{{/if}}</dd></div>
         </dl>
         <footer class="vehicle-card-actions">
           <a class="btn btn-primary btn-sm" href="/dispositivos/{{id}}"><i class="fa-solid fa-eye me-1" aria-hidden="true"></i>Detalhes</a>

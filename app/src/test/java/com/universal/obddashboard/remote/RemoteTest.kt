@@ -169,6 +169,10 @@ class RemoteTest {
         assertEquals(1, alerts.size)
         assertEquals("Rotação: 6500 RPM script", alerts[0].jsonObject["message"]!!.jsonPrimitive.content)
         assertEquals(0, Json.parseToJsonElement(RemotePayload.live(entity(5), false, emptyList(), emptyMap())).jsonObject["alerts"]!!.jsonArray.size)
+        val versioned = Json.parseToJsonElement(RemotePayload.live(entity(5), false, emptyList(), emptyMap(), emptyList(), "0.9.14")).jsonObject
+        assertEquals("0.9.14", versioned["appVersion"]!!.jsonPrimitive.content)
+        assertEquals("versão fora do formato não vai", null,
+            Json.parseToJsonElement(RemotePayload.live(entity(5), false, emptyList(), emptyMap(), emptyList(), "0.9 <x>")).jsonObject["appVersion"])
     }
 
     @Test fun ritmoAoVivoSegueQuemEstaOlhando() {

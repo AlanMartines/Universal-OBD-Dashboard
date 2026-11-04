@@ -81,7 +81,7 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
   app.get('/internal/devices/overview', { preValidation: requireReady }, async (request) => {
     const { user } = request.session;
     const { rows } = await pool.query(
-      `SELECT d.id, d.name, d.last_seen_at, u.username AS owner,
+      `SELECT d.id, d.name, d.last_seen_at, u.username AS owner, d.odometer_km AS device_odometer,
               s.ts AS latest_ts, coalesce(s.dtcs, '{}') AS dtcs,
               (s.metrics->>'odometer_km')::float AS odometer_km
          FROM devices d JOIN users u ON u.id = d.user_id
@@ -94,21 +94,27 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     );
     const ids = rows.map((r) => r.id);
     const fuel = ids.length ? (await pool.query(
-      `SELECT device_id, local_id, ts, odometer_km, liters, total_price, fuel_type, full_tank
-         FROM fuel_ups WHERE device_id = ANY($1::uuid[]) AND removed_at IS NULL ORDER BY ts`,
+      `SELECT device_id, local_id, ts, odometer_km, liters, total_price, fuel_type, full_tank, removed_at
+         FROM fuel_ups WHERE device_id = ANY($1::uuid[]) ORDER BY ts`,
       [ids],
     )).rows : [];
     const month = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit' }).format(new Date());
     return {
       month,
       vehicles: rows.map((r) => {
-        const items = fuel.filter((f) => f.device_id === r.id).map((f) => ({
+        const mine = fuel.filter((f) => f.device_id === r.id && f.removed_at === null);
+        const lastFuelOdometer = [...mine].reverse().find((f) => f.odometer_km !== null)?.odometer_km ?? null;
+        const items = mine.map((f) => ({
           ts: f.ts.getTime(), odometerKm: f.odometer_km, liters: f.liters, totalPrice: f.total_price, fuelType: f.fuel_type, fullTank: f.full_tank,
         }));
         const summary = fuelSummary(items);
         return {
           id: r.id, name: r.name, owner: r.owner, lastSeenAt: r.last_seen_at, latestTs: r.latest_ts,
-          dtcs: r.dtcs, odometerKm: r.odometer_km, avgKmPerL: summary.avgKmPerL, monthCost: summary.costByMonth[month] ?? 0,
+          dtcs: r.dtcs,
+          // Hodômetro atual (painel ou app); sem ele, o do último abastecimento, marcado como tal.
+          odometerKm: r.device_odometer ?? r.odometer_km ?? lastFuelOdometer,
+          odometerFromFuelUp: r.device_odometer === null && r.odometer_km === null && lastFuelOdometer !== null,
+          avgKmPerL: summary.avgKmPerL, monthCost: summary.costByMonth[month] ?? 0,
         };
       }),
     };
