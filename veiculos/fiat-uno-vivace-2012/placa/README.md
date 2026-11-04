@@ -4,6 +4,14 @@ Placa perfurada de ilhas soltas, 5 × 7 cm (grade de 2,54 mm), com o ESP32 DevKi
 
 > **Situação: provisória.** As posições usam medidas de catálogo, que variam entre fabricantes. Antes de soldar, confira com as medidas da tabela abaixo e gere de novo.
 
+## Desenho
+
+| Vista de cima (componentes) | Vista de baixo (solda, espelhada) |
+|---|---|
+| ![Vista de cima da placa: ESP32, porta-fusível, resistores, módulos e fios F1 a F11](cima-2x.svg) | ![Vista de baixo da placa: pontes de solda coloridas](baixo-2x.svg) |
+
+Cores: vermelho 12 V e 5 V, preto GND, laranja 3V3, amarelo RX/D21, azul CAN. Furos indicados como (coluna, linha), na numeração das bordas do desenho.
+
 ## Arquivos
 
 | Arquivo | O que é |
@@ -24,6 +32,47 @@ Placa perfurada de ilhas soltas, 5 × 7 cm (grade de 2,54 mm), com o ESP32 DevKi
 - **Cabo OBD:** fios soldados nas ilhas da borda de cima: 16 (+12 V), 4 (chassi), 5 (terra de sinal) e 14 (CAN-L).
 
 Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio F3 (OUT+ → VIN) ainda solto.
+
+## Pontes, resistores e fios
+
+**Pontes de solda (lado de baixo)**
+
+| Ligação | Furos |
+|---|---|
+| Pino 16 (+12 V) → porta-fusível | (15,1) – (15,2) – (15,3) |
+| 5 V: VIN do ESP32 | (12,3) – (13,3) – (13,2) |
+| GND do ESP32 (direita) | (12,4) – (13,4) – (13,5) – (14,5) |
+| 3V3 do ESP32 → R4 | (2,3) – (3,3) – (4,3) |
+| GND do ESP32 (esquerda) | (2,4) – (3,4) |
+| D21 → R1 e R2 | (2,13) – (3,13) – (4,13) – (5,13) |
+| R2 → R3 | (9,13) – (10,13) |
+
+**Resistores (1 kΩ, 1/4 W)**
+
+| | Furos | Função |
+|---|---|---|
+| R1 | (4,9) – (4,13) | RX do TJA1050 → D21 |
+| R2 | (5,13) – (9,13) | D21 → R3 (divisor) |
+| R3 | (10,13) – (10,9) | R2 → GND (divisor) |
+| R4 | (4,3) – (8,3) | 3V3 → CANH |
+
+**Fios (isolados, curtos)**
+
+| | De | Para |
+|---|---|---|
+| F1 | Porta-fusível, clipe de baixo (15,12) | RT8272 IN+ |
+| F2 | Ilha do pino 4 (16,1) | RT8272 IN− |
+| F3 | 5 V (13,2) | RT8272 OUT+, **só depois de regular 5,0 V** |
+| F4 | GND (13,5) | RT8272 OUT− |
+| F5 | 5 V (13,3) | TJA1050 VCC; no módulo, ligue também o TX ao VCC |
+| F6 | GND (13,4) | TJA1050 GND |
+| F7 | R1 (4,9) | TJA1050 RX |
+| F8 | R4 (8,3) | TJA1050 CANH |
+| F9 | Ilha do pino 14 (18,1) | TJA1050 CANL |
+| F10 | Ilha do pino 5 (17,1) | GND (14,5) |
+| F11 | R3 (10,9) | GND esquerdo (3,4) |
+
+**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre (15,1) e GND, nem entre (13,2) e GND. Com o ESP32 fora das barras e o F3 solto, regule o OUT+ do RT8272 em 5,0 V. Depois de soldar o F3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
 
 ## Medidas dos componentes
 
