@@ -1,6 +1,6 @@
 # Fiat Uno Vivace 1.0 Flex — IAW 7GF
 
-**Nesta pasta:** estas notas, a [ligação da escuta CAN](ligacao-can.md) e os diagramas em [`img/`](img/). O perfil do app fica em [`fiat_uno_vivace_7gf.json`](../../app/src/main/assets/profiles/fiat_uno_vivace_7gf.json), porque ele vai dentro do APK.
+**Nesta pasta:** estas notas, a [ligação da escuta CAN](ligacao-can.md), os diagramas em [`img/`](img/) e a [placa ilhada](placa/README.md) do ESP32. O perfil do app fica em [`fiat_uno_vivace_7gf.json`](../../app/src/main/assets/profiles/fiat_uno_vivace_7gf.json), porque ele vai dentro do APK.
 
 ## Capturas pendentes
 
