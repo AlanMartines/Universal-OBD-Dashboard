@@ -6,6 +6,14 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.18] - 2026-11-04
+
+### Adicionado
+- **Roteiro de captura: botão "Testar voz e vibração"**, que fala "liga" com vibração forte e "desliga" com vibração curta, para conferir antes de começar. A lista explica a estrela (★ = passo prioritário).
+
+### Corrigido
+- **Roteiro de captura: passos de liga e desliga sem tempo.** Os tempos e repetições iguais ao padrão (10 s, 3 vezes) não chegavam à tela: aparecia "undefined s" e o passo não terminava sozinho.
+
 ## [0.9.17] - 2026-11-04
 
 ### Adicionado

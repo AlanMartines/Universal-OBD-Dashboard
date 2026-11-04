@@ -64,7 +64,8 @@ data class CaptureScript(
     class ScriptException(message: String) : Exception(message)
 
     companion object {
-        private val json = Json { ignoreUnknownKeys = true }
+        // encodeDefaults: a tela precisa de todos os campos (on_s, off_s, repeat…), mesmo os iguais ao padrão
+        private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
         private val ID = Regex("^[a-z0-9_]{1,32}$")
         private const val MAX_TEXT = 240
         const val GENERIC = "generic"

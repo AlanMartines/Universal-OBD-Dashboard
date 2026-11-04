@@ -271,6 +271,7 @@ input[readonly] { opacity: .7; }
 .script-ready { padding: 8px 10px; border-radius: 10px; background: var(--card-2); color: var(--muted); }
 .script-ready.ok { background: rgba(61, 220, 132, .12); color: var(--accent); }
 .script-ready.bad { background: rgba(255, 201, 64, .14); color: var(--yellow); }
+#script-test { margin-top: 8px; }
 .script-group { margin: 14px 0 6px; }
 .script-group h3 { margin: 0 0 2px; font-size: 0.95rem; }
 .script-group p { margin: 0 0 6px; }

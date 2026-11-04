@@ -4,6 +4,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import java.io.File
 
 class CaptureScriptTest {
@@ -28,6 +33,18 @@ class CaptureScriptTest {
         assertTrue("grupo em movimento não tem passos", s.groups.filter { it.place == "moving" }.all { it.steps.isEmpty() })
         // O roteiro volta à tela pelo encode; precisa sair igual
         assertEquals(s, CaptureScript.parse(CaptureScript.encode(s)))
+    }
+
+    @Test fun encodedScriptKeepsEveryFieldTheScreenReads() {
+        // Sem os valores padrão no texto, a tela recebia "undefined" e o passo nunca terminava
+        val o = Json.parseToJsonElement(CaptureScript.encode(CaptureScript.parse(generic))).jsonObject
+        val steps = o["groups"]!!.jsonArray.flatMap { (it.jsonObject["steps"] as? JsonArray).orEmpty() }.map { it.jsonObject }
+        assertTrue(steps.isNotEmpty())
+        steps.forEach { st ->
+            val id = st["id"].toString()
+            listOf("priority", "engine").forEach { assertTrue("$id sem $it", st.containsKey(it)) }
+            (st["pattern"] as? JsonObject)?.let { p -> listOf("on_s", "off_s", "repeat").forEach { assertTrue("$id sem $it", p.containsKey(it)) } }
+        }
     }
 
     @Test fun invalidScriptsAreRefused() {

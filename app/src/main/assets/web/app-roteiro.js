@@ -63,6 +63,10 @@ function scriptStepsFlat() {
 function scriptRenderList() {
   const box = $('script-list');
   box.innerHTML = '';
+  const legend = document.createElement('p');
+  legend.className = 'muted small';
+  legend.textContent = '★ = passo prioritário: se faltar tempo ou bateria, faça estes primeiro. Pule o que o carro não tiver.';
+  box.appendChild(legend);
   (scriptData.groups || []).forEach((g) => {
     const sec = document.createElement('div');
     sec.className = 'script-group';
@@ -351,6 +355,13 @@ $('script-skip').addEventListener('click', () => {
   scriptNextStep();
 });
 $('script-next').addEventListener('click', scriptNextStep);
+// Confere antes de começar: a voz fala em português e o celular vibra forte no "liga" e curto no "desliga"
+$('script-test').addEventListener('click', () => {
+  bridge.captureSpeak('Teste de voz. Liga.');
+  bridge.captureVibrate(400);
+  setTimeout(() => { bridge.captureSpeak('Desliga.'); bridge.captureVibrate(150); }, 2000);
+  toast('Você deve ouvir "liga" com vibração forte e, 2 s depois, "desliga" com vibração curta.');
+});
 $('script-note-save').addEventListener('click', () => {
   const note = $('script-note').value.trim();
   if (!note) return;
