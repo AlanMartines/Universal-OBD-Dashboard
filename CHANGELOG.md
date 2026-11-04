@@ -6,6 +6,19 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.16] - 2026-11-04
+
+### Adicionado
+- **Painel web: aviso de leitura antiga na visão geral.** Quando o veículo não está enviando, os cartões ficam esmaecidos e um aviso informa a data e a hora da última leitura, para não parecer tempo real.
+- **Painel web: nomes dos sinais da escuta CAN** (Velocidade, Rotação, Temperatura do motor e Tensão da bateria "do painel", e Nível do tanque), cada um no seu grupo. A tensão ganhou o grupo Elétrica.
+
+### Alterado
+- **Painel web:** os itens de cada grupo da visão geral seguem uma ordem fixa, e não mais a ordem de chegada dos sinais.
+
+### Corrigido
+- **Nível do tanque zerado no fim da viagem (Uno Vivace):** nos últimos segundos antes de a ignição desligar, o painel do carro envia o nível em 0%. O perfil passa a descartar 0%, e a última leitura deixa de mostrar o tanque vazio.
+- **Painel web: títulos das colunas de ação** em Usuários, Sessões ativas, Dispositivos e Viagens. Na aba Viagens, o título da coluna não aparecia.
+
 ## [0.9.15] - 2026-11-04
 
 ### Adicionado

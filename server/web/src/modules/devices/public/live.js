@@ -26,12 +26,17 @@
     'derived.fuelRemainingL': ['No tanque', 'L', 1], 'derived.tripDistanceKm': ['Distância', 'km', 1], 'derived.estimatedGear': ['Marcha', '', 0],
     'derived.recommendedGear': ['Marcha sugerida', '', 0],
     'derived.estimatedLoadPct': ['Carga estimada', '%', 0], 'derived.tripCost': ['Custo da viagem', 'R$', 2],
+    fuel_level_pct: ['Nível do tanque', '%', 0],
+    // Sinais da escuta CAN (ESP32), lidos da rede do painel do carro
+    can_speed: ['Velocidade (painel)', 'km/h', 0], can_rpm: ['Rotação (painel)', 'RPM', 0],
+    can_coolant_temp: ['Temperatura do motor (painel)', '°C', 0], can_voltage: ['Tensão da bateria (painel)', 'V', 1],
   };
   var HIGHLIGHTS = ['speed', 'rpm', 'coolant_temp', 'battery_volts'];
   var GROUPS = [
-    ['Motor', ['derived.estimatedLoadPct', 'engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear']],
-    ['Combustível', ['derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
-    ['Viagem', ['trip_distance_km', 'derived.tripDistanceKm', 'trip_km', 'odometer_km']],
+    ['Motor', ['derived.estimatedLoadPct', 'engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear', 'can_rpm', 'can_coolant_temp']],
+    ['Combustível', ['fuel_level_pct', 'derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
+    ['Viagem', ['can_speed', 'trip_distance_km', 'derived.tripDistanceKm', 'trip_km', 'odometer_km']],
+    ['Elétrica', ['can_voltage']],
     ['Ambiente', ['intake_temp']],
     ['Outros', []],
   ];
@@ -41,6 +46,8 @@
   var compare = document.getElementById('chart-compare');
   var rangeBox = document.getElementById('chart-range');
   var status = document.getElementById('live-status');
+  var overview = document.getElementById('pane-overview');
+  var staleNote = document.getElementById('stale-note');
   var lastUpdate = document.getElementById('last-update');
   var limits = {};
   try { limits = JSON.parse(document.getElementById('latest-data').dataset.limits) || {}; } catch (e) { /* ainda sem escalas salvas */ }
@@ -134,11 +141,17 @@
   function row(id) {
     if (rows[id]) return rows[id];
     var meta = info(id);
-    var list = groupBox(groupOf(id));
+    var name = groupOf(id);
+    var list = groupBox(name);
     var wrap = node('div', 'stat-row');
     var value = node('dd', 'mb-0');
     wrap.append(node('dt', '', meta[0]), value);
-    list.append(wrap);
+    // Mesma ordem da lista do grupo, qualquer que seja a ordem de chegada; os sem posição vão ao fim.
+    var order = (GROUPS.find(function (g) { return g[0] === name; }) || [name, []])[1];
+    var pos = order.indexOf(id);
+    wrap.dataset.order = String(pos < 0 ? 999 : pos);
+    var after = Array.prototype.find.call(list.children, function (c) { return Number(c.dataset.order) > Number(wrap.dataset.order); });
+    list.insertBefore(wrap, after || null);
     rows[id] = value;
     return value;
   }
@@ -383,12 +396,21 @@
       return;
     }
     var age = Date.now() - lastTs;
-    if (age <= STALE_MS) {
+    var stale = age > STALE_MS;
+    if (!stale) {
       status.textContent = 'Ao vivo';
       status.className = 'badge text-bg-success';
     } else {
       status.textContent = 'Sem dados';
       status.className = 'badge text-bg-warning';
+    }
+    // Sem transmissão, os cartões mostram a última leitura que chegou, não o momento atual.
+    overview.classList.toggle('is-stale', stale);
+    staleNote.classList.toggle('d-none', !stale);
+    if (stale) {
+      var when = new Date(lastTs);
+      staleNote.lastChild.textContent = 'Valores da última leitura, em ' + when.toLocaleDateString('pt-BR') + ' às ' +
+        when.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '. O veículo não está enviando dados agora.';
     }
     lastUpdate.textContent = 'Última leitura há ' + ago(age);
     lastUpdate.title = new Date(lastTs).toLocaleString('pt-BR');

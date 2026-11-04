@@ -178,6 +178,7 @@ Setas, pisca-alerta, portas, freio de mão, pedal de freio e cinto não mudam ne
 - **Abastecimento:** 7,47 L, que são 15,6% do tanque de 48 L. O `0x380` b5 subiu 16 pontos.
 - **Marcador do painel:** 4 palitinhos antes (≈ 12 L) e 6 depois (≈ 18 L), com cerca de 3 L cada. O byte deu 23% (≈ 11 L) e 39% (≈ 19 L), dentro da resolução do marcador.
 - **Escala:** % do tanque, de 0 a 100. A medida foi feita parada: andando, o valor varia com a inclinação e o balanço do combustível.
+- **Ao desligar:** nos últimos ~2 s antes de a ignição desligar, o `0x380` chega com o b5 zerado (visto no fim de duas viagens em 04/11/2026). O perfil descarta 0% (`min` = 1).
 - **Candidato:** o `0x380` b2 bit 3 apagou depois do abastecimento. Pode ser o aviso de reserva, mas o motor também foi ligado entre as duas leituras.
 
 **Velocidade em 02/11/2026** (ESP32 + TJA1050, só escuta, em trechos constantes):

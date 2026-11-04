@@ -36,6 +36,8 @@ class CanListenTest {
         assertEquals(14.08, decode("t3E080058000000000000")["can_voltage"]!!, 1e-9)
         assertTrue("quadro sem sinal mapeado", decode("t2C1800C83C0000000000").isEmpty())
         assertTrue("acima de 100% é descartado", decode("t38080000000000C8FF00").isEmpty())
+        // O painel manda o nível zerado nos últimos segundos antes de a ignição desligar
+        assertTrue("0% é descartado", decode("t38080000100000000B00").isEmpty())
         // Sinais da escuta viram saídas do perfil: aparecem em Sensores e servem para alarmes
         assertEquals("can", uno.outputs.getValue("fuel_level_pct").lane)
         assertEquals("odometer_km", uno.profile.roles.odometer)
