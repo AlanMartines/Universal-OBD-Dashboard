@@ -124,6 +124,68 @@ export default function deviceRoutes(app, { pool, live, limit }) {
     return { received: request.body.samples.length, stored: inserted, rejected };
   });
 
+  // Lista inteira de abastecimentos do veículo: o que não vier mais foi apagado no celular.
+  app.post('/api/v1/fuel-ups', {
+    ...limit(30, '1 minute', (request) => sha256(String(request.headers.authorization ?? request.clientIp)).toString('hex')),
+    bodyLimit: 256 * 1024,
+    preValidation: requireDevice,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['items'],
+        additionalProperties: false,
+        properties: {
+          items: {
+            type: 'array',
+            maxItems: 1000,
+            items: {
+              type: 'object',
+              required: ['id', 'ts', 'liters', 'fuelType', 'fullTank'],
+              additionalProperties: false,
+              properties: {
+                id: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+                ts: { type: 'integer', minimum: 0, maximum: 8640000000000000 },
+                odometerKm: { type: ['number', 'null'], minimum: 0, maximum: 10000000 },
+                liters: { type: 'number', exclusiveMinimum: 0, maximum: 1000 },
+                totalPrice: { type: ['number', 'null'], minimum: 0, maximum: 100000 },
+                pricePerLiter: { type: ['number', 'null'], minimum: 0, maximum: 1000 },
+                fuelType: { type: 'string', enum: ['gasoline', 'gasoline_premium', 'ethanol', 'mix'] },
+                ethanolPct: { type: ['number', 'null'], minimum: 0, maximum: 100 },
+                fullTank: { type: 'boolean' },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, async (request) => {
+    const { items } = request.body;
+    const ids = items.map((f) => f.id);
+    if (new Set(ids).size !== ids.length) throw fail(400, 'duplicate_id');
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM fuel_ups WHERE device_id = $1 AND NOT (local_id = ANY($2::bigint[]))', [request.device.id, ids]);
+      for (const f of items) {
+        await client.query(
+          `INSERT INTO fuel_ups (device_id, local_id, ts, odometer_km, liters, total_price, price_per_liter, fuel_type, ethanol_pct, full_tank)
+           VALUES ($1, $2, to_timestamp($3 / 1000.0), $4, $5, $6, $7, $8, $9, $10)
+           ON CONFLICT (device_id, local_id) DO UPDATE SET ts = EXCLUDED.ts, odometer_km = EXCLUDED.odometer_km, liters = EXCLUDED.liters,
+             total_price = EXCLUDED.total_price, price_per_liter = EXCLUDED.price_per_liter, fuel_type = EXCLUDED.fuel_type,
+             ethanol_pct = EXCLUDED.ethanol_pct, full_tank = EXCLUDED.full_tank, received_at = now()`,
+          [request.device.id, f.id, f.ts, f.odometerKm ?? null, f.liters, f.totalPrice ?? null, f.pricePerLiter ?? null, f.fuelType, f.ethanolPct ?? null, f.fullTank],
+        );
+      }
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+    return { stored: items.length };
+  });
+
   // Última leitura, para quem está olhando agora. Não vai ao banco; quem guarda o histórico é /telemetry.
   // A resposta só diz quantas pessoas assistem, para o app reduzir o envio: nunca leva comandos.
   app.post('/api/v1/live', {

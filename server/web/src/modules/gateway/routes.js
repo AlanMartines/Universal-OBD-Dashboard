@@ -1,7 +1,7 @@
-export const DEVICE_ROUTES = ['/api/v1/devices/register', '/api/v1/telemetry', '/api/v1/live'];
+export const DEVICE_ROUTES = ['/api/v1/devices/register', '/api/v1/telemetry', '/api/v1/live', '/api/v1/fuel-ups'];
 
 export default function gatewayRoutes(app, { config }) {
-  // Só estas duas rotas da API são públicas. Nada mais é encaminhado.
+  // Só estas rotas da API são públicas. Nada mais é encaminhado.
   for (const route of DEVICE_ROUTES) {
     app.post(route, { bodyLimit: 512 * 1024 }, async (request, reply) => {
       const headers = { 'content-type': 'application/json', 'x-forwarded-for': request.ip };

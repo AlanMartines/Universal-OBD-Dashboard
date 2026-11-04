@@ -6,6 +6,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.9] - 2026-11-03
+
+### Adicionado
+- **Abastecimentos no painel web:** o app envia a lista de abastecimentos do veículo ao servidor quando ela muda, com edições e exclusões. O dispositivo mostra o consumo real, o custo por km, o gasto do mês, os últimos registros e o consumo medido. O nome do posto e as observações ficam só no celular.
+
 ### Corrigido
 - **Abastecimento cheio ou parcial:** a caixa "Tanque cheio" vinha marcada e um toque a mais a deixava marcada de novo. Agora a escolha entre "tanque cheio" e "parcial" é obrigatória, sem opção pronta, e o aviso confirma como ficou gravado.
 

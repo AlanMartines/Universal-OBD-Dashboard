@@ -194,4 +194,18 @@ class RemoteTest {
         )
         File(dir, "batch.json").writeText(body)
     }
+
+    @Test fun fuelUpsLeaveStationAndNotesOnThePhone() {
+        val f = com.universal.obddashboard.db.FuelUpEntity(
+            id = 3, timestamp = 1_000, profileId = "p", odometerKm = 1234.0, liters = 7.473, totalPrice = 50.0, pricePerLiter = 6.691,
+            fuelType = "gasoline_premium", fullTank = false, station = "Posto da esquina", notes = "perto de casa",
+        )
+        val text = RemotePayload.fuelUps(listOf(f, f.copy(id = 0)))
+        val items = Json.parseToJsonElement(text).jsonObject["items"]!!.jsonArray
+        assertEquals("sem id local não vai", 1, items.size)
+        val o = items[0].jsonObject
+        assertEquals("gasoline_premium", o["fuelType"]!!.jsonPrimitive.content)
+        assertEquals("false", o["fullTank"]!!.jsonPrimitive.content)
+        assertTrue(!text.contains("Posto") && !text.contains("casa") && !text.contains("station"))
+    }
 }

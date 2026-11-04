@@ -1,3 +1,4 @@
+import { fuelSummary } from '../fuel.js';
 import { audit } from '../db.js';
 import { fail } from '../errors.js';
 import { pageNumberSchema, pageSizeSchema, paged } from '../pagination.js';
@@ -74,6 +75,21 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
         gps: !allowed || s.latitude === null ? null : { lat: s.latitude, lon: s.longitude, speedKmh: s.gps_speed },
       } : null,
     };
+  });
+
+  app.get('/internal/devices/:id/fuel-ups', { preValidation: requireReady, schema: { params: uuidParam } }, async (request) => {
+    const device = await loadDevice(request);
+    const { rows } = await pool.query(
+      `SELECT local_id, ts, odometer_km, liters, total_price, price_per_liter, fuel_type, ethanol_pct, full_tank
+         FROM fuel_ups WHERE device_id = $1 ORDER BY ts`,
+      [device.id],
+    );
+    const items = rows.map((r) => ({
+      id: Number(r.local_id), ts: r.ts.getTime(), odometerKm: r.odometer_km, liters: r.liters, totalPrice: r.total_price,
+      pricePerLiter: r.price_per_liter, fuelType: r.fuel_type, ethanolPct: r.ethanol_pct, fullTank: r.full_tank,
+    }));
+    const summary = fuelSummary(items);
+    return { items: items.reverse().slice(0, 100), summary };
   });
 
   app.get('/internal/devices/:id/history', {

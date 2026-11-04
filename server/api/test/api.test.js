@@ -283,6 +283,34 @@ describe('API', () => {
       assert.equal((await post(dev.deviceToken, { ts: Date.now(), metrics: {}, alerts: [{ level: 'WARNING', message: '<b>x</b>' }] })).statusCode, 400);
     });
 
+    test('abastecimentos: a lista do app substitui a do servidor e o resumo calcula o consumo', async () => {
+      const send = (items) => app.inject({ method: 'POST', url: '/api/v1/fuel-ups', headers: { authorization: `Bearer ${dev.deviceToken}` }, payload: { items } });
+      const day = 86400000;
+      const t0 = Date.now() - 10 * day;
+      const full1 = { id: 1, ts: t0, odometerKm: 1000, liters: 30, totalPrice: 180, pricePerLiter: 6, fuelType: 'gasoline', ethanolPct: null, fullTank: true };
+      const part = { id: 2, ts: t0 + day, odometerKm: null, liters: 10, totalPrice: 60, pricePerLiter: 6, fuelType: 'gasoline_premium', ethanolPct: null, fullTank: false };
+      const full2 = { id: 3, ts: t0 + 2 * day, odometerKm: 1400, liters: 20, totalPrice: 120, pricePerLiter: 6, fuelType: 'gasoline', ethanolPct: null, fullTank: true };
+      assert.equal((await send([full1, part, full2])).statusCode, 200);
+      const read = async () => (await internal(app, 'GET', `/internal/devices/${dev.id}/fuel-ups`, { token: alice })).json();
+      let data = await read();
+      assert.equal(data.items.length, 3);
+      assert.equal(data.items[0].id, 3, 'mais recente primeiro');
+      // 400 km com 10 + 20 L entre os dois tanques cheios
+      assert.equal(data.summary.intervals.length, 1);
+      assert.equal(data.summary.intervals[0].kmPerL, 400 / 30);
+      assert.equal(data.summary.intervals[0].fuelType, 'gasoline');
+      // Edição no celular (parcial vira cheio) e exclusão: a lista nova vale
+      assert.equal((await send([full1, { ...part, fullTank: true, odometerKm: 1200 }])).statusCode, 200);
+      data = await read();
+      assert.deepEqual(data.items.map((f) => f.id), [2, 1]);
+      assert.equal(data.summary.intervals[0].kmPerL, 200 / 10);
+      assert.equal((await send([{ ...full1, station: 'posto' }])).statusCode, 400, 'campo fora da lista é recusado');
+      assert.equal((await send([full1, full1])).statusCode, 400, 'id repetido');
+      assert.equal((await app.inject({ method: 'POST', url: '/api/v1/fuel-ups', payload: { items: [] } })).statusCode, 401);
+      assert.equal((await send([])).statusCode, 200);
+      assert.equal((await read()).items.length, 0);
+    });
+
     test('escalas dos mostradores ficam salvas no dispositivo, sem dados fora da lista ou da faixa', async () => {
       const post = (metrics) => app.inject({ method: 'POST', url: '/api/v1/live', headers: { authorization: `Bearer ${dev.deviceToken}` }, payload: { ts: Date.now(), metrics } });
       const saved = async () => (await pool.query('SELECT dash_limits FROM devices WHERE id = $1', [dev.id])).rows[0].dash_limits;

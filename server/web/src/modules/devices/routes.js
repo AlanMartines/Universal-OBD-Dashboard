@@ -45,7 +45,16 @@ export default function devicesRoutes(app, {
 
   app.get('/dispositivos/:id', { preHandler: requireUser }, async (request, reply) => {
     const data = await api(request, 'GET', `/internal/devices/${requireUuid(request)}`);
+    const fuel = await api(request, 'GET', `/internal/devices/${data.device.id}/fuel-ups`);
+    const months = Object.entries(fuel.summary.costByMonth);
+    const lastMonth = months.length ? months[months.length - 1] : null;
     return reply.view('modules/devices/views/device.hbs', context(request, {
+      fuel: {
+        ...fuel,
+        recent: fuel.items.slice(0, 10),
+        intervals: fuel.summary.intervals.slice(0, 5),
+        month: lastMonth ? { label: lastMonth[0].split('-').reverse().join('/'), total: lastMonth[1] } : null,
+      },
       title: data.device.name,
       device: data.device,
       latestJson: JSON.stringify(data.latest),

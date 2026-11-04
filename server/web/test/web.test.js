@@ -233,6 +233,8 @@ describe('fluxo pelo navegador', () => {
     assert.ok(!panel.body.includes('"do" carro'));
 
     const page = await web.inject({ method: 'GET', url: `/dispositivos/${deviceId}`, headers: { cookie: adminCookie } });
+    assert.match(page.body, /id="fuel-title"/);
+    assert.match(page.body, /Nenhum abastecimento enviado ainda/);
     assert.equal(page.statusCode, 200);
     // A leitura inicial fica em atributo: dentro de <script>, o escape impediria o JSON.parse.
     assert.match(page.body, /id="latest-data" hidden data-sample="[^"]*&quot;rpm&quot;/);

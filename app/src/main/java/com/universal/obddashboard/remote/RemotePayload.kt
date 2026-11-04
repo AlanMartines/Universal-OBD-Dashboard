@@ -1,5 +1,6 @@
 package com.universal.obddashboard.remote
 
+import com.universal.obddashboard.db.FuelUpEntity
 import com.universal.obddashboard.db.TelemetryLogEntity
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -107,6 +108,34 @@ object RemotePayload {
             }
         }.toString()
     }
+
+    /**
+     * Abastecimentos do veículo, lista inteira. Nome do posto e observações ficam no celular:
+     * revelariam por onde a pessoa anda.
+     */
+    fun fuelUps(list: List<FuelUpEntity>): String = buildJsonObject {
+        put(
+            "items",
+            buildJsonArray {
+                list.filter { it.id > 0 && it.liters > 0 && it.liters <= MAX_LITERS }.take(MAX_FUEL_UPS).forEach { f ->
+                    add(buildJsonObject {
+                        put("id", f.id)
+                        put("ts", f.timestamp)
+                        put("odometerKm", f.odometerKm?.takeIf { it.isFinite() && it >= 0 })
+                        put("liters", f.liters)
+                        put("totalPrice", f.totalPrice?.takeIf { it.isFinite() && it >= 0 })
+                        put("pricePerLiter", f.pricePerLiter?.takeIf { it.isFinite() && it >= 0 })
+                        put("fuelType", f.fuelType)
+                        put("ethanolPct", f.ethanolPct?.takeIf { it.isFinite() }?.coerceIn(0.0, 100.0))
+                        put("fullTank", f.fullTank)
+                    })
+                }
+            },
+        )
+    }.toString()
+
+    private const val MAX_FUEL_UPS = 1000
+    private const val MAX_LITERS = 1000.0
 
     fun batch(samples: List<JsonObject>): String =
         buildJsonObject { put("samples", buildJsonArray { samples.forEach { add(it) } }) }.toString()

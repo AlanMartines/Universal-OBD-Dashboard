@@ -45,6 +45,14 @@ export function createHandlebars() {
   hbs.registerHelper('roleLabel', (role) => ({ superadmin: 'Super Admin', admin: 'Admin', user: 'Usuário' }[role] ?? ''));
   hbs.registerHelper('canManage', (user) => Boolean(user) && user.role !== 'user');
   hbs.registerHelper('date', (value) => (value ? dateFormat.format(new Date(value)) : '—'));
+  // Números e valores no formato brasileiro; vazio vira travessão.
+  hbs.registerHelper('num', (value, digits) => (typeof value === 'number'
+    ? value.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits }) : '—'));
+  hbs.registerHelper('brl', (value) => (typeof value === 'number'
+    ? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'));
+  hbs.registerHelper('fuelName', (type) => ({
+    gasoline: 'Gasolina', gasoline_premium: 'Gasolina aditivada', ethanol: 'Etanol', mix: 'Mistura',
+  }[type] ?? '—'));
   return hbs;
 }
 

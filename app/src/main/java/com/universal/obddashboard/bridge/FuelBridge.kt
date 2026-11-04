@@ -11,6 +11,7 @@ import com.universal.obddashboard.export.TripExportFiles
 import com.universal.obddashboard.fuel.FuelCalibration
 import com.universal.obddashboard.fuel.FuelLog
 import com.universal.obddashboard.orNull
+import com.universal.obddashboard.remote.RemoteSync
 import com.universal.obddashboard.telemetry.TelemetryHub
 import java.util.Locale
 import org.json.JSONArray
@@ -114,6 +115,7 @@ class FuelBridge(private val activity: MainActivity) {
             val vehicleId = Vehicles.selectedId(activity)
             if (dao.get(id, vehicleId) == null) throw IllegalArgumentException("Abastecimento não encontrado neste veículo.")
             dao.update(fuelUpFrom(json, id))
+            RemoteSync.syncSoon(activity)
             "ok"
         } catch (e: Exception) {
             e.message ?: "erro"
@@ -123,6 +125,7 @@ class FuelBridge(private val activity: MainActivity) {
     private suspend fun addFuelUp(json: String): String = try {
         val f = fuelUpFrom(json)
         AppDatabase.get(activity).fuelUpDao().insert(f)
+        RemoteSync.syncSoon(activity)
         if (System.currentTimeMillis() - f.timestamp < MainActivity.RECENT_FUEL_UP_MS) {
             f.odometerKm?.let { activity.applyOdometer(it) }
             applyFillUp(f)?.let { "ok|$it" } ?: "ok"
@@ -137,6 +140,7 @@ class FuelBridge(private val activity: MainActivity) {
     fun deleteFuelUp(requestId: String, id: Long) = activity.answerAsync(requestId) {
         try {
             AppDatabase.get(activity).fuelUpDao().delete(id)
+            RemoteSync.syncSoon(activity)
             "ok"
         } catch (e: Exception) {
             "Falha ao apagar: ${e.message}"
@@ -182,6 +186,7 @@ class FuelBridge(private val activity: MainActivity) {
             dao.insertAll(fresh)
             fresh.size to removed
         }
+        RemoteSync.syncSoon(activity)
         JSONObject().put("ok", true).put("added", added).put("skipped", parsed.size - added).put("removed", removed).toString()
     } catch (e: Exception) {
         JSONObject().put("ok", false).put("error", e.message).toString()

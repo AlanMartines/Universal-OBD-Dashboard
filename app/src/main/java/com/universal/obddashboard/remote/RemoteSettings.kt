@@ -29,6 +29,7 @@ object RemoteSettings {
     private const val KEY_TOKEN = "token_enc"
     private const val KEY_LAST_SENT = "last_sent_at"
     private const val KEY_LAST_ERROR = "last_error"
+    private const val KEY_FUEL_HASH = "fuel_sent_hash"
     private const val KEYSTORE = "AndroidKeyStore"
     private const val KEY_ALIAS = "obd_remote_token"
     private const val GCM_IV_BYTES = 12
@@ -49,6 +50,10 @@ object RemoteSettings {
     fun setCursor(c: Context, id: Long, v: String = Vehicles.selectedId(c)) = prefs(c).edit { putLong(k(KEY_CURSOR, v), id) }
     fun lastSentAt(c: Context, v: String = Vehicles.selectedId(c)): Long = prefs(c).getLong(k(KEY_LAST_SENT, v), 0L)
     fun lastError(c: Context, v: String = Vehicles.selectedId(c)): String = prefs(c).getString(k(KEY_LAST_ERROR, v), null).orEmpty()
+
+    /** Resumo do último envio de abastecimentos: só reenvia quando a lista mudar. */
+    fun fuelSentHash(c: Context, v: String = Vehicles.selectedId(c)): String = prefs(c).getString(k(KEY_FUEL_HASH, v), null).orEmpty()
+    fun setFuelSentHash(c: Context, hash: String, v: String = Vehicles.selectedId(c)) = prefs(c).edit { putString(k(KEY_FUEL_HASH, v), hash) }
 
     fun recordResult(c: Context, sentNow: Boolean, error: String?, v: String = Vehicles.selectedId(c)) = prefs(c).edit {
         if (sentNow) putLong(k(KEY_LAST_SENT, v), System.currentTimeMillis())
@@ -72,6 +77,7 @@ object RemoteSettings {
             putBoolean(k(KEY_ENABLED, v), true)
             remove(k(KEY_LAST_ERROR, v))
             remove(k(KEY_LAST_SENT, v))
+            remove(k(KEY_FUEL_HASH, v))
         }
     }
 

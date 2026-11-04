@@ -61,6 +61,49 @@
 
   <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3" id="groups"></div>
 
+  <section class="stat-panel mb-3" aria-labelledby="fuel-title">
+    <h2 class="h6 mb-3" id="fuel-title"><i class="fa-solid fa-gas-pump me-1" aria-hidden="true"></i>Abastecimentos</h2>
+    {{#if fuel.items.length}}
+    <div class="row row-cols-1 row-cols-sm-3 g-2 mb-3">
+      <div class="col"><div class="fuel-stat"><span class="small text-body-secondary">Consumo real</span><strong>{{#if fuel.summary.avgKmPerL}}{{num fuel.summary.avgKmPerL 1}} km/l{{else}}—{{/if}}</strong><span class="small text-body-secondary">entre tanques cheios</span></div></div>
+      <div class="col"><div class="fuel-stat"><span class="small text-body-secondary">Custo por km</span><strong>{{brl fuel.summary.costPerKm}}</strong><span class="small text-body-secondary">{{brl fuel.summary.totalCost}} no total</span></div></div>
+      <div class="col"><div class="fuel-stat"><span class="small text-body-secondary">Gasto no mês</span><strong>{{#if fuel.month}}{{brl fuel.month.total}}{{else}}—{{/if}}</strong><span class="small text-body-secondary">{{fuel.month.label}}</span></div></div>
+    </div>
+    <p class="small text-body-secondary mb-2">Últimos abastecimentos registrados no app</p>
+    <div class="table-responsive">
+      <table class="table table-sm table-striped table-hover table-stack align-middle mb-2">
+        <thead class="table-dark">
+          <tr><th scope="col">Data</th><th scope="col" class="text-end">Litros</th><th scope="col" class="text-end">Valor</th><th scope="col" class="text-end">R$/L</th><th scope="col">Combustível</th><th scope="col">Tanque</th><th scope="col" class="text-end">Hodômetro</th></tr>
+        </thead>
+        <tbody>
+          {{#each fuel.recent}}
+          <tr><td data-label="Data">{{date ts}}</td><td data-label="Litros" class="text-end">{{num liters 3}}</td><td data-label="Valor" class="text-end">{{brl totalPrice}}</td><td data-label="R$/L" class="text-end">{{num pricePerLiter 3}}</td><td data-label="Combustível">{{fuelName fuelType}}{{#if ethanolPct}} ({{num ethanolPct 0}}% etanol){{/if}}</td><td data-label="Tanque">{{#if fullTank}}Cheio{{else}}Parcial{{/if}}</td><td data-label="Hodômetro" class="text-end">{{#if odometerKm}}{{num odometerKm 0}} km{{else}}—{{/if}}</td></tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{#if fuel.intervals.length}}
+    <h3 class="h6 mt-3">Consumo medido</h3>
+    <div class="table-responsive">
+      <table class="table table-sm table-striped table-hover table-stack align-middle mb-0">
+        <thead class="table-dark">
+          <tr><th scope="col">Período</th><th scope="col" class="text-end">km/l</th><th scope="col" class="text-end">km</th><th scope="col" class="text-end">Litros</th><th scope="col" class="text-end">R$/km</th><th scope="col">Combustível</th></tr>
+        </thead>
+        <tbody>
+          {{#each fuel.intervals}}
+          <tr><td data-label="Período">{{date from}} → {{date to}}</td><td data-label="km/l" class="text-end">{{num kmPerL 1}}</td><td data-label="km" class="text-end">{{num km 0}}</td><td data-label="Litros" class="text-end">{{num liters 2}}</td><td data-label="R$/km" class="text-end">{{brl costPerKm}}</td><td data-label="Combustível">{{fuelName fuelType}}</td></tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p class="small text-body-secondary mb-0">O consumo real aparece depois de dois tanques cheios com hodômetro.</p>
+    {{/if}}
+    {{else}}
+    <p class="small text-body-secondary mb-0">Nenhum abastecimento enviado ainda. Os registrados no app chegam aqui com a telemetria remota ligada.</p>
+    {{/if}}
+  </section>
+
   <div id="gps-box" class="d-none">
     <button type="button" class="btn btn-outline-secondary btn-sm" id="gps-toggle" aria-expanded="false"><i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i>Ver localização</button>
     <span id="gps-text" class="small text-body-secondary ms-2" hidden></span>
