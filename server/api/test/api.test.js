@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, test } from 'node:test';
 import { loadConfig } from '../src/config.js';
-import { bootstrap } from '../src/db.js';
+import { bootstrap, purgeExpired } from '../src/db.js';
 import sharp from 'sharp';
 import { resetPassword } from '../bin/user-reset-password.js';
 import { base32Encode, codeForStep, generateRecoveryCodes, stepAt } from '../src/totp.js';
@@ -302,13 +302,23 @@ describe('API', () => {
       // Edição no celular (parcial vira cheio) e exclusão: a lista nova vale
       assert.equal((await send([full1, { ...part, fullTank: true, odometerKm: 1200 }])).statusCode, 200);
       data = await read();
-      assert.deepEqual(data.items.map((f) => f.id), [2, 1]);
+      // O 3 foi apagado no app: continua listado, marcado, e fora das contas
+      assert.deepEqual(data.items.map((f) => [f.id, f.removedAt !== null]), [[3, true], [2, false], [1, false]]);
+      assert.equal(data.summary.count, 2);
       assert.equal(data.summary.intervals[0].kmPerL, 200 / 10);
+      // Volta na lista: deixa de estar removido
+      assert.equal((await send([full1, { ...part, fullTank: true, odometerKm: 1200 }, full2])).statusCode, 200);
+      assert.equal((await read()).items.find((f) => f.id === 3).removedAt, null);
+      // Depois de 30 dias marcado, a limpeza apaga de vez
+      assert.equal((await send([full1])).statusCode, 200);
+      await pool.query(`UPDATE fuel_ups SET removed_at = now() - interval '31 days' WHERE device_id = $1 AND local_id = 3`, [dev.id]);
+      await purgeExpired(pool, 90);
+      assert.deepEqual((await read()).items.map((f) => f.id), [2, 1]);
       assert.equal((await send([{ ...full1, station: 'posto' }])).statusCode, 400, 'campo fora da lista é recusado');
       assert.equal((await send([full1, full1])).statusCode, 400, 'id repetido');
       assert.equal((await app.inject({ method: 'POST', url: '/api/v1/fuel-ups', payload: { items: [] } })).statusCode, 401);
       assert.equal((await send([])).statusCode, 200);
-      assert.equal((await read()).items.length, 0);
+      assert.equal((await read()).summary.count, 0, 'lista vazia marca todos como removidos');
     });
 
     test('escalas dos mostradores ficam salvas no dispositivo, sem dados fora da lista ou da faixa', async () => {

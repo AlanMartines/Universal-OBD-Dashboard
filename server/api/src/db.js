@@ -88,6 +88,9 @@ export async function audit(db, { actor = null, action, target = null, ip = null
   await db.query('INSERT INTO audit_log (actor, action, target, ip) VALUES ($1, $2, $3, $4)', [actor, action, target, ip]);
 }
 
+/** Dias que um abastecimento apagado no app fica no painel, marcado como removido. */
+export const FUEL_REMOVED_DAYS = 30;
+
 export async function purgeExpired(pool, retentionDays) {
   await pool.query('DELETE FROM sessions WHERE expires_at < now()');
   await pool.query('DELETE FROM email_changes WHERE expires_at < now()');
@@ -96,6 +99,7 @@ export async function purgeExpired(pool, retentionDays) {
   await pool.query(`DELETE FROM mail_outbox WHERE created_at < now() - interval '1 day'`);
   await pool.query(`DELETE FROM telemetry_samples WHERE ts < now() - make_interval(days => $1)`, [retentionDays]);
   await pool.query(`DELETE FROM audit_log WHERE at < now() - interval '365 days'`);
+  await pool.query(`DELETE FROM fuel_ups WHERE removed_at < now() - interval '${FUEL_REMOVED_DAYS} days'`);
   await pool.query(
     `DELETE FROM devices WHERE paired_at IS NULL AND pairing_expires_at < now() - interval '1 day'`,
   );

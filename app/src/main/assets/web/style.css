@@ -264,3 +264,4 @@ input[readonly] { opacity: .7; }
 
 .fu-fill { border: 1px solid var(--line, #2a3340); border-radius: 10px; padding: 8px 12px; margin: 8px 0; }
 .fu-fill legend { padding: 0 4px; font-size: 14px; }
+.fu-sync { gap: 8px; margin: 4px 0 8px; flex-wrap: wrap; }

@@ -61,7 +61,31 @@ async function loadFuel() {
     lb.appendChild(el);
   });
   refreshFuelWhen();
+  loadFuelSync();
 }
+
+/* ---------------------------------------------------------------- Painel web */
+/** O painel é espelho do app: a lista inteira vai junto, com edições e exclusões. */
+let fuSyncRecheck = null;
+async function loadFuelSync(again) {
+  const s = parse(await nativeAsync((id) => bridge.getFuelSyncStatus(id)).catch(() => null), { paired: false });
+  // Ao salvar, o app já envia sozinho: confere de novo em alguns segundos em vez de deixar "aguardando".
+  clearTimeout(fuSyncRecheck);
+  if (s.paired && !s.inSync && !again) fuSyncRecheck = setTimeout(() => loadFuelSync(true), 4000);
+  $('fu-sync').disabled = !s.paired;
+  $('fu-sync-status').textContent = !s.paired ? 'Pareie este veículo em Ajustes → Telemetria remota para ver no painel.'
+    : s.inSync ? `Painel atualizado${s.sentAt ? ' em ' + dt(s.sentAt) : ''}.` : 'Alterações aguardando envio ao painel.';
+}
+
+$('fu-sync').addEventListener('click', async () => {
+  const btn = $('fu-sync');
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+  const res = await nativeAsync((id) => bridge.sendFuelUpsNow(id)).catch((e) => e.message);
+  btn.textContent = 'Enviar ao painel';
+  okOrToast(res, 'Abastecimentos enviados ao painel.');
+  loadFuelSync();
+});
 
 /* Data e hora do abastecimento: acompanha o relógio até o usuário editar (senão um registro feito
    horas depois sairia com o horário do anterior e não acertaria o tanque). */

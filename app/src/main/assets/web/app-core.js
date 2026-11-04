@@ -33,6 +33,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   getTimedRuns: () => '[{"band":"0-60","best":null,"last":null}]', clearTimedRuns: () => 'ok',
   getDashboardSettings: () => '{"rpmMax":7000,"rpmRedline":6250,"speedMax":200,"speedCorrectionPct":0}', setDashboardSettings: () => 'ok', resetDashboardSettings: () => 'ok',
   getFuelUps: () => '{"items":[],"summary":{"count":0},"intervals":[]}', addFuelUp: () => 'ok', deleteFuelUp: () => 'ok', updateFuelUp: () => 'ok',
+  getFuelSyncStatus: () => '{"paired":true,"inSync":false,"sentAt":null}', sendFuelUpsNow: () => 'ok',
   setFuelCorrection: () => 'ok',
   exportBackup: () => 'Backup disponível só no app', pickBackup() {},
   exportFuelUps: () => 'Exportação disponível só no app', importFuelUps: () => '{"ok":false,"error":"sem app"}', pickFuelCsv() {},

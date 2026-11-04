@@ -11,6 +11,7 @@ import com.universal.obddashboard.export.TripExportFiles
 import com.universal.obddashboard.fuel.FuelCalibration
 import com.universal.obddashboard.fuel.FuelLog
 import com.universal.obddashboard.orNull
+import com.universal.obddashboard.remote.RemoteSettings
 import com.universal.obddashboard.remote.RemoteSync
 import com.universal.obddashboard.telemetry.TelemetryHub
 import java.util.Locale
@@ -134,6 +135,26 @@ class FuelBridge(private val activity: MainActivity) {
         }
     } catch (e: Exception) {
         e.message ?: "erro"
+    }
+
+    /** {paired, inSync, sentAt}: estado do envio dos abastecimentos deste veículo ao painel. */
+    @JavascriptInterface
+    fun getFuelSyncStatus(requestId: String) = activity.answerAsync(requestId) {
+        val paired = RemoteSettings.enabled(activity) && RemoteSettings.token(activity) != null
+        JSONObject().put("paired", paired)
+            .put("inSync", paired && RemoteSync.fuelUpsInSync(activity))
+            .put("sentAt", RemoteSettings.fuelSentAt(activity).takeIf { it > 0 } ?: JSONObject.NULL)
+            .toString()
+    }
+
+    @JavascriptInterface
+    fun sendFuelUpsNow(requestId: String) = activity.answerAsync(requestId) {
+        when (RemoteSync.sendFuelUpsNow(activity)) {
+            null -> "Pareie este veículo em Ajustes → Telemetria remota e ligue o envio."
+            RemoteSync.FuelSync.OFFLINE -> "Sem conexão com o servidor. A lista sobe no próximo envio."
+            RemoteSync.FuelSync.REFUSED -> "O servidor recusou a lista. Confira se o painel está atualizado."
+            else -> "ok"
+        }
     }
 
     @JavascriptInterface

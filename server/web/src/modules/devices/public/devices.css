@@ -186,3 +186,5 @@
 /* Abastecimentos */
 .fuel-stat { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--bs-border-color); border-radius: var(--bs-border-radius); height: 100%; }
 .fuel-stat strong { font-size: 1.25rem; }
+.fuel-removed td { opacity: .6; text-decoration: line-through; }
+.fuel-removed .badge { text-decoration: none; display: inline-block; }

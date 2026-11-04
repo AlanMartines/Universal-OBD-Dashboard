@@ -1,5 +1,5 @@
 import { fuelSummary } from '../fuel.js';
-import { audit } from '../db.js';
+import { audit, FUEL_REMOVED_DAYS } from '../db.js';
 import { fail } from '../errors.js';
 import { pageNumberSchema, pageSizeSchema, paged } from '../pagination.js';
 import { deviceName, MAX_LIVE_PER_USER, PAIRING_MINUTES, uuidParam } from '../schemas.js';
@@ -80,16 +80,18 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
   app.get('/internal/devices/:id/fuel-ups', { preValidation: requireReady, schema: { params: uuidParam } }, async (request) => {
     const device = await loadDevice(request);
     const { rows } = await pool.query(
-      `SELECT local_id, ts, odometer_km, liters, total_price, price_per_liter, fuel_type, ethanol_pct, full_tank
+      `SELECT local_id, ts, odometer_km, liters, total_price, price_per_liter, fuel_type, ethanol_pct, full_tank, removed_at
          FROM fuel_ups WHERE device_id = $1 ORDER BY ts`,
       [device.id],
     );
     const items = rows.map((r) => ({
       id: Number(r.local_id), ts: r.ts.getTime(), odometerKm: r.odometer_km, liters: r.liters, totalPrice: r.total_price,
       pricePerLiter: r.price_per_liter, fuelType: r.fuel_type, ethanolPct: r.ethanol_pct, fullTank: r.full_tank,
+      removedAt: r.removed_at ? r.removed_at.getTime() : null,
     }));
-    const summary = fuelSummary(items);
-    return { items: items.reverse().slice(0, 100), summary };
+    // Os removidos no app aparecem na lista, marcados, mas não entram nas contas.
+    const summary = fuelSummary(items.filter((f) => f.removedAt === null));
+    return { items: items.reverse().slice(0, 100), summary, removedDays: FUEL_REMOVED_DAYS };
   });
 
   app.get('/internal/devices/:id/history', {

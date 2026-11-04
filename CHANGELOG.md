@@ -6,6 +6,14 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.13] - 2026-11-04
+
+### Adicionado
+- **Enviar ao painel (Abastecimentos):** botão que envia na hora a lista de abastecimentos do veículo, com uma linha que diz se o painel está atualizado ou se há alterações aguardando envio.
+
+### Alterado
+- **Abastecimento apagado no app:** o painel web guarda o registro por 30 dias, marcado como "Removido no app" e fora das contas de consumo e gasto, e depois o apaga de vez. Se o registro voltar à lista, deixa de estar removido. Migração 007.
+
 ## [0.9.12] - 2026-11-04
 
 ### Adicionado

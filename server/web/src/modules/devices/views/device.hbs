@@ -69,7 +69,7 @@
       <div class="col"><div class="fuel-stat"><span class="small text-body-secondary">Custo por km</span><strong>{{brl fuel.summary.costPerKm}}</strong><span class="small text-body-secondary">{{brl fuel.summary.totalCost}} no total</span></div></div>
       <div class="col"><div class="fuel-stat"><span class="small text-body-secondary">Gasto no mês</span><strong>{{#if fuel.month}}{{brl fuel.month.total}}{{else}}—{{/if}}</strong><span class="small text-body-secondary">{{fuel.month.label}}</span></div></div>
     </div>
-    <p class="small text-body-secondary mb-2">Últimos abastecimentos registrados no app</p>
+    <p class="small text-body-secondary mb-2">Últimos abastecimentos registrados no app. Os apagados no app ficam aqui por {{fuel.removedDays}} dias, marcados, e não entram nas contas.</p>
     <div class="table-responsive">
       <table class="table table-sm table-striped table-hover table-stack align-middle mb-2">
         <thead class="table-dark">
@@ -77,7 +77,7 @@
         </thead>
         <tbody>
           {{#each fuel.recent}}
-          <tr><td data-label="Data">{{date ts}}</td><td data-label="Litros" class="text-end">{{num liters 3}}</td><td data-label="Valor" class="text-end">{{brl totalPrice}}</td><td data-label="R$/L" class="text-end">{{num pricePerLiter 3}}</td><td data-label="Combustível">{{fuelName fuelType}}{{#if ethanolPct}} ({{num ethanolPct 0}}% etanol){{/if}}</td><td data-label="Tanque">{{#if fullTank}}Cheio{{else}}Parcial{{/if}}</td><td data-label="Hodômetro" class="text-end">{{#if odometerKm}}{{num odometerKm 0}} km{{else}}—{{/if}}</td></tr>
+          <tr{{#if removedAt}} class="fuel-removed"{{/if}}><td data-label="Data">{{date ts}}{{#if removedAt}} <span class="badge text-bg-secondary">Removido no app</span>{{/if}}</td><td data-label="Litros" class="text-end">{{num liters 3}}</td><td data-label="Valor" class="text-end">{{brl totalPrice}}</td><td data-label="R$/L" class="text-end">{{num pricePerLiter 3}}</td><td data-label="Combustível">{{fuelName fuelType}}{{#if ethanolPct}} ({{num ethanolPct 0}}% etanol){{/if}}</td><td data-label="Tanque">{{#if fullTank}}Cheio{{else}}Parcial{{/if}}</td><td data-label="Hodômetro" class="text-end">{{#if odometerKm}}{{num odometerKm 0}} km{{else}}—{{/if}}</td></tr>
           {{/each}}
         </tbody>
       </table>

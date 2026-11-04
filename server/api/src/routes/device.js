@@ -124,7 +124,8 @@ export default function deviceRoutes(app, { pool, live, limit }) {
     return { received: request.body.samples.length, stored: inserted, rejected };
   });
 
-  // Lista inteira de abastecimentos do veículo: o que não vier mais foi apagado no celular.
+  // Lista inteira de abastecimentos do veículo. O que não vier mais foi apagado no celular: fica
+  // marcado como removido (o worker apaga depois de 30 dias). Se voltar na lista, deixa de estar removido.
   app.post('/api/v1/fuel-ups', {
     ...limit(30, '1 minute', (request) => sha256(String(request.headers.authorization ?? request.clientIp)).toString('hex')),
     bodyLimit: 256 * 1024,
@@ -165,14 +166,17 @@ export default function deviceRoutes(app, { pool, live, limit }) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query('DELETE FROM fuel_ups WHERE device_id = $1 AND NOT (local_id = ANY($2::bigint[]))', [request.device.id, ids]);
+      await client.query(
+        'UPDATE fuel_ups SET removed_at = now() WHERE device_id = $1 AND removed_at IS NULL AND NOT (local_id = ANY($2::bigint[]))',
+        [request.device.id, ids],
+      );
       for (const f of items) {
         await client.query(
           `INSERT INTO fuel_ups (device_id, local_id, ts, odometer_km, liters, total_price, price_per_liter, fuel_type, ethanol_pct, full_tank)
            VALUES ($1, $2, to_timestamp($3 / 1000.0), $4, $5, $6, $7, $8, $9, $10)
            ON CONFLICT (device_id, local_id) DO UPDATE SET ts = EXCLUDED.ts, odometer_km = EXCLUDED.odometer_km, liters = EXCLUDED.liters,
              total_price = EXCLUDED.total_price, price_per_liter = EXCLUDED.price_per_liter, fuel_type = EXCLUDED.fuel_type,
-             ethanol_pct = EXCLUDED.ethanol_pct, full_tank = EXCLUDED.full_tank, received_at = now()`,
+             ethanol_pct = EXCLUDED.ethanol_pct, full_tank = EXCLUDED.full_tank, received_at = now(), removed_at = NULL`,
           [request.device.id, f.id, f.ts, f.odometerKm ?? null, f.liters, f.totalPrice ?? null, f.pricePerLiter ?? null, f.fuelType, f.ethanolPct ?? null, f.fullTank],
         );
       }

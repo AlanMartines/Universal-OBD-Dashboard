@@ -27,17 +27,42 @@ object RemoteSync {
         mine
     }
 
-    /** Lista de abastecimentos do veículo, enviada quando muda. Falha aqui não atrapalha a telemetria. */
-    private suspend fun syncFuelUps(c: Context, v: String, client: RemoteClient, token: String) {
+    enum class FuelSync { UNCHANGED, SENT, OFFLINE, REFUSED }
+
+    /** Lista de abastecimentos do veículo, enviada quando muda (ou sempre, com [force]). Falha aqui não atrapalha a telemetria. */
+    private suspend fun syncFuelUps(c: Context, v: String, client: RemoteClient, token: String, force: Boolean = false): FuelSync {
         val body = RemotePayload.fuelUps(AppDatabase.get(c).fuelUpDao().all(v))
         val hash = sha256(body)
-        if (hash == RemoteSettings.fuelSentHash(c, v)) return
-        try {
+        if (!force && hash == RemoteSettings.fuelSentHash(c, v)) return FuelSync.UNCHANGED
+        return try {
             val code = client.uploadFuelUps(token, body)
-            if (code in 200..299) RemoteSettings.setFuelSentHash(c, hash, v) else Log.w(TAG, "Abastecimentos recusados: $code")
+            if (code in 200..299) {
+                RemoteSettings.setFuelSentHash(c, hash, v)
+                FuelSync.SENT
+            } else {
+                Log.w(TAG, "Abastecimentos recusados: $code")
+                FuelSync.REFUSED
+            }
         } catch (e: java.io.IOException) {
             Log.i(TAG, "Abastecimentos ficam para o próximo envio: ${e.message}")
+            FuelSync.OFFLINE
         }
+    }
+
+    /** Aba Abastecimentos → "Enviar ao painel": a lista do veículo selecionado, na hora. null = não pareado. */
+    suspend fun sendFuelUpsNow(context: Context): FuelSync? = lock.withLock {
+        val c = context.applicationContext
+        val v = Vehicles.selectedId(c)
+        if (!RemoteSettings.enabled(c, v)) return@withLock null
+        val token = RemoteSettings.token(c, v) ?: return@withLock null
+        syncFuelUps(c, v, RemoteClient(RemoteSettings.baseUrl(c, v)), token, force = true)
+    }
+
+    /** A lista atual já está no painel? */
+    suspend fun fuelUpsInSync(context: Context): Boolean {
+        val c = context.applicationContext
+        val v = Vehicles.selectedId(c)
+        return sha256(RemotePayload.fuelUps(AppDatabase.get(c).fuelUpDao().all(v))) == RemoteSettings.fuelSentHash(c, v)
     }
 
     private fun sha256(text: String): String =
