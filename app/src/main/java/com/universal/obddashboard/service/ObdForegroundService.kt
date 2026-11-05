@@ -38,6 +38,8 @@ import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import com.universal.obddashboard.Vehicles
+import com.universal.obddashboard.telemetry.TripComputerStore
+import com.universal.obddashboard.fuel.FuelLog
 import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.R
@@ -580,6 +582,10 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     private suspend fun remoteLiveLoop(loaded: LoadedProfile) {
         val c = applicationContext
         var wait = RemoteUploader.LIVE_IDLE_MS
+        // Computador de bordo para o painel web: a parte do banco é relida a cada minuto
+        var pcBase: TripComputerStore.Base? = null
+        var pcRealKmPerL: Double? = null
+        var pcLoadedAt = 0L
         while (true) {
             delay(wait)
             wait = RemoteUploader.LIVE_IDLE_MS
@@ -590,6 +596,13 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             if (s.connection != ConnectionStatus.STREAMING) continue
             wait = try {
                 val odometerNow = appOdometerKm()
+                if (System.currentTimeMillis() - pcLoadedAt > PC_REFRESH_MS) {
+                    pcLoadedAt = System.currentTimeMillis()
+                    val db = AppDatabase.get(c)
+                    pcBase = runCatching { TripComputerStore.load(c, db, vehicleId, t.tripId, loaded.profile.fuel) }.getOrNull()
+                    pcRealKmPerL = runCatching { FuelLog.summary(db.fuelUpDao().all(vehicleId)).avgKmPerL }.getOrNull()
+                }
+                val pc = TripComputerStore.snapshot(pcBase, s, true, pcRealKmPerL, s.derived.fuelRemainingL)
                 val body = withContext(Dispatchers.Default) {
                     val v = loaded.profile
                     val dash = AppSettings.dashboard(c, loaded)
@@ -623,7 +636,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                             "dash.reserveL" to v.fuel?.reserveMaxL,
                             // Total do app (hodômetro informado + viagens desde então), para o painel web
                             "app.odometer_km" to odometerNow,
-                        ),
+                        ) + pc.metrics(),
                         s.alerts.map { RemotePayload.LiveAlert(it.level.name, it.message) },
                         BuildConfig.VERSION_NAME,
                     )
@@ -1152,6 +1165,9 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         }
 
         private const val TAG = "ObdService"
+
+        /** Releitura do computador de bordo (médias desde o abastecimento, parcial A…) para o painel web. */
+        private const val PC_REFRESH_MS = 60_000L
 
         const val ACTION_START = "com.universal.obddashboard.action.START"
         const val ACTION_STOP = "com.universal.obddashboard.action.STOP"

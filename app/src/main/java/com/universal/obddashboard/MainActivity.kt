@@ -46,7 +46,7 @@ import com.universal.obddashboard.service.ObdForegroundService
 import com.universal.obddashboard.telemetry.DashboardState
 import com.universal.obddashboard.telemetry.TelemetryHub
 import com.universal.obddashboard.telemetry.Leg
-import com.universal.obddashboard.telemetry.TripComputer
+import com.universal.obddashboard.telemetry.TripComputerStore
 import com.universal.obddashboard.telemetry.TripMark
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -241,53 +241,13 @@ class MainActivity : ComponentActivity() {
             if (ref != null) ref.km + dao.distanceSinceKm(ref.since, vehicleId) else dao.totalDistanceKm(vehicleId)
         }.getOrNull()
         realKmPerL = runCatching { FuelLog.summary(db.fuelUpDao().all(Vehicles.selectedId(this))).avgKmPerL }.getOrNull()
-        computerBase = runCatching { loadComputerBase(db) }.getOrNull()
+        computerBase = runCatching {
+            val current = TelemetryHub.state.value.tripId?.takeIf { ObdForegroundService.isRunning }
+            TripComputerStore.load(this, db, Vehicles.selectedId(this), current, currentProfile().profile.fuel)
+        }.getOrNull()
     }
 
-    /** O que o computador de bordo precisa do banco, sem a viagem em andamento (somada ao vivo em [computerJson]). */
-    private class ComputerBase(
-        val currentTripId: Long?,
-        val fuelUp: Period?,
-        val tripA: Period?,
-        /** Viagens anteriores, da mais nova para a mais velha (para os últimos ~50 km). */
-        val previous: List<Leg>,
-        val pricePerL: Double?,
-        val reserveL: Double,
-    )
-
-    /** Período a partir de uma marca: viagens já fechadas e, se a da marca terminou, o resto dela. */
-    private class Period(val mark: TripMark, val closedAfter: Leg, val markTripFinal: Leg?)
-
-    private suspend fun loadComputerBase(db: AppDatabase): ComputerBase {
-        val dao = db.tripDao()
-        val vehicleId = Vehicles.selectedId(this)
-        val current = TelemetryHub.state.value.tripId?.takeIf { ObdForegroundService.isRunning }
-        suspend fun period(kind: String, fallbackSince: Long?): Period? {
-            val mark = AppSettings.tripMark(this, kind) ?: fallbackSince?.let { TripMark(it, null, 0.0, 0.0) } ?: return null
-            val closed = dao.totalsSince(mark.since, vehicleId, current ?: -1, mark.tripId ?: -1).let { Leg(it.km, it.liters) }
-            val markFinal = mark.tripId?.takeIf { it != current }?.let { id -> dao.getTrip(id)?.let { Leg(it.distanceKm, it.fuelUsedL) } }
-            return Period(mark, closed, markFinal)
-        }
-        val fuelUps = db.fuelUpDao().all(vehicleId)
-        val lastFuelUp = fuelUps.maxByOrNull { it.timestamp }
-        // A marca do abastecimento vale se for do último registrado; senão, conta desde o horário dele
-        val fuelMark = AppSettings.tripMark(this, AppSettings.MARK_FUEL_UP)
-        val fuelUp = lastFuelUp?.let { f ->
-            if (fuelMark != null && kotlin.math.abs(fuelMark.since - f.timestamp) <= FUEL_MARK_MATCH_MS) period(AppSettings.MARK_FUEL_UP, null)
-            else period("none", f.timestamp)
-        }
-        val fuel = currentProfile().profile.fuel
-        return ComputerBase(
-            currentTripId = current,
-            fuelUp = fuelUp,
-            tripA = period(AppSettings.MARK_TRIP_A, null),
-            previous = dao.recentTrips(RECENT_TRIPS, vehicleId).filter { it.id != current }.map { Leg(it.distanceKm, it.fuelUsedL) },
-            pricePerL = lastFuelUp?.let { f -> f.pricePerLiter ?: f.totalPrice?.takeIf { f.liters > 0 }?.div(f.liters) },
-            reserveL = fuel?.let { (it.reserveMinL + it.reserveMaxL) / 2 } ?: 0.0,
-        )
-    }
-
-    @Volatile private var computerBase: ComputerBase? = null
+    @Volatile private var computerBase: TripComputerStore.Base? = null
 
     /** Marca o início de um período do computador de bordo agora, com os totais da viagem em andamento. */
     internal fun markTripPeriod(kind: String, at: Long = System.currentTimeMillis()) {
@@ -302,42 +262,32 @@ class MainActivity : ComponentActivity() {
 
     /** Computador de bordo para a tela: base do banco + viagem em andamento + leituras do momento. */
     private fun computerJson(s: DashboardState): JSONObject {
-        val base = computerBase
-        val d = s.derived
-        val running = ObdForegroundService.isRunning && s.tripId != null
-        val current = if (running) Leg(s.tripDistanceKm, d.tripFuelUsedL) else null
-        fun periodJson(p: Period?): Any {
-            if (p == null) return JSONObject.NULL
-            val leg = TripComputer.sinceMark(p.mark, p.closedAfter, p.markTripFinal, current, s.tripId, s.tripStartedAt)
-            return JSONObject().put("since", p.mark.since).put("km", leg.km).put("liters", leg.liters)
-                .put("kmPerL", leg.kmPerL.orNull()).put("cost", base?.pricePerL?.times(leg.liters).orNull())
-        }
-        val recent = TripComputer.recent(current ?: Leg.ZERO, base?.previous.orEmpty())
-        val sinceFuel = base?.fuelUp?.let { TripComputer.sinceMark(it.mark, it.closedAfter, it.markTripFinal, current, s.tripId, s.tripStartedAt) }
-        val fuelL = d.fuelRemainingL ?: AppSettings.fuelLevel(this).takeIf { !ObdForegroundService.isRunning }
-        val rangeKmPerL = TripComputer.rangeKmPerL(sinceFuel, realKmPerL, recent)
-        val (toReserve, toEmpty) = TripComputer.range(fuelL, rangeKmPerL, base?.reserveL ?: 0.0)
-        val price = base?.pricePerL
+        val fuelL = s.derived.fuelRemainingL ?: AppSettings.fuelLevel(this).takeIf { !ObdForegroundService.isRunning }
+        val c = TripComputerStore.snapshot(computerBase, s, ObdForegroundService.isRunning, realKmPerL, fuelL)
+        fun leg(l: Leg?, since: Long? = null, cost: Double? = null): Any = l?.let {
+            JSONObject().put("km", it.km).put("liters", it.liters).put("kmPerL", it.kmPerL.orNull())
+                .put("cost", (cost ?: c.pricePerL?.times(it.liters)).orNull()).put("since", since ?: JSONObject.NULL)
+        } ?: JSONObject.NULL
         return JSONObject()
-            .put("instantLph", d.instantLph.orNull())
-            .put("instantKmPerL", d.instantKmPerL.orNull())
-            .put("ecoBand", d.ecoBand ?: JSONObject.NULL)
-            .put("costPerKmNow", TripComputer.costPerKm(price, d.instantKmPerL).orNull())
-            .put("pricePerL", price.orNull())
-            .put("trip", current?.let { JSONObject().put("km", it.km).put("liters", it.liters).put("kmPerL", it.kmPerL.orNull()).put("cost", d.tripCost.orNull()) } ?: JSONObject.NULL)
-            .put("sinceFuelUp", periodJson(base?.fuelUp))
-            .put("tripA", periodJson(base?.tripA))
-            .put("recent", JSONObject().put("km", recent.km).put("liters", recent.liters).put("kmPerL", recent.kmPerL.orNull()))
-            .put("rangeKmPerL", rangeKmPerL.orNull())
-            .put("rangeToReserveKm", toReserve.orNull())
-            .put("rangeToEmptyKm", toEmpty.orNull())
-            .put("movingS", d.movingS)
-            .put("idleS", d.idleS)
-            .put("idleFuelL", d.idleFuelL)
-            .put("idleCost", price?.times(d.idleFuelL).orNull())
-            .put("fuelCutKm", d.fuelCutKm)
-            .put("avgMovingKmh", d.avgMovingKmh.orNull())
-            .put("ecoPct", d.ecoPct?.let { JSONArray(it) } ?: JSONObject.NULL)
+            .put("instantLph", c.instantLph.orNull())
+            .put("instantKmPerL", c.instantKmPerL.orNull())
+            .put("ecoBand", c.ecoBand ?: JSONObject.NULL)
+            .put("costPerKmNow", c.costPerKmNow.orNull())
+            .put("pricePerL", c.pricePerL.orNull())
+            .put("trip", leg(c.trip, cost = c.tripCost))
+            .put("sinceFuelUp", leg(c.sinceFuelUp, c.fuelUpSince))
+            .put("tripA", leg(c.tripA, c.tripASince))
+            .put("recent", leg(c.recent))
+            .put("rangeKmPerL", c.rangeKmPerL.orNull())
+            .put("rangeToReserveKm", c.rangeToReserveKm.orNull())
+            .put("rangeToEmptyKm", c.rangeToEmptyKm.orNull())
+            .put("movingS", c.movingS)
+            .put("idleS", c.idleS)
+            .put("idleFuelL", c.idleFuelL)
+            .put("idleCost", c.idleCost.orNull())
+            .put("fuelCutKm", c.fuelCutKm)
+            .put("avgMovingKmh", c.avgMovingKmh.orNull())
+            .put("ecoPct", c.ecoPct?.let { JSONArray(it) } ?: JSONObject.NULL)
     }
 
     /** Consumo real médio dos abastecimentos (para a autonomia do painel), relido a cada minuto. */
@@ -614,10 +564,6 @@ class MainActivity : ComponentActivity() {
         private const val APP_URL = "https://appassets.androidplatform.net/assets/web/index.html"
         private const val UI_REFRESH_MS = 250L
         internal const val CONSOLE_REVIEW_LINES = 3000
-        /** Viagens anteriores lidas para os "últimos ~50 km" do computador de bordo. */
-        private const val RECENT_TRIPS = 40
-        /** A marca de abastecimento vale para o registro feito até este tanto depois (ou antes) dela. */
-        private const val FUEL_MARK_MATCH_MS = 6 * 60 * 60 * 1000L
         internal const val MAX_CSV_BYTES = 1_000_000
         internal const val MAX_TRIPS_FOR_TOTALS = 500
         private const val TOTAL_KM_REFRESH_MS = 60_000L
