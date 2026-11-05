@@ -221,6 +221,7 @@
     "tank_capacity_l": 48.0,
     "reserve_min_l": 5.5,
     "reserve_max_l": 7.5,
+    "eco_mid_l_per_100km": 10.0,
     "method": "speed_density",
     "displacement_l": 0.999,
     "volumetric_efficiency": 0.99,

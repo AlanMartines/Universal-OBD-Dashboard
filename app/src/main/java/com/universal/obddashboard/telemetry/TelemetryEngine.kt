@@ -37,6 +37,15 @@ class TelemetryEngine(
     private val timers = PerformanceTimers()
     private val speedFactor = 1 + speedCorrectionPct / 100
     private var lastSpeedAt = 0L
+    private val ecoMid = profile.profile.fuel?.ecoMidLPer100km ?: TripStats.DEFAULT_ECO_MID
+    /** Computador de bordo da viagem; numa viagem retomada, refeito pelas amostras gravadas ([restoreStats]). */
+    var stats = TripStats(ecoMid); private set
+    private val smoothLph = Smoothed()
+    private val smoothSpeed = Smoothed()
+
+    fun restoreStats(logs: List<com.universal.obddashboard.db.TelemetryLogEntity>) {
+        stats = TripStats.fromLogs(logs, ecoMid)
+    }
 
     class Result(
         val derived: DerivedMetrics,
@@ -78,7 +87,15 @@ class TelemetryEngine(
             fuelLph = lph,
         )
 
-        val instantKmL = if (lph != null && lph > 0.05 && speed != null && speed > 5) speed / lph else null
+        stats.add(dtS, speed, rpm, lph)
+        val sLph = smoothLph.update(lph, dtS)
+        val sSpeed = smoothSpeed.update(speed, dtS)
+        val instantKmL = if (sLph != null && sLph > TripStats.CUT_LPH && sSpeed != null && sSpeed > 5) sSpeed / sLph else null
+        val ecoBand = if (sLph != null && sLph > TripStats.CUT_LPH && sSpeed != null && sSpeed >= TripStats.ECO_MIN_KMH) {
+            TripStats.band(sLph / sSpeed * 100.0, ecoMid)
+        } else {
+            null
+        }
         val tripKmL = trip?.let { if (it.fuelUsedL > 0.05) it.distanceKm / it.fuelUsedL else null }
         val advice = shiftAdvisor?.advise(speed, rpm, tps)
         val loadPct = estimatedLoad.update(rpm, v(roles.map))
@@ -102,6 +119,14 @@ class TelemetryEngine(
             shiftUp = advice?.shiftUp ?: false,
             estimatedLoadPct = loadPct,
             tripCost = fuelPricePerL?.let { it * fuelUsed },
+            instantLph = sLph,
+            ecoBand = ecoBand,
+            movingS = stats.movingS,
+            idleS = stats.idleS,
+            idleFuelL = stats.idleFuelL,
+            fuelCutKm = stats.fuelCutKm,
+            avgMovingKmh = stats.avgMovingKmh,
+            ecoPct = stats.ecoPct(),
         )
 
         val vars = VariableResolver { name ->

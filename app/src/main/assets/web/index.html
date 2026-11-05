@@ -88,6 +88,26 @@
       </div>
 
       <div class="col">
+      <div class="card computer" id="computer">
+        <div class="row-between"><span class="label">Computador de bordo</span><span id="pc-eco" class="eco-pill">--</span></div>
+        <div class="pc-now">
+          <div><b id="pc-now-value">--</b> <small id="pc-now-unit">km/l</small></div>
+          <div class="small muted" id="pc-now-sub">--</div>
+        </div>
+        <div class="pc-grid">
+          <div class="pc-cell"><span class="label">Viagem</span><b id="pc-trip-kml">--</b><small id="pc-trip-sub">--</small></div>
+          <div class="pc-cell"><span class="label">Desde o abastecimento</span><b id="pc-fuel-kml">--</b><small id="pc-fuel-sub">--</small></div>
+          <div class="pc-cell"><span class="label">Parcial A <button id="pc-reset-a" class="btn btn-small">Zerar</button></span><b id="pc-a-kml">--</b><small id="pc-a-sub">--</small></div>
+          <div class="pc-cell"><span class="label">Últimas viagens</span><b id="pc-recent-kml">--</b><small id="pc-recent-sub">--</small></div>
+        </div>
+        <div class="pc-range">
+          <div><span class="label">Até a reserva</span><b id="pc-to-reserve">--</b></div>
+          <div><span class="label">Até vazio</span><b id="pc-to-empty">--</b></div>
+        </div>
+        <div class="small muted" id="pc-range-basis"></div>
+        <div class="kv small" id="pc-stats"></div>
+        <p class="small muted pc-note">Consumo estimado pelo motor (MAP e rotação), calibrado com os seus abastecimentos. Km/l e médias só aparecem com dados suficientes.</p>
+      </div>
       <div class="card">
         <div class="row-between"><span class="label">Falhas (DTC)</span><span id="mil" class="pill">MIL --</span></div>
         <div id="dtcs" class="dtc-list muted">Nenhuma falha lida ainda.</div>
@@ -629,6 +649,7 @@
   <script src="app-remoto.js"></script>
   <script src="app-dispositivo.js"></script>
   <script src="app-roteiro.js"></script>
+  <script src="app-computador.js"></script>
   <script src="app-main.js"></script>
 </body>
 </html>

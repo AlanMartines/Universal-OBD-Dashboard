@@ -247,6 +247,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             },
             speedCorrectionPct = AppSettings.dashboard(this, loaded).speedCorrectionPct,
         )
+        // Viagem retomada: o computador de bordo continua de onde parou, refeito pelas amostras gravadas.
+        if (resumeId != null) runCatching { engine?.restoreStats(dao.telemetryForTrip(tripId)) }
         TelemetryHub.update { it.copy(tripId = tripId, tripStartedAt = acc.startTime, tripDistanceKm = acc.distanceKm, userAlarmsLoaded = userAlerts.size) }
         startLocationUpdates(highAccuracy = true)
 

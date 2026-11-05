@@ -56,6 +56,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
     { id: 'ignition', title: 'Ignição ligada, motor desligado', place: 'stopped', steps: [
       { id: 'door_driver', title: 'Porta do motorista', priority: true, engine: 'off', pattern: { on: 'Abra a porta', off: 'Feche a porta', on_s: 3, off_s: 3, repeat: 2 } }] }] } }),
   captureMark: () => 'ok', captureSpeak() {}, captureVibrate() {}, captureKeepAlive() {},
+  resetTripA: () => 'ok', getTripSummary: () => JSON.stringify({ ok: true, samples: 400, km: 12.3, liters: 1.1, kmPerL: 11.2, cost: 7.1, costPerKm: 0.58, movingS: 1320, idleS: 300, idleFuelL: 0.08, idleCost: 0.5, avgMovingKmh: 33, fuelCutKm: 0.9, ecoPct: [55, 20, 25] }),
 };
 
 /* Consultas ao banco respondem depois, em window.onBridgeResult, para não prender a tela enquanto o banco trabalha.

@@ -200,6 +200,8 @@ data class FuelSettings(
     val gasoline: FuelType = FuelType("Gasolina", 14.7, 745.0),
     val ethanol: FuelType? = null,
     @SerialName("default_ethanol_pct") val defaultEthanolPct: Double = 0.0,
+    /** Meio do indicador de economia (L/100 km): abaixo é verde, acima é vermelho. */
+    @SerialName("eco_mid_l_per_100km") val ecoMidLPer100km: Double = 10.0,
 )
 
 @Serializable

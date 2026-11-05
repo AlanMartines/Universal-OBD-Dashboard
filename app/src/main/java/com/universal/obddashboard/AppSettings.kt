@@ -9,6 +9,7 @@ import com.universal.obddashboard.obd.LoadedProfile
 import com.universal.obddashboard.obd.ProfileParser
 import com.universal.obddashboard.obd.UserAlarm
 import com.universal.obddashboard.telemetry.TimedRun
+import com.universal.obddashboard.telemetry.TripMark
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -33,6 +34,9 @@ object AppSettings {
     private const val KEY_DIAG_FILE = "diag_file"
     private const val KEY_ODOMETER_KM = "odometer_ref_km"
     private const val KEY_ODOMETER_SINCE = "odometer_ref_since"
+    private const val KEY_TRIP_MARK_PREFIX = "trip_mark_"
+    const val MARK_TRIP_A = "a"
+    const val MARK_FUEL_UP = "fuel"
     private const val KEY_FUEL_CORR_PREFIX = "fuel_correction_"
     private const val KEY_FUEL_CORR_SINCE_PREFIX = "fuel_correction_since_"
     private const val KEY_DASHBOARD_PREFIX = "dashboard_"
@@ -206,6 +210,16 @@ object AppSettings {
         if (ref == null) remove(sk(context, KEY_ODOMETER_KM)).remove(sk(context, KEY_ODOMETER_SINCE))
         else putFloat(sk(context, KEY_ODOMETER_KM), ref.km.toFloat()).putLong(sk(context, KEY_ODOMETER_SINCE), ref.since)
     }
+
+    /**
+     * Marcas do computador de bordo, por veículo: o instante em que o parcial A foi zerado ou em que houve
+     * abastecimento, com os totais da viagem em andamento naquele momento (para contar só o resto dela).
+     */
+    fun tripMark(context: Context, kind: String): TripMark? =
+        prefs(context).getString(sk(context, KEY_TRIP_MARK_PREFIX + kind), null)?.let { TripMark.decode(it) }
+
+    fun setTripMark(context: Context, kind: String, mark: TripMark) =
+        prefs(context).edit { putString(sk(context, KEY_TRIP_MARK_PREFIX + kind), mark.encode()) }
 
     private fun csv(value: String?): List<String> =
         value.orEmpty().split(',', ';').map { it.trim() }.filter { it.isNotEmpty() }

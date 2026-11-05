@@ -30,7 +30,8 @@ async function loadHistory() {
       <div class="kv"><span>Vmáx ${fmt(t.maxSpeedKmh)} km/h</span><span>RPM máx ${fmt(t.maxRpm)}</span>
       <span>Temp máx ${fmt(t.maxCoolantC)} °C</span><span>Tensão mín ${fmt(t.minVoltage, 1)} V</span>
       <span>${fmt(t.fuelUsedL, 2)} L</span><span>${REASONS[t.endReason] || t.endReason || ''}</span></div>
-      <div class="actions"><button class="btn btn-small" data-export="csv" data-trip="${t.id}">CSV</button>
+      <div class="actions"><button class="btn btn-small" data-summary="${t.id}">Resumo</button>
+      <button class="btn btn-small" data-export="csv" data-trip="${t.id}">CSV</button>
       <button class="btn btn-small" data-export="gpx" data-trip="${t.id}">GPX</button>
       <button class="btn btn-small btn-danger" data-delete-trip="${t.id}">Apagar</button></div>`;
     if (aiReady() && t.distanceKm >= 0.5) {

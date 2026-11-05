@@ -6,6 +6,18 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Computador de bordo (aba Detalhes):**
+  - **agora:** km/l andando, ou L/h parado com o motor ligado, com R$/km;
+  - **eficiência:** selo "Econômico", "Na média" ou "Gastando", com o mesmo critério do indicador de economia (meio do perfil, `eco_mid_l_per_100km`);
+  - **médias:** da viagem, desde o abastecimento, do parcial A (zerado pelo botão) e das últimas viagens (~50 km). O abastecimento ou o parcial A no meio de uma viagem contam só o resto dela;
+  - **autonomia:** até a reserva e até vazio, pela média e pelo nível do tanque, dizendo qual média usou;
+  - **viagem:** tempo andando e velocidade média, marcha lenta (tempo, litros e R$), km com a injeção cortada e % do tempo no verde, meio e vermelho. Numa viagem retomada, as contas continuam pelas amostras gravadas.
+- **Histórico → Resumo** de cada viagem, refeito pelas amostras gravadas: km/l, litros, R$ e R$/km, tempo andando, velocidade média, marcha lenta, injeção cortada e % no verde, meio e vermelho.
+
+### Alterado
+- **km/l instantâneo suavizado** (cerca de 3 s), para o número não pular a cada leitura.
+
 ## [0.9.22] - 2026-11-05
 
 ### Adicionado

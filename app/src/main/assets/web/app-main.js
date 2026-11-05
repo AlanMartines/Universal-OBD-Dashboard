@@ -8,6 +8,8 @@ $('import-profile').addEventListener('click', () => {
   if (res.ok) loadSettings();
 });
 $('trips').addEventListener('click', async (e) => {
+  const sum = e.target.closest('[data-summary]');
+  if (sum) { showTripSummary(sum); return; }
   const del = e.target.closest('[data-delete-trip]');
   if (del) {
     if (!confirm('Apagar esta viagem, com a telemetria e as falhas registradas nela?')) return;
