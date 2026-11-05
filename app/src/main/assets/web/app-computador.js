@@ -21,7 +21,7 @@ function pcLeg(prefix, leg) {
 function renderComputer(s) {
   const c = s.computer || {};
   const eco = $('pc-eco');
-  eco.textContent = c.ecoBand != null ? PC_ECO[c.ecoBand] : '--';
+  $('pc-eco-text').textContent = c.ecoBand != null ? PC_ECO[c.ecoBand] : 'sem leitura';
   eco.className = 'eco-pill' + (c.ecoBand != null ? ' eco-' + c.ecoBand : '');
 
   // Agora: km/l andando; parado com o motor ligado, km/l não existe e vale o L/h

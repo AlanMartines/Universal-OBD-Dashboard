@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.23] - 2026-11-05
+
 ### Adicionado
 - **Computador de bordo (aba Detalhes):**
   - **agora:** km/l andando, ou L/h parado com o motor ligado, com R$/km;
@@ -13,6 +15,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
   - **médias:** da viagem, desde o abastecimento, do parcial A (zerado pelo botão) e das últimas viagens (~50 km). O abastecimento ou o parcial A no meio de uma viagem contam só o resto dela;
   - **autonomia:** até a reserva e até vazio, pela média e pelo nível do tanque, dizendo qual média usou;
   - **viagem:** tempo andando e velocidade média, marcha lenta (tempo, litros e R$), km com a injeção cortada e % do tempo no verde, meio e vermelho. Numa viagem retomada, as contas continuam pelas amostras gravadas.
+- **Indicador de economia (folha aberta, desenho do projeto) no Painel:** verde quando econômico, na cor do texto na média e vermelha com consumo alto; apagada parado ou sem leitura. Fica entre a marcha e a velocidade no Minimal, antes do combustível na Cápsula e depois do combustível no HUD. O selo do computador de bordo usa a mesma folha.
 - **Histórico → Resumo** de cada viagem, refeito pelas amostras gravadas: km/l, litros, R$ e R$/km, tempo andando, velocidade média, marcha lenta, injeção cortada e % no verde, meio e vermelho.
 
 ### Alterado
