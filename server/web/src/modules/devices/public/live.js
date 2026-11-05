@@ -534,5 +534,7 @@
     render(sample);
     lastTs = ts;
     tick();
+    // O Percurso (route.js) usa a mesma conexão para andar com o carro no mapa.
+    document.dispatchEvent(new CustomEvent('live-sample', { detail: sample }));
   });
 }());
