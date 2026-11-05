@@ -84,7 +84,57 @@
   var chartRequest = 0;
 
   // Limites dos mostradores e dados internos da viagem não são sinais para exibir.
-  function isInternal(id) { return id.indexOf('dash.') === 0 || id.indexOf('trip.') === 0 || id.indexOf('app.') === 0; }
+  function isInternal(id) { return id.indexOf('dash.') === 0 || id.indexOf('trip.') === 0 || id.indexOf('app.') === 0 || id.indexOf('pc.') === 0; }
+
+  /* ---------------- Computador de bordo (métricas "pc.*" enviadas pelo app) */
+  var pc = {};
+  var PC_ECO = ['Econômico', 'Na média', 'Gastando'];
+  function pcNum(v, d) { return typeof v === 'number' ? v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) : null; }
+  function pcBrl(v) { return typeof v === 'number' ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : null; }
+  function pcTime(s) {
+    if (typeof s !== 'number') return null;
+    var m = Math.round(s / 60);
+    return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0');
+  }
+  function pcLeg(id, km, liters, kml, cost) {
+    document.getElementById(id).textContent = pcNum(kml, 1) ? pcNum(kml, 1) + ' km/l' : '—';
+    document.getElementById(id + '-sub').textContent = typeof km === 'number'
+      ? pcNum(km, 1) + ' km · ' + pcNum(liters || 0, 2) + ' L' + (pcBrl(cost) ? ' · ' + pcBrl(cost) : '') : '—';
+  }
+  function renderPc() {
+    var panel = document.getElementById('pc-panel');
+    if (!Object.keys(pc).length) { panel.hidden = true; return; }
+    panel.hidden = false;
+    // O momento (consumo agora, eficiência) só vale com o carro enviando
+    var band = isStale ? null : pc['pc.ecoBand'];
+    var eco = document.getElementById('pc-eco');
+    eco.dataset.band = typeof band === 'number' ? String(band) : '';
+    document.getElementById('pc-eco-text').textContent = typeof band === 'number' ? PC_ECO[band] : 'sem leitura';
+    var kml = isStale ? null : pc['pc.instantKmPerL'];
+    var lph = isStale ? null : pc['pc.instantLph'];
+    document.getElementById('pc-now').textContent = pcNum(kml, 1) || pcNum(lph, 2) || '—';
+    document.getElementById('pc-now-unit').textContent = pcNum(kml, 1) || !pcNum(lph, 2) ? 'km/l' : 'L/h';
+    var sub = [];
+    if (pcNum(kml, 1) && pcNum(lph, 1)) sub.push(pcNum(lph, 1) + ' L/h');
+    if (pcNum(kml, 1) && pcBrl(pc['pc.costPerKmNow'])) sub.push(pcBrl(pc['pc.costPerKmNow']) + '/km');
+    if (!pcNum(kml, 1) && pcNum(lph, 2)) sub.push('parado com o motor ligado');
+    document.getElementById('pc-now-sub').textContent = isStale ? 'sem leitura agora' : (sub.join(' · ') || '—');
+    var price = pc['pc.pricePerL'];
+    pcLeg('pc-trip', pc['pc.tripKm'], pc['pc.tripL'], pc['pc.tripKmPerL'], pc['pc.tripCost']);
+    pcLeg('pc-fuel', pc['pc.fuelUpKm'], pc['pc.fuelUpL'], pc['pc.fuelUpKmPerL'], typeof price === 'number' && typeof pc['pc.fuelUpL'] === 'number' ? price * pc['pc.fuelUpL'] : null);
+    pcLeg('pc-a', pc['pc.tripAKm'], pc['pc.tripAL'], pc['pc.tripAKmPerL'], typeof price === 'number' && typeof pc['pc.tripAL'] === 'number' ? price * pc['pc.tripAL'] : null);
+    pcLeg('pc-recent', pc['pc.recentKm'], pc['pc.recentL'], pc['pc.recentKmPerL'], null);
+    document.getElementById('pc-reserve').textContent = pcNum(pc['pc.rangeReserveKm'], 0) ? pcNum(pc['pc.rangeReserveKm'], 0) + ' km' : '—';
+    document.getElementById('pc-empty').textContent = pcNum(pc['pc.rangeEmptyKm'], 0) ? pcNum(pc['pc.rangeEmptyKm'], 0) + ' km' : '—';
+    document.getElementById('pc-range-basis').textContent = pcNum(pc['pc.rangeKmPerL'], 1) ? 'Pela média de ' + pcNum(pc['pc.rangeKmPerL'], 1) + ' km/l e o nível do tanque.' : '';
+    var st = [];
+    if (pc['pc.movingS']) st.push('Andando ' + pcTime(pc['pc.movingS']) + (pcNum(pc['pc.avgMovingKmh'], 0) ? ' · média ' + pcNum(pc['pc.avgMovingKmh'], 0) + ' km/h' : ''));
+    if (pc['pc.idleS']) st.push('Marcha lenta ' + pcTime(pc['pc.idleS']) + ' · ' + pcNum(pc['pc.idleFuelL'] || 0, 2) + ' L' + (typeof price === 'number' ? ' · ' + pcBrl(price * (pc['pc.idleFuelL'] || 0)) : ''));
+    if (pc['pc.fuelCutKm'] >= 0.1) st.push('Injeção cortada ' + pcNum(pc['pc.fuelCutKm'], 1) + ' km');
+    if (typeof pc['pc.ecoGreenPct'] === 'number') st.push('Verde ' + pcNum(pc['pc.ecoGreenPct'], 0) + '% · meio ' + pcNum(pc['pc.ecoMidPct'], 0) + '% · vermelho ' + pcNum(pc['pc.ecoRedPct'], 0) + '%');
+    var box = document.getElementById('pc-stats');
+    box.replaceChildren.apply(box, st.map(function (t) { var sp = document.createElement('span'); sp.textContent = t; return sp; }));
+  }
 
   function info(id) {
     if (LABELS[id]) return LABELS[id];
@@ -244,6 +294,10 @@
     Object.keys(metrics).forEach(function (id) {
       if (id.indexOf('dash.') === 0 && typeof metrics[id] === 'number') limits[id] = metrics[id];
     });
+    // A cada leitura o app manda o computador de bordo inteiro: o que não veio deixou de existir
+    var nextPc = {};
+    Object.keys(metrics).forEach(function (id) { if (id.indexOf('pc.') === 0 && typeof metrics[id] === 'number') nextPc[id] = metrics[id]; });
+    if (Object.keys(nextPc).length) { pc = nextPc; renderPc(); }
     Object.keys(metrics).forEach(function (id) {
       var value = metrics[id];
       if (typeof value !== 'number' || isInternal(id)) return;
@@ -429,6 +483,7 @@
     if (stale !== isStale) {
       isStale = stale;
       Object.keys(shown).forEach(paint);
+      renderPc();
     }
     staleNote.classList.toggle('d-none', !stale);
     if (stale) {

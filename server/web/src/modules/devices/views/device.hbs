@@ -31,6 +31,34 @@
   <p id="stale-note" class="alert alert-secondary small py-2 mb-3 d-none" role="status"><i class="fa-solid fa-clock-rotate-left me-1" aria-hidden="true"></i><span></span></p>
   <div class="row row-cols-2 row-cols-lg-4 g-3 mb-3" id="highlights"></div>
 
+  <section class="stat-panel pc-panel mb-3" id="pc-panel" aria-labelledby="pc-title" hidden>
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+      <h2 class="stat-group-title mb-0 me-auto" id="pc-title">Computador de bordo</h2>
+      <span class="pc-eco" id="pc-eco" data-band=""><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 2C20.2 4.8 20.6 10.4 16.6 13.3C14.3 15 10.7 15.2 7.8 16.2C5.4 17 3.5 19.4 2.4 22.6C2.7 18.6 4.6 15.8 7.9 14.4C10.9 13.3 14 13.5 15.9 11.8C18.2 9.7 18.4 5.9 16.6 3.1Z"/><path d="M17.4 2C13.6 3.3 10 3.4 7.6 5.5C6.1 6.8 4.9 8.6 4.4 10.6C5.5 9 7 7.8 8.7 7C11.4 5.7 14.5 5.4 16.6 3.1Z"/><path d="M15.2 7.4C14 10 11.7 10.9 9.3 12C6.9 13.1 5 14.9 3.8 17.6C5.5 15.9 7.4 14.8 9.8 13.9C12.6 12.8 14.8 10.6 15.2 7.4Z"/></svg><span id="pc-eco-text">sem leitura</span></span>
+    </div>
+    <div class="row g-3">
+      <div class="col-12 col-md-4">
+        <div class="pc-now"><span class="pc-big" id="pc-now">—</span> <small id="pc-now-unit">km/l</small></div>
+        <div class="small text-body-secondary" id="pc-now-sub">—</div>
+        <div class="pc-range mt-3">
+          <div><span class="small text-body-secondary">Até a reserva</span><b id="pc-reserve">—</b></div>
+          <div><span class="small text-body-secondary">Até vazio</span><b id="pc-empty">—</b></div>
+        </div>
+        <div class="small text-body-secondary mt-1" id="pc-range-basis"></div>
+      </div>
+      <div class="col-12 col-md-8">
+        <div class="pc-legs">
+          <div class="pc-leg"><span class="small text-body-secondary">Viagem</span><b id="pc-trip">—</b><small id="pc-trip-sub">—</small></div>
+          <div class="pc-leg"><span class="small text-body-secondary">Desde o abastecimento</span><b id="pc-fuel">—</b><small id="pc-fuel-sub">—</small></div>
+          <div class="pc-leg"><span class="small text-body-secondary">Parcial A</span><b id="pc-a">—</b><small id="pc-a-sub">—</small></div>
+          <div class="pc-leg"><span class="small text-body-secondary">Últimas viagens</span><b id="pc-recent">—</b><small id="pc-recent-sub">—</small></div>
+        </div>
+        <div class="pc-stats small text-body-secondary mt-2" id="pc-stats"></div>
+      </div>
+    </div>
+    <p class="small text-body-secondary mb-0 mt-2">Consumo estimado pelo app (motor, calibrado com os abastecimentos). Médias só com dados suficientes.</p>
+  </section>
+
   <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3" id="groups"></div>
 
   <div id="gps-box" class="d-none">

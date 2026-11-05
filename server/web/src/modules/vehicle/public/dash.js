@@ -67,9 +67,14 @@ window.Dash = (function () {
     temp: '<path d="M12 3.5a2 2 0 0 1 2 2v8.6a3.6 3.6 0 1 1-4 0V5.5a2 2 0 0 1 2-2zM12 9v7.5M16.5 6.5h3M16.5 9.5h3M3.5 20.5c1.4-1 2.8-1 4.2 0M16.3 20.5c1.4-1 2.8-1 4.2 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
     battery: '<path d="M3 8h18v11H3zM6.5 5.5h3V8M14.5 5.5h3V8M6 13.5h3.5M14.5 13.5H18M16.25 11.75v3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>',
     engine: '<path d="M2.5 11v5M2.5 13.5h2.5M5 9.5h3V7.5h5v2h2.5l2 2H20V10h1.5v7H20v-2h-1.5l-3 3H8l-3-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>',
+    // Folha aberta do indicador de economia (desenho próprio do projeto); preenchida com a cor do estado
+    leaf: '<path d="M17.4 2C20.2 4.8 20.6 10.4 16.6 13.3C14.3 15 10.7 15.2 7.8 16.2C5.4 17 3.5 19.4 2.4 22.6C2.7 18.6 4.6 15.8 7.9 14.4C10.9 13.3 14 13.5 15.9 11.8C18.2 9.7 18.4 5.9 16.6 3.1Z"/><path d="M17.4 2C13.6 3.3 10 3.4 7.6 5.5C6.1 6.8 4.9 8.6 4.4 10.6C5.5 9 7 7.8 8.7 7C11.4 5.7 14.5 5.4 16.6 3.1Z"/><path d="M15.2 7.4C14 10 11.7 10.9 9.3 12C6.9 13.1 5 14.9 3.8 17.6C5.5 15.9 7.4 14.8 9.8 13.9C12.6 12.8 14.8 10.6 15.2 7.4Z"/>',
     fuel: '<path d="M4.5 20V5.5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1V20M3 20h12M7 8.5h4M13.5 10.5h2a1 1 0 0 1 1 1v5a1.5 1.5 0 0 0 3 0V9l-3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>',
   };
   const icon = (id) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[id]}</svg>`;
+  /** Indicador de economia: folha verde (econômico), só o contorno (na média), vermelha (gastando), apagada (sem leitura). */
+  const ECO_TITLES = ['Econômico', 'Consumo na média', 'Consumo alto'];
+  const ecoLeaf = () => `<span class="eco-leaf" data-ui="eco" title="Economia: sem leitura">${icon('leaf')}</span>`;
   const LIGHTS = [
     ['link', 'OBD desconectado'], ['engine', 'Injeção (MIL)'], ['temp', 'Temperatura do motor'],
     ['battery', 'Carga da bateria'], ['fuel', 'Reserva'], ['fan', 'Eletroventilador ligado'],
@@ -253,6 +258,7 @@ window.Dash = (function () {
           <div class="cl-gear" data-ui="gear"><b data-ui="gearNum">–</b><small data-ui="gearSub">marcha</small></div>
           <span class="cl-divider"></span>
           <div class="cl-speed"><b data-ui="speedNum">--</b><small>km/h</small></div>
+          <div class="cl-eco">${ecoLeaf()}</div>
         </div>
         <div class="cl-side cl-right">${fields(3)}</div>
         ${foot({ lights: true, trip: true })}`;
@@ -353,7 +359,7 @@ window.Dash = (function () {
         <div class="cap-box">
           <svg class="cap-outline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M8 1.5 H92 L98.5 22 V78 L92 98.5 H8 L1.5 78 V22 Z" vector-effect="non-scaling-stroke"/></svg>
           <div class="cap-lights" data-ui="lights"></div>
-          <div class="cap-bars">${bar('fuelBar', 'fuel', ['E', 'F'])}<span class="cap-sep"></span>${bar('tempBar', 'temp', ['C', 'H'])}</div>
+          <div class="cap-bars">${ecoLeaf()}${bar('fuelBar', 'fuel', ['E', 'F'])}<span class="cap-sep"></span>${bar('tempBar', 'temp', ['C', 'H'])}</div>
           <div class="cap-cells">${fields(6)}</div>
           <div class="cap-trip"><span>Viagem <b data-ui="tripKm">--</b> km</span><span>Tempo <b data-ui="tripTime">--</b></span><span>Total <b data-ui="totalKm">--</b> km</span></div>
         </div>
@@ -423,7 +429,7 @@ window.Dash = (function () {
           <div class="hud-lights hud-lights-r" data-ui="lightsR"></div>
           <div class="hud-tab-bot" data-ui="tabBot">${bar('tempBar', 'temp', ['', ''])}
             <div class="hud-gear" data-ui="gear"><b data-ui="gearNum">N</b><small data-ui="gearSub"></small></div>
-            ${bar('fuelBar', 'fuel', ['', ''], true)}</div>
+            ${bar('fuelBar', 'fuel', ['', ''], true)}${ecoLeaf()}</div>
         </div>
         ${foot({})}`;
     },
@@ -735,6 +741,16 @@ window.Dash = (function () {
       if (st) node.dataset.state = st; else delete node.dataset.state;
       drawFieldBar(node, f.bar ? f.bar(s, d) : null);
     });
+
+    // Indicador de economia (os três temas): pelo computador de bordo
+    if (ui.eco) {
+      const band = s.computer && s.computer.ecoBand != null ? s.computer.ecoBand : null;
+      const v = band == null ? '' : String(band);
+      if (ui.eco.dataset.band !== v) {
+        ui.eco.dataset.band = v;
+        ui.eco.title = 'Economia: ' + (band == null ? 'sem leitura' : ECO_TITLES[band]);
+      }
+    }
 
     // Barras de combustível e temperatura (Cápsula e HUD)
     const cool = reading('coolant');

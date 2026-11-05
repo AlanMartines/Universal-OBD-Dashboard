@@ -72,6 +72,8 @@
       gps: fresh ? lastGps : null,
       tripDistanceKm: readings.trip_distance_km,
       tripStartedAt: typeof readings['trip.startedAt'] === 'number' ? readings['trip.startedAt'] : null,
+      // Indicador de economia (folha): só com o carro enviando
+      computer: { ecoBand: fresh && typeof readings['pc.ecoBand'] === 'number' ? readings['pc.ecoBand'] : null },
     });
   }
 
