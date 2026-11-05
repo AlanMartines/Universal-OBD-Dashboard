@@ -6,6 +6,16 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.27] - 2026-11-05
+
+### Alterado
+- **App: avisos** empilhados (até 3, o mais novo embaixo), com ícone pelo tipo e barra do tempo restante; tocar fecha, arrastar para o lado dispensa e segurar pausa.
+- **Painel web: avisos** no mesmo desenho do app (sucesso, erro, aviso e informação), embaixo no celular e no canto inferior direito a partir do tablet, com pausa ao passar o mouse.
+- **Painel web: confirmações** com ícone e cor pela gravidade: vermelho para excluir, amarelo para revogar, desativar, encerrar e remover, verde para entrar no modo suporte.
+
+### Corrigido
+- **Painel web:** o contorno verde dos campos em foco e o brilho verde do fundo não apareciam (cor escrita em formato inválido no CSS).
+
 ## [0.9.26] - 2026-11-05
 
 ### Adicionado
