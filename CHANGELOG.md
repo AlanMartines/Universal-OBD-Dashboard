@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.24] - 2026-11-05
+
 ### Adicionado
 - **Painel web: cartão "Computador de bordo" ao vivo** na visão geral do dispositivo: km/l agora (ou L/h parado), R$/km, folha de eficiência, médias da viagem, desde o abastecimento, parcial A e últimas viagens, autonomia até a reserva e até vazio, e tempo andando, marcha lenta, injeção cortada e % no verde, meio e vermelho. Sem transmissão, o "agora" e a folha ficam em "—"/"sem leitura"; médias e autonomia mantêm o último valor.
 - **App:** a leitura ao vivo envia o computador de bordo (métricas `pc.*`), calculado pela mesma rotina da tela do app (`TripComputerStore`).
