@@ -6,6 +6,14 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.25] - 2026-11-05
+
+### Corrigido
+- **App, aba Detalhes:** o cartão "Computador de bordo" ficava colado nos cartõezinhos de cima no celular em pé; agora tem o mesmo espaço dos outros cards.
+
+### Alterado
+- **Build:** Android Gradle Plugin 9.5.0 e KSP 2.3.13 (Dependabot).
+
 ## [0.9.24] - 2026-11-05
 
 ### Adicionado
