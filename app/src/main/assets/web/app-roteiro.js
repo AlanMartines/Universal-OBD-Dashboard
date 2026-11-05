@@ -127,8 +127,12 @@ function scriptPhases(st) {
     return out;
   }
   if (st.phases) return st.phases.map((ph, i) => ({ kind: 'phase', say: ph.say, s: ph.s, n: i + 1 }));
+  if (st.zones) return [{ kind: 'events', say: 'Toque na posição do ponteiro', s: st.max_s, n: 1 }];
   return [{ kind: 'events', say: 'Toque no botão quando acontecer', s: st.max_s, n: 1 }];
 }
+
+/** Passos com botões que a pessoa toca (eventos ou grupos): terminam com "Finalizar teste". */
+function scriptTapStep(st) { return !!(st.events || st.zones); }
 
 function scriptOpenStep(st) {
   if (scriptRunState) return;
@@ -138,7 +142,9 @@ function scriptOpenStep(st) {
   $('script-step-title').textContent = (st.priority ? '★ ' : '') + st.title;
   const total = scriptPhases(st).reduce((a, p) => a + p.s, 0);
   const how = st.pattern ? `${st.pattern.on} ${st.pattern.on_s} s → ${st.pattern.off} ${st.pattern.off_s} s, ${st.pattern.repeat} vezes.` : '';
-  $('script-step-before').textContent = [st.before, how, st.events ? `Até ${Math.round(st.max_s / 60)} min.` : `Cerca de ${Math.ceil((total + SCRIPT_PREPARE_S) / 60)} min.`].filter(Boolean).join(' ');
+  const length = st.zones ? 'Sem tempo fixo: no fim, toque em Finalizar teste.'
+    : st.events ? `Até ${Math.round(st.max_s / 60)} min; no fim, toque em Finalizar teste.` : `Cerca de ${Math.ceil((total + SCRIPT_PREPARE_S) / 60)} min.`;
+  $('script-step-before').textContent = [st.before, how, length].filter(Boolean).join(' ');
   $('script-live').hidden = true;
   $('script-summary').hidden = true;
   $('script-start').hidden = false;
@@ -179,6 +185,8 @@ function scriptStart() {
   $('script-start').hidden = true;
   $('script-skip').hidden = true;
   $('script-stop').hidden = false;
+  $('script-stop').textContent = scriptTapStep(st) ? 'Finalizar teste' : 'Parar passo';
+  $('script-stop').className = scriptTapStep(st) ? 'btn btn-primary' : 'btn btn-danger';
   $('script-back').disabled = true;
   $('script-live').hidden = false;
   $('script-live').className = 'script-live';
@@ -202,17 +210,41 @@ function scriptStart() {
     choices.prepend(label);
   }
   const events = $('script-events');
-  events.hidden = !st.events;
-  if (st.events) {
-    scriptButtons(events, st.events, (ev) => {
-      const roles = meta.roles || {};
-      const temp = scriptReading([roles.coolant || 'coolant_temp', 'can_coolant_temp']);
-      const speed = scriptSpeed();
-      const value = [speed === null ? '' : `${fmt(speed)} km/h`, temp === null ? '' : `${fmt(temp)} °C`].filter(Boolean).join(' · ');
-      if (scriptMark({ phase: 'event', label: ev, value }) !== 'ok') return;
-      bridge.captureVibrate(150);
-      scriptRunState.events.push(`${new Date().toLocaleTimeString('pt-BR')} · ${ev}${value ? ' · ' + value : ''}`);
-      $('script-event-log').textContent = scriptRunState.events.join('\n');
+  events.hidden = !scriptTapStep(st);
+  events.className = st.zones ? 'script-zones' : 'script-buttons';
+  const tap = (ev, btn) => {
+    const roles = meta.roles || {};
+    const temp = scriptReading([roles.coolant || 'coolant_temp', 'can_coolant_temp']);
+    const speed = scriptSpeed();
+    const value = [speed === null ? '' : `${fmt(speed)} km/h`, temp === null ? '' : `${fmt(temp)} °C`].filter(Boolean).join(' · ');
+    if (scriptMark({ phase: 'event', label: ev, value }) !== 'ok') return;
+    bridge.captureVibrate(150);
+    events.querySelectorAll('.btn').forEach((b) => b.classList.toggle('picked', b === btn));
+    scriptRunState.events.push(`${new Date().toLocaleTimeString('pt-BR')} · ${ev}${value ? ' · ' + value : ''}`);
+    $('script-event-log').textContent = scriptRunState.events.slice(-4).join('\n');
+  };
+  if (st.events) scriptButtons(events, st.events, tap);
+  if (st.zones) {
+    events.innerHTML = '';
+    st.zones.forEach((z) => {
+      const card = document.createElement('div');
+      card.className = 'script-zone zone-' + z.color;
+      const one = z.options.length === 1 && z.options[0] === z.label;
+      if (!one) {
+        const title = document.createElement('div');
+        title.className = 'zone-title';
+        title.textContent = z.label;
+        card.appendChild(title);
+      }
+      z.options.forEach((opt) => {
+        const b = document.createElement('button');
+        b.className = 'btn';
+        b.textContent = opt;
+        const label = one ? opt : `${z.label} ${opt.toLowerCase()}`;
+        b.addEventListener('click', () => tap(label, b));
+        card.appendChild(b);
+      });
+      events.appendChild(card);
     });
   }
   scriptRunState.phaseAt = Date.now() + SCRIPT_PREPARE_S * 1000;
@@ -229,7 +261,7 @@ function scriptEnterPhase(i) {
   $('script-say').textContent = ph.say;
   $('script-live').className = 'script-live ' + (ph.kind === 'on' ? 'on' : ph.kind === 'off' ? 'off' : '');
   const total = run.phases.length;
-  $('script-phase').textContent = scriptStep.pattern ? `${ph.kind === 'on' ? 'Aciona' : 'Solta'} · vez ${ph.n} de ${scriptStep.pattern.repeat}` : `Fase ${i + 1} de ${total}`;
+  $('script-phase').textContent = scriptStep.zones ? 'Toque de novo sempre que o ponteiro mudar de posição.' : scriptStep.pattern ? `${ph.kind === 'on' ? 'Aciona' : 'Solta'} · vez ${ph.n} de ${scriptStep.pattern.repeat}` : `Fase ${i + 1} de ${total}`;
   if (ph.kind !== 'events') bridge.captureSpeak(ph.say);
   bridge.captureVibrate(ph.kind === 'on' ? 400 : ph.kind === 'off' ? 150 : 250);
 }
@@ -255,7 +287,7 @@ function scriptTick() {
     return;
   }
   const left = Math.ceil((end - now) / 1000);
-  $('script-count').textContent = ph.kind === 'events' ? `${Math.floor((now - run.phaseAt) / 60000)}:${String(Math.floor(((now - run.phaseAt) / 1000) % 60)).padStart(2, '0')}` : String(left);
+  $('script-count').textContent = scriptStep.zones ? '' : ph.kind === 'events' ? `${Math.floor((now - run.phaseAt) / 60000)}:${String(Math.floor(((now - run.phaseAt) / 1000) % 60)).padStart(2, '0')}` : String(left);
 }
 
 const SCRIPT_RESULTS = {
@@ -269,7 +301,7 @@ function scriptFinish(result) {
   clearInterval(run.timer);
   scriptRunState = null;
   // Eventos terminam quando a pessoa encerra: isso conta como concluído
-  const ok = result === 'done' || (result === 'cancelled' && !!scriptStep.events);
+  const ok = result === 'done' || (result === 'cancelled' && scriptTapStep(scriptStep));
   scriptMark({ phase: 'step_end', result: ok ? 'done' : result });
   bridge.captureSpeak(ok ? 'Fim do passo.' : SCRIPT_RESULTS[result]);
   bridge.captureVibrate(ok ? 600 : 300);

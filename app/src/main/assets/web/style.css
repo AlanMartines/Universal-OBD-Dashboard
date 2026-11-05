@@ -292,3 +292,13 @@ input[readonly] { opacity: .7; }
 .script-actions { margin: 8px 0; }
 .script-summary { margin-top: 12px; }
 .script-result { font-weight: 700; }
+.script-zones { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.script-zone { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: var(--radius); }
+.script-zone .zone-title { font-weight: 700; font-size: 0.85rem; text-align: left; }
+.script-zone .btn { width: 100%; padding: 14px; font-size: 1.05rem; font-weight: 700; }
+.zone-red { background: rgba(255, 77, 79, .14); border: 1px solid rgba(255, 77, 79, .5); }
+.zone-red .zone-title, .zone-red .btn { color: var(--red); }
+.zone-green { background: rgba(61, 220, 132, .12); border: 1px solid rgba(61, 220, 132, .45); }
+.zone-green .zone-title, .zone-green .btn { color: var(--accent); }
+.zone-neutral { padding: 0 10px; }
+.script-zone .btn.picked { outline: 3px solid currentColor; outline-offset: -3px; }

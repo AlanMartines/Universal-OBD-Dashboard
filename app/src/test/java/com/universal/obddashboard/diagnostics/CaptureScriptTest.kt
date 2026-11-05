@@ -31,7 +31,10 @@ class CaptureScriptTest {
         listOf("ign_quiet", "door_driver", "seatbelt_driver", "brake_pedal", "handbrake", "reverse", "high_beam", "idle_quiet", "ac", "rpm_fixed", "radiator_fan", "engine_off")
             .forEach { assertTrue("roteiro genérico sem $it", it in steps) }
         assertTrue("em movimento, só passos do passageiro", s.groups.filter { it.place == "moving" }.all { g -> g.steps.all { it.passenger } })
-        assertTrue("indicador de economia com o passageiro", s.groups.flatMap { it.steps }.any { it.id == "economy_gauge" && it.passenger })
+        val gauge = s.groups.flatMap { it.steps }.first { it.id == "economy_gauge" }
+        assertTrue("indicador de economia com o passageiro", gauge.passenger)
+        assertEquals(listOf("red", "neutral", "green"), gauge.zones!!.map { it.color })
+        assertEquals(listOf("Alto", "Médio", "Baixo"), gauge.zones!!.first().options)
         // O roteiro volta à tela pelo encode; precisa sair igual
         assertEquals(s, CaptureScript.parse(CaptureScript.encode(s)))
     }
@@ -55,6 +58,7 @@ class CaptureScriptTest {
         assertTrue("duração fora da faixa", refused(generic.replaceFirst("\"on_s\": 10", "\"on_s\": 0")))
         assertTrue("passo comum em movimento", refused(generic.replace("{ \"id\": \"economy_gauge\"", "{ \"id\": \"x\", \"title\": \"x\", \"phases\": [{ \"say\": \"x\", \"s\": 1 }] }, { \"id\": \"economy_gauge\"")))
         assertTrue("passo do passageiro em grupo parado", refused(generic.replaceFirst("\"id\": \"door_driver\", \"title\": \"Porta do motorista\",", "\"id\": \"door_driver\", \"title\": \"Porta do motorista\", \"passenger\": true,")))
+        assertTrue("cor desconhecida", refused(generic.replace("\"color\": \"red\"", "\"color\": \"azul\"")))
         assertTrue("texto ilegível", refused("{"))
     }
 

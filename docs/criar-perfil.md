@@ -86,9 +86,10 @@ Para mapear a rede de um carro novo, use o **Roteiro de captura** do app ([can-e
 
 - **`pattern`:** alterna `on` e `off` (`on_s`, `off_s`, `repeat`);
 - **`phases`:** sequência de instruções com duração (`say`, `s`);
-- **`events`:** botões para tocar quando algo acontece, até `max_s`.
+- **`events`:** de 1 a 8 botões para tocar quando algo acontece, até `max_s`.
+- **`zones`:** botões em grupos coloridos (`color`: `red`, `green` ou `neutral`), sem contador: a pessoa toca a posição sempre que ela muda e encerra com "Finalizar teste". `max_s` é só o limite de tempo. Exemplo: o indicador de economia do roteiro genérico.
 
-`choices` acrescenta botões opcionais durante o passo, e `engine` (`on`, `off`, `any`) só avisa se o motor está no estado esperado. Os textos são falados pelo app: escreva como uma instrução curta ("Abra a porta do motorista").
+`choices` acrescenta botões opcionais durante o passo, e `engine` (`on`, `off`, `any`) só avisa se o motor está no estado esperado. `passenger: true` marca um passo feito pelo passageiro com o carro andando; ele só pode ficar num grupo com `place: "moving"`, e é o único tipo de passo que roda em movimento. Os textos são falados pelo app: escreva como uma instrução curta ("Abra a porta do motorista").
 
 ## 8. Só consulta
 

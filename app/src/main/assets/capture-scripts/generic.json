@@ -145,8 +145,13 @@
       "note": "O motorista só dirige, com a captura rodando, e não mexe no celular. Os passos daqui são feitos pelo passageiro.",
       "steps": [
         { "id": "economy_gauge", "title": "Indicador de economia (passageiro)", "passenger": true, "engine": "on",
-          "before": "Só o passageiro opera o celular. Em trechos de velocidade constante, subidas e retomadas, toque na posição do ponteiro no arco, de baixo para cima, sempre que ela mudar. O app grava junto a velocidade e a temperatura.",
-          "events": ["Repouso (embaixo)", "Verde baixo", "Verde alto", "Vermelho baixo", "Vermelho alto (topo)"], "max_s": 1800 }
+          "before": "Só o passageiro mexe no celular. Em trechos constantes, subidas e retomadas, toque na posição do ponteiro sempre que ela mudar.",
+          "max_s": 3600,
+          "zones": [
+            { "label": "Vermelho", "color": "red", "options": ["Alto", "Médio", "Baixo"] },
+            { "label": "Meio", "color": "neutral", "options": ["Meio"] },
+            { "label": "Verde", "color": "green", "options": ["Baixo", "Médio", "Alto"] }
+          ] }
       ]
     }
   ]

@@ -33,7 +33,9 @@ data class CaptureScript(
      * Um passo tem exatamente um formato:
      * - [pattern]: alterna "liga" e "desliga" [Pattern.repeat] vezes;
      * - [phases]: sequência de instruções com duração;
-     * - [events]: botões que a pessoa toca quando algo acontece (ex.: ventilador ligou), até [maxS].
+     * - [events]: botões que a pessoa toca quando algo acontece (ex.: ventilador ligou), até [maxS];
+     * - [zones]: botões em grupos coloridos (ex.: vermelho, meio e verde de um indicador), sem contador:
+     *   a pessoa toca a posição sempre que ela muda e encerra com "Finalizar teste" ([maxS] é só o limite).
      * [choices] são botões opcionais durante o passo (ex.: posição do econômetro).
      * [engine]: "on", "off" ou "any", só para avisar; o bloqueio é sempre com o carro andando.
      * [passenger]: passo feito pelo passageiro com o carro andando. Só ele roda em movimento, e só num grupo "moving".
@@ -50,6 +52,7 @@ data class CaptureScript(
         val pattern: Pattern? = null,
         val phases: List<Phase>? = null,
         val events: List<String>? = null,
+        val zones: List<Zone>? = null,
         @SerialName("max_s") val maxS: Int? = null,
         val choices: Choices? = null,
     )
@@ -62,6 +65,10 @@ data class CaptureScript(
 
     @Serializable
     data class Choices(val label: String, val options: List<String>)
+
+    /** Grupo de botões de um passo [Step.zones]. [color]: "red", "green" ou "neutral". */
+    @Serializable
+    data class Zone(val label: String, val color: String = "neutral", val options: List<String>)
 
     class ScriptException(message: String) : Exception(message)
 
@@ -106,8 +113,8 @@ data class CaptureScript(
                     if (!ID.matches(st.id) || !ids.add(st.id)) throw ScriptException("$ctx: id inválido ou repetido")
                     listOf(st.title, st.before, st.after).forEach { text(it, ctx) }
                     if (st.engine !in setOf("on", "off", "any")) throw ScriptException("$ctx: engine deve ser on, off ou any")
-                    val kinds = listOfNotNull(st.pattern, st.phases, st.events)
-                    if (kinds.size != 1) throw ScriptException("$ctx: use exatamente um de pattern, phases ou events")
+                    val kinds = listOfNotNull(st.pattern, st.phases, st.events, st.zones)
+                    if (kinds.size != 1) throw ScriptException("$ctx: use exatamente um de pattern, phases, events ou zones")
                     st.pattern?.let { p ->
                         text(p.on, ctx); text(p.off, ctx)
                         if (p.onS !in 1..600 || p.offS !in 1..600 || p.repeat !in 1..10) throw ScriptException("$ctx: tempos ou repetições fora da faixa")
@@ -117,9 +124,20 @@ data class CaptureScript(
                         ph.forEach { text(it.say, ctx); if (it.s !in 1..600) throw ScriptException("$ctx: fase com duração fora da faixa") }
                     }
                     st.events?.let { ev ->
-                        if (ev.isEmpty() || ev.size > 6) throw ScriptException("$ctx: de 1 a 6 eventos")
+                        if (ev.isEmpty() || ev.size > 8) throw ScriptException("$ctx: de 1 a 8 eventos")
                         ev.forEach { text(it, ctx) }
                         if (st.maxS == null || st.maxS !in 10..3600) throw ScriptException("$ctx: eventos precisam de max_s entre 10 e 3600")
+                    }
+                    st.zones?.let { zs ->
+                        if (zs.isEmpty() || zs.size > 4) throw ScriptException("$ctx: de 1 a 4 grupos")
+                        if (zs.sumOf { it.options.size } > 10) throw ScriptException("$ctx: no máximo 10 botões")
+                        zs.forEach { z ->
+                            text(z.label, ctx)
+                            if (z.color !in setOf("red", "green", "neutral")) throw ScriptException("$ctx: cor deve ser red, green ou neutral")
+                            if (z.options.isEmpty()) throw ScriptException("$ctx: grupo sem botões")
+                            z.options.forEach { text(it, ctx) }
+                        }
+                        if (st.maxS == null || st.maxS !in 10..3600) throw ScriptException("$ctx: grupos precisam de max_s entre 10 e 3600")
                     }
                     st.choices?.let { c ->
                         text(c.label, ctx)
