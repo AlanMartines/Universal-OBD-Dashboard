@@ -532,7 +532,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         if (loaded.canSignals.isEmpty() || names.isEmpty()) return
         val roles = loaded.profile.roles
         val tank = loaded.profile.fuel?.tankCapacityL?.let { TankAnchor(it) }
-        var odometerApplied = false
+        var odometerSyncedKm: Double? = null
         val link = CanListenLink(
             this, loaded.canSignals,
             onValues = { values, ts ->
@@ -545,10 +545,13 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                     }
                 }
                 roles.odometer?.let { values[it] }?.let { km ->
-                    if (!odometerApplied && s.tripStartedAt != null) {
-                        odometerApplied = true
-                        // O Total passa a ser o hodômetro do painel: viagens desde o início desta contam a partir daí.
-                        AppSettings.setOdometerRef(this, AppSettings.OdometerRef(km - s.tripDistanceKm, s.tripStartedAt))
+                    val started = s.tripStartedAt
+                    // O Total acompanha o hodômetro do painel a cada km novo, não só no começo da captura:
+                    // a distância calculada pelo app entre um km e outro só preenche o intervalo.
+                    if (started != null && km != odometerSyncedKm) {
+                        odometerSyncedKm = km
+                        AppSettings.setOdometerRef(this, AppSettings.OdometerRef(km - s.tripDistanceKm, started))
+                        recorder?.event("odometer_sync") { put("km", km); put("trip_km", s.tripDistanceKm) }
                     }
                 }
             },

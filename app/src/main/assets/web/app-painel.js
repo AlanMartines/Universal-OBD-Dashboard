@@ -86,6 +86,10 @@ function onTelemetry(s) {
   // Ajustes: com a captura rodando, o nível acompanha a estimativa (exceto enquanto é editado).
   const fl = $('fuel-level');
   if (s.running && s.derived && s.derived.fuelRemainingL != null && document.activeElement !== fl) fl.value = s.derived.fuelRemainingL.toFixed(1);
+  // Ajustes: com a escuta CAN, o hodômetro acompanha o painel do carro (exceto enquanto é editado).
+  const odo = s.running && s.readings ? s.readings.odometer_km : null;
+  if (Number.isFinite(odo) && document.activeElement !== $('odometer')) $('odometer').value = String(Math.round(odo));
+  $('odometer-source').hidden = !Number.isFinite(odo);
   Dash.update(s);
   if (!!wasRunning !== !!s.running) updateDashMode();
   $('notif-warning').hidden = s.notificationsEnabled !== false;

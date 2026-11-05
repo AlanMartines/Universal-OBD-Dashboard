@@ -11,7 +11,23 @@ let fuItems = {};
 /** Abastecimento em edição no formulário de cima (null = novo registro). */
 let fuEditingId = null;
 
+/** Hodômetro de agora: o do painel do carro (escuta CAN) durante a captura, senão o Total do app. */
+function currentOdometerKm() {
+  const can = lastState && lastState.running && lastState.readings ? lastState.readings.odometer_km : null;
+  if (Number.isFinite(can)) return can;
+  const s = parse(bridge.getSettings(), {});
+  return Number.isFinite(s.odometerKm) ? s.odometerKm : null;
+}
+
+/** Novo abastecimento: o hodômetro já vem preenchido e pode ser corrigido. */
+function prefillFuelOdometer() {
+  if (fuEditingId != null || $('fu-odo').value || document.activeElement === $('fu-odo')) return;
+  const km = currentOdometerKm();
+  if (km != null) $('fu-odo').value = String(Math.round(km));
+}
+
 async function loadFuel() {
+  prefillFuelOdometer();
   const seq = ++fuelSeq;
   const json = await nativeAsync((id) => bridge.getFuelUps(id)).catch(() => null);
   if (seq !== fuelSeq) return; // outra atualização começou depois desta

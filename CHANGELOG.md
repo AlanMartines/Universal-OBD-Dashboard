@@ -6,6 +6,14 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.21] - 2026-11-04
+
+### Corrigido
+- **Hodômetro sempre atualizado pela escuta CAN.** O Total do app só pegava o hodômetro do painel do carro no começo da captura; agora acompanha cada km novo. Em Ajustes, o campo Hodômetro se atualiza sozinho durante a captura, com o aviso "Atualizado sozinho pelo painel do carro", e continua editável. Cada acerto fica no arquivo de diagnóstico (evento `odometer_sync`).
+
+### Adicionado
+- **Novo abastecimento com o hodômetro já preenchido:** o do painel do carro durante a captura, ou o Total do app. Dá para corrigir à mão antes de salvar.
+
 ## [0.9.20] - 2026-11-04
 
 ### Alterado
