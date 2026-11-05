@@ -6,6 +6,18 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.26] - 2026-11-05
+
+### Adicionado
+- **App: tema claro e automático** em Ajustes → Aparência (escuro continua o padrão; o automático fica claro das 6 h às 18 h). Os mostradores da aba Painel mantêm o dia e a noite próprios.
+
+### Alterado
+- **App: acabamento visual:** abas em pílula, cards com borda e sombra leve, título dos cards em versalete, botões e campos com 44 px de toque, foco visível e retorno ao toque; animações desligadas com a opção de reduzir movimento do Android.
+- **Painel web:** verde do app no lugar do azul do Bootstrap (botões, links, abas, menu, foco, paginação) e, no tema escuro, fundo e cartões com as cores do app.
+
+### Corrigido
+- **App:** link "Ver na aba Falhas" com o azul-padrão do navegador, espaço duplo abaixo do RPM, botão "Zerar" do Parcial A quase invisível, campo "Data e hora" do abastecimento sem estilo e botão "Salvar" do hodômetro desalinhado.
+
 ## [0.9.25] - 2026-11-05
 
 ### Corrigido
