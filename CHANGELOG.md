@@ -6,6 +6,16 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.22] - 2026-11-05
+
+### Adicionado
+- **Roteiro de captura: grupo "Abastecimento"**, com os passos "Antes de abastecer" e "Depois de abastecer" (60 s parado com a ignição ligada e o motor desligado). As marcas mostram, no arquivo de diagnóstico, o nível do tanque antes e depois, e o passo final lembra de registrar o abastecimento.
+
+### Alterado
+- **Painel web, sem transmissão:** os valores que só valem com o motor rodando (velocidade, rotação, consumo, carga, MAP, borboleta, avanço, ajuste de mistura e sonda) aparecem como "—", e os cartões grandes como "sem leitura", em vez dos zeros do último instante. Tanque, hodômetro, parcial, temperaturas e tensões continuam com o último valor.
+- **Ajustes → Captura: opção de 45 min** em "Encerrar depois de parado por" e em "Continuar a mesma viagem se recomeçar em até", entre 30 min e 1 hora.
+- **Roteiro de captura: estrela (★) só nos dados que quase todo carro informa** (referências, rotações, eletroventilador, lanterna, farol baixo, ar-condicionado e abastecimento). Porta, cinto, pedal de freio, freio de mão, ré e farol alto passam a opcionais.
+
 ## [0.9.21] - 2026-11-04
 
 ### Corrigido

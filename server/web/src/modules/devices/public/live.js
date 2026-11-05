@@ -33,6 +33,27 @@
     can_fuel_lph: ['Consumo da injeção (painel)', 'L/h', 1],
   };
   var HIGHLIGHTS = ['speed', 'rpm', 'coolant_temp', 'battery_volts'];
+  // Valores que só valem com o motor rodando: sem transmissão, a última leitura (em geral, motor já
+  // desligado) mostraria zeros enganosos. Tanque, hodômetro, temperaturas e tensão continuam valendo parado.
+  var MOMENTARY = ['speed', 'rpm', 'can_speed', 'can_rpm', 'map', 'maf', 'throttle', 'engine_load', 'timing_advance',
+    'stft_b1', 'ltft_b1', 'lambda_v', 'can_fuel_lph', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.estimatedLoadPct',
+    'derived.estimatedGear', 'derived.recommendedGear'];
+  function momentary(id) { return MOMENTARY.indexOf(id) >= 0 || /^lambda_/.test(id); }
+  var shown = {};
+  var isStale = false;
+
+  function paint(id) {
+    var v = shown[id];
+    if (typeof v !== 'number') return;
+    var hide = isStale && momentary(id);
+    if (cards[id]) {
+      cards[id].value.textContent = hide ? '—' : format(id, v);
+      cards[id].unit.textContent = hide ? 'sem leitura' : info(id)[1];
+    } else {
+      var unit = info(id)[1];
+      row(id).textContent = hide ? '—' : format(id, v) + (unit ? ' ' + unit : '');
+    }
+  }
   var GROUPS = [
     ['Motor', ['derived.estimatedLoadPct', 'engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear', 'can_rpm', 'can_coolant_temp']],
     ['Combustível', ['fuel_level_pct', 'can_fuel_lph', 'derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
@@ -112,7 +133,7 @@
       });
       col.append(card);
       box.append(col);
-      cards[id] = { value: value, poly: poly, card: card };
+      cards[id] = { value: value, unit: unit, poly: poly, card: card };
     });
   }
 
@@ -227,13 +248,11 @@
       var value = metrics[id];
       if (typeof value !== 'number' || isInternal(id)) return;
       addOption(id);
+      shown[id] = value;
+      paint(id);
       if (cards[id]) {
-        cards[id].value.textContent = format(id, value);
         cards[id].card.dataset.level = level(id, value);
         pushSpark(id, ts, value);
-      } else {
-        var unit = info(id)[1];
-        row(id).textContent = format(id, value) + (unit ? ' ' + unit : '');
       }
       appendToChart(id, ts, value);
     });
@@ -407,6 +426,10 @@
     }
     // Sem transmissão, os cartões mostram a última leitura que chegou, não o momento atual.
     overview.classList.toggle('is-stale', stale);
+    if (stale !== isStale) {
+      isStale = stale;
+      Object.keys(shown).forEach(paint);
+    }
     staleNote.classList.toggle('d-none', !stale);
     if (stale) {
       var when = new Date(lastTs);

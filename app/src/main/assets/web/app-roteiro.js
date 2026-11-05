@@ -67,7 +67,7 @@ function scriptRenderList() {
   box.innerHTML = '';
   const legend = document.createElement('p');
   legend.className = 'muted small';
-  legend.textContent = '★ = passo prioritário: se faltar tempo ou bateria, faça estes primeiro. Os passos com "(passageiro)" são feitos por quem vai ao lado, com o carro andando. Pule o que o carro não tiver.';
+  legend.textContent = '★ = dados que quase todo carro informa (referências, motor, tanque, luzes e ar-condicionado): faça estes primeiro. Os demais variam de carro para carro. Os passos com "(passageiro)" são feitos por quem vai ao lado, com o carro andando. Pule o que o carro não tiver.';
   box.appendChild(legend);
   (scriptData.groups || []).forEach((g) => {
     const sec = document.createElement('div');

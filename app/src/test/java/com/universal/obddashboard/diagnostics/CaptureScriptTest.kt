@@ -28,7 +28,7 @@ class CaptureScriptTest {
     @Test fun genericScriptCoversTheCommonItems() {
         val s = CaptureScript.parse(generic)
         val steps = s.groups.flatMap { it.steps }.map { it.id }.toSet()
-        listOf("ign_quiet", "door_driver", "seatbelt_driver", "brake_pedal", "handbrake", "reverse", "high_beam", "idle_quiet", "ac", "rpm_fixed", "radiator_fan", "engine_off")
+        listOf("ign_quiet", "door_driver", "seatbelt_driver", "brake_pedal", "handbrake", "reverse", "high_beam", "idle_quiet", "ac", "rpm_fixed", "radiator_fan", "engine_off", "fuel_before", "fuel_after")
             .forEach { assertTrue("roteiro genérico sem $it", it in steps) }
         assertTrue("em movimento, só passos do passageiro", s.groups.filter { it.place == "moving" }.all { g -> g.steps.all { it.passenger } })
         val gauge = s.groups.flatMap { it.steps }.first { it.id == "economy_gauge" }
