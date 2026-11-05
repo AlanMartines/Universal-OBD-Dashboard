@@ -96,6 +96,8 @@
   <section class="stat-panel mb-3" id="route-card" data-device-id="{{device.id}}" data-has-map="{{hasMap}}" aria-labelledby="route-title">
     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
       <h2 class="h6 mb-0 me-auto" id="route-title">Percurso <span class="small fw-normal text-body-secondary" id="route-summary"></span></h2>
+      <span class="route-live" id="route-live" data-state="live" role="status" hidden><span class="route-live-dot" aria-hidden="true"></span><span id="route-live-text">Ao vivo</span></span>
+      <button type="button" class="btn btn-sm btn-outline-primary" id="route-follow" aria-pressed="true" hidden><i class="fa-solid fa-location-crosshairs me-1" aria-hidden="true"></i>Seguir</button>
       <label class="visually-hidden" for="route-trip">Viagem</label>
       <select id="route-trip" class="form-select form-select-sm w-auto"><option value="">Todas as viagens do período</option></select>
       <div class="btn-group btn-group-sm" role="group" aria-label="Período do percurso" id="route-range">

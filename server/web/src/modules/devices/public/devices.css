@@ -251,3 +251,23 @@
 .pc-eco[data-band="1"] { color: var(--bs-body-color); }
 .pc-eco[data-band="2"] { color: var(--bs-danger); }
 .pc-eco[data-band="0"] svg, .pc-eco[data-band="1"] svg, .pc-eco[data-band="2"] svg { opacity: 1; }
+
+/* ---------- Percurso ao vivo ----------
+   Selo "Ao vivo" (ou "Sem sinal desde…") e o carro na ponta do trajeto, girando com a direção. */
+.route-live {
+  display: inline-flex; align-items: center; gap: .4rem; padding: .2rem .65rem; border-radius: 999px;
+  font-size: .8rem; font-weight: 600; color: var(--bs-success-text-emphasis); background: var(--bs-success-bg-subtle);
+}
+.route-live-dot { width: .5rem; height: .5rem; border-radius: 50%; background: currentColor; animation: live-pulse 1.6s ease-in-out infinite; }
+.route-live[data-state="stale"] { color: var(--bs-secondary-color); background: var(--bs-tertiary-bg); }
+.route-live[data-state="stale"] .route-live-dot { animation: none; }
+#route-follow[aria-pressed="true"] { color: var(--app-on-brand); background: var(--app-brand); }
+.route-car { width: 34px; height: 34px; pointer-events: none; }
+.route-car svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 1px 3px rgb(0 0 0 / 45%)); }
+.route-car .car-halo { fill: var(--app-brand); opacity: .22; transform-box: fill-box; transform-origin: center; animation: car-halo 1.8s ease-out infinite; }
+.route-car .car-body { fill: var(--app-brand); stroke: #fff; stroke-width: 2.5; }
+.route-car .car-arrow { fill: #fff; }
+.route-car.stale .car-body, .route-car.stale .car-halo { fill: #8a99a8; }
+.route-car.stale .car-halo { animation: none; opacity: 0; }
+@keyframes car-halo { from { transform: scale(.6); opacity: .35; } to { transform: scale(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .route-car .car-halo, .route-live-dot { animation: none; } }
