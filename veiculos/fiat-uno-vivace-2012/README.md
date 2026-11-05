@@ -151,13 +151,20 @@ Para o receptor:
 | `0x603` | b1–b3 | Hodômetro total | Inteiro em km. Ex.: `01 E2 40` = 123.456 km | **Confirmado** com o painel em duas leituras |
 | `0x643` | b5–b7 | Hodômetro parcial | Inteiro ÷ 160, em km. Ex.: `01 86 A0` = 625,0 km. Avança de 16 em 16 (100 m) | **Confirmado** com o painel em duas leituras |
 | `0x2A0` | b0–b1 | Velocidade | Inteiro big-endian ÷ 16, em km/h. Ex.: `03 80` = 56,0 km/h | **Confirmado** em 02/11/2026 com o velocímetro e o hodômetro parcial |
-| `0x380` e `0x3C3` | `0x380` b0 bit 3; `0x3C3` b2 bit 4 (invertido) | Luzes acesas | 1 em `0x380` e 0 em `0x3C3` com as luzes acesas | **Confirmado** com lanterna e faróis; o farol alto não tem sinal próprio |
+| `0x380` e `0x3C3` | `0x380` b0 bit 3; `0x3C3` b2 bit 4 (invertido) | Luzes acesas | 1 em `0x380` e 0 em `0x3C3` com as luzes acesas | **Confirmado** com lanterna e faróis; o farol alto não tem sinal próprio Reconfirmado em 04/11/2026 com o Roteiro de captura (lanterna e farol baixo) |
+| `0x281` | b2 bit 6 | Ar-condicionado ligado | 1 com o compressor pedido. Ex.: b2 `C0` | **Confirmado** em 04/11/2026 com o Roteiro de captura (3 vezes; 99% das janelas). A marcha lenta sobe de ~845 para ~945 rpm |
+| `0x180` | b2 bit 4 | Desembaçador traseiro ligado | 1 com o desembaçador ligado | **Confirmado** em 04/11/2026 com o Roteiro de captura (3 vezes; 100% das janelas) |
+| `0x281` | b2 bit 7 | Plena carga (provável corte do A/C) | 1 no uso normal; 0 com o pedal quase no fundo (borboleta mediana 38%, MAP ~91 kPa) | Candidato: falta acelerar forte com o A/C ligado |
 | `0x281` | b5–b6 | RPM | `(b6·256+b5)/8`, como na Ducato. Ex.: `08 25` = 1.185 rpm | **Confirmado** em 04/11/2026 com a linha K (ELM327) |
 | `0x281` | b3 | Temperatura do motor | `b3−40` °C, como na Ducato. Ex.: `75` = 77 °C | **Confirmado** em 04/11/2026 com a linha K (ELM327) |
 | `0x3E0` | b1 | Tensão da bateria | `b1×0,16` V. Ex.: `58` = 14,08 V | **Confirmado** em 04/11/2026 com o `ATRV` do ELM327 |
 | `0x380` | b5 | Nível do tanque | Inteiro em % do tanque de 48 L. Ex.: `32` = 50% ≈ 24 L | **Confirmado** em 03/11/2026 com um abastecimento e o marcador do painel |
 
 Setas, pisca-alerta, portas, freio de mão, pedal de freio e cinto não mudam nenhum byte. Os IDs `0x040` e `0x041` aparecem a cada 180 s, sem relação com as ações.
+
+**Roteiro de captura de 04/11/2026** (app v0.9.18, marcas no arquivo de diagnóstico, carro parado; analisado com `tools/can-capture/roteiro_app.py`):
+- **Sem sinal próprio na rede:** porta do motorista, cinto do motorista, pedal de freio, farol alto, lampejo, farol de neblina, ventilação interna, direção e eletroventilador. A neblina só aparece como queda de tensão no `0x3E0` (consumo da lâmpada); o eletroventilador, como queda de tensão e a temperatura subindo. O relé dele é comandado direto pela injeção: ligou a 95 e 98 °C e desligou a 92 e 93 °C.
+- **Ainda não feitos com o roteiro:** freio de mão, ré, setas, pisca-alerta, limpadores e rotações fixas (com o indicador de economia).
 
 **No app:** velocidade, nível do tanque, hodômetro e parcial estão na seção `can_listen` do perfil. Basta escolher o ESP32 em Ajustes → Escuta CAN. Rotação, temperatura e tensão entram como `can_rpm`, `can_coolant_temp` e `can_voltage`: aparecem no "Testar (15 s)", em Sensores e nas exportações, sem substituir as leituras do ELM327.
 
