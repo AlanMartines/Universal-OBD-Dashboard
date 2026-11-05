@@ -15,7 +15,7 @@
       <input class="visually-hidden" id="avatar" name="avatar" type="file" accept="image/jpeg,image/png,image/webp">
     </form>
     {{#if account.avatarVersion}}
-    <form method="post" action="/conta/foto/remover" data-confirm="Remover sua foto de perfil?" data-confirm-label="Remover">
+    <form method="post" action="/conta/foto/remover" data-confirm="Remover sua foto de perfil?" data-confirm-label="Remover" data-confirm-tone="warning">
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fa-solid fa-trash me-1" aria-hidden="true"></i>Remover foto</button>
     </form>
@@ -121,7 +121,7 @@
   <div class="card-body">
     {{#if account.mfaEnabled}}
     <p><span class="badge text-bg-success">Ativa</span> <span class="small text-body-secondary">{{account.recoveryLeft}} códigos de recuperação restantes.</span></p>
-    <form method="post" action="/conta/2fa/desativar" class="row g-3" data-validate data-confirm="Desativar a verificação em duas etapas?" data-confirm-label="Desativar">
+    <form method="post" action="/conta/2fa/desativar" class="row g-3" data-validate data-confirm="Desativar a verificação em duas etapas?" data-confirm-label="Desativar" data-confirm-tone="warning">
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <div class="col-md-6">
         <label class="form-label fw-semibold required-mark" for="mfaOffPassword">Senha atual</label>
@@ -160,7 +160,7 @@
   <div class="card-header fw-semibold text-danger-emphasis"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>Excluir conta</div>
   <div class="card-body">
     <p class="text-body-secondary">Apaga sua conta, seus dispositivos, os usuários vinculados e toda a telemetria. Não tem como desfazer.</p>
-    <form method="post" action="/conta/excluir" class="row g-3 align-items-end" data-validate data-confirm="Excluir sua conta, dispositivos, usuários vinculados e telemetria? Não tem como desfazer." data-confirm-label="Excluir conta">
+    <form method="post" action="/conta/excluir" class="row g-3 align-items-end" data-validate data-confirm="Excluir sua conta, dispositivos, usuários vinculados e telemetria? Não tem como desfazer." data-confirm-label="Excluir conta" data-confirm-tone="danger">
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <div class="col-md-6">
         <label class="form-label fw-semibold required-mark" for="deletePassword">Confirme com sua senha</label>

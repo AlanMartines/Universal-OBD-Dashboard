@@ -22,7 +22,7 @@
   {{#if user}}<script src="{{asset "/static/js/shell.js"}}"></script>{{/if}}
 </head>
 <body>
-  <div class="toast-container position-fixed top-0 end-0 p-3 app-toasts" id="app-toasts" aria-live="polite"></div>
+  <div class="app-toasts" id="app-toasts" aria-live="polite"></div>
   {{#if flash}}<div id="app-flash" hidden data-message="{{flash}}"></div>{{/if}}
   {{#if user}}
   {{> sidebar}}
