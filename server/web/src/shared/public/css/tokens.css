@@ -33,15 +33,58 @@
   --bs-border-radius-xl: 1rem;
 }
 
+/* ---------------------------------------------------------------- Cor da marca
+   O mesmo verde do app (assets/web/style.css): no claro um verde mais fechado, que dá contraste com
+   texto branco; no escuro o verde vivo do app, com texto escuro por cima. Substitui o azul do Bootstrap. */
+:root,
+[data-bs-theme="light"] {
+  --app-brand: #128a49;
+  --app-brand-rgb: 18, 138, 73;
+  --app-brand-hover: #0f7a40;
+  --app-brand-active: #0c6a37;
+  --app-on-brand: #fff;
+  --bs-primary: var(--app-brand);
+  --bs-primary-rgb: var(--app-brand-rgb);
+  --bs-primary-text-emphasis: #0b5530;
+  --bs-primary-bg-subtle: #dcf2e5;
+  --bs-primary-border-subtle: #a6dbbd;
+  --bs-link-color: var(--app-brand);
+  --bs-link-color-rgb: var(--app-brand-rgb);
+  --bs-link-hover-color: var(--app-brand-active);
+  --bs-link-hover-color-rgb: 12, 106, 55;
+  --bs-focus-ring-color: rgb(var(--app-brand-rgb) / 30%);
+  --app-card-bg: #fff;
+}
+
 [data-bs-theme="dark"] {
   --app-shadow-sm: 0 1px 2px rgb(0 0 0 / 35%);
   --app-shadow: 0 1px 3px rgb(0 0 0 / 40%), 0 4px 12px rgb(0 0 0 / 30%);
   --app-shadow-lg: 0 8px 24px rgb(0 0 0 / 45%);
-  --app-surface-glass: rgb(33 37 41 / 78%);
-  --bs-body-bg: #0f1419;
-  --bs-body-bg-rgb: 15, 20, 25;
-  --bs-tertiary-bg: #1b2229;
-  --bs-secondary-bg: #161c22;
+  --app-surface-glass: rgb(20 27 35 / 78%);
+  /* Fundo e cartões com as cores do app. */
+  --bs-body-bg: #0b0f14;
+  --bs-body-bg-rgb: 11, 15, 20;
+  --bs-tertiary-bg: #1b2430;
+  --bs-tertiary-bg-rgb: 27, 36, 48;
+  --bs-secondary-bg: #141b23;
+  --bs-secondary-bg-rgb: 20, 27, 35;
+  --bs-border-color: rgb(255 255 255 / 9%);
+  --app-card-bg: #141b23;
+  --app-brand: #3ddc84;
+  --app-brand-rgb: 61, 220, 132;
+  --app-brand-hover: #5be49a;
+  --app-brand-active: #2fc372;
+  --app-on-brand: #062b16;
+  --bs-primary: var(--app-brand);
+  --bs-primary-rgb: var(--app-brand-rgb);
+  --bs-primary-text-emphasis: #8debb6;
+  --bs-primary-bg-subtle: #0e2a1b;
+  --bs-primary-border-subtle: #1c5a37;
+  --bs-link-color: var(--app-brand);
+  --bs-link-color-rgb: var(--app-brand-rgb);
+  --bs-link-hover-color: var(--app-brand-hover);
+  --bs-link-hover-color-rgb: 91, 228, 154;
+  --bs-focus-ring-color: rgb(var(--app-brand-rgb) / 30%);
 }
 
 @media (prefers-reduced-motion: reduce) {

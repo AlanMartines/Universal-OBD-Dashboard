@@ -61,7 +61,7 @@
 
 .stat-card,
 .stat-panel {
-  background: var(--bs-body-bg);
+  background: var(--app-card-bg);
   border: 1px solid var(--bs-border-color-translucent);
   border-radius: var(--app-radius-lg);
   box-shadow: var(--app-shadow-sm);
@@ -195,7 +195,7 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
-  background: var(--bs-body-bg);
+  background: var(--app-card-bg);
   border: 1px solid var(--bs-border-color-translucent);
   border-radius: var(--app-radius-lg);
   box-shadow: var(--app-shadow-sm);

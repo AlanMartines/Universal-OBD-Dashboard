@@ -9,7 +9,7 @@
   overflow: hidden;
   font-size: 1.75rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--app-on-brand);
   background: var(--bs-primary);
   border-radius: 50%;
 }

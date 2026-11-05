@@ -269,3 +269,70 @@
     padding: var(--space-5) var(--space-4);
   }
 }
+
+/* ---------------------------------------------------------------- Cor da marca nos componentes
+   O Bootstrap compila o azul dentro de cada componente; aqui eles passam a usar o verde dos tokens. */
+.btn-primary {
+  --bs-btn-color: var(--app-on-brand);
+  --bs-btn-bg: var(--app-brand);
+  --bs-btn-border-color: var(--app-brand);
+  --bs-btn-hover-color: var(--app-on-brand);
+  --bs-btn-hover-bg: var(--app-brand-hover);
+  --bs-btn-hover-border-color: var(--app-brand-hover);
+  --bs-btn-focus-shadow-rgb: var(--app-brand-rgb);
+  --bs-btn-active-color: var(--app-on-brand);
+  --bs-btn-active-bg: var(--app-brand-active);
+  --bs-btn-active-border-color: var(--app-brand-active);
+  --bs-btn-disabled-color: var(--app-on-brand);
+  --bs-btn-disabled-bg: var(--app-brand);
+  --bs-btn-disabled-border-color: var(--app-brand);
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--app-brand);
+  --bs-btn-border-color: var(--app-brand);
+  --bs-btn-hover-color: var(--app-on-brand);
+  --bs-btn-hover-bg: var(--app-brand);
+  --bs-btn-hover-border-color: var(--app-brand);
+  --bs-btn-focus-shadow-rgb: var(--app-brand-rgb);
+  --bs-btn-active-color: var(--app-on-brand);
+  --bs-btn-active-bg: var(--app-brand-active);
+  --bs-btn-active-border-color: var(--app-brand-active);
+  --bs-btn-disabled-color: var(--app-brand);
+  --bs-btn-disabled-border-color: var(--app-brand);
+}
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  border-color: rgb(var(--app-brand-rgb) / 60%);
+  box-shadow: 0 0 0 0.25rem rgb(var(--app-brand-rgb) / 25%);
+}
+.form-check-input:checked {
+  background-color: var(--app-brand);
+  border-color: var(--app-brand);
+}
+.form-switch .form-check-input:focus:not(:checked) {
+  --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%2861, 220, 132, 0.6%29'/%3e%3c/svg%3e");
+}
+.pagination {
+  --bs-pagination-active-bg: var(--app-brand);
+  --bs-pagination-active-border-color: var(--app-brand);
+  --bs-pagination-active-color: var(--app-on-brand);
+  --bs-pagination-focus-box-shadow: 0 0 0 0.25rem rgb(var(--app-brand-rgb) / 25%);
+}
+.nav-pills {
+  --bs-nav-pills-link-active-bg: var(--app-brand);
+  --bs-nav-pills-link-active-color: var(--app-on-brand);
+}
+.dropdown-menu {
+  --bs-dropdown-link-active-bg: var(--app-brand);
+  --bs-dropdown-link-active-color: var(--app-on-brand);
+}
+.list-group {
+  --bs-list-group-active-bg: var(--app-brand);
+  --bs-list-group-active-border-color: var(--app-brand);
+  --bs-list-group-active-color: var(--app-on-brand);
+}
+.text-bg-primary { color: var(--app-on-brand) !important; }
+
+/* Cartões um degrau acima do fundo, como no app. */
+.card { --bs-card-bg: var(--app-card-bg); }

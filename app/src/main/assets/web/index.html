@@ -6,6 +6,7 @@
   <title>Universal OBD</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="dash.css">
+  <script src="tema.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -309,6 +310,18 @@
         </div>
         <p class="muted small">Hodômetro, tanque, etanol, adaptador, gatilhos, mostradores, alarmes, tempos, calibração, viagens, abastecimentos, falhas e telemetria remota ficam separados por veículo. Ao conectar o adaptador cadastrado em outro veículo, o app troca sozinho antes da captura.</p>
         <p id="vehicle-result" class="small"></p>
+      </div>
+
+      <div class="card form" id="theme-card">
+        <span class="label">Aparência</span>
+        <label>Tema do app
+          <select id="app-theme">
+            <option value="dark">Escuro</option>
+            <option value="light">Claro</option>
+            <option value="auto">Automático (claro de dia, escuro à noite)</option>
+          </select>
+        </label>
+        <p class="muted small">Vale para as abas do app. Os mostradores da aba Painel têm dia e noite próprios, no botão do próprio painel.</p>
       </div>
 
       <div class="card form" id="dash-card">

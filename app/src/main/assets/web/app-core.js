@@ -104,6 +104,7 @@ let lastState = null;
 /* ---------------------------------------------------------------- Abas */
 document.querySelectorAll('.tab').forEach((btn) => btn.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b === btn));
+  btn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   document.querySelectorAll('.tab-page').forEach((p) => p.classList.toggle('active', p.id === 'tab-' + btn.dataset.tab));
   if (btn.dataset.tab === 'history' || btn.dataset.tab === 'faults') loadHistory();
   if (btn.dataset.tab === 'settings') loadSettings();
