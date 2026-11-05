@@ -125,9 +125,69 @@
   }
 }
 
-/* ---------- Avisos ---------- */
+/* ---------- Avisos ----------
+   Mesmo desenho do app: cartão com ícone e cor pelo tipo e barra do tempo. No celular ficam embaixo,
+   na largura da tela; a partir do tablet, no canto de baixo à direita. */
 .app-toasts {
+  position: fixed;
+  right: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
   z-index: 1090;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(calc(100vw - 2rem), 26rem);
+  transform: translateX(50%);
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .app-toasts { right: 1.25rem; bottom: 1.25rem; transform: none; }
+}
+.app-toast {
+  --toast-color: var(--bs-success);
+  position: relative;
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: 0.85rem 0.75rem 0.95rem 1rem;
+  overflow: hidden;
+  color: var(--bs-body-color);
+  background: var(--app-card-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--app-radius-lg);
+  box-shadow: var(--app-shadow-lg);
+  opacity: 0;
+  transform: translateY(0.75rem) scale(0.98);
+  transition: opacity var(--app-dur) var(--app-ease), transform 200ms var(--app-ease);
+  pointer-events: auto;
+  touch-action: pan-y;
+  user-select: none;
+}
+.app-toast.show { opacity: 1; transform: none; }
+.app-toast.leaving { opacity: 0; }
+.app-toast.dragging { transition: none; }
+.app-toast-success { --toast-color: var(--bs-success); }
+.app-toast-danger { --toast-color: var(--bs-danger); border-color: rgba(var(--bs-danger-rgb), 0.45); }
+.app-toast-warning { --toast-color: var(--bs-warning); }
+.app-toast-info { --toast-color: var(--bs-info); }
+.app-toast-icon { margin-top: 0.15rem; font-size: 1.1rem; color: var(--toast-color); }
+.app-toast-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.app-toast-close { flex: none; margin-top: 0.1rem; font-size: 0.7rem; }
+.app-toast-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--toast-color);
+  opacity: 0.6;
+  transform-origin: left;
+  animation: app-toast-time var(--toast-ms, 5000ms) linear forwards;
+}
+.app-toast.paused .app-toast-bar { animation-play-state: paused; }
+@keyframes app-toast-time { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .app-toast, .app-toast-bar { transition: none; animation: none; }
 }
 
 /* ---------- Modo suporte ---------- */
@@ -303,8 +363,8 @@
 .form-control:focus,
 .form-select:focus,
 .form-check-input:focus {
-  border-color: rgb(var(--app-brand-rgb) / 60%);
-  box-shadow: 0 0 0 0.25rem rgb(var(--app-brand-rgb) / 25%);
+  border-color: rgba(var(--app-brand-rgb), 0.6);
+  box-shadow: 0 0 0 0.25rem rgba(var(--app-brand-rgb), 0.25);
 }
 .form-check-input:checked {
   background-color: var(--app-brand);
@@ -317,7 +377,7 @@
   --bs-pagination-active-bg: var(--app-brand);
   --bs-pagination-active-border-color: var(--app-brand);
   --bs-pagination-active-color: var(--app-on-brand);
-  --bs-pagination-focus-box-shadow: 0 0 0 0.25rem rgb(var(--app-brand-rgb) / 25%);
+  --bs-pagination-focus-box-shadow: 0 0 0 0.25rem rgba(var(--app-brand-rgb), 0.25);
 }
 .nav-pills {
   --bs-nav-pills-link-active-bg: var(--app-brand);
@@ -336,3 +396,21 @@
 
 /* Cartões um degrau acima do fundo, como no app. */
 .card { --bs-card-bg: var(--app-card-bg); }
+
+/* ---------- Confirmação ----------
+   Ícone com a cor da gravidade ao lado da pergunta (data-confirm-tone no formulário). */
+.confirm-body { display: flex; gap: var(--space-3); align-items: flex-start; }
+.confirm-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.15rem;
+  border-radius: 50%;
+}
+.confirm-icon[data-tone="danger"] { color: var(--bs-danger-text-emphasis); background: var(--bs-danger-bg-subtle); }
+.confirm-icon[data-tone="warning"] { color: var(--bs-warning-text-emphasis); background: var(--bs-warning-bg-subtle); }
+.confirm-icon[data-tone="primary"] { color: var(--bs-primary-text-emphasis); background: var(--bs-primary-bg-subtle); }
+#confirm-text { padding-top: 0.45rem; }

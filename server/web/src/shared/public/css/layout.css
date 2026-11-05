@@ -13,7 +13,7 @@ body {
 /* No escuro, a textura clara do fundo dá lugar a um degradê discreto. */
 [data-bs-theme="dark"] body,
 html[data-bs-theme="dark"] {
-  background-image: radial-gradient(1200px 600px at 100% -10%, rgb(var(--app-brand-rgb) / 8%), transparent 60%);
+  background-image: radial-gradient(1200px 600px at 100% -10%, rgba(var(--app-brand-rgb), 0.08), transparent 60%);
   background-repeat: no-repeat;
   background-attachment: fixed;
 }

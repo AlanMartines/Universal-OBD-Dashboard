@@ -14,7 +14,7 @@
       <div class="card-body">
         <h2 class="h5">Cadastro público</h2>
         <p>Situação atual: {{#if signupOpen}}<span class="badge text-bg-success">Aberto</span>{{else}}<span class="badge text-bg-secondary">Fechado</span>{{/if}}</p>
-        <form method="post" action="/admin/cadastro" {{#unless signupOpen}}data-confirm="Abrir o cadastro público? Qualquer pessoa poderá criar uma conta." data-confirm-label="Abrir cadastro"{{/unless}}>
+        <form method="post" action="/admin/cadastro" {{#unless signupOpen}}data-confirm="Abrir o cadastro público? Qualquer pessoa poderá criar uma conta." data-confirm-label="Abrir cadastro" data-confirm-tone="warning"{{/unless}}>
           <input type="hidden" name="_csrf" value="{{csrf}}">
           <input type="hidden" name="open" value="{{#if signupOpen}}false{{else}}true{{/if}}">
           <button class="btn btn-outline-primary" type="submit">{{#if signupOpen}}Fechar cadastro{{else}}Abrir cadastro{{/if}}</button>
@@ -82,17 +82,17 @@
         <td class="table-actions text-center">
           {{#unless (eq id ../user.id)}}
           {{#if ../isSuper}}{{#unless (eq role "superadmin")}}{{#unless disabled}}
-          <form method="post" action="/admin/usuarios/{{id}}/personificar" class="d-inline" data-confirm="Entrar como {{username}}? A sessão de suporte dura 1 hora e fica registrada na auditoria." data-confirm-label="Entrar">
+          <form method="post" action="/admin/usuarios/{{id}}/personificar" class="d-inline" data-confirm="Entrar como {{username}}? A sessão de suporte dura 1 hora e fica registrada na auditoria." data-confirm-label="Entrar" data-confirm-tone="primary">
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <button class="btn btn-outline-primary btn-sm" type="submit">Entrar como</button>
           </form>
           {{/unless}}{{/unless}}{{/if}}
-          <form method="post" action="/admin/usuarios/{{id}}/status" class="d-inline" {{#unless disabled}}data-confirm="Desativar {{username}}? As sessões abertas serão encerradas." data-confirm-label="Desativar"{{/unless}}>
+          <form method="post" action="/admin/usuarios/{{id}}/status" class="d-inline" {{#unless disabled}}data-confirm="Desativar {{username}}? As sessões abertas serão encerradas." data-confirm-label="Desativar" data-confirm-tone="warning"{{/unless}}>
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <input type="hidden" name="disabled" value="{{#if disabled}}false{{else}}true{{/if}}">
             <button class="btn btn-outline-warning btn-sm" type="submit">{{#if disabled}}Ativar{{else}}Desativar{{/if}}</button>
           </form>
-          <form method="post" action="/admin/usuarios/{{id}}/excluir" class="d-inline" data-confirm="Excluir {{username}}? Dispositivos, telemetria e usuários vinculados também serão apagados." data-confirm-label="Excluir">
+          <form method="post" action="/admin/usuarios/{{id}}/excluir" class="d-inline" data-confirm="Excluir {{username}}? Dispositivos, telemetria e usuários vinculados também serão apagados." data-confirm-label="Excluir" data-confirm-tone="danger">
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <button class="btn btn-outline-danger btn-sm" type="submit">Excluir</button>
           </form>

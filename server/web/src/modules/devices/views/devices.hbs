@@ -59,12 +59,12 @@
           <a class="btn btn-outline-primary btn-sm" href="/painel-veiculo?dispositivo={{id}}" title="Painel do veículo" aria-label="Painel do veículo de {{name}}"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></a>{{/if}}
           {{#if (canManage ../user)}}
           {{#unless revokedAt}}
-          <form method="post" action="/dispositivos/{{id}}/revogar" class="d-inline" data-confirm="Revogar {{name}}? O aparelho deixa de enviar dados." data-confirm-label="Revogar">
+          <form method="post" action="/dispositivos/{{id}}/revogar" class="d-inline" data-confirm="Revogar {{name}}? O aparelho deixa de enviar dados." data-confirm-label="Revogar" data-confirm-tone="warning">
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <button class="btn btn-outline-warning btn-sm" type="submit">Revogar</button>
           </form>
           {{/unless}}
-          <form method="post" action="/dispositivos/{{id}}/excluir" class="d-inline" data-confirm="Excluir {{name}} e toda a sua telemetria? Não tem como desfazer." data-confirm-label="Excluir">
+          <form method="post" action="/dispositivos/{{id}}/excluir" class="d-inline" data-confirm="Excluir {{name}} e toda a sua telemetria? Não tem como desfazer." data-confirm-label="Excluir" data-confirm-tone="danger">
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <button class="btn btn-outline-danger btn-sm" type="submit">Excluir com dados</button>
           </form>

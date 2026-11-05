@@ -52,7 +52,7 @@
   --bs-link-color-rgb: var(--app-brand-rgb);
   --bs-link-hover-color: var(--app-brand-active);
   --bs-link-hover-color-rgb: 12, 106, 55;
-  --bs-focus-ring-color: rgb(var(--app-brand-rgb) / 30%);
+  --bs-focus-ring-color: rgba(var(--app-brand-rgb), 0.3);
   --app-card-bg: #fff;
 }
 
@@ -84,7 +84,7 @@
   --bs-link-color-rgb: var(--app-brand-rgb);
   --bs-link-hover-color: var(--app-brand-hover);
   --bs-link-hover-color-rgb: 91, 228, 154;
-  --bs-focus-ring-color: rgb(var(--app-brand-rgb) / 30%);
+  --bs-focus-ring-color: rgba(var(--app-brand-rgb), 0.3);
 }
 
 @media (prefers-reduced-motion: reduce) {

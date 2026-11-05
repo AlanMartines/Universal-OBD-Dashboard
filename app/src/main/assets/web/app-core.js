@@ -84,16 +84,76 @@ const nf = (d) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: d, max
 const fmt = (v, d = 0) => (v === null || v === undefined || Number.isNaN(v)) ? '--' : nf(d).format(v);
 const parse = (s, fallback) => { try { return JSON.parse(s); } catch (e) { return fallback; } };
 
-/** Aviso rápido na parte de baixo da tela, para confirmar que a ação foi feita. Some sozinho. */
-let toastTimer = null;
+/*
+ * Avisos rápidos na parte de baixo da tela, empilhados (até 3; o mais novo embaixo). Cada um tem ícone
+ * pelo tipo, barra do tempo que falta e some sozinho; tocar fecha, arrastar para o lado dispensa e
+ * segurar o dedo pausa. O texto entra como texto, nunca como HTML.
+ */
+const TOAST_MAX = 3;
+const TOAST_ICON = {
+  ok: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-1.3-4.2-3.1-3.1 1.4-1.4 1.7 1.7 4.5-4.5 1.4 1.4z',
+  error: 'M11 7h2v6h-2zm0 8h2v2h-2zM12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z',
+};
 function toast(text, isError) {
   if (!text) return;
-  const el = $('toast');
-  el.textContent = text;
-  el.classList.toggle('toast-error', !!isError);
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), isError ? 5000 : 3000);
+  const box = $('toasts');
+  const kind = isError ? 'error' : 'ok';
+  const ms = isError ? 5000 : 3000;
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + kind;
+  el.setAttribute('role', isError ? 'alert' : 'status');
+  el.style.setProperty('--toast-ms', ms + 'ms');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.classList.add('toast-icon');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', TOAST_ICON[kind]);
+  svg.append(path);
+  const msg = document.createElement('span');
+  msg.className = 'toast-text';
+  msg.textContent = text;
+  const bar = document.createElement('i');
+  bar.className = 'toast-bar';
+  el.append(svg, msg, bar);
+  box.append(el);
+  while (box.children.length > TOAST_MAX) box.firstElementChild.remove();
+  requestAnimationFrame(() => el.classList.add('show'));
+
+  let left = ms; let started = Date.now(); let timer = setTimeout(close, left);
+  function close(dx) {
+    clearTimeout(timer);
+    if (el.classList.contains('leaving')) return;
+    el.classList.add('leaving');
+    if (dx) el.style.transform = `translateX(${dx > 0 ? 120 : -120}%)`;
+    setTimeout(() => el.remove(), 220);
+  }
+  // Segurar pausa o tempo; arrastar mais de 70 px dispensa; um toque simples fecha.
+  let x0 = null; let moved = 0;
+  el.addEventListener('pointerdown', (e) => {
+    x0 = e.clientX; moved = 0;
+    clearTimeout(timer); left -= Date.now() - started; el.classList.add('paused');
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (x0 === null) return;
+    moved = e.clientX - x0;
+    el.classList.add('dragging');
+    el.style.transform = `translateX(${moved}px)`;
+    el.style.opacity = String(Math.max(0.2, 1 - Math.abs(moved) / 200));
+  });
+  const release = () => {
+    if (x0 === null) return;
+    x0 = null;
+    el.classList.remove('dragging');
+    if (Math.abs(moved) > 70) return close(moved);
+    if (Math.abs(moved) < 6) return close();
+    el.style.transform = ''; el.style.opacity = '';
+    el.classList.remove('paused');
+    started = Date.now(); timer = setTimeout(close, Math.max(left, 800));
+  };
+  el.addEventListener('pointerup', release);
+  el.addEventListener('pointercancel', release);
 }
 /** Mostra o resultado no cartão e no aviso. "ok" vira [okText]; qualquer outra resposta é erro. */
 const okOrToast = (res, okText) => { const ok = res === 'ok'; toast(ok ? okText : res, !ok); return ok; };
