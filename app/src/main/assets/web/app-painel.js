@@ -91,6 +91,7 @@ function onTelemetry(s) {
   if (Number.isFinite(odo) && document.activeElement !== $('odometer')) $('odometer').value = String(Math.round(odo));
   $('odometer-source').hidden = !Number.isFinite(odo);
   Dash.update(s);
+  renderComputer(s);
   if (!!wasRunning !== !!s.running) updateDashMode();
   $('notif-warning').hidden = s.notificationsEnabled !== false;
   $('bgloc-warning').hidden = s.backgroundLocation !== false;

@@ -129,6 +129,8 @@ class FuelBridge(private val activity: MainActivity) {
         RemoteSync.syncSoon(activity)
         if (System.currentTimeMillis() - f.timestamp < MainActivity.RECENT_FUEL_UP_MS) {
             f.odometerKm?.let { activity.applyOdometer(it) }
+            // Computador de bordo: "desde o abastecimento" conta a partir daqui, inclusive o resto da viagem em andamento
+            activity.markTripPeriod(AppSettings.MARK_FUEL_UP, f.timestamp)
             applyFillUp(f)?.let { "ok|$it" } ?: "ok"
         } else {
             "ok|Registro antigo: nível e etanol do tanque não foram alterados"

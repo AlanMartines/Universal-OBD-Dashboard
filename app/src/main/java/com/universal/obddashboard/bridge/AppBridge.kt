@@ -247,6 +247,13 @@ class AppBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun setResumeWindowMin(minutes: Int) = AppSettings.setResumeWindowMin(activity, minutes)
 
+    /** Computador de bordo → Zerar parcial A: as médias do parcial A passam a contar a partir de agora. */
+    @JavascriptInterface
+    fun resetTripA(): String {
+        activity.markTripPeriod(AppSettings.MARK_TRIP_A)
+        return "ok"
+    }
+
     /** Ajustes → Hodômetro do carro (ver activity.applyOdometer). */
     @JavascriptInterface
     fun setOdometerKm(km: Double): String {

@@ -38,6 +38,13 @@ interface TripDao {
     )
     suspend fun fuelSamples(from: Long, to: Long, vehicleId: String): List<FuelSample>
 
+    /** Distância e combustível das viagens iniciadas a partir de [since], sem duas viagens (a em andamento e a da marca). */
+    @Query(
+        "SELECT COALESCE(SUM(distance_km), 0) AS km, COALESCE(SUM(fuel_used_l), 0) AS liters FROM trips " +
+            "WHERE vehicle_id = :vehicleId AND start_time >= :since AND id NOT IN (:excludeA, :excludeB)",
+    )
+    suspend fun totalsSince(since: Long, vehicleId: String, excludeA: Long, excludeB: Long): Totals
+
     @Query("SELECT * FROM trips WHERE vehicle_id = :vehicleId ORDER BY start_time DESC LIMIT 1")
     suspend fun lastTrip(vehicleId: String): TripEntity?
 
@@ -137,6 +144,9 @@ interface TripDao {
 
 /** Amostra de consumo instantâneo (L/h) da caixa preta. */
 data class FuelSample(val timestamp: Long, val lph: Double?)
+
+/** Soma de distância (km) e combustível (L) de um conjunto de viagens. */
+data class Totals(val km: Double, val liters: Double)
 
 /** Velocidade da ECU e do GPS no mesmo instante da caixa preta. */
 data class SpeedSample(val timestamp: Long, val obd: Double, val gps: Double, val accuracy: Float?)

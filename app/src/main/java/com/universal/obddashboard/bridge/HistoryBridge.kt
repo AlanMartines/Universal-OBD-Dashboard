@@ -8,7 +8,10 @@ import com.universal.obddashboard.db.AppDatabase
 import com.universal.obddashboard.export.TripExportFiles
 import com.universal.obddashboard.orNull
 import com.universal.obddashboard.service.ObdForegroundService
+import com.universal.obddashboard.telemetry.Leg
 import com.universal.obddashboard.telemetry.SpeedCalibration
+import com.universal.obddashboard.telemetry.TripComputer
+import com.universal.obddashboard.telemetry.TripStats
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -36,6 +39,30 @@ class HistoryBridge(private val activity: MainActivity) {
             )
         }
         arr.toString()
+    }
+
+    /**
+     * Histórico → Resumo da viagem: refeito pelas amostras gravadas (a cada ~2 s). Tempo andando e parado,
+     * velocidade média, km/l, litros, custo (preço do último abastecimento antes dela), marcha lenta,
+     * km com a injeção cortada e % do tempo no verde, meio e vermelho.
+     */
+    @JavascriptInterface
+    fun getTripSummary(requestId: String, tripId: Long) = activity.answerAsync(requestId) {
+        val db = AppDatabase.get(activity)
+        val trip = db.tripDao().getTrip(tripId) ?: return@answerAsync JSONObject().put("ok", false).put("error", "Viagem não encontrada.").toString()
+        val logs = db.tripDao().telemetryForTrip(tripId)
+        val ecoMid = activity.currentProfile().profile.fuel?.ecoMidLPer100km ?: TripStats.DEFAULT_ECO_MID
+        val st = TripStats.fromLogs(logs, ecoMid)
+        val price = db.fuelUpDao().all(trip.vehicleId).filter { it.timestamp <= (trip.endTime ?: Long.MAX_VALUE) }.maxByOrNull { it.timestamp }
+            ?.let { f -> f.pricePerLiter ?: f.totalPrice?.takeIf { f.liters > 0 }?.div(f.liters) }
+        val leg = Leg(trip.distanceKm, trip.fuelUsedL)
+        JSONObject().put("ok", true).put("samples", logs.size)
+            .put("km", trip.distanceKm).put("liters", trip.fuelUsedL).put("kmPerL", leg.kmPerL.orNull())
+            .put("cost", price?.times(trip.fuelUsedL).orNull()).put("costPerKm", TripComputer.costPerKm(price, leg.kmPerL).orNull())
+            .put("movingS", st.movingS).put("idleS", st.idleS).put("idleFuelL", st.idleFuelL)
+            .put("idleCost", price?.times(st.idleFuelL).orNull()).put("avgMovingKmh", st.avgMovingKmh.orNull())
+            .put("fuelCutKm", st.fuelCutKm).put("ecoPct", st.ecoPct()?.let { JSONArray(it) } ?: JSONObject.NULL)
+            .toString()
     }
 
     /** Gera o CSV/GPX da viagem e abre o menu de compartilhamento. Retorna "ok" ou a mensagem de erro. */

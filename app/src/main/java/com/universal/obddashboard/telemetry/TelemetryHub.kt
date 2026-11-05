@@ -42,6 +42,17 @@ data class DerivedMetrics(
     val shiftUp: Boolean = false,
     val estimatedLoadPct: Double? = null,
     val tripCost: Double? = null,
+    /** Consumo instantâneo suavizado (L/h): o que interessa com o carro parado e o motor ligado. */
+    val instantLph: Double? = null,
+    /** Faixa do indicador de economia agora: 0 verde, 1 meio, 2 vermelho; null parado ou sem consumo. */
+    val ecoBand: Int? = null,
+    val movingS: Double = 0.0,
+    val idleS: Double = 0.0,
+    val idleFuelL: Double = 0.0,
+    val fuelCutKm: Double = 0.0,
+    val avgMovingKmh: Double? = null,
+    /** % do tempo andando no verde, meio e vermelho. */
+    val ecoPct: List<Double>? = null,
 )
 
 data class DashboardState(

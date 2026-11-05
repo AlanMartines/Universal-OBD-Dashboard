@@ -302,3 +302,21 @@ input[readonly] { opacity: .7; }
 .zone-green .zone-title, .zone-green .btn { color: var(--accent); }
 .zone-neutral { padding: 0 10px; }
 .script-zone .btn.picked { outline: 3px solid currentColor; outline-offset: -3px; }
+
+/* ---------------------------------------------------------------- Computador de bordo */
+.computer .pc-now { margin: 8px 0 10px; }
+.computer .pc-now b { font-size: 2.2rem; font-variant-numeric: tabular-nums; }
+.pc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pc-cell { background: var(--card-2); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pc-cell .label { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.pc-cell b { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.pc-cell small { color: var(--muted); font-size: 0.75rem; }
+.pc-range { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.pc-range > div { display: flex; flex-direction: column; }
+.pc-range b { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.pc-note { margin: 8px 0 0; }
+.eco-pill { padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; background: var(--card-2); color: var(--muted); }
+.eco-pill.eco-0 { background: rgba(61, 220, 132, .18); color: var(--accent); }
+.eco-pill.eco-1 { background: rgba(255, 201, 64, .16); color: var(--yellow); }
+.eco-pill.eco-2 { background: rgba(255, 77, 79, .18); color: var(--red); }
+.trip-summary { margin-top: 6px; }
