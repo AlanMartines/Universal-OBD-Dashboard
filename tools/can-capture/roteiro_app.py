@@ -19,6 +19,8 @@ from collections import defaultdict
 
 # Tempo para a pessoa reagir à voz: o começo de cada janela fica de fora.
 REACT_S = 1.5
+# Fração mínima de quadros com o bit no valor da ação, em toda janela "liga" (e o contrário em toda "desliga")
+MAJORITY = 0.6
 EVENT_WINDOW_S = 4.0
 
 
@@ -107,7 +109,7 @@ def pattern_windows(run, frames):
 
 
 def analyze_pattern(run, frames):
-    """Bits que ficam num valor em toda janela "liga" e no outro em toda janela "desliga"."""
+    """Bits que ficam, na maior parte de cada janela "liga", num valor, e no outro em cada janela "desliga"."""
     win = pattern_windows(run, frames)
     if not win["on"] or not win["off"]:
         return []
@@ -119,9 +121,10 @@ def analyze_pattern(run, frames):
     for k in keys:
         on = [m[k] for m in per["on"]]
         off = [m[k] for m in per["off"]]
-        if min(on) >= 0.9 and max(off) <= 0.1:
+        # Maioria em cada janela: a pessoa pode demorar alguns segundos a mais que REACT_S para agir
+        if min(on) >= MAJORITY and max(off) <= 1 - MAJORITY:
             found.append((k, 1, sum(on) / len(on), sum(off) / len(off)))
-        elif max(on) <= 0.1 and min(off) >= 0.9:
+        elif max(on) <= 1 - MAJORITY and min(off) >= MAJORITY:
             found.append((k, 0, sum(on) / len(on), sum(off) / len(off)))
     return sorted(found)
 
