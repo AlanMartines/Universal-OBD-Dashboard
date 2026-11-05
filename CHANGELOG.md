@@ -6,6 +6,15 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.19] - 2026-11-04
+
+### Adicionado
+- **Escuta CAN do Uno Vivace: consumo da injeção** (`can_fuel_lph`, do `0x281` b4 × 0,66 L/h). Ainda provável: bateu com o consumo calculado em quatro viagens; aparece em Sensores, nas exportações e no painel web, sem substituir o cálculo atual.
+- **Roteiro de captura: passos do passageiro, com o carro andando.** O primeiro é o "Indicador de economia": o passageiro toca na posição do ponteiro e o app grava junto a velocidade e a temperatura. Os demais passos continuam só com o carro parado.
+
+### Alterado
+- **Roteiro de captura:** o passo "Rotações fixas" não pergunta mais o indicador de economia, que não se move com o carro parado.
+
 ## [0.9.18] - 2026-11-04
 
 ### Adicionado

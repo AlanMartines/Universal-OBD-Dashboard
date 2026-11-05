@@ -41,13 +41,15 @@ function scriptRpm() {
   return scriptReading([roles.rpm || 'rpm', 'can_rpm']);
 }
 
-/** Pode começar um passo? Só com a captura gravando e o carro parado. */
+/** Pode começar um passo? Só com a captura gravando e o carro parado, exceto os passos do passageiro. */
 function scriptReadiness() {
   const s = lastState;
   if (!s || !s.running) return { ok: false, text: 'Toque em Iniciar (topo do app) e espere conectar. As marcas vão para o arquivo da captura.' };
   if (!s.diagRecording) return { ok: false, text: 'Esta captura não está gravando o diagnóstico. Marque Gravação de diagnóstico em Ajustes, encerre e inicie a captura de novo.' };
   const v = scriptSpeed();
-  if (v !== null && v > SCRIPT_MOVING_KMH) return { ok: false, text: 'Carro em movimento: os passos só rodam com o carro parado.' };
+  const passenger = !!(scriptStep && scriptStep.passenger);
+  if (passenger) return { ok: true, passenger: true, text: 'Passo do passageiro: só ele mexe no celular. O motorista só dirige.' };
+  if (v !== null && v > SCRIPT_MOVING_KMH) return { ok: false, text: 'Carro em movimento: os passos só rodam com o carro parado (exceto os do passageiro).' };
   const esp = s.canStatus ? ` ${s.canStatus}.` : '';
   return { ok: true, text: `Captura gravando. Pode começar.${esp}` };
 }
@@ -65,7 +67,7 @@ function scriptRenderList() {
   box.innerHTML = '';
   const legend = document.createElement('p');
   legend.className = 'muted small';
-  legend.textContent = '★ = passo prioritário: se faltar tempo ou bateria, faça estes primeiro. Pule o que o carro não tiver.';
+  legend.textContent = '★ = passo prioritário: se faltar tempo ou bateria, faça estes primeiro. Os passos com "(passageiro)" são feitos por quem vai ao lado, com o carro andando. Pule o que o carro não tiver.';
   box.appendChild(legend);
   (scriptData.groups || []).forEach((g) => {
     const sec = document.createElement('div');
@@ -205,7 +207,8 @@ function scriptStart() {
     scriptButtons(events, st.events, (ev) => {
       const roles = meta.roles || {};
       const temp = scriptReading([roles.coolant || 'coolant_temp', 'can_coolant_temp']);
-      const value = temp === null ? '' : `${fmt(temp)} °C`;
+      const speed = scriptSpeed();
+      const value = [speed === null ? '' : `${fmt(speed)} km/h`, temp === null ? '' : `${fmt(temp)} °C`].filter(Boolean).join(' · ');
       if (scriptMark({ phase: 'event', label: ev, value }) !== 'ok') return;
       bridge.captureVibrate(150);
       scriptRunState.events.push(`${new Date().toLocaleTimeString('pt-BR')} · ${ev}${value ? ' · ' + value : ''}`);
@@ -235,7 +238,7 @@ function scriptTick() {
   const run = scriptRunState;
   if (!run) return;
   const v = scriptSpeed();
-  if (v !== null && v > SCRIPT_MOVING_KMH) { scriptFinish('moving'); return; }
+  if (!scriptStep.passenger && v !== null && v > SCRIPT_MOVING_KMH) { scriptFinish('moving'); return; }
   if (!lastState || !lastState.running) { scriptFinish('capture_stopped'); return; }
   const now = Date.now();
   if (run.index < 0) {

@@ -30,10 +30,12 @@ class CanListenTest {
         assertEquals(123456.0, decode("t60380001E24000000000")["odometer_km"]!!, 1e-9)
         assertEquals(625.0, decode("t643800000000000186A0")["trip_km"]!!, 1e-9)
         // Rotação, temperatura e tensão: confirmados com o ELM327 em 04/11/2026
-        val engine = decode("t28180301807502082504")
+        val engine = decode("t2818030180750A082504")
         assertEquals(1185.0, engine["can_rpm"]!!, 1e-9)
         assertEquals(77.0, engine["can_coolant_temp"]!!, 1e-9)
         assertEquals(14.08, decode("t3E080058000000000000")["can_voltage"]!!, 1e-9)
+        // Consumo da injeção (provável): b4 × 0,66 L/h
+        assertEquals(6.6, engine["can_fuel_lph"]!!, 1e-9)
         assertTrue("quadro sem sinal mapeado", decode("t2C1800C83C0000000000").isEmpty())
         assertTrue("acima de 100% é descartado", decode("t38080000000000C8FF00").isEmpty())
         // O painel manda o nível zerado nos últimos segundos antes de a ignição desligar

@@ -121,8 +121,7 @@
             { "say": "Solte. Marcha lenta", "s": 20 },
             { "say": "Acelere e segure três mil", "s": 20 },
             { "say": "Solte. Marcha lenta", "s": 20 }
-          ],
-          "choices": { "label": "Indicador de economia (se tiver)", "options": ["Fundo do verde", "Verde", "Meio", "Vermelho", "Fundo do vermelho"] } },
+          ] },
         { "id": "radiator_fan", "title": "Eletroventilador do radiador", "priority": true, "engine": "on",
           "before": "Marcha lenta, sem acelerar, tudo desligado. Toque no botão quando o ventilador ligar e quando desligar. Acima de 105 °C ou com alerta, desligue o motor.",
           "events": ["Ventilador ligou", "Ventilador desligou"], "max_s": 1500 }
@@ -143,7 +142,12 @@
       "id": "moving",
       "title": "Em movimento",
       "place": "moving",
-      "note": "Sem passos guiados: só dirija com a captura rodando. Nada de celular com o carro andando."
+      "note": "O motorista só dirige, com a captura rodando, e não mexe no celular. Os passos daqui são feitos pelo passageiro.",
+      "steps": [
+        { "id": "economy_gauge", "title": "Indicador de economia (passageiro)", "passenger": true, "engine": "on",
+          "before": "Só o passageiro opera o celular. Em trechos de velocidade constante, subidas e retomadas, toque na posição do ponteiro no arco, de baixo para cima, sempre que ela mudar. O app grava junto a velocidade e a temperatura.",
+          "events": ["Repouso (embaixo)", "Verde baixo", "Verde alto", "Vermelho baixo", "Vermelho alto (topo)"], "max_s": 1800 }
+      ]
     }
   ]
 }

@@ -30,7 +30,8 @@ class CaptureScriptTest {
         val steps = s.groups.flatMap { it.steps }.map { it.id }.toSet()
         listOf("ign_quiet", "door_driver", "seatbelt_driver", "brake_pedal", "handbrake", "reverse", "high_beam", "idle_quiet", "ac", "rpm_fixed", "radiator_fan", "engine_off")
             .forEach { assertTrue("roteiro genérico sem $it", it in steps) }
-        assertTrue("grupo em movimento não tem passos", s.groups.filter { it.place == "moving" }.all { it.steps.isEmpty() })
+        assertTrue("em movimento, só passos do passageiro", s.groups.filter { it.place == "moving" }.all { g -> g.steps.all { it.passenger } })
+        assertTrue("indicador de economia com o passageiro", s.groups.flatMap { it.steps }.any { it.id == "economy_gauge" && it.passenger })
         // O roteiro volta à tela pelo encode; precisa sair igual
         assertEquals(s, CaptureScript.parse(CaptureScript.encode(s)))
     }
@@ -52,7 +53,8 @@ class CaptureScriptTest {
         assertTrue("dois formatos no mesmo passo", refused(generic.replaceFirst("\"phases\": [{ \"say\": \"Ignição ligada. Não toque em nada.\", \"s\": 60 }]", "\"phases\": [{ \"say\": \"x\", \"s\": 60 }], \"events\": [\"a\"], \"max_s\": 60")))
         assertTrue("id repetido", refused(generic.replaceFirst("\"id\": \"door_passenger\"", "\"id\": \"door_driver\"")))
         assertTrue("duração fora da faixa", refused(generic.replaceFirst("\"on_s\": 10", "\"on_s\": 0")))
-        assertTrue("passos em movimento", refused(generic.replace("\"place\": \"moving\",", "\"place\": \"moving\", \"steps\": [{ \"id\": \"x\", \"title\": \"x\", \"phases\": [{ \"say\": \"x\", \"s\": 1 }] }],")))
+        assertTrue("passo comum em movimento", refused(generic.replace("{ \"id\": \"economy_gauge\"", "{ \"id\": \"x\", \"title\": \"x\", \"phases\": [{ \"say\": \"x\", \"s\": 1 }] }, { \"id\": \"economy_gauge\"")))
+        assertTrue("passo do passageiro em grupo parado", refused(generic.replaceFirst("\"id\": \"door_driver\", \"title\": \"Porta do motorista\",", "\"id\": \"door_driver\", \"title\": \"Porta do motorista\", \"passenger\": true,")))
         assertTrue("texto ilegível", refused("{"))
     }
 

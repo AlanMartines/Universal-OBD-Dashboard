@@ -25,7 +25,7 @@ data class CaptureScript(
     val title: String,
     val groups: List<Group>,
 ) {
-    /** Onde o grupo acontece: "stopped" (parado) ou "moving" (só dirigir, sem passos guiados). */
+    /** Onde o grupo acontece: "stopped" (parado) ou "moving" (andando: só passos do passageiro). */
     @Serializable
     data class Group(val id: String, val title: String, val place: String = "stopped", val note: String? = null, val steps: List<Step> = emptyList())
 
@@ -36,12 +36,14 @@ data class CaptureScript(
      * - [events]: botões que a pessoa toca quando algo acontece (ex.: ventilador ligou), até [maxS].
      * [choices] são botões opcionais durante o passo (ex.: posição do econômetro).
      * [engine]: "on", "off" ou "any", só para avisar; o bloqueio é sempre com o carro andando.
+     * [passenger]: passo feito pelo passageiro com o carro andando. Só ele roda em movimento, e só num grupo "moving".
      */
     @Serializable
     data class Step(
         val id: String,
         val title: String,
         val priority: Boolean = false,
+        val passenger: Boolean = false,
         val engine: String = "any",
         val before: String? = null,
         val after: String? = null,
@@ -97,7 +99,8 @@ data class CaptureScript(
                 if (!ID.matches(g.id) || !ids.add("g:" + g.id)) throw ScriptException("grupo '${g.id}': id inválido ou repetido")
                 if (g.place !in setOf("stopped", "moving")) throw ScriptException("grupo '${g.id}': place deve ser stopped ou moving")
                 text(g.title, "grupo '${g.id}'"); text(g.note, "grupo '${g.id}'")
-                if (g.place == "moving" && g.steps.isNotEmpty()) throw ScriptException("grupo '${g.id}': em movimento não há passos guiados")
+                if (g.place == "moving" && g.steps.any { !it.passenger }) throw ScriptException("grupo '${g.id}': em movimento só há passos do passageiro")
+                if (g.place == "stopped" && g.steps.any { it.passenger }) throw ScriptException("grupo '${g.id}': passo do passageiro só num grupo em movimento")
                 g.steps.forEach { st ->
                     val ctx = "passo '${st.id}'"
                     if (!ID.matches(st.id) || !ids.add(st.id)) throw ScriptException("$ctx: id inválido ou repetido")

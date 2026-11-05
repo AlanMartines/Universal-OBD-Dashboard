@@ -253,7 +253,7 @@
   },
 
   "_comment_speed": "Velocidade da ECU 2,6% abaixo do hodômetro do carro (406,6 km × 418 km num trecho de teste); o GPS ficou 1,8% acima do hodômetro. O fator só entra na distância quando não há GPS.",
-  "_comment_can": "Escuta CAN com ESP32 (veiculos/fiat-uno-vivace-2012): só os sinais confirmados. Rotação, temperatura e tensão (can_*) foram conferidas com o ELM327 e não substituem as leituras dele. O nível do tanque começa em 1%: nos últimos segundos antes de a ignição desligar, o painel manda o 0x380 com o b5 zerado.",
+  "_comment_can": "Escuta CAN com ESP32 (veiculos/fiat-uno-vivace-2012): só os sinais confirmados. Rotação, temperatura e tensão (can_*) foram conferidas com o ELM327 e não substituem as leituras dele. O nível do tanque começa em 1%: nos últimos segundos antes de a ignição desligar, o painel manda o 0x380 com o b5 zerado. can_fuel_lph (0x281 b4 × 0,66) é provável: bateu com o consumo calculado em quatro viagens (±3%), falta conferir entre dois tanques cheios.",
   "can_listen": {
     "bitrate_kbps": 50,
     "signals": [
@@ -263,7 +263,8 @@
       { "id": "trip_km", "name": "Parcial do painel", "frame": "643", "start": 5, "length": 3, "formula": "((A*65536)+(B*256)+C)/160", "unit": "km", "decimals": 1, "min": 0, "max": 100000 },
       { "id": "can_rpm", "name": "Rotação (painel)", "frame": "281", "start": 5, "length": 2, "formula": "((B*256)+A)/8", "unit": "RPM", "decimals": 0, "min": 0, "max": 8000 },
       { "id": "can_coolant_temp", "name": "Temperatura do motor (painel)", "frame": "281", "start": 3, "length": 1, "formula": "A-40", "unit": "°C", "decimals": 0, "min": -40, "max": 150 },
-      { "id": "can_voltage", "name": "Tensão da bateria (painel)", "frame": "3E0", "start": 1, "length": 1, "formula": "A*0.16", "unit": "V", "decimals": 1, "min": 0, "max": 20 }
+      { "id": "can_voltage", "name": "Tensão da bateria (painel)", "frame": "3E0", "start": 1, "length": 1, "formula": "A*0.16", "unit": "V", "decimals": 1, "min": 0, "max": 20 },
+      { "id": "can_fuel_lph", "name": "Consumo da injeção (painel)", "frame": "281", "start": 4, "length": 1, "formula": "A*0.66", "unit": "L/h", "decimals": 1, "min": 0, "max": 40 }
     ]
   },
 
