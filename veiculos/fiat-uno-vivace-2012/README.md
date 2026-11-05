@@ -155,7 +155,7 @@ Para o receptor:
 | `0x281` | b2 bit 6 | Ar-condicionado ligado | 1 com o compressor pedido. Ex.: b2 `C0` | **Confirmado** em 04/11/2026 com o Roteiro de captura (3 vezes; 99% das janelas). A marcha lenta sobe de ~845 para ~945 rpm |
 | `0x180` | b2 bit 4 | Desembaçador traseiro ligado | 1 com o desembaçador ligado | **Confirmado** em 04/11/2026 com o Roteiro de captura (3 vezes; 100% das janelas) |
 | `0x281` | b2 bit 7 | Plena carga (provável corte do A/C) | 1 no uso normal; 0 com o pedal quase no fundo (borboleta mediana 38%, MAP ~91 kPa) | Candidato: falta acelerar forte com o A/C ligado |
-| `0x281` | b4 | Consumo da injeção | `b4 × 0,66` L/h. Ex.: `0A` = 6,6 L/h. Marcha lenta ≈ 1,7 (≈ 1,1 L/h); sobe com o A/C e ao acelerar | Provável: a soma em quatro viagens de 04/11/2026 bateu com o consumo calculado pelo app (0,637 a 0,679 L por unidade·hora, ±3%); falta conferir entre dois tanques cheios. No app: `can_fuel_lph` |
+| `0x281` | b4 | Consumo da injeção | `b4 × 0,66` L/h. Ex.: `0A` = 6,6 L/h. Marcha lenta ≈ 1,7 (≈ 1,1 L/h); sobe com o A/C e ao acelerar | Provável: a soma em quatro viagens de 04/11/2026 bateu com o consumo calculado pelo app (0,637 a 0,679 L por unidade·hora, ±3%); falta conferir entre dois tanques cheios. No app: `can_fuel_lph` O indicador de economia do painel acompanha este valor dividido pela velocidade (05/11/2026) |
 | `0x281` | b5–b6 | RPM | `(b6·256+b5)/8`, como na Ducato. Ex.: `08 25` = 1.185 rpm | **Confirmado** em 04/11/2026 com a linha K (ELM327) |
 | `0x281` | b3 | Temperatura do motor | `b3−40` °C, como na Ducato. Ex.: `75` = 77 °C | **Confirmado** em 04/11/2026 com a linha K (ELM327) |
 | `0x3E0` | b1 | Tensão da bateria | `b1×0,16` V. Ex.: `58` = 14,08 V | **Confirmado** em 04/11/2026 com o `ATRV` do ELM327 |
@@ -166,7 +166,20 @@ Setas, pisca-alerta, portas, freio de mão, pedal de freio e cinto não mudam ne
 **Roteiro de captura de 04/11/2026** (app v0.9.18, marcas no arquivo de diagnóstico, carro parado; analisado com `tools/can-capture/roteiro_app.py`):
 - **Sem sinal próprio na rede:** porta do motorista, cinto do motorista, pedal de freio, farol alto, lampejo, farol de neblina, ventilação interna, direção e eletroventilador. A neblina só aparece como queda de tensão no `0x3E0` (consumo da lâmpada); o eletroventilador, como queda de tensão e a temperatura subindo. O relé dele é comandado direto pela injeção: ligou a 95 e 98 °C e desligou a 92 e 93 °C.
 - **Rotações fixas (17:33 a 17:35, sem o roteiro):** sem conta-giros, a rotação não ficou firme; o `0x281` b4 subiu de 1,7 para 4,5 ao acelerar e voltou a ~2 com a rotação caindo, o que aponta para injeção (carga), não rotação.
-- **Indicador de economia (econômetro):** só se move com o carro andando; parado, mesmo acelerando, fica imóvel. Deve ser o consumo por distância (km/l) que o painel calcula com o consumo da injeção e a velocidade do `0x2A0`. Para conferir, o passageiro anota a posição pelo passo "Indicador de economia (passageiro)" do roteiro.
+- **Indicador de economia (ECO): confirmado em 05/11/2026.** O ponteiro segue o consumo por distância (L/100 km) calculado com o consumo da injeção (`0x281` b4) e a velocidade (`0x2A0`): correlação de 0,82 em 35 marcações do passageiro, numa viagem de 11 km com o Roteiro de captura. A mediana sobe em ordem, sem inversão. Parado, o ponteiro some no topo (repouso), mesmo acelerando.
+
+  | Posição | Marcações | L/100 km (mediana) | km/l (mediana) |
+  |---|---|---|---|
+  | Vermelho alto | 3 | 20,4 | 4,9 |
+  | Vermelho médio | 3 | 12,6 | 7,9 |
+  | Vermelho baixo | 6 | 11,8 | 8,6 |
+  | Meio | 3 | 10,4 | 9,6 |
+  | Verde baixo | 5 | 9,0 | 11,1 |
+  | Verde médio | 4 | 6,9 | 14,9 |
+  | Verde alto | 10 | 3,6 | 28,0 |
+
+  O Meio fica perto de 10 L/100 km (≈ 10 km/l). Alguns toques fogem da tabela porque o ponteiro se move o tempo todo e o toque vem um instante depois.
+- **Hodômetro sincronizado (app v0.9.21, 05/11/2026):** o Total do app acompanhou o `0x603` a cada km (12 acertos, evento `odometer_sync`) e terminou igual ao painel. O visor central do painel mostra o relógio; a temperatura é o marcador de barras à direita (C a H), que fica no meio com o motor quente.
 - **Ainda não feitos com o roteiro:** freio de mão, ré, setas, pisca-alerta e limpadores.
 
 **No app:** velocidade, nível do tanque, hodômetro e parcial estão na seção `can_listen` do perfil. Basta escolher o ESP32 em Ajustes → Escuta CAN. Rotação, temperatura e tensão entram como `can_rpm`, `can_coolant_temp` e `can_voltage`: aparecem no "Testar (15 s)", em Sensores e nas exportações, sem substituir as leituras do ELM327.
