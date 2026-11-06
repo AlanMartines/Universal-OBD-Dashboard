@@ -11,7 +11,7 @@
 </div>
 
 <div id="live-root" data-device-id="{{device.id}}">
-  <div id="latest-data" hidden data-sample="{{latestJson}}" data-limits="{{limitsJson}}"></div>
+  <div id="latest-data" hidden data-sample="{{latestJson}}" data-limits="{{limitsJson}}" data-last-valid="{{lastValidJson}}"></div>
   <p id="no-data" class="text-body-secondary d-none">Ainda não chegaram dados deste dispositivo.</p>
 
   <div id="dtc-box" class="alert alert-warning d-none" role="alert">
@@ -31,7 +31,6 @@
 
   <div class="tab-content">
   <div class="tab-pane fade show active" id="pane-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
-  <p id="stale-note" class="alert alert-secondary small py-2 mb-3 d-none" role="status"><i class="fa-solid fa-clock-rotate-left me-1" aria-hidden="true"></i><span></span></p>
   <div class="row row-cols-2 row-cols-lg-4 g-3 mb-3" id="highlights" aria-busy="true"><div class="col"><div class="skeleton stat-skeleton"></div></div><div class="col"><div class="skeleton stat-skeleton"></div></div><div class="col"><div class="skeleton stat-skeleton"></div></div><div class="col"><div class="skeleton stat-skeleton"></div></div></div>
 
   <section class="stat-panel pc-panel mb-3" id="pc-panel" aria-labelledby="pc-title" hidden>

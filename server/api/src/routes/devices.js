@@ -67,9 +67,24 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     );
     const s = rows[0];
     const allowed = locationAllowed(request.session, device);
+    // Último valor válido (número diferente de zero; rotação a partir de 300) de cada sinal nas últimas 24 h: com o carro sem
+    // transmitir, a tela mostra estes em vez de "—" ou do zero do motor desligado, com o horário.
+    const { rows: valid } = await pool.query(
+      `SELECT DISTINCT ON (e.key) e.key, (e.value #>> '{}')::float AS v, t.ts
+         FROM (SELECT ts, metrics FROM telemetry_samples
+                WHERE device_id = $1 AND ts > now() - interval '24 hours'
+                ORDER BY ts DESC LIMIT 20000) t,
+              jsonb_each(t.metrics) e
+        WHERE jsonb_typeof(e.value) = 'number' AND (e.value #>> '{}')::float <> 0
+          -- Rotação abaixo da marcha lenta é o motor parando, não um valor útil
+          AND NOT (e.key IN ('rpm', 'can_rpm') AND (e.value #>> '{}')::float < 300)
+        ORDER BY e.key, t.ts DESC`,
+      [device.id],
+    );
     return {
       locationAllowed: allowed,
       device: publicDevice(device),
+      lastValid: Object.fromEntries(valid.map((r) => [r.key, { v: r.v, t: r.ts }])),
       latest: s ? {
         ts: s.ts,
         metrics: s.metrics,

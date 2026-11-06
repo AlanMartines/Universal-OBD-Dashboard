@@ -42,17 +42,45 @@
   var shown = {};
   var isStale = false;
 
-  function paint(id) {
+  // Último valor válido (diferente de zero) de cada sinal, com o horário: vem da página e se atualiza
+  // a cada leitura. Sem transmissão, os valores do momento mostram este, com a nota no rodapé do cartão.
+  var lastValid = {};
+  function noteValid(id, value, ts) {
+    if (typeof value === 'number' && value !== 0) lastValid[id] = { v: value, t: ts };
+  }
+  /** O que mostrar: o valor atual ou, sem transmissão, o último válido. null = nada a mostrar. */
+  function display(id) {
     var v = shown[id];
-    if (typeof v !== 'number') return;
-    var hide = isStale && momentary(id);
+    var fallback = isStale && (momentary(id) || typeof v !== 'number' || v === 0) && lastValid[id];
+    if (fallback) return { v: fallback.v, t: fallback.t };
+    if (typeof v !== 'number') return null;
+    return { v: v, t: null };
+  }
+  function paint(id) {
+    var d = display(id);
+    if (!d) return;
+    var gone = isStale && momentary(id) && !d.t;
     if (cards[id]) {
-      cards[id].value.textContent = hide ? '—' : format(id, v);
-      cards[id].unit.textContent = hide ? 'sem leitura' : info(id)[1];
+      cards[id].value.textContent = gone ? '—' : format(id, d.v);
+      cards[id].unit.textContent = gone ? 'sem leitura' : info(id)[1];
+      cards[id].note.textContent = d.t ? 'Último valor válido · ' + hhmm(d.t) : '';
     } else {
       var unit = info(id)[1];
-      row(id).textContent = hide ? '—' : format(id, v) + (unit ? ' ' + unit : '');
+      var cell = row(id);
+      cell.textContent = gone ? '—' : format(id, d.v) + (unit ? ' ' + unit : '');
+      cell.dataset.validAt = d.t ? String(d.t) : '';
     }
+  }
+  function hhmm(t) { return new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
+  /** Rodapé de cada grupo: "Últimos valores válidos antes de desligar · 12:03" quando algum veio de lá. */
+  function paintGroupNotes() {
+    Object.keys(groupBoxes).forEach(function (name) {
+      var list = groupBoxes[name];
+      var latest = 0;
+      list.querySelectorAll('dd[data-valid-at]').forEach(function (dd) { latest = Math.max(latest, Number(dd.dataset.validAt) || 0); });
+      var note = list.parentNode.querySelector('.stat-note');
+      note.textContent = latest ? 'Últimos valores válidos antes de desligar · ' + hhmm(latest) : '';
+    });
   }
   var GROUPS = [
     ['Motor', ['derived.estimatedLoadPct', 'engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear', 'can_rpm', 'can_coolant_temp']],
@@ -69,7 +97,6 @@
   var rangeBox = document.getElementById('chart-range');
   var status = document.getElementById('live-status');
   var overview = document.getElementById('pane-overview');
-  var staleNote = document.getElementById('stale-note');
   var lastUpdate = document.getElementById('last-update');
   var limits = {};
   try { limits = JSON.parse(document.getElementById('latest-data').dataset.limits) || {}; } catch (e) { /* ainda sem escalas salvas */ }
@@ -176,7 +203,8 @@
       spark.setAttribute('aria-hidden', 'true');
       var poly = document.createElementNS(SVGNS, 'polyline');
       spark.append(poly);
-      card.append(node('span', 'stat-label', meta[0]), line, spark);
+      var note = node('em', 'stat-note');
+      card.append(node('span', 'stat-label', meta[0]), line, spark, note);
       card.addEventListener('click', function () {
         addOption(id);
         select.value = id;
@@ -185,7 +213,7 @@
       });
       col.append(card);
       box.append(col);
-      cards[id] = { value: value, unit: unit, poly: poly, card: card };
+      cards[id] = { value: value, unit: unit, poly: poly, card: card, note: note };
     });
   }
 
@@ -203,7 +231,7 @@
     var panel = node('section', 'stat-panel h-100');
     panel.append(node('h2', 'stat-group-title', name));
     var list = node('dl', 'stat-list mb-0');
-    panel.append(list);
+    panel.append(list, node('em', 'stat-note'));
     col.append(panel);
     var parent = document.getElementById('groups');
     var after = Array.prototype.find.call(parent.children, function (c) { return Number(c.dataset.order) > Number(col.dataset.order); });
@@ -261,8 +289,14 @@
       card.poly.setAttribute('points', '');
       return;
     }
-    var now = Date.now();
+    // Sem transmissão, o minigráfico mostra os últimos 15 min COM dados, não os 15 min até agora.
+    var now = isStale && lastTs ? lastTs : Date.now();
     var from = now - SPARK_MINUTES * 60000;
+    points = points.filter(function (p) { return p.t >= from && p.t <= now; });
+    if (points.length < 2) {
+      card.poly.setAttribute('points', '');
+      return;
+    }
     var values = points.map(function (p) { return p.v; });
     var lo = Math.min.apply(null, values);
     var hi = Math.max.apply(null, values);
@@ -280,7 +314,7 @@
     var last = list[list.length - 1];
     if (last && ts <= last.t) return;
     list.push({ t: ts, v: value });
-    var limit = Date.now() - SPARK_MINUTES * 60000;
+    var limit = (isStale && lastTs ? lastTs : Date.now()) - SPARK_MINUTES * 60000;
     while (list.length > SPARK_POINTS * 4 || (list.length && list[0].t < limit)) list.shift();
     drawSpark(id);
   }
@@ -305,6 +339,7 @@
       if (typeof value !== 'number' || isInternal(id)) return;
       addOption(id);
       shown[id] = value;
+      noteValid(id, value, ts);
       paint(id);
       if (cards[id]) {
         cards[id].card.dataset.level = level(id, value);
@@ -461,9 +496,15 @@
     }
   }
 
+  /** Menor período do histórico que ainda alcança os 15 min antes da última leitura. */
+  function sparkRange() {
+    var need = (Date.now() - (lastTs || Date.now())) / 60000 + SPARK_MINUTES;
+    return [15, 60, 360, 1440, 10080].find(function (m) { return m >= need; }) || 10080;
+  }
   function loadSparks() {
+    var range = sparkRange();
     HIGHLIGHTS.forEach(function (id) {
-      fetchHistory(id, SPARK_MINUTES).then(function (r) {
+      fetchHistory(id, range).then(function (r) {
         sparkData[id] = r.points.map(function (p) { return { t: new Date(p.t).getTime(), v: p.v }; });
         drawSpark(id);
       }).catch(function () { /* sem minigráfico, o valor continua visível */ });
@@ -499,15 +540,12 @@
     overview.classList.toggle('is-stale', stale);
     if (stale !== isStale) {
       isStale = stale;
-      Object.keys(shown).forEach(paint);
+      Object.keys(shown).concat(Object.keys(lastValid)).forEach(paint);
+      paintGroupNotes();
+      HIGHLIGHTS.forEach(drawSpark);
       renderPc();
     }
-    staleNote.classList.toggle('d-none', !stale);
-    if (stale) {
-      var when = new Date(lastTs);
-      staleNote.lastChild.textContent = 'Valores da última leitura, em ' + when.toLocaleDateString('pt-BR') + ' às ' +
-        when.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '. O veículo não está enviando dados agora.';
-    }
+    // Sem transmissão, o selo do topo diz de quando é a última leitura (os cartões têm a nota no rodapé).
     lastUpdate.textContent = 'Última leitura há ' + ago(age);
     lastUpdate.title = new Date(lastTs).toLocaleString('pt-BR');
   }
@@ -515,9 +553,18 @@
   buildHighlights();
   var initial = null;
   try { initial = JSON.parse(document.getElementById('latest-data').dataset.sample); } catch (e) { /* sem dados */ }
+  try {
+    var lv = JSON.parse(document.getElementById('latest-data').dataset.lastValid || '{}');
+    Object.keys(lv).forEach(function (id) {
+      if (isInternal(id) || typeof lv[id].v !== 'number') return;
+      lastValid[id] = { v: lv[id].v, t: new Date(lv[id].t).getTime() };
+    });
+  } catch (e) { /* sem últimos valores */ }
   HIGHLIGHTS.forEach(addOption);
   render(initial);
   if (initial && initial.ts) lastTs = new Date(initial.ts).getTime();
+  // Sinais que não vieram na última leitura (ELM327 já desconectado) mas têm último valor válido
+  Object.keys(lastValid).forEach(function (id) { if (!(id in shown)) addOption(id); });
   select.value = 'speed';
   loadChart();
   loadSparks();

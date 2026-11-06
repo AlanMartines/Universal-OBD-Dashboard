@@ -136,6 +136,7 @@ export default function devicesRoutes(app, {
       title: data.device.name,
       device: data.device,
       latestJson: JSON.stringify(data.latest),
+      lastValidJson: JSON.stringify(data.lastValid ?? {}),
       limitsJson: JSON.stringify(data.device.dashLimits),
       ...DEVICE_ASSETS,
       pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/static/js/chart-theme.js', '/static/js/tabs.js', '/static/js/dtc-sae.js', '/modules/devices/live.js', '/modules/devices/faults.js', '/modules/devices/reports.js', ...(data.locationAllowed ? ['/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js'] : [])],

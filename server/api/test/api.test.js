@@ -373,6 +373,12 @@ describe('API', () => {
       assert.equal(mine.odometerFromFuelUp, false);
       assert.match(overview.month, /^\d{4}-\d{2}$/);
       assert.equal(mine.computer, null);
+      // Último valor válido de cada sinal: o zero do motor desligado não apaga a última velocidade
+      await send(app, dev.deviceToken, [sample(900, { ts: Date.now() - 60000, metrics: { can_speed: 42, can_rpm: 2100 } }), sample(901, { ts: Date.now() - 59500, metrics: { can_rpm: 120 } }), sample(902, { ts: Date.now() - 59000, metrics: { can_speed: 0, can_rpm: 0, can_voltage: 13.9 } })]);
+      const detail = (await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: alice })).json();
+      assert.equal(detail.lastValid.can_speed.v, 42);
+      assert.equal(detail.lastValid.can_rpm.v, 2100);
+      assert.equal(detail.lastValid.can_voltage.v, 13.9);
       // Computador de bordo: o último retrato ao vivo fica para o cartão da página inicial (no máximo 1×/min)
       const pc = (metrics) => app.inject({ method: 'POST', url: '/api/v1/live', headers: { authorization: `Bearer ${dev.deviceToken}` }, payload: { ts: Date.now(), metrics } });
       assert.equal((await pc({ 'pc.rangeReserveKm': 412.5, 'pc.fuelUpKmPerL': 11.2, 'pc.fuelUpKm': 38 })).statusCode, 200);
