@@ -1,7 +1,4 @@
-<div class="page-header mb-4">
-  <h1 class="h3 mb-1"><i class="fa-solid {{#if isSuper}}fa-gear{{else}}fa-users{{/if}} text-primary me-2" aria-hidden="true"></i>{{#if isSuper}}Configurações{{else}}Usuários{{/if}}</h1>
-  <p class="text-body-secondary mb-0">{{#if isSuper}}Usuários, cadastro público e auditoria do painel{{else}}Pessoas que acessam os dados da sua conta{{/if}}</p>
-</div>
+{{#if isSuper}}{{#> pageHeader title="Configurações" icon="fa-gear" subtitle="Usuários, cadastro público e auditoria do painel"}}{{/pageHeader}}{{else}}{{#> pageHeader title="Usuários" icon="fa-users" subtitle="Pessoas que acessam os dados da sua conta"}}{{/pageHeader}}{{/if}}
 
 <ul class="admin-stats">
   <li><span class="admin-stat-icon" aria-hidden="true"><i class="fa-solid fa-users"></i></span><span><b>{{stats.users}}</b><small>usuários</small></span></li>

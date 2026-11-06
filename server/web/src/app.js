@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cookie from '@fastify/cookie';
@@ -109,6 +110,8 @@ export async function buildApp({ config, logger }) {
         imgSrc: ["'self'", 'data:', 'blob:'],
         fontSrc: ["'self'"],
         connectSrc: ["'self'"],
+        manifestSrc: ["'self'"],
+        workerSrc: ["'self'", 'blob:'],
         formAction: ["'self'"],
         baseUri: ["'none'"],
         frameAncestors: ["'none'"],
@@ -150,6 +153,7 @@ export async function buildApp({ config, logger }) {
         pagination: 'shared/views/components/pagination.hbs',
         confirmModal: 'shared/views/components/confirm-modal.hbs',
         passwordStrength: 'shared/views/components/password-strength.hbs',
+        emptyState: 'shared/views/components/empty-state.hbs',
       },
     },
   });
@@ -166,6 +170,7 @@ export async function buildApp({ config, logger }) {
     ['/vendor/maplibre/', 'node_modules/maplibre-gl/dist', ['/maplibre-gl.mjs', '/maplibre-gl-worker.mjs', '/maplibre-gl.css']],
     ['/vendor/pmtiles/', 'node_modules/pmtiles/dist', ['/pmtiles.js']],
     ['/vendor/basemaps/', 'node_modules/@protomaps/basemaps/dist', ['/basemaps.js']],
+    ['/vendor/inter/', 'node_modules/@fontsource-variable/inter/files', ['/inter-latin-wght-normal.woff2', '/inter-latin-ext-wght-normal.woff2']],
   ]) {
     await app.register(fastifyStatic, {
       root: join(ROOT, dir), prefix, decorateReply: false, maxAge: '7d', allowedPath: (path) => allowed.includes(path),
@@ -248,9 +253,11 @@ export async function buildApp({ config, logger }) {
   app.addHook('onSend', async (request, reply) => {
     reply.header('X-Robots-Tag', 'noindex, nofollow');
     reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
-    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/') && !request.url.startsWith('/modules/') && !request.url.startsWith('/mapa/') && !request.url.startsWith('/meus-dados/foto')) {
+    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/') && !request.url.startsWith('/modules/') && !request.url.startsWith('/mapa/') && !request.url.startsWith('/meus-dados/foto')
+      && !reply.hasHeader('Cache-Control')) {
       reply.header('Cache-Control', 'no-store');
     }
+    if (String(reply.getHeader('content-type') ?? '').startsWith('text/html')) reply.header('Speculation-Rules', '"/speculation-rules.json"');
   });
 
   // ---------- Cliente da API ----------
@@ -366,6 +373,33 @@ export async function buildApp({ config, logger }) {
   // ---------- Geral ----------
 
   app.get('/healthz', { config: { rateLimit: false } }, async () => ({ status: 'ok' }));
+  // ---------- PWA: instalar o painel no celular ----------
+  const PWA_DIR = join(SRC, 'shared/pwa');
+  const MANIFEST = JSON.stringify({
+    name: 'Telemetria OBD',
+    short_name: 'Telemetria',
+    description: 'Telemetria do seu veículo, em tempo real',
+    lang: 'pt-BR',
+    start_url: '/painel',
+    scope: '/',
+    display: 'standalone',
+    background_color: '#0b0f14',
+    theme_color: '#0b0f14',
+    icons: [
+      { src: '/assets/favicons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/assets/favicons/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { src: '/assets/favicons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  });
+  app.get('/manifest.webmanifest', async (_request, reply) => reply.type('application/manifest+json').header('Cache-Control', 'public, max-age=3600').send(MANIFEST));
+  app.get('/sw.js', async (_request, reply) => reply.type('text/javascript; charset=utf-8').header('Cache-Control', 'no-cache').send(await readFile(join(PWA_DIR, 'sw.js'), 'utf8')));
+  app.get('/offline', async (_request, reply) => reply.type('text/html; charset=utf-8').send(await readFile(join(PWA_DIR, 'offline.html'), 'utf8')));
+  // Carrega a próxima página quando o mouse para no link (Chrome/Edge); os outros navegadores ignoram.
+  const SPECULATION = JSON.stringify({
+    prefetch: [{ where: { and: [{ href_matches: '/*' }, { not: { href_matches: ['/logout', '/mapa/*', '/*?*erro*'] } }] }, eagerness: 'moderate' }],
+  });
+  app.get('/speculation-rules.json', async (_request, reply) => reply.type('application/speculationrules+json').header('Cache-Control', 'public, max-age=3600').send(SPECULATION));
+
   app.get('/robots.txt', async (_request, reply) => reply.type('text/plain').send('User-agent: *\nDisallow: /\n'));
   app.get('/', async (request, reply) => reply.redirect(request.cookies[cookieName] ? '/painel' : '/login'));
 

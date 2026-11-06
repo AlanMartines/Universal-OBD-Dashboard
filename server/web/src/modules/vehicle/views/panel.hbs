@@ -17,8 +17,7 @@
   <div id="dash-host" class="cluster-host" aria-label="Painel de instrumentos"></div>
 </div>
 {{else}}
-<div class="card card-body text-center py-5">
-  <p class="mb-1">Nenhum veículo conectado ainda.</p>
-  <p class="text-body-secondary mb-0">Adicione um dispositivo para ver o painel em tempo real.</p>
+<div class="card">
+  {{> emptyState icon="fa-gauge-high" title="Nenhum veículo conectado ainda" text="Adicione um dispositivo para ver o painel em tempo real."}}
 </div>
 {{/if}}

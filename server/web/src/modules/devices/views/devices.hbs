@@ -1,4 +1,4 @@
-{{#> pageHeader title="Dispositivos"}}
+{{#> pageHeader title="Dispositivos" icon="fa-mobile-screen" subtitle="Veículos que enviam dados ao painel"}}
   {{#if (canManage user)}}
   <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#add-device-modal"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Adicionar dispositivo</button>
   {{/if}}
@@ -85,9 +85,8 @@
 {{/dataTable}}
 {{> pagination pager=pager label="Páginas de dispositivos"}}
 {{else}}
-<div class="card card-body text-center py-5">
-  <p class="mb-1">Nenhum dispositivo ainda.</p>
-  {{#if (canManage user)}}<p class="text-body-secondary mb-0">Clique em Adicionar dispositivo para gerar o código de pareamento.</p>{{/if}}
+<div class="card">
+  {{#if (canManage user)}}{{> emptyState icon="fa-mobile-screen" title="Nenhum dispositivo ainda" text="Toque em Adicionar dispositivo para gerar o código de pareamento e ligar o app."}}{{else}}{{> emptyState icon="fa-mobile-screen" title="Nenhum dispositivo ainda" text="Quando o dono da conta parear um celular, ele aparece aqui."}}{{/if}}
 </div>
 {{/if}}
 

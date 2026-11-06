@@ -1,15 +1,11 @@
-<div class="page-header d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-  <div>
-    <h1 class="h3 mb-1"><i class="fa-solid fa-shield-halved text-primary me-2" aria-hidden="true"></i>Sessões ativas</h1>
-    <p class="text-body-secondary mb-0">Dispositivos com sua conta conectada no momento</p>
-  </div>
+{{#> pageHeader title="Sessões ativas" icon="fa-shield-halved" subtitle="Dispositivos com sua conta conectada no momento"}}
   {{#if hasOthers}}
   <form method="post" action="/meus-dados/sessoes/encerrar-outras" data-confirm="Encerrar todas as outras sessões?" data-confirm-label="Encerrar" data-confirm-tone="warning">
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fa-solid fa-right-from-bracket me-1" aria-hidden="true"></i>Encerrar as outras</button>
   </form>
   {{/if}}
-</div>
+{{/pageHeader}}
 
 <ul class="session-list">
   {{#each sessions}}

@@ -1,0 +1,10 @@
+/* Página "Sem conexão" do PWA: sozinha, sem Bootstrap (fica guardada no aparelho). */
+:root { color-scheme: light dark; --bg: #f6f8fa; --text: #1b2430; --muted: #5a6b7c; --brand: #128a49; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0b0f14; --text: #e8eef4; --muted: #8a99a8; --brand: #3ddc84; } }
+body { display: grid; min-height: 100vh; margin: 0; place-items: center; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); }
+main { max-width: 22rem; padding: 2rem 1.5rem; text-align: center; }
+img { border-radius: 14px; }
+h1 { margin: 1rem 0 .5rem; font-size: 1.4rem; }
+p { margin: 0 0 1.5rem; line-height: 1.5; color: var(--muted); }
+a { display: inline-block; padding: .65rem 1.25rem; font-weight: 600; color: #fff; text-decoration: none; background: var(--brand); border-radius: 10px; }
+@media (prefers-color-scheme: dark) { a { color: #062b16; } }

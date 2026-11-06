@@ -1,6 +1,6 @@
 <div class="row justify-content-center">
   <div class="col-md-8 col-lg-6">
-    <h1 class="h3 mb-3">{{#if repair}}Novo código de pareamento{{else}}Parear dispositivo{{/if}}</h1>
+    <h1 class="page-title mb-3"><span class="page-title-icon" aria-hidden="true"><i class="fa-solid fa-qrcode"></i></span>{{#if repair}}Novo código de pareamento{{else}}Parear dispositivo{{/if}}</h1>
     {{#if repair}}<div class="alert alert-info" role="status"><strong>{{name}}</strong>: o histórico continua neste dispositivo. O app que envia hoje segue funcionando até o app novo parear com este código; depois disso, só o novo envia.</div>{{/if}}
     <div class="card card-body text-center mb-3">
       <p class="text-body-secondary mb-2">Código de pareamento</p>

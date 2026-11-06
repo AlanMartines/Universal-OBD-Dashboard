@@ -330,6 +330,35 @@
   }
 }
 
+/* Computador: tela dividida, com a marca e o que o painel faz ao lado do formulário. */
+.auth-hero { display: none; }
+@media (min-width: 992px) {
+  .auth-main { gap: clamp(2rem, 5vw, 5rem); align-items: center; }
+  .auth-hero {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    max-width: 420px;
+    padding: var(--space-6);
+    color: #e8eef4;
+    background:
+      radial-gradient(420px 260px at 0% 0%, rgba(var(--app-brand-rgb), 0.28), transparent 70%),
+      linear-gradient(160deg, #141b23, #0b0f14);
+    border: 1px solid rgb(255 255 255 / 6%);
+    border-radius: var(--app-radius-lg);
+    box-shadow: var(--app-shadow-lg);
+  }
+  .auth-hero-logo { width: 56px; height: 56px; }
+  .auth-hero h2 { margin: 0; font-size: 1.6rem; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+  .auth-hero ul { display: grid; gap: 0.85rem; padding: 0; margin: 0; list-style: none; color: #b8c4cf; }
+  .auth-hero li { display: flex; gap: 0.75rem; align-items: center; }
+  .auth-hero li i {
+    display: inline-flex; flex: none; align-items: center; justify-content: center; width: 2rem; height: 2rem;
+    color: #3ddc84; background: rgba(61, 220, 132, 0.12); border-radius: 50%;
+  }
+  .auth-hero + .auth-card .auth-brand { display: none; }
+}
+
 /* ---------------------------------------------------------------- Cor da marca nos componentes
    O Bootstrap compila o azul dentro de cada componente; aqui eles passam a usar o verde dos tokens. */
 .btn-primary {
@@ -414,3 +443,112 @@
 .confirm-icon[data-tone="warning"] { color: var(--bs-warning-text-emphasis); background: var(--bs-warning-bg-subtle); }
 .confirm-icon[data-tone="primary"] { color: var(--bs-primary-text-emphasis); background: var(--bs-primary-bg-subtle); }
 #confirm-text { padding-top: 0.45rem; }
+
+/* ---------- Topo das páginas ----------
+   Um só desenho: ícone no círculo da marca, título e subtítulo; ações à direita (abaixo, no celular). */
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-5);
+}
+.page-header-text { min-width: 0; }
+.page-title {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 0;
+  font-size: clamp(1.3rem, 1.1rem + 0.8vw, 1.65rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.page-title-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.05rem;
+  color: var(--bs-primary-text-emphasis);
+  background: var(--bs-primary-bg-subtle);
+  border: 1px solid rgba(var(--app-brand-rgb), 0.25);
+  border-radius: 50%;
+}
+.page-subtitle { margin: 0.3rem 0 0; color: var(--bs-secondary-color); }
+.page-header-text:has(.page-title-icon) .page-subtitle { margin-left: 3.25rem; }
+.page-header-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.page-header-actions:empty { display: none; }
+
+/* ---------- Cabeçalho das tabelas ----------
+   Continua table-dark, mas no tom escuro dos tokens em vez do preto puro, mais leve no tema claro. */
+.table-dark {
+  --bs-table-color: #f1f4f7;
+  --bs-table-bg: #2b3640;
+  --bs-table-border-color: #3a4651;
+}
+[data-bs-theme="dark"] .table-dark {
+  --bs-table-bg: #1b2430;
+  --bs-table-border-color: #263241;
+}
+.table > thead.table-dark th { font-size: 0.82rem; font-weight: 600; letter-spacing: 0.02em; }
+
+/* ---------- Estado vazio ---------- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: center;
+  padding: var(--space-6) var(--space-4);
+  color: var(--bs-secondary-color);
+  text-align: center;
+}
+.empty-state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin-bottom: 0.35rem;
+  font-size: 1.35rem;
+  color: var(--bs-secondary-color);
+  background: var(--bs-tertiary-bg);
+  border-radius: 50%;
+}
+.empty-state strong { color: var(--bs-body-color); }
+.empty-state-ok .empty-state-icon { color: var(--bs-success-text-emphasis); background: var(--bs-success-bg-subtle); }
+
+/* ---------- Carregando (esqueleto) ---------- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bs-tertiary-bg);
+  border-radius: var(--app-radius);
+}
+.skeleton::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.18), transparent);
+  transform: translateX(-100%);
+  animation: skeleton-shine 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shine { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .skeleton::after { animation: none; } }
+
+/* ---------- Transição entre páginas ----------
+   O navegador anima a troca de página (MPA) só com CSS; quem não suporta navega como antes.
+   Menu e barra de cima ficam parados; só o conteúdo esmaece e sobe um pouco. */
+@view-transition { navigation: auto; }
+.app-sidebar { view-transition-name: menu; }
+.app-topbar { view-transition-name: topo; }
+.app-content { view-transition-name: conteudo; }
+::view-transition-old(conteudo) { animation: 140ms ease-in both vt-saida; }
+::view-transition-new(conteudo) { animation: 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-entrada; }
+@keyframes vt-saida { to { opacity: 0; } }
+@keyframes vt-entrada { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(conteudo), ::view-transition-new(conteudo) { animation: none; }
+}

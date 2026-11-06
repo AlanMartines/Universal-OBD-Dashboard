@@ -59,6 +59,15 @@ export default function devicesRoutes(app, {
     return { label: `Há ${Math.round(s / 86400)} dias`, tone: 'secondary' };
   };
 
+  // Indicador global "Ao vivo" (menu e barra de cima): veículos com leitura no último minuto.
+  app.get('/painel/ao-vivo', { preHandler: requireUser }, async (request) => {
+    const overview = await api(request, 'GET', '/internal/devices/overview');
+    const live = overview.vehicles
+      .filter((v) => freshness(v.latestTs ?? v.lastSeenAt).live)
+      .map((v) => ({ id: v.id, name: v.name }));
+    return { live };
+  });
+
   const panelView = async (request, reply, status = 200, error = null) => {
     const query = new URLSearchParams({ page: pageParam(request) });
     const [{ devices, pagination }, overview] = await Promise.all([
@@ -129,7 +138,7 @@ export default function devicesRoutes(app, {
       latestJson: JSON.stringify(data.latest),
       limitsJson: JSON.stringify(data.device.dashLimits),
       ...DEVICE_ASSETS,
-      pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/static/js/tabs.js', '/static/js/dtc-sae.js', '/modules/devices/live.js', '/modules/devices/faults.js', '/modules/devices/reports.js', ...(data.locationAllowed ? ['/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js'] : [])],
+      pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/static/js/chart-theme.js', '/static/js/tabs.js', '/static/js/dtc-sae.js', '/modules/devices/live.js', '/modules/devices/faults.js', '/modules/devices/reports.js', ...(data.locationAllowed ? ['/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js'] : [])],
       pageModules: data.locationAllowed ? ['/modules/devices/route.js'] : [],
       pageCss: ['/modules/devices/devices.css', ...(data.locationAllowed ? ['/vendor/maplibre/maplibre-gl.css'] : [])],
       locationAllowed: data.locationAllowed,
