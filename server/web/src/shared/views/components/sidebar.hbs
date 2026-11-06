@@ -13,7 +13,7 @@
 
   <div class="sidebar-user" title="{{#if user.displayName}}{{user.displayName}}{{else}}{{user.username}}{{/if}}">
     <div class="sidebar-avatar">
-      {{#if user.avatarVersion}}<img src="/conta/foto?v={{user.avatarVersion}}" alt="">{{else}}<span aria-hidden="true">{{initials user.displayName user.username}}</span>{{/if}}
+      {{#if user.avatarVersion}}<img src="/meus-dados/foto?v={{user.avatarVersion}}" alt="">{{else}}<span aria-hidden="true">{{initials user.displayName user.username}}</span>{{/if}}
     </div>
     <div class="sidebar-label">
       <div class="sidebar-user-name text-truncate">{{#if user.displayName}}{{user.displayName}}{{else}}{{user.username}}{{/if}}</div>
@@ -39,8 +39,8 @@
 
   <div class="sidebar-footer">
     <ul class="sidebar-nav">
-      <li><a href="/conta" title="Meus Dados" class="{{#if (eq activePage "conta")}}active{{/if}}" {{#if (eq activePage "conta")}}aria-current="page"{{/if}}><i class="fa-solid fa-circle-user fa-fw" aria-hidden="true"></i><span class="sidebar-label">Meus Dados</span></a></li>
-      <li><a href="/conta/sessoes" title="Sessões" class="{{#if (eq activePage "sessoes")}}active{{/if}}" {{#if (eq activePage "sessoes")}}aria-current="page"{{/if}}><i class="fa-solid fa-shield-halved fa-fw" aria-hidden="true"></i><span class="sidebar-label">Sessões</span></a></li>
+      <li><a href="/meus-dados" title="Meus Dados" class="{{#if (eq activePage "conta")}}active{{/if}}" {{#if (eq activePage "conta")}}aria-current="page"{{/if}}><i class="fa-solid fa-circle-user fa-fw" aria-hidden="true"></i><span class="sidebar-label">Meus Dados</span></a></li>
+      <li><a href="/meus-dados/sessoes" title="Sessões" class="{{#if (eq activePage "sessoes")}}active{{/if}}" {{#if (eq activePage "sessoes")}}aria-current="page"{{/if}}><i class="fa-solid fa-shield-halved fa-fw" aria-hidden="true"></i><span class="sidebar-label">Sessões</span></a></li>
     </ul>
     <button type="button" data-theme-toggle aria-label="Tema"><i class="fa-solid fa-fw fa-circle-half-stroke" data-theme-icon aria-hidden="true"></i><span class="sidebar-label" data-theme-label>Tema automático</span></button>
     <form method="post" action="/logout" class="m-0">

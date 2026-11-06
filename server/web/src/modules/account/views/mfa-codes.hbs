@@ -1,6 +1,11 @@
 <div class="row justify-content-center">
   <div class="col-md-8 col-lg-6">
-    <h1 class="h3 mb-3">Códigos de recuperação</h1>
+    <h1 class="h3 mb-2"><i class="fa-solid fa-key text-primary me-2" aria-hidden="true"></i>Códigos de recuperação</h1>
+    <ol class="mfa-progress mb-3" aria-label="Etapas">
+      <li class="done">Senha</li>
+      <li class="done">QR Code e código</li>
+      <li class="current" aria-current="step">Códigos de recuperação</li>
+    </ol>
     <div class="alert alert-warning" role="alert">
       <strong>Guarde estes códigos agora.</strong> Eles não serão mostrados de novo. Cada um funciona uma vez, se você perder o aplicativo autenticador.
     </div>
@@ -9,6 +14,6 @@
         {{#each codes}}<li>{{this}}</li>{{/each}}
       </ul>
     </div>
-    <a class="btn btn-primary" href="/conta">Já guardei</a>
+    <a class="btn btn-primary" href="/meus-dados">Já guardei</a>
   </div>
 </div>

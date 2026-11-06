@@ -1,6 +1,6 @@
 <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
   <div class="profile-avatar">
-    {{#if account.avatarVersion}}<img src="/conta/foto?v={{account.avatarVersion}}" alt="Sua foto de perfil">{{else}}<span aria-hidden="true">{{initials account.displayName account.username}}</span>{{/if}}
+    {{#if account.avatarVersion}}<img src="/meus-dados/foto?v={{account.avatarVersion}}" alt="Sua foto de perfil">{{else}}<span aria-hidden="true">{{initials account.displayName account.username}}</span>{{/if}}
   </div>
   <div class="profile-head">
     <h1 class="h4 mb-0 text-break">{{#if account.displayName}}{{account.displayName}}{{else}}{{account.username}}{{/if}}</h1>
@@ -9,13 +9,13 @@
     <span class="badge text-bg-success">Ativo</span>
   </div>
   <div class="profile-actions d-flex flex-wrap align-items-center gap-2">
-    <form method="post" action="/conta/foto" enctype="multipart/form-data">
+    <form method="post" action="/meus-dados/foto" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <label class="btn btn-outline-primary btn-sm mb-0" for="avatar"><i class="fa-solid fa-camera me-1" aria-hidden="true"></i>Alterar foto</label>
       <input class="visually-hidden" id="avatar" name="avatar" type="file" accept="image/jpeg,image/png,image/webp">
     </form>
     {{#if account.avatarVersion}}
-    <form method="post" action="/conta/foto/remover" data-confirm="Remover sua foto de perfil?" data-confirm-label="Remover" data-confirm-tone="warning">
+    <form method="post" action="/meus-dados/foto/remover" data-confirm="Remover sua foto de perfil?" data-confirm-label="Remover" data-confirm-tone="warning">
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fa-solid fa-trash me-1" aria-hidden="true"></i>Remover foto</button>
     </form>
@@ -30,7 +30,7 @@
 <div class="card mb-4">
   <div class="card-header fw-semibold"><i class="fa-solid fa-id-card me-2" aria-hidden="true"></i>Dados</div>
   <div class="card-body">
-    <form method="post" action="/conta/perfil" class="row g-3" data-validate>
+    <form method="post" action="/meus-dados/perfil" class="row g-3" data-validate>
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <div class="col-md-6">
         <label class="form-label fw-semibold" for="displayName">Nome</label>
@@ -53,7 +53,7 @@
   <div class="card-header fw-semibold"><i class="fa-solid fa-envelope me-2" aria-hidden="true"></i>Trocar e-mail</div>
   <div class="card-body">
     {{#if account.pendingEmail}}<div class="alert alert-warning" role="status">Aguardando confirmação de <strong class="text-break">{{account.pendingEmail}}</strong>. Abra o link enviado para esse endereço.</div>{{/if}}
-    <form method="post" action="/conta/email" class="row g-3" data-validate>
+    <form method="post" action="/meus-dados/email" class="row g-3" data-validate>
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <div class="col-12">
         <label class="form-label fw-semibold" for="current-email">E-mail atual</label>
@@ -84,7 +84,7 @@
 <div class="card mb-4">
   <div class="card-header fw-semibold"><i class="fa-solid fa-lock me-2" aria-hidden="true"></i>Trocar senha</div>
   <div class="card-body">
-    <form method="post" action="/conta/senha" class="row g-3" data-validate>
+    <form method="post" action="/meus-dados/senha" class="row g-3" data-validate>
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <div class="col-12">
         <label class="form-label fw-semibold required-mark" for="currentPassword">Senha atual</label>
@@ -116,42 +116,55 @@
   </div>
 </div>
 
-<div class="card mb-4">
-  <div class="card-header fw-semibold"><i class="fa-solid fa-shield-halved me-2" aria-hidden="true"></i>Verificação em duas etapas</div>
+<div class="card mb-4 mfa-card">
+  <div class="card-header d-flex justify-content-between align-items-center gap-2">
+    <span class="fw-semibold"><i class="fa-solid fa-shield-halved me-2" aria-hidden="true"></i>Verificação em duas etapas (2FA)</span>
+    {{#if account.mfaEnabled}}<span class="badge mfa-badge-on"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Ativa</span>{{else}}<span class="badge text-bg-secondary">Inativa</span>{{/if}}
+  </div>
   <div class="card-body">
     {{#if account.mfaEnabled}}
-    <p><span class="badge text-bg-success">Ativa</span> <span class="small text-body-secondary">{{account.recoveryLeft}} códigos de recuperação restantes.</span></p>
-    <form method="post" action="/conta/2fa/desativar" class="row g-3" data-validate data-confirm="Desativar a verificação em duas etapas?" data-confirm-label="Desativar" data-confirm-tone="warning">
-      <input type="hidden" name="_csrf" value="{{csrf}}">
-      <div class="col-md-6">
-        <label class="form-label fw-semibold required-mark" for="mfaOffPassword">Senha atual</label>
-        <input class="form-control" id="mfaOffPassword" name="currentPassword" type="password" autocomplete="current-password" required>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label fw-semibold required-mark" for="mfaOffCode">Código</label>
-        <input class="form-control" id="mfaOffCode" name="code" autocomplete="one-time-code" minlength="6" maxlength="16" required>
-      </div>
-      <div class="col-12 text-end"><button class="btn btn-outline-danger" type="submit">Desativar</button></div>
-    </form>
+    <p class="mb-2">Cada login pede, além da senha, o código do seu aplicativo autenticador.</p>
+    <p class="small mb-3 {{#if account.recoveryLow}}text-warning-emphasis{{else}}text-body-secondary{{/if}}">
+      <i class="fa-solid fa-key me-1" aria-hidden="true"></i>{{account.recoveryLeft}} códigos de recuperação restantes.{{#if account.recoveryLow}} Desative e ative de novo para gerar códigos novos.{{/if}}
+    </p>
+    <button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#mfa-off" aria-expanded="{{#if mfaOpen}}true{{else}}false{{/if}}" aria-controls="mfa-off">
+      <i class="fa-solid fa-shield me-1" aria-hidden="true"></i>Desativar 2FA
+    </button>
+    <div class="collapse{{#if mfaOpen}} show{{/if}}" id="mfa-off">
+      <form method="post" action="/meus-dados/2fa/desativar" class="row g-3 mt-1" data-validate data-confirm="Desativar a verificação em duas etapas? Sua conta fica protegida só pela senha." data-confirm-label="Desativar" data-confirm-tone="warning">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold required-mark" for="mfaOffPassword">Senha atual</label>
+          <input class="form-control" id="mfaOffPassword" name="currentPassword" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold required-mark" for="mfaOffCode">Código do aplicativo ou de recuperação</label>
+          <input class="form-control" id="mfaOffCode" name="code" autocomplete="one-time-code" minlength="6" maxlength="16" required>
+        </div>
+        <div class="col-12 text-end"><button class="btn btn-danger" type="submit">Desativar</button></div>
+      </form>
+    </div>
     {{else}}
-    <p class="text-body-secondary">Pede também um código do aplicativo autenticador ao entrar. É a melhor proteção contra roubo de senha.</p>
-    <form method="post" action="/conta/2fa/iniciar" class="row g-3" data-validate>
-      <input type="hidden" name="_csrf" value="{{csrf}}">
-      <div class="col-md-6">
-        <label class="form-label fw-semibold required-mark" for="mfaPassword">Senha atual</label>
-        <input class="form-control" id="mfaPassword" name="currentPassword" type="password" autocomplete="current-password" required>
-      </div>
-      <div class="col-12 text-end"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-shield-halved me-1" aria-hidden="true"></i>Configurar</button></div>
-    </form>
+    <p class="mb-2">Adicione uma camada extra de segurança à sua conta. Depois de ativar, cada login pede também um código gerado pelo aplicativo autenticador (Google Authenticator, Microsoft Authenticator, Authy…). Mesmo que alguém descubra sua senha, não entra sem o celular.</p>
+    <ol class="mfa-steps small text-body-secondary">
+      <li>Confirme sua senha.</li>
+      <li>Escaneie o QR Code no aplicativo e digite o código de 6 dígitos.</li>
+      <li>Guarde os códigos de recuperação, para o caso de perder o celular.</li>
+    </ol>
+    <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#mfa-on" aria-expanded="{{#if mfaOpen}}true{{else}}false{{/if}}" aria-controls="mfa-on">
+      <i class="fa-solid fa-shield-halved me-1" aria-hidden="true"></i>Ativar 2FA
+    </button>
+    <div class="collapse{{#if mfaOpen}} show{{/if}}" id="mfa-on">
+      <form method="post" action="/meus-dados/2fa/iniciar" class="row g-3 mt-1" data-validate>
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold required-mark" for="mfaPassword">Senha atual</label>
+          <input class="form-control" id="mfaPassword" name="currentPassword" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="col-12 text-end"><button class="btn btn-primary" type="submit">Continuar<i class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></i></button></div>
+      </form>
+    </div>
     {{/if}}
-  </div>
-</div>
-
-<div class="card mb-4">
-  <div class="card-header fw-semibold"><i class="fa-solid fa-laptop me-2" aria-hidden="true"></i>Sessões</div>
-  <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
-    <span class="text-body-secondary">Veja onde sua conta está conectada e encerre o que não reconhecer.</span>
-    <a class="btn btn-outline-primary" href="/conta/sessoes">Sessões ativas</a>
   </div>
 </div>
 
@@ -160,7 +173,7 @@
   <div class="card-header fw-semibold text-danger-emphasis"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>Excluir conta</div>
   <div class="card-body">
     <p class="text-body-secondary">Apaga sua conta, seus dispositivos, os usuários vinculados e toda a telemetria. Não tem como desfazer.</p>
-    <form method="post" action="/conta/excluir" class="row g-3 align-items-end" data-validate data-confirm="Excluir sua conta, dispositivos, usuários vinculados e telemetria? Não tem como desfazer." data-confirm-label="Excluir conta" data-confirm-tone="danger">
+    <form method="post" action="/meus-dados/excluir" class="row g-3 align-items-end" data-validate data-confirm="Excluir sua conta, dispositivos, usuários vinculados e telemetria? Não tem como desfazer." data-confirm-label="Excluir conta" data-confirm-tone="danger">
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <div class="col-md-6">
         <label class="form-label fw-semibold required-mark" for="deletePassword">Confirme com sua senha</label>

@@ -73,8 +73,8 @@ export function createHandlebars() {
 function activePageOf(url) {
   if (url.startsWith('/painel-veiculo')) return 'vehicle';
   if (url.startsWith('/admin')) return 'admin';
-  if (url.startsWith('/conta/sessoes')) return 'sessoes';
-  if (url.startsWith('/conta')) return 'conta';
+  if (url.startsWith('/meus-dados/sessoes')) return 'sessoes';
+  if (url.startsWith('/meus-dados')) return 'conta';
   return 'painel';
 }
 
@@ -248,7 +248,7 @@ export async function buildApp({ config, logger }) {
   app.addHook('onSend', async (request, reply) => {
     reply.header('X-Robots-Tag', 'noindex, nofollow');
     reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
-    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/') && !request.url.startsWith('/modules/') && !request.url.startsWith('/mapa/') && !request.url.startsWith('/conta/foto')) {
+    if (!request.url.startsWith('/static/') && !request.url.startsWith('/vendor/') && !request.url.startsWith('/assets/') && !request.url.startsWith('/modules/') && !request.url.startsWith('/mapa/') && !request.url.startsWith('/meus-dados/foto')) {
       reply.header('Cache-Control', 'no-store');
     }
   });
@@ -304,13 +304,13 @@ export async function buildApp({ config, logger }) {
       return reply.code(status).send({ error: code });
     }
     // Foto grande demais: volta à tela com uma mensagem clara, em vez da página de erro.
-    if (error.code === 'FST_REQ_FILE_TOO_LARGE') return reply.redirect('/conta?erro=image_too_large', 303);
+    if (error.code === 'FST_REQ_FILE_TOO_LARGE') return reply.redirect('/meus-dados?erro=image_too_large', 303);
     if (error instanceof ApiError) {
       if (error.status === 401) {
         clearSession(reply);
         return reply.redirect('/login');
       }
-      if (error.code === 'password_change_required') return reply.redirect('/conta/senha');
+      if (error.code === 'password_change_required') return reply.redirect('/meus-dados/senha');
       return renderError(reply, error.status, error.code);
     }
     if (error.statusCode === 429) return renderError(reply, 429, 'too_many_requests');
@@ -343,8 +343,8 @@ export async function buildApp({ config, logger }) {
     if (request.method === 'POST' && !safeEqualText(request.body?._csrf, session.csrf)) {
       throw new ApiError(403, 'bad_form');
     }
-    if (session.user.mustChangePassword && !['/conta/senha', '/logout', '/conta/foto', '/conta/personificacao/sair'].includes(request.routeOptions.url)) {
-      return reply.redirect('/conta/senha');
+    if (session.user.mustChangePassword && !['/meus-dados/senha', '/logout', '/meus-dados/foto', '/meus-dados/personificacao/sair'].includes(request.routeOptions.url)) {
+      return reply.redirect('/meus-dados/senha');
     }
     return undefined;
   };

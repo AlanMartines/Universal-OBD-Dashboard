@@ -9,7 +9,7 @@
         <a class="btn btn-primary" href="/">Continuar</a>
         {{else if token}}
         <p>Clique no botão para concluir a troca de e-mail da sua conta.</p>
-        <form method="post" action="/conta/email/confirmar">
+        <form method="post" action="/meus-dados/email/confirmar">
           <input type="hidden" name="token" value="{{token}}">
           <button class="btn btn-primary" type="submit">Confirmar</button>
         </form>

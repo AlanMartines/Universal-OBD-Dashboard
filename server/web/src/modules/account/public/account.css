@@ -61,3 +61,17 @@
   .session-action { width: 100%; }
   .session-action .btn { width: 100%; }
 }
+
+/* ---------- Verificação em duas etapas ---------- */
+.mfa-badge-on { color: var(--bs-success-text-emphasis); background: var(--bs-success-bg-subtle); }
+.mfa-steps { padding-left: 1.2rem; margin-bottom: 1rem; }
+.mfa-steps li { margin-bottom: .15rem; }
+.mfa-progress { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; padding: 0; list-style: none; counter-reset: passo; font-size: .85rem; }
+.mfa-progress li { display: inline-flex; align-items: center; gap: .4rem; color: var(--bs-secondary-color); counter-increment: passo; }
+.mfa-progress li::before {
+  display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem;
+  font-weight: 700; content: counter(passo); background: var(--bs-tertiary-bg); border-radius: 50%;
+}
+.mfa-progress li.done::before { color: var(--app-on-brand); content: "✓"; background: var(--app-brand); }
+.mfa-progress li.current { font-weight: 600; color: var(--bs-body-color); }
+.mfa-progress li.current::before { color: var(--app-on-brand); background: var(--app-brand); }
