@@ -83,13 +83,25 @@ class CanListenLink(
 /**
  * Nível do tanque pela rede CAN: andando, o valor balança com curvas e inclinação. Só vale a média
  * de leituras com o carro parado há [STILL_MS], e só muda a estimativa se diferir mais que [MIN_CHANGE_L].
+ *
+ * O valor da rede é o do ponteiro do painel, amortecido: depois de abastecer ele só sobe com o motor
+ * ligado, e devagar (no Uno, ~40 min de motor para ir de 17% a 97%). Por isso:
+ * - subindo há menos de [SETTLE_MS], o ponteiro ainda está alcançando o tanque: só puxa a estimativa para cima;
+ * - depois de um nível informado pela pessoa (abastecimento ou ajuste, [manualAt]), o ponteiro atrasado
+ *   não baixa a estimativa até alcançá-la (ou por até [HOLD_MS], caso o registro estivesse errado).
  */
 class TankAnchor(private val capacityL: Double) {
     private val window = ArrayDeque<Double>()
     private var stillSince: Long? = null
+    private var lastPct: Double? = null
+    private var lastRiseAt: Long? = null
+    /** Nível informado cujo ponteiro já alcançou: a partir daí volta a valer o painel. */
+    private var caughtUpFor: Long? = null
 
     /** @return novo nível em litros para a estimativa, ou null se ainda não há medida firme. */
-    fun onReading(pct: Double, speedKmh: Double?, now: Long, currentEstimateL: Double?): Double? {
+    fun onReading(pct: Double, speedKmh: Double?, now: Long, currentEstimateL: Double?, manualAt: Long? = null): Double? {
+        lastPct?.let { if (pct >= it + 1) lastRiseAt = now }
+        lastPct = pct
         if (speedKmh == null || speedKmh >= 1) {
             stillSince = null
             window.clear()
@@ -100,7 +112,13 @@ class TankAnchor(private val capacityL: Double) {
         if (window.size > MAX_SAMPLES) window.removeFirst()
         if (now - stillSince!! < STILL_MS || window.size < MIN_SAMPLES) return null
         val liters = window.sorted()[window.size / 2] / 100 * capacityL
-        return if (currentEstimateL == null || kotlin.math.abs(liters - currentEstimateL) > MIN_CHANGE_L) liters else null
+        if (currentEstimateL == null) return liters
+        val diff = liters - currentEstimateL
+        val held = manualAt != null && now - manualAt in 0 until HOLD_MS && caughtUpFor != manualAt
+        if (held && kotlin.math.abs(diff) <= MIN_CHANGE_L) caughtUpFor = manualAt
+        val rising = lastRiseAt?.let { now - it < SETTLE_MS } == true
+        if ((held || rising) && diff < 0) return null
+        return if (kotlin.math.abs(diff) > MIN_CHANGE_L) liters else null
     }
 
     private companion object {
@@ -108,5 +126,7 @@ class TankAnchor(private val capacityL: Double) {
         const val MIN_SAMPLES = 5
         const val MAX_SAMPLES = 60
         const val MIN_CHANGE_L = 1.0
+        const val SETTLE_MS = 10 * 60_000L
+        const val HOLD_MS = 24 * 60 * 60_000L
     }
 }

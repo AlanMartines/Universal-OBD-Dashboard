@@ -57,6 +57,36 @@ class CanListenTest {
         assertTrue("diferença menor que 1 L mantém a estimativa", (1..12).map { t += 1000; tank2.onReading(39.0, 0.0, t, 18.5) }.all { it == null })
     }
 
+    @Test fun lateGaugeAfterFuelUpDoesNotUndoTheFullTank() {
+        // Como em 05/11: tanque cheio registrado (48 L) com o ponteiro ainda em 17%, subindo devagar.
+        val tank = TankAnchor(48.0)
+        var t = 1_000_000L
+        val fuelUpAt = t
+        // Cada etapa começa andando (zera a janela de leituras paradas), como no uso real.
+        fun still(pct: Double, n: Int, est: Double): List<Double?> {
+            t += 1000
+            tank.onReading(pct, 30.0, t, est, fuelUpAt)
+            return (1..n).map { t += 1000; tank.onReading(pct, 0.0, t, est, fuelUpAt) }
+        }
+        assertTrue("ponteiro atrasado não baixa o nível informado", still(17.0, 20, 48.0).all { it == null })
+        assertTrue("subindo, ainda atrás: mantém", still(60.0, 20, 47.5).all { it == null })
+        assertTrue("alcançou (dentro de 1 L): nada muda", still(98.0, 20, 47.2).all { it == null })
+        // Depois de alcançar, volta a valer o painel, inclusive para baixo.
+        // Dias depois, com o tanque gasto.
+        t += 11 * 60_000L
+        assertEquals(30.0 / 100 * 48, still(30.0, 20, 47.0).filterNotNull().first(), 1e-9)
+    }
+
+    @Test fun risingGaugeOnlyPullsTheEstimateUp() {
+        // Sem abastecimento registrado: enquanto o ponteiro sobe, só serve para aumentar a estimativa.
+        val tank = TankAnchor(48.0)
+        var t = 0L
+        fun still(pct: Double, n: Int, est: Double) = (1..n).map { t += 1000; tank.onReading(pct, 0.0, t, est) }
+        still(17.0, 5, 8.0)
+        assertEquals(40.0 / 100 * 48, still(40.0, 15, 8.0).filterNotNull().first(), 1e-9)
+        assertTrue("subindo e abaixo da estimativa: ignora", still(41.0, 15, 30.0).all { it == null })
+    }
+
     @Test fun badSignalDefinitionIsRefused() {
         val json = File("src/main/assets/profiles/fiat_uno_vivace_7gf.json").readText()
             .replace("\"frame\": \"2A0\", \"start\": 0,", "\"frame\": \"2A0\", \"start\": 7,")

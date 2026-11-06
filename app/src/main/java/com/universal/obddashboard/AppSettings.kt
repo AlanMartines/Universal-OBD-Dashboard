@@ -26,6 +26,7 @@ object AppSettings {
     private const val KEY_ADAPTER_NAMES = "adapter_device_names"
     private const val KEY_FUEL_LEVEL = "fuel_level_l"
     private const val KEY_FUEL_LEVEL_AT = "fuel_level_updated_at"
+    private const val KEY_FUEL_LEVEL_MANUAL_AT = "fuel_level_manual_at"
     private const val KEY_DIAGNOSTICS = "diagnostic_recording"
     private const val KEY_IDLE_TIMEOUT_MIN = "idle_timeout_min"
     private const val KEY_RESUME_WINDOW_MIN = "resume_window_min"
@@ -143,6 +144,13 @@ object AppSettings {
             putFloat(sk(context, KEY_FUEL_LEVEL), liters.coerceAtLeast(0.0).toFloat())
             putLong(sk(context, KEY_FUEL_LEVEL_AT), System.currentTimeMillis())
         }
+
+    /** Quando a pessoa informou o nível (abastecimento ou ajuste): o ponteiro atrasado do painel não o desfaz. */
+    fun fuelLevelManualAt(context: Context): Long? =
+        prefs(context).getLong(sk(context, KEY_FUEL_LEVEL_MANUAL_AT), 0L).takeIf { it > 0 }
+
+    fun markFuelLevelManual(context: Context, at: Long = System.currentTimeMillis()) =
+        prefs(context).edit { putLong(sk(context, KEY_FUEL_LEVEL_MANUAL_AT), at) }
 
     /** Fator sobre o consumo calculado pelo perfil, calibrado com abastecimentos; [since] = quando mudou. */
     data class FuelCorrection(val factor: Double, val since: Long)

@@ -224,6 +224,7 @@ class FuelBridge(private val activity: MainActivity) {
     @JavascriptInterface
     fun setFuelLevel(liters: Double) {
         AppSettings.setFuelLevel(activity, liters)
+        AppSettings.markFuelLevelManual(activity)
         TelemetryHub.requestFuelOverride(TelemetryHub.FuelOverride(fuelLevelL = liters.coerceAtLeast(0.0)))
     }
 
@@ -250,6 +251,7 @@ class FuelBridge(private val activity: MainActivity) {
         val before = AppSettings.ethanolPercent(activity, fuel.defaultEthanolPct)
         val t = FuelLog.tankAfter(f, fuel.tankCapacityL, activity.currentFuelLevel(), before)
         AppSettings.setFuelLevel(activity, t.levelL)
+        AppSettings.markFuelLevelManual(activity)
         if (flex) AppSettings.setEthanolPercent(activity, t.ethanolPct)
         TelemetryHub.requestFuelOverride(TelemetryHub.FuelOverride(fuelLevelL = t.levelL, ethanolPercent = t.ethanolPct.takeIf { flex }))
         return "Tanque: %.1f L".format(Locale("pt", "BR"), t.levelL) +

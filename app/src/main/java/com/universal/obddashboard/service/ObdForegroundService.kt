@@ -271,6 +271,10 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         requestStop(reason)
     }
 
+    /** Última leitura decodificada da escuta CAN (relógio de [SystemClock.elapsedRealtime]). */
+    @Volatile private var lastCanValuesAt = 0L
+    private fun canBusAlive() = lastCanValuesAt > 0 && SystemClock.elapsedRealtime() - lastCanValuesAt < CAN_ALIVE_MS
+
     /** Conecta, inicializa e executa a fila; reconecta em quedas. Retorna o motivo de encerramento. */
     private suspend fun connectionLoop(loaded: LoadedProfile): String {
         val policy = ConnectRetryPolicy(loaded.profile.powerManagement) { SystemClock.elapsedRealtime() }
@@ -315,7 +319,13 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             } catch (e: EcuSilentException) {
                 Log.i(TAG, e.message ?: "ECU em silêncio")
                 recorder?.error("connection", e)
-                return REASON_IGNITION_OFF
+                // Rede CAN ativa = ignição ligada: a central só parou de responder ao ELM327 (por exemplo,
+                // depois de desligar e religar a chave no posto). Reinicia a conexão em vez de encerrar.
+                if (!canBusAlive()) return REASON_IGNITION_OFF
+                recorder?.event("ecu_silent_can_alive") {}
+                setStatus(ConnectionStatus.RECONNECTING, "Ignição ligada; reconectando à central…")
+                delay(ECU_RETRY_MS)
+                continue
             } catch (e: EcuNotRespondingException) {
                 Log.w(TAG, e.message ?: "ECU não respondeu")
                 recorder?.error("connection", e)
@@ -540,11 +550,12 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         val link = CanListenLink(
             this, loaded.canSignals,
             onValues = { values, ts ->
+                lastCanValuesAt = SystemClock.elapsedRealtime()
                 TelemetryHub.mergeValues(values, ts)
                 val s = TelemetryHub.state.value
                 val speed = s.value(roles.speed, ts) ?: s.value(roles.canSpeed, ts)
                 roles.fuelLevelPct?.let { values[it] }?.let { pct ->
-                    tank?.onReading(pct, speed, ts, engine?.fuelLevelL)?.let { liters ->
+                    tank?.onReading(pct, speed, ts, engine?.fuelLevelL, AppSettings.fuelLevelManualAt(this))?.let { liters ->
                         TelemetryHub.requestFuelOverride(TelemetryHub.FuelOverride(fuelLevelL = liters))
                     }
                 }
@@ -1186,6 +1197,9 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         const val REASON_USER_STOP = "user_stop"
         const val REASON_BT_DISCONNECTED = "bluetooth_disconnected"
         const val REASON_IGNITION_OFF = "ignition_off"
+        /** Rede CAN conta como ativa se mandou leitura há menos que isso. */
+        private const val CAN_ALIVE_MS = 3_000L
+        private const val ECU_RETRY_MS = 3_000L
         const val REASON_IDLE_TIMEOUT = "idle_timeout"
         const val REASON_IDLE_CONFIRMED = "idle_confirmed"
         const val REASON_ADAPTER_UNREACHABLE = "adapter_unreachable"
