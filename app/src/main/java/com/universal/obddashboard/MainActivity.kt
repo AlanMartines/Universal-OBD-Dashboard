@@ -422,6 +422,8 @@ class MainActivity : ComponentActivity() {
             )
             .put("userAlarmsLoaded", s.userAlarmsLoaded ?: JSONObject.NULL)
             .put("canStatus", s.canStatus ?: JSONObject.NULL)
+            .put("canLink", s.canLink ?: JSONObject.NULL)
+            .put("canConfigured", canConfigured())
             .put("confirmedDtcs", JSONArray(s.confirmedDtcs))
             .put("pendingDtcs", JSONArray(s.pendingDtcs))
             .put("tripId", s.tripId ?: JSONObject.NULL)
@@ -552,6 +554,10 @@ class MainActivity : ComponentActivity() {
             .put("dtcDescriptions", JSONObject(v.dtcDescriptions.mapKeys { it.key.uppercase() }))
             .put("outputs", outputs)
     }
+
+    /** Escuta CAN em uso: o perfil tem sinais mapeados e há um ESP32 escolhido em Ajustes. */
+    private fun canConfigured(): Boolean =
+        currentProfile().canSignals.isNotEmpty() && AppSettings.canAdapterNames(this).isNotEmpty()
 
     internal fun currentProfile(): LoadedProfile = TelemetryHub.profile ?: ProfileParser.loadSelected(this)
 

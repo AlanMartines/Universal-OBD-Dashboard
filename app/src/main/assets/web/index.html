@@ -12,7 +12,10 @@
   <header class="topbar">
     <div class="title">
       <h1 id="vehicle">Universal OBD</h1>
-      <span id="status" class="pill pill-idle">Parado</span>
+      <div class="status-pills">
+        <span id="status" class="pill pill-idle">Parado</span>
+        <span id="can-pill" class="pill" hidden>CAN</span>
+      </div>
     </div>
     <button id="toggle" class="btn btn-primary">Iniciar</button>
   </header>
@@ -411,6 +414,19 @@
         <p id="bt-result" class="small muted"></p>
       </div>
 
+      <div class="card form" id="can-card" hidden>
+        <span class="label">Escuta CAN (ESP32) deste veículo</span>
+        <p class="muted small">Lê do painel do carro o nível do tanque, o hodômetro e a velocidade, ao lado do ELM327. Só escuta: o app não envia nada ao adaptador. Os sinais vêm do perfil do veículo.</p>
+        <label>Adaptador de escuta
+          <select id="can-adapter"></select>
+        </label>
+        <div class="row">
+          <button id="can-save" class="btn btn-primary">Salvar</button>
+          <button id="can-test" class="btn">Testar (15 s)</button>
+        </div>
+        <div id="can-result" class="list small"></div>
+      </div>
+
       <div class="card form">
         <span class="label">Gravação de diagnóstico</span>
         <label class="check"><input id="diag-enabled" type="checkbox">
@@ -431,19 +447,6 @@
           <button id="backup-restore" class="btn btn-danger">Restaurar backup…</button>
         </div>
         <p id="backup-result" class="small"></p>
-      </div>
-
-      <div class="card form" id="can-card" hidden>
-        <span class="label">Escuta CAN (ESP32) deste veículo</span>
-        <p class="muted small">Lê do painel do carro o nível do tanque, o hodômetro e a velocidade, ao lado do ELM327. Só escuta: o app não envia nada ao adaptador. Os sinais vêm do perfil do veículo.</p>
-        <label>Adaptador de escuta
-          <select id="can-adapter"></select>
-        </label>
-        <div class="row">
-          <button id="can-save" class="btn btn-primary">Salvar</button>
-          <button id="can-test" class="btn">Testar (15 s)</button>
-        </div>
-        <div id="can-result" class="list small"></div>
       </div>
 
       <div class="card form" id="remote-card">
@@ -647,6 +650,15 @@
   </div>
 
   <div id="toasts" class="toasts" aria-live="polite"></div>
+  <dialog id="can-dialog" class="app-dialog" aria-labelledby="can-dialog-title">
+    <h3 id="can-dialog-title">Escuta CAN (ESP32) não conectou</h3>
+    <p>O módulo de escuta CAN não respondeu desde o início da captura. Confira se ele está ligado e perto do celular.</p>
+    <p class="muted small">Continuando, a captura segue só com o OBD (ELM327) e o app continua tentando o ESP32 em segundo plano.</p>
+    <div class="dialog-actions">
+      <button id="can-dialog-stop" class="btn btn-danger">Encerrar</button>
+      <button id="can-dialog-go" class="btn btn-primary">Continuar só com o OBD</button>
+    </div>
+  </dialog>
   <script src="dash.js"></script>
   <!-- Ordem importa: app-core primeiro (ponte e utilitários), app-main por último (inicialização). -->
   <script src="app-core.js"></script>
