@@ -56,6 +56,18 @@ docker compose up -d web
 
 O script precisa de Docker e de alguns GB livres, e o tempo depende da internet. Sem o arquivo, o traçado aparece sem as ruas. O Super Admin só vê a localização de outras contas no modo suporte, que fica registrado na auditoria. Dados do mapa: © OpenStreetMap, por meio do Protomaps.
 
+### Percurso nas ruas (opcional)
+
+O GPS do celular costuma ficar alguns metros fora da rua, e entre duas posições a linha corta as esquinas. Com o **OSRM** rodando no próprio servidor, o painel encaixa o traço nas ruas, como os apps de entrega. É só desenho: as posições gravadas, a distância e o consumo não mudam, e o botão **Ajustar às ruas** mostra o traço bruto do GPS.
+
+```bash
+sh scripts/preparar-rotas.sh
+# no .env: COMPOSE_PROFILES=rotas e OSRM_URL=http://osrm:5000
+docker compose up -d
+```
+
+O script baixa as ruas do Brasil do OpenStreetMap (~1,8 GB, pela Geofabrik) e processa com o perfil de carro: 30 a 60 minutos, ~10 GB de disco. O contêiner `osrm` usa alguns GB de memória e só a API fala com ele, por rede interna. Para atualizar as ruas, rode o script de novo: o serviço no ar segue com os dados antigos até o fim do processamento. Trecho que não encaixa (estacionamento, rua nova, sinal ruim) aparece como o traço do GPS.
+
 ## Conta
 
 O login aceita usuário ou e-mail. Em **Meus Dados**, a pessoa altera nome, foto, e-mail e senha.

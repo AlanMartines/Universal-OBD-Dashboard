@@ -55,7 +55,8 @@ services:
       SESSION_MAX_DAYS: ${SESSION_MAX_DAYS:-7}
       RATE_LIMIT_FACTOR: ${RATE_LIMIT_FACTOR:-1}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-    networks: [backend, app]
+      OSRM_URL: ${OSRM_URL:-}
+    networks: [backend, app, routing]
     read_only: true
     tmpfs:
       - /tmp:size=16m
@@ -104,6 +105,21 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+
+  # Encaixe do percurso nas ruas. Opcional: liga com COMPOSE_PROFILES=rotas e OSRM_URL no .env,
+  # depois de preparar os dados com scripts/preparar-rotas.sh. Só a API fala com ele, por rede interna.
+  osrm:
+    <<: *hardening
+    image: ghcr.io/project-osrm/osrm-backend:v5.27.1
+    profiles: [rotas]
+    command: ["osrm-routed", "--algorithm", "mld", "--max-matching-size", "500", "--max-table-size", "0", "--max-trip-size", "0", "/data/regiao.osrm"]
+    volumes:
+      - ${OSRM_DATA_DIR:-./data/osrm}:/data:ro
+    networks: [routing]
+    read_only: true
+    cap_drop: [ALL]
+    pids_limit: 64
+    mem_limit: 12g
 
   # Tarefas periódicas isoladas: se parar, API e painel seguem funcionando.
   worker:
@@ -164,6 +180,8 @@ networks:
   app:
     internal: true
   backend:
+    internal: true
+  routing:
     internal: true
 
 volumes:

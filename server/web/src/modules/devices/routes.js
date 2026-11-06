@@ -92,6 +92,7 @@ export default function devicesRoutes(app, {
   app.get('/dispositivos/:id/percurso', { preHandler: requireUser }, async (request) => {
     const params = new URLSearchParams({ minutes: String(request.query.minutes ?? '') });
     if (request.query.viagem) params.set('tripId', String(request.query.viagem));
+    if (request.query.ruas !== undefined) params.set('snap', String(request.query.ruas));
     return api(request, 'GET', `/internal/devices/${requireUuid(request)}/route?${params}`);
   });
 
