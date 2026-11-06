@@ -243,9 +243,30 @@ describe('fluxo pelo navegador', () => {
     assert.ok([403, 404].includes((await web.inject({ method: 'POST', url: '/internal/auth/login', payload: {} })).statusCode));
   });
 
+  test('PWA: manifesto, service worker, página sem conexão e pré-carregamento', async () => {
+    const manifest = await web.inject({ method: 'GET', url: '/manifest.webmanifest' });
+    assert.equal(manifest.statusCode, 200);
+    assert.match(manifest.headers['content-type'], /manifest\+json/);
+    assert.equal(manifest.json().start_url, '/painel');
+    for (const icon of manifest.json().icons) assert.equal((await web.inject({ method: 'GET', url: icon.src })).statusCode, 200, icon.src);
+    const sw = await web.inject({ method: 'GET', url: '/sw.js' });
+    assert.equal(sw.statusCode, 200);
+    assert.match(sw.headers['content-type'], /javascript/);
+    assert.equal((await web.inject({ method: 'GET', url: '/offline' })).statusCode, 200);
+    assert.equal((await web.inject({ method: 'GET', url: '/static/css/offline.css' })).statusCode, 200);
+    const login = await web.inject({ method: 'GET', url: '/login' });
+    assert.equal(login.headers['speculation-rules'], '"/speculation-rules.json"');
+    assert.match(login.headers['content-security-policy'], /manifest-src 'self'/);
+    assert.equal((await web.inject({ method: 'GET', url: '/speculation-rules.json' })).statusCode, 200);
+    // Indicador "Ao vivo": só com login
+    assert.notEqual((await web.inject({ method: 'GET', url: '/painel/ao-vivo' })).statusCode, 200);
+  });
+
   test('arquivos fora da lista permitida não são servidos', async () => {
     assert.equal((await web.inject({ method: 'GET', url: '/vendor/bootstrap/css/bootstrap.min.css' })).statusCode, 200);
     assert.equal((await web.inject({ method: 'GET', url: '/vendor/chartjs/chart.umd.min.js' })).statusCode, 200);
+    assert.equal((await web.inject({ method: 'GET', url: '/vendor/inter/inter-latin-wght-normal.woff2' })).statusCode, 200);
+    assert.notEqual((await web.inject({ method: 'GET', url: '/vendor/inter/inter-greek-wght-normal.woff2' })).statusCode, 200);
     assert.notEqual((await web.inject({ method: 'GET', url: '/vendor/bootstrap/js/index.js' })).statusCode, 200);
     assert.notEqual((await web.inject({ method: 'GET', url: '/static/../src/config.js' })).statusCode, 200);
     assert.notEqual((await web.inject({ method: 'GET', url: '/static/..%2f..%2fpackage.json' })).statusCode, 200);
@@ -292,7 +313,7 @@ describe('fluxo pelo navegador', () => {
     assert.match(page.body, /src="\/static\/js\/theme\.js\?v=[0-9a-z]+"/);
     assert.match(page.body, /href="\/modules\/devices\/devices\.css\?v=[0-9a-z]+"/);
     assert.match(page.body, /src="\/vendor\/chartjs\/chart\.umd\.min\.js"/);
-    assert.match(page.body, /Nenhum abastecimento enviado ainda/);
+    assert.match(page.body, /Nenhum abastecimento ainda/);
     assert.equal(page.statusCode, 200);
     // A leitura inicial fica em atributo: dentro de <script>, o escape impediria o JSON.parse.
     assert.match(page.body, /id="latest-data" hidden data-sample="[^"]*&quot;rpm&quot;/);

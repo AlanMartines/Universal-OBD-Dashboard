@@ -157,6 +157,8 @@
 
   function buildHighlights() {
     var box = document.getElementById('highlights');
+    box.replaceChildren(); // tira os blocos de carregamento
+    box.removeAttribute('aria-busy');
     HIGHLIGHTS.forEach(function (id) {
       var meta = info(id);
       var col = node('div', 'col');
@@ -344,15 +346,30 @@
       .then(function (r) { if (!r.ok) throw new Error('historico'); return r.json(); });
   }
 
+  // Primeira série no verde da marca (com degradê embaixo); a de comparação em laranja.
+  function seriesColor(index) {
+    var brand = window.chartTheme ? window.chartTheme.css('--app-brand', COLORS[0]) : COLORS[0];
+    return index ? COLORS[1] : brand;
+  }
+  function fade(color) {
+    return function (ctx) {
+      var area = ctx.chart.chartArea;
+      if (!area) return color + '1a';
+      var g = ctx.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+      g.addColorStop(0, color + '40');
+      g.addColorStop(1, color + '00');
+      return g;
+    };
+  }
   function dataset(metric, data, index) {
-    var color = COLORS[index];
+    var color = seriesColor(index);
     return {
       label: info(metric)[0],
       metric: metric,
       data: data,
       yAxisID: index ? 'y2' : 'y',
       borderColor: color,
-      backgroundColor: color + '1a',
+      backgroundColor: index ? color + '1a' : fade(color),
       fill: index === 0,
       tension: 0.25,
       pointRadius: 0,

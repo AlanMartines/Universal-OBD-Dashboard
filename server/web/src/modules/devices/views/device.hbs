@@ -1,11 +1,13 @@
-<div class="device-head d-flex flex-wrap align-items-center gap-2 mb-3">
-  <div class="me-auto min-w-0">
-    <h1 class="h4 mb-0 text-break">{{device.name}}</h1>
-    <p class="small text-body-secondary mb-0">Conta: {{device.owner}}{{#if device.appVersion}} · App {{device.appVersion}}{{/if}}</p>
+<div class="page-header device-head">
+  <div class="page-header-text">
+    <h1 class="page-title"><span class="page-title-icon" aria-hidden="true"><i class="fa-solid fa-car-side"></i></span><span class="text-break">{{device.name}}</span></h1>
+    <p class="page-subtitle">Conta: {{device.owner}}{{#if device.appVersion}} · App {{device.appVersion}}{{/if}}</p>
   </div>
+  <div class="page-header-actions">
   <span id="live-status" class="badge text-bg-secondary" role="status">Sem dados</span>
   <span id="last-update" class="small text-body-secondary"></span>
   <a class="btn btn-outline-primary btn-sm" href="/painel-veiculo?dispositivo={{device.id}}"><i class="fa-solid fa-gauge-high me-1" aria-hidden="true"></i>Painel do veículo</a>
+  </div>
 </div>
 
 <div id="live-root" data-device-id="{{device.id}}">
@@ -30,7 +32,7 @@
   <div class="tab-content">
   <div class="tab-pane fade show active" id="pane-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
   <p id="stale-note" class="alert alert-secondary small py-2 mb-3 d-none" role="status"><i class="fa-solid fa-clock-rotate-left me-1" aria-hidden="true"></i><span></span></p>
-  <div class="row row-cols-2 row-cols-lg-4 g-3 mb-3" id="highlights"></div>
+  <div class="row row-cols-2 row-cols-lg-4 g-3 mb-3" id="highlights" aria-busy="true"><div class="col"><div class="skeleton stat-skeleton"></div></div><div class="col"><div class="skeleton stat-skeleton"></div></div><div class="col"><div class="skeleton stat-skeleton"></div></div><div class="col"><div class="skeleton stat-skeleton"></div></div></div>
 
   <section class="stat-panel pc-panel mb-3" id="pc-panel" aria-labelledby="pc-title" hidden>
     <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
@@ -109,6 +111,7 @@
       </div>
     </div>
     <p class="small text-body-secondary" id="route-notice" hidden></p>
+    <div class="skeleton route-skeleton" id="route-loading" aria-hidden="true"></div>
     <div class="route-map" id="route-map" hidden></div>
     <p class="route-legend small text-body-secondary mt-2 mb-0">
       <span class="route-dot route-slow"></span>até 30 km/h <span class="route-dot route-mid"></span>até 60 <span class="route-dot route-fast"></span>até 90 <span class="route-dot route-top"></span>acima de 90
@@ -135,7 +138,7 @@
       </table>
     </div>
     {{else}}
-    <div class="empty-state"><i class="fa-solid fa-road" aria-hidden="true"></i><p class="mb-0">Nenhuma viagem enviada ainda. Elas aparecem quando o app grava uma captura com a telemetria remota ligada.</p></div>
+    {{> emptyState icon="fa-road" title="Nenhuma viagem ainda" text="Elas aparecem quando o app grava uma captura com a telemetria remota ligada."}}
     {{/if}}
   </section>
   </div>
@@ -147,7 +150,7 @@
     {{#if report.hasChart}}
     <div class="report-chart"><canvas id="report-chart" data-report="{{reportJson}}" role="img" aria-label="Gráfico de km/l por tanque"></canvas></div>
     {{else}}
-    <p class="text-body-secondary mb-0">Aparece a partir de dois abastecimentos de tanque cheio com hodômetro.</p>
+    {{> emptyState icon="fa-chart-column" title="Ainda sem tanques fechados" text="O gráfico aparece a partir de dois abastecimentos de tanque cheio com hodômetro."}}
     {{/if}}
   </section>
   <section class="stat-panel mb-3" aria-labelledby="report-month-title">
@@ -165,7 +168,7 @@
       </table>
     </div>
     {{else}}
-    <p class="text-body-secondary mb-0">Sem viagens nem abastecimentos ainda.</p>
+    {{> emptyState icon="fa-calendar-days" title="Nada para resumir ainda" text="O resumo aparece com as primeiras viagens e abastecimentos."}}
     {{/if}}
   </section>
   </div>
@@ -210,7 +213,7 @@
     <p class="small text-body-secondary mb-0">O consumo real aparece depois de dois tanques cheios com hodômetro.</p>
     {{/if}}
     {{else}}
-    <p class="small text-body-secondary mb-0">Nenhum abastecimento enviado ainda. Os registrados no app chegam aqui com a telemetria remota ligada.</p>
+    {{> emptyState icon="fa-gas-pump" title="Nenhum abastecimento ainda" text="Os registrados no app chegam aqui com a telemetria remota ligada."}}
     {{/if}}
   </section>
   </div>
@@ -233,7 +236,7 @@
       </table>
     </div>
     {{else}}
-    <div class="empty-state"><i class="fa-solid fa-circle-check text-success" aria-hidden="true"></i><p class="mb-0">Nenhum código de falha enviado por este veículo.</p></div>
+    {{> emptyState icon="fa-circle-check" tone="ok" title="Nenhuma falha" text="Este veículo não enviou nenhum código de falha."}}
     {{/if}}
   </section>
   </div>

@@ -11,6 +11,11 @@
   <link rel="icon" type="image/png" sizes="96x96" href="/assets/favicons/favicon-96x96.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-icon-180x180.png">
   <meta name="color-scheme" content="light dark">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f14">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Telemetria">
   <script src="{{asset "/static/js/theme.js"}}"></script>
   <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
   <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
@@ -32,6 +37,7 @@
         <i class="fa-solid fa-bars" aria-hidden="true"></i>
       </button>
       <span class="topbar-title text-truncate">{{title}}</span>
+      <a class="topbar-live" data-live-link hidden href="/painel"><span class="live-dot" aria-hidden="true"></span><span data-live-text>Ao vivo</span></a>
       <button class="btn topbar-btn" type="button" data-theme-toggle aria-label="Tema">
         <i class="fa-solid fa-fw fa-circle-half-stroke" data-theme-icon aria-hidden="true"></i>
       </button>
@@ -58,6 +64,16 @@
     </button>
   </header>
   <main class="auth-main">
+    <aside class="auth-hero" aria-hidden="true">
+      <img class="auth-hero-logo" src="/assets/logos/eletroinfo.svg" alt="">
+      <h2>Telemetria do seu veículo, em tempo real</h2>
+      <ul>
+        <li><i class="fa-solid fa-gauge-high"></i>Painel ao vivo e percurso no mapa</li>
+        <li><i class="fa-solid fa-gas-pump"></i>Consumo real, abastecimentos e relatórios</li>
+        <li><i class="fa-solid fa-triangle-exclamation"></i>Falhas do motor e alertas</li>
+        <li><i class="fa-solid fa-shield-halved"></i>Dados no seu próprio servidor</li>
+      </ul>
+    </aside>
     <div class="auth-card">
       <div class="auth-brand">
         <img class="auth-logo" src="/assets/logos/eletroinfo.svg" alt="">
@@ -72,6 +88,9 @@
   <script src="/vendor/jquery-validation/jquery.validate.min.js"></script>
   <script src="{{asset "/static/js/forms.js"}}"></script>
   <script src="{{asset "/static/js/toast.js"}}"></script>
+  <script src="{{asset "/static/js/pwa.js"}}"></script>
+  {{#if user}}<script src="{{asset "/static/js/tooltips.js"}}"></script>
+  <script src="{{asset "/static/js/live-indicator.js"}}"></script>{{/if}}
   {{#if user}}<script src="{{asset "/static/js/confirm.js"}}"></script>{{/if}}
   {{#each pageScripts}}<script src="{{asset this}}"></script>
   {{/each}}

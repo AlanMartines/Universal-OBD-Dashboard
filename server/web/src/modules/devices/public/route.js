@@ -143,7 +143,9 @@ if (card) {
     notice.hidden = !text;
   }
 
+  const loading = document.getElementById('route-loading');
   async function load(keepView = false) {
+    if (!shownOnce && loading) loading.hidden = false;
     const query = new URLSearchParams({ minutes: String(minutes), ruas: snapOn ? '1' : '0' });
     if (tripSelect.value) query.set('viagem', tripSelect.value);
     let data;
@@ -152,9 +154,11 @@ if (card) {
       if (!response.ok) throw new Error('percurso');
       data = await response.json();
     } catch {
+      if (loading) loading.hidden = true;
       say('Não foi possível carregar o percurso.');
       return;
     }
+    if (loading) loading.hidden = true;
     const selected = tripSelect.value;
     tripSelect.replaceChildren(new Option('Todas as viagens do período', ''));
     data.trips.forEach((trip) => {

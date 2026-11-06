@@ -214,20 +214,13 @@
 .vehicle-card-stats dd { margin: 0; font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .vehicle-card-stats small { font-size: 0.75rem; font-weight: 500; color: var(--bs-secondary-color); }
 .vehicle-card-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: auto; }
-.live-dot {
-  display: inline-block; width: 0.5em; height: 0.5em; margin-right: 0.35em; vertical-align: 0.1em;
-  background: currentColor; border-radius: 50%; animation: live-pulse 1.6s ease-in-out infinite;
-}
-@keyframes live-pulse { 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+/* .live-dot e live-pulse: em layout.css (também usados no menu e na barra de cima) */
 
 /* ---------- Abas do dispositivo ---------- */
 .device-tabs { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
 .device-tabs .nav-link { white-space: nowrap; }
 
 /* ---------- Estado vazio ---------- */
-.empty-state { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-6) var(--space-4); text-align: center; color: var(--bs-secondary-color); }
-.empty-state > .fa-solid { font-size: 2rem; opacity: 0.6; }
 
 /* Sem transmissão: os valores são da última leitura, não do momento atual. */
 #pane-overview.is-stale #highlights,
@@ -276,3 +269,8 @@
 /* ---------- Relatórios ---------- */
 .report-chart { position: relative; height: 280px; }
 @media (max-width: 575.98px) { .report-chart { height: 220px; } }
+
+/* Carregando: cartões de destaque e mapa */
+.stat-skeleton { height: 7.25rem; border-radius: var(--app-radius-lg); }
+.route-skeleton { height: clamp(280px, 50vh, 520px); }
+.route-skeleton[hidden] { display: none; }
