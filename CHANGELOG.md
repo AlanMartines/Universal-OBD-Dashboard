@@ -6,6 +6,15 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.31] - 2026-11-06
+
+### Corrigido
+- **Backup completo:** agora leva toda a configuração, menos as chaves:
+  - a configuração da IA (ligada ou não, provedor, endereço, modelo e permissões de envio);
+  - o endereço do painel, o envio ligado e a opção de GPS de cada veículo;
+  - as preferências da tela: tema do app, visual e modo dia/noite dos mostradores.
+- Continuam de fora, por segurança, a chave de API da IA e o pareamento com o painel. Depois de restaurar, o resumo diz o que falta: colar a chave e parear de novo (no painel, Dispositivos → novo código).
+
 ## [0.9.30] - 2026-11-06
 
 ### Alterado
