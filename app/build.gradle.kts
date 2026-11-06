@@ -12,7 +12,8 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.universal.obddashboard"
+        // Identificador na Play/Android: domínio da Eletro Info invertido. O pacote do código (namespace) segue o antigo.
+        applicationId = "br.com.eletroinfotecnologia.universalobd"
         minSdk = 26
         targetSdk = 36
         versionCode = 52

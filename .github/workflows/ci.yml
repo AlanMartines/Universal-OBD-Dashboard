@@ -84,8 +84,8 @@ jobs:
           script: |
             adb install -r app/build/outputs/apk/smoke/app-smoke.apk
             adb logcat -c
-            adb shell am start -W -n com.universal.obddashboard/.MainActivity
+            adb shell am start -W -n br.com.eletroinfotecnologia.universalobd/com.universal.obddashboard.MainActivity
             sleep 15
-            adb shell pidof com.universal.obddashboard
+            adb shell pidof br.com.eletroinfotecnologia.universalobd
             adb logcat -d -s AndroidRuntime:E > crash.txt || true
-            if grep -q "com.universal.obddashboard" crash.txt; then cat crash.txt; exit 1; fi
+            if grep -qE "com.universal.obddashboard|br.com.eletroinfotecnologia.universalobd" crash.txt; then cat crash.txt; exit 1; fi

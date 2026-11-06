@@ -38,7 +38,7 @@ O app aparece na categoria **IoT** do Android Auto, porque não existe uma categ
 **Mas o APK das Releases não aparece na central do carro.** A partir do Android Auto 17.7, a opção *Fontes desconhecidas* (Configurações → 10 toques em *Versão* → ⋮ → *Configurações do desenvolvedor*) só libera apps instalados por APK dos tipos mídia, navegação antiga, mensagens, notificação e serviço. Apps da Car App Library, como este, são recusados. O app nem entra em *Personalizar o menu de apps*, e o logcat registra:
 
 ```
-Package DENIED; failed all other checks [com.universal.obddashboard]
+Package DENIED; failed all other checks [br.com.eletroinfotecnologia.universalobd]
 ```
 
 Isso foi visto no Android Auto 17.9. A explicação vem da comunidade ([Fermata #846](https://github.com/AndreyPavlenko/Fermata/issues/846), [lapin #1](https://github.com/prototux/lapin/issues/1)), sem documentação oficial do Google. A regra fica no Android Auto e pode mudar a cada atualização. O pacote do app está correto: ele declara o serviço, a categoria e o `automotive_app_desc` como a documentação pede.
