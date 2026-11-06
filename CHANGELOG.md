@@ -6,6 +6,12 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.28] - 2026-11-05
+
+### Corrigido
+- **Tanque depois do abastecimento:** com a escuta CAN, o ponteiro do painel (amortecido, só sobe com o motor ligado e leva ~40 min para alcançar o tanque cheio) desfazia o tanque cheio registrado e a autonomia ficava errada. Agora o nível informado vale até o ponteiro alcançá-lo, e um ponteiro subindo só aumenta a estimativa.
+- **Captura parando no posto:** depois de desligar e religar a chave, a central parava de responder ao ELM327 e a captura era encerrada como "ignição desligada". Com a rede CAN ativa, o app agora reconecta.
+
 ## [0.9.27] - 2026-11-05
 
 ### Alterado

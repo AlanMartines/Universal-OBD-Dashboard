@@ -15,8 +15,8 @@ android {
         applicationId = "com.universal.obddashboard"
         minSdk = 26
         targetSdk = 36
-        versionCode = 50
-        versionName = "0.9.27"
+        versionCode = 51
+        versionName = "0.9.28"
     }
 
     signingConfigs {
