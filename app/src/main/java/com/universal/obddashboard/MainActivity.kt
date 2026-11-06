@@ -104,7 +104,9 @@ class MainActivity : ComponentActivity() {
             if (uri == null) return@registerForActivityResult
             lifecycleScope.launch(Dispatchers.IO) {
                 val result = try {
-                    JSONObject().put("ok", true).put("message", BackupManager.restore(this@MainActivity, uri))
+                    val restored = BackupManager.restore(this@MainActivity, uri)
+                    JSONObject().put("ok", true).put("message", restored.message)
+                        .put("webSettings", restored.webSettings?.let { JSONObject(it) } ?: JSONObject.NULL)
                 } catch (e: BackupArchive.BackupException) {
                     JSONObject().put("ok", false).put("error", e.message)
                 } catch (e: Exception) {

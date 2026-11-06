@@ -24,8 +24,8 @@ import java.util.zip.ZipOutputStream
 
 /**
  * Backup completo (Ajustes → Backup): um .zip com manifesto, banco (viagens, telemetria, falhas,
- * abastecimentos, respostas da IA), ajustes do app e perfis importados. A chave de API da IA não
- * entra: fica só no Keystore do aparelho.
+ * abastecimentos, respostas da IA), ajustes do app, perfis importados, configuração da IA e endereço do
+ * painel. A chave de API da IA e o pareamento com o painel não entram: ficam só no Keystore do aparelho.
  */
 object BackupArchive {
 
@@ -33,6 +33,20 @@ object BackupArchive {
     const val MANIFEST = "manifest.json"
     const val DATABASE = "database.db"
     const val SETTINGS = "settings.json"
+    /** Configuração da IA, sem a chave de API (que fica só no Keystore do aparelho). */
+    const val AI_SETTINGS = "ai_settings.json"
+    /** Endereço do painel e opção de GPS de cada veículo, sem o pareamento (token e controle de envio). */
+    const val REMOTE_SETTINGS = "remote_settings.json"
+    /** Preferências da tela (localStorage da WebView): tema do app, visual e modo dos mostradores… */
+    const val WEB_SETTINGS = "web_settings.json"
+    private val EXTRA_FILES = listOf(AI_SETTINGS, REMOTE_SETTINGS, WEB_SETTINGS)
+    /** Chave da IA cifrada: nunca vai para o backup. */
+    private const val AI_SECRET_KEY = "api_key_enc"
+    /**
+     * Do servidor, tudo o que é escolha da pessoa (as chaves são por veículo: "base_url@<id>"). Ficam de
+     * fora o token e o estado do pareamento (instalação, nome do dispositivo, cursor e últimos envios).
+     */
+    private val REMOTE_KEYS = setOf("base_url", "send_gps", "enabled")
     const val PROFILES_DIR = "profiles/"
     private val PROFILE_NAME = Regex("^[A-Za-z0-9_.-]{1,80}\\.json$")
     private const val MAX_DB_BYTES = 2L * 1024 * 1024 * 1024
@@ -49,9 +63,34 @@ object BackupArchive {
         }.toString()
     }
 
-    data class Contents(val manifest: Manifest, val database: File, val settingsJson: String?, val profiles: List<File>)
+    data class Contents(
+        val manifest: Manifest,
+        val database: File,
+        val settingsJson: String?,
+        val profiles: List<File>,
+        /** [AI_SETTINGS] e [REMOTE_SETTINGS], quando o backup os tem (backups antigos não têm). */
+        val extras: Map<String, String> = emptyMap(),
+    )
 
-    fun write(out: File, manifest: Manifest, database: File, settingsJson: String, profiles: List<File>) {
+    /** Configuração da IA que vai para o backup: tudo menos a chave. */
+    fun aiPrefsForBackup(all: Map<String, *>): Map<String, *> = all.filterKeys { it != AI_SECRET_KEY }
+
+    /** Configuração do servidor que vai para o backup: endereço e GPS de cada veículo, sem o pareamento. */
+    fun remotePrefsForBackup(all: Map<String, *>): Map<String, *> = all.filterKeys { it.substringBefore('@') in REMOTE_KEYS }
+
+    /** Preferências da tela vindas do JavaScript: só um objeto de textos, com limites de tamanho. */
+    fun sanitizeWebSettings(json: String?): String {
+        val o = runCatching { Json.parseToJsonElement(json.orEmpty()).jsonObject }.getOrNull() ?: return "{}"
+        return buildJsonObject {
+            o.entries.take(MAX_WEB_KEYS).forEach { (k, v) ->
+                val text = (v as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return@forEach
+                if (k.length <= 100 && text.length <= 4000) put(k, text)
+            }
+        }.toString()
+    }
+    private const val MAX_WEB_KEYS = 200
+
+    fun write(out: File, manifest: Manifest, database: File, settingsJson: String, profiles: List<File>, extras: Map<String, String> = emptyMap()) {
         ZipOutputStream(out.outputStream().buffered()).use { zip ->
             fun put(name: String, write: (java.io.OutputStream) -> Unit) {
                 zip.putNextEntry(ZipEntry(name))
@@ -61,6 +100,7 @@ object BackupArchive {
             put(MANIFEST) { it.write(manifest.toJson().toByteArray()) }
             put(DATABASE) { o -> database.inputStream().use { it.copyTo(o) } }
             put(SETTINGS) { it.write(settingsJson.toByteArray()) }
+            extras.filterKeys { it in EXTRA_FILES }.forEach { (name, json) -> put(name) { it.write(json.toByteArray()) } }
             profiles.filter { PROFILE_NAME.matches(it.name) }.forEach { f -> put(PROFILES_DIR + f.name) { o -> f.inputStream().use { it.copyTo(o) } } }
         }
     }
@@ -102,8 +142,11 @@ object BackupArchive {
             val profiles = z.entries().toList()
                 .filter { it.name.startsWith(PROFILES_DIR) && PROFILE_NAME.matches(it.name.removePrefix(PROFILES_DIR)) }
                 .map { e -> File(profileDir, e.name.removePrefix(PROFILES_DIR)).also { extract(e, it, MAX_SMALL_BYTES) } }
+            val extras = EXTRA_FILES.mapNotNull { name ->
+                z.getEntry(name)?.let { e -> name to File(dir, name).also { extract(e, it, MAX_SMALL_BYTES) }.readText() }
+            }.toMap()
             if (!db.readHeader().startsWith("SQLite format 3")) throw BackupException("Banco de dados do backup corrompido")
-            return Contents(m, db, settings, profiles)
+            return Contents(m, db, settings, profiles, extras)
         }
     }
 

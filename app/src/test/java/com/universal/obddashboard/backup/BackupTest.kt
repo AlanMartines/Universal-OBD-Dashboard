@@ -47,7 +47,7 @@ class BackupTest {
         prefs.edit().clear().commit()
         File(context.filesDir, "profiles").deleteRecursively()
 
-        val msg = runBlocking { BackupManager.restore(context, Uri.fromFile(zip)) }
+        val msg = runBlocking { BackupManager.restore(context, Uri.fromFile(zip)) }.message
         assertTrue(msg, msg.contains("1 viagens") && msg.contains("1 abastecimentos"))
         val restored = AppDatabase.get(context)
         runBlocking { assertEquals(418.0, restored.tripDao().recentTrips(10, "v1").single().distanceKm, 0.0) }
@@ -57,6 +57,39 @@ class BackupTest {
         assertEquals(setOf("a", "b"), prefs.getStringSet("x_set", null))
         assertEquals(5L, prefs.getLong("odometer_ref_since@v1", 0))
         assertTrue(File(context.filesDir, "profiles/meu_carro.json").isFile)
+    }
+
+    @Test fun aiAndServerSettingsTravelWithoutSecrets() {
+        AppDatabase.get(context)
+        val ai = context.getSharedPreferences("ai_settings", Context.MODE_PRIVATE)
+        val remote = context.getSharedPreferences("remote_telemetry", Context.MODE_PRIVATE)
+        ai.edit().putBoolean("enabled", true).putString("provider", "OPENAI").putString("model", "gpt-x")
+            .putStringSet("consents", setOf("dtc")).putString("api_key_enc", "SEGREDO").commit()
+        remote.edit().putString("base_url@v1", "https://painel.exemplo.test").putBoolean("send_gps@v1", true).putBoolean("enabled@v1", true)
+            .putString("token_enc@v1", "TOKEN").putLong("cursor@v1", 42L).putString("installation_id", "id-antigo").commit()
+        val zip = BackupManager.export(context, """{"app-theme":"light","dash.look":"hud","lixo":{"x":1}}""")
+        val text = java.util.zip.ZipFile(zip).use { z -> z.entries().toList().filter { it.name.endsWith(".json") }.joinToString { z.getInputStream(it).readBytes().decodeToString() } }
+        assertFalse("chave da IA não vai", text.contains("SEGREDO"))
+        assertFalse("token não vai", text.contains("TOKEN") || text.contains("token_enc"))
+        assertFalse("instalação não vai", text.contains("id-antigo"))
+
+        // Celular novo
+        AppDatabase.closeForRestore()
+        context.getDatabasePath(AppDatabase.NAME).delete()
+        ai.edit().clear().commit()
+        remote.edit().clear().commit()
+        val msg = runBlocking { BackupManager.restore(context, Uri.fromFile(zip)) }.message
+        assertEquals("gpt-x", ai.getString("model", null))
+        assertTrue(ai.getBoolean("enabled", false))
+        assertEquals(setOf("dtc"), ai.getStringSet("consents", null))
+        assertFalse(ai.contains("api_key_enc"))
+        assertEquals("https://painel.exemplo.test", remote.getString("base_url@v1", null))
+        assertTrue(remote.getBoolean("send_gps@v1", false))
+        assertTrue(remote.getBoolean("enabled@v1", false))
+        assertFalse(remote.contains("token_enc@v1") || remote.contains("cursor@v1"))
+        assertTrue(msg, msg.contains("chave da IA") && msg.contains("pareie com o painel"))
+        val web = runBlocking { BackupManager.restore(context, Uri.fromFile(zip)) }.webSettings.orEmpty()
+        assertTrue(web, web.contains("\"dash.look\":\"hud\"") && web.contains("app-theme") && !web.contains("lixo"))
     }
 
     private fun zipOf(vararg entries: Pair<String, ByteArray>): File {

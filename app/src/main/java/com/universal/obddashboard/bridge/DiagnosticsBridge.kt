@@ -157,8 +157,8 @@ class DiagnosticsBridge(private val activity: MainActivity) {
     }
 
     @JavascriptInterface
-    fun exportBackup(): String = try {
-        val file = BackupManager.export(activity)
+    fun exportBackup(webSettings: String?): String = try {
+        val file = BackupManager.export(activity, webSettings)
         activity.runOnUiThread { activity.startActivity(TripExportFiles.shareIntent(activity, file, "application/zip")) }
         "ok"
     } catch (e: Exception) {
