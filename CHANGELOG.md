@@ -6,6 +6,12 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.32] - 2026-11-06
+
+### Corrigido
+- **Topo do app:** ao abrir com a captura parada, as etiquetas às vezes não apareciam (ficava só "Parado", sem a do CAN). A tela agora pede o estado atual ao carregar.
+- **Etiqueta do OBD:** sempre identificada ("OBD · Parado", "OBD · Capturando"…), com ou sem a Escuta CAN; a do CAN aparece só com a escuta em uso.
+
 ## [0.9.31] - 2026-11-06
 
 ### Corrigido
