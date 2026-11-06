@@ -6,6 +6,16 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.29] - 2026-11-06
+
+### Adicionado
+- **Topo do app com duas etiquetas:** OBD (ELM327) e CAN (ESP32: conectado, conectando, sem conexão ou desligado). Sem escuta CAN configurada, fica só a etiqueta de sempre.
+- **Aviso quando o ESP32 não conecta:** 10 s depois de iniciar, pergunta se encerra ou continua só com o OBD; fecha sozinho se ele conectar. A notificação da captura mostra "CAN sem conexão".
+- **Painel web:** percurso encaixado nas ruas (OSRM no próprio servidor, opcional) e percurso ao vivo.
+
+### Alterado
+- **Ajustes:** o card Escuta CAN (ESP32) vem logo depois do Adaptador OBD.
+
 ## [0.9.28] - 2026-11-05
 
 ### Corrigido
