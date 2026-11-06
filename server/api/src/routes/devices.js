@@ -1,3 +1,4 @@
+import { createMatcher } from '../map-match.js';
 import { fuelSummary } from '../fuel.js';
 import { audit, FUEL_REMOVED_DAYS } from '../db.js';
 import { fail } from '../errors.js';
@@ -8,6 +9,7 @@ import { formatPairingCode, generatePairingCode, sha256 } from '../security.js';
 const ROUTE_MAX_POINTS = 2000;
 
 export default function devicesRoutes(app, { config, pool, live, limit, requireReady, requireManager, loadDevice, publicDevice, locationAllowed }) {
+  const matcher = createMatcher({ url: config.osrmUrl });
   app.get('/internal/devices', {
     preValidation: requireReady,
     schema: {
@@ -221,6 +223,7 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
         properties: {
           minutes: { type: 'string', pattern: '^(60|1440|10080)$' },
           tripId: { type: 'string', pattern: '^[0-9]{1,15}$' },
+          snap: { type: 'string', pattern: '^(0|1)$' },
         },
       },
     },
@@ -241,19 +244,31 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     const { rows: [{ total }] } = await pool.query(`SELECT count(*)::int AS total FROM telemetry_samples WHERE ${scope}`, [device.id, tripId, minutes]);
     const step = Math.max(1, Math.ceil(total / ROUTE_MAX_POINTS));
     const { rows } = await pool.query(
-      `SELECT ts, latitude, longitude, speed FROM (
-         SELECT ts, latitude, longitude, COALESCE((metrics->>'speed')::double precision, gps_speed) AS speed,
+      `SELECT ts, latitude, longitude, speed, accuracy FROM (
+         SELECT ts, latitude, longitude, COALESCE((metrics->>'speed')::double precision, gps_speed) AS speed, gps_accuracy AS accuracy,
                 row_number() OVER (ORDER BY ts) AS n, count(*) OVER () AS c
            FROM telemetry_samples WHERE ${scope}
        ) t WHERE n % $4 = 1 OR $4 = 1 OR n = c ORDER BY ts`,
       [device.id, tripId, minutes, step],
     );
-    return {
-      total,
-      gapSeconds: Math.max(60, step * 10),
-      trips,
-      points: rows.map((r) => ({ t: r.ts, lat: r.latitude, lon: r.longitude, speed: r.speed })),
-    };
+    const gapSeconds = Math.max(60, step * 10);
+    const points = rows.map((r) => ({ t: r.ts, lat: r.latitude, lon: r.longitude, speed: r.speed }));
+    // Encaixe nas ruas, só para desenhar. Sem OSRM configurado: "off"; fora do ar: "unavailable".
+    let snapped = null;
+    let snapStatus = 'off';
+    if (request.query.snap === '1' && matcher.enabled && rows.length > 1) {
+      try {
+        snapped = await matcher.match(rows.map((r) => ({ t: r.ts, lat: r.latitude, lon: r.longitude, speed: r.speed, accuracy: r.accuracy })), gapSeconds * 1000);
+        snapStatus = 'ok';
+      } catch (error) {
+        request.log.warn({ err: error }, 'osrm indisponível');
+        snapStatus = 'unavailable';
+      }
+    } else if (request.query.snap === '1' && matcher.enabled) {
+      snapStatus = 'ok';
+      snapped = [];
+    }
+    return { total, gapSeconds, trips, points, snapped, snapStatus, snapAvailable: matcher.enabled };
   });
 
   app.post('/internal/devices/:id/revoke', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {

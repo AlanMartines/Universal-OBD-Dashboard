@@ -24,6 +24,13 @@ function integer(env, name, fallback, min, max) {
   return value;
 }
 
+function osrmUrl(raw) {
+  if (!raw) return '';
+  const url = new URL(raw);
+  if (!['http:', 'https:'].includes(url.protocol)) throw new Error('OSRM_URL precisa ser http ou https');
+  return url.toString().replace(/\/+$/, '');
+}
+
 /** Lê e valida o ambiente. Falta de segredo interrompe a subida, sem valor padrão inseguro. */
 export function loadConfig(env = process.env) {
   return {
@@ -44,5 +51,7 @@ export function loadConfig(env = process.env) {
     sessionMaxDays: integer(env, 'SESSION_MAX_DAYS', 7, 1, 90),
     // Só para os testes automatizados: desliga os limites por IP, não as outras proteções.
     rateLimitMax: integer(env, 'RATE_LIMIT_FACTOR', 1, 1, 100000),
+    // Encaixe do percurso nas ruas (contêiner osrm, perfil "rotas"). Vazio: o painel mostra o traço do GPS.
+    osrmUrl: osrmUrl(env.OSRM_URL),
   };
 }

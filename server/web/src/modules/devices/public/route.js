@@ -31,6 +31,15 @@ if (card) {
   let bearing = 0;
   let follow = true;
   let refillTimer = null;
+  // Encaixe nas ruas (OSRM no servidor): só muda o desenho; o botão mostra o traço bruto do GPS.
+  const snapButton = document.getElementById('route-snap');
+  const SNAP_KEY = 'obd-route-snap';
+  const RESNAP_MS = 20000;
+  let snapOn = true;
+  try { snapOn = localStorage.getItem(SNAP_KEY) !== '0'; } catch { /* sem armazenamento: ligado */ }
+  let snapped = null;
+  let snappedUntil = 0;
+  let resnapTimer = null;
   // A lista de viagens com GPS chega com o primeiro carregamento; a escolha espera por ela.
   function selectPendingTrip() {
     if (!pendingTrip || !started) return;
@@ -135,7 +144,7 @@ if (card) {
   }
 
   async function load(keepView = false) {
-    const query = new URLSearchParams({ minutes: String(minutes) });
+    const query = new URLSearchParams({ minutes: String(minutes), ruas: snapOn ? '1' : '0' });
     if (tripSelect.value) query.set('viagem', tripSelect.value);
     let data;
     try {
@@ -182,10 +191,14 @@ if (card) {
       say('Sem localização neste período. Para registrar o percurso, ligue "Incluir localização GPS" em Ajustes → Telemetria remota, no app.');
       return;
     }
-    say(hasMap ? '' : 'O mapa de ruas ainda não foi instalado neste servidor. O traçado aparece sem as ruas.');
+    if (!(snapOn && data.snapStatus === 'unavailable')) say(hasMap ? '' : 'O mapa de ruas ainda não foi instalado neste servidor. O traçado aparece sem as ruas.');
     box.hidden = false;
     await ensureMap();
     map.resize();
+    snapButton.hidden = !data.snapAvailable;
+    snapped = data.snapStatus === 'ok' ? data.snapped : null;
+    snappedUntil = snapped && snapped.length ? Math.max(...snapped.map((l) => new Date(l.t).getTime())) : 0;
+    if (snapOn && data.snapStatus === 'unavailable') say('O ajuste às ruas está indisponível agora; mostrando o traço do GPS.');
     // Posições ao vivo mais novas que as gravadas (ainda vindo nos lotes do app) continuam no traço.
     const serverLast = new Date(data.points[data.points.length - 1].t).getTime();
     const liveTail = isLive() ? points.filter((p) => new Date(p.t).getTime() > serverLast) : [];
@@ -194,8 +207,8 @@ if (card) {
     draw();
     const bounds = points.reduce((b, p) => b.extend([p.lon, p.lat]), new LngLatBounds([points[0].lon, points[0].lat], [points[0].lon, points[0].lat]));
     lastBounds = bounds;
-    // Seguindo o carro ao vivo, a câmera fica nele; senão mostra o trajeto inteiro.
-    if (!(keepView && follow && carAt)) map.fitBounds(bounds, { padding: 40, maxZoom: 16, animate: shownOnce });
+    // Recarga do mesmo período (botão das ruas, buraco de sinal, re-encaixe ao vivo) não mexe na câmera.
+    if (!keepView) map.fitBounds(bounds, { padding: 40, maxZoom: 16, animate: shownOnce });
     shownOnce = true;
     summary.textContent = `${data.total.toLocaleString('pt-BR')} posições`;
     // O carro aparece na ponta se a última posição é recente; parado (cinza) até chegar leitura ao vivo.
@@ -205,9 +218,22 @@ if (card) {
     liveTick();
   }
 
+  /** Linha pelas ruas (pernas do OSRM) e, depois da última perna, o traço bruto que ainda não foi encaixado. */
+  function snappedFeatures() {
+    const features = snapped.map((leg) => ({
+      type: 'Feature', properties: { color: colorFor(leg.speed) }, geometry: { type: 'LineString', coordinates: leg.coords },
+    }));
+    const tail = points.filter((p) => new Date(p.t).getTime() >= snappedUntil);
+    if (tail.length > 1) {
+      tail.gapMs = points.gapMs;
+      features.push(...toFeatures(tail).features);
+    }
+    return { type: 'FeatureCollection', features };
+  }
+
   /** Redesenha a linha e as pontas; ao vivo, a ponta final é o carro. */
   function draw() {
-    routeData = toFeatures(points);
+    routeData = snapOn && snapped && snapped.length ? snappedFeatures() : toFeatures(points);
     endsData = markers(points);
     if (isLive() && car) endsData = { type: 'FeatureCollection', features: endsData.features.slice(0, 1) };
     map.getSource('route')?.setData(routeData);
@@ -297,6 +323,14 @@ if (card) {
   }
   followButton.addEventListener('click', () => setFollow(!follow));
 
+  snapButton.setAttribute('aria-pressed', String(snapOn));
+  snapButton.addEventListener('click', () => {
+    snapOn = !snapOn;
+    snapButton.setAttribute('aria-pressed', String(snapOn));
+    try { localStorage.setItem(SNAP_KEY, snapOn ? '1' : '0'); } catch { /* vale só nesta página */ }
+    load(true);
+  });
+
   /** Selo: "Ao vivo · 14:32:05" ou, sem leitura há mais de 15 s, "Sem sinal desde 14:32". */
   function liveTick() {
     if (car) car.getElement().classList.toggle('stale', !liveLastAt || Date.now() - liveLastAt > LIVE_STALE_MS);
@@ -339,6 +373,10 @@ if (card) {
     summary.textContent = '';
     draw();
     placeCar(p, true);
+    // A ponta ao vivo chega bruta; de tempos em tempos o trecho é encaixado de novo nas ruas.
+    if (snapOn && snapButton.hidden === false && !resnapTimer) {
+      resnapTimer = setTimeout(() => { resnapTimer = null; load(true); }, RESNAP_MS);
+    }
     liveTick();
   });
 
