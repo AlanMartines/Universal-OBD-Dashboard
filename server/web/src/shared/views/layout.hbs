@@ -39,7 +39,7 @@
     {{#if user.impersonatedBy}}
     <div class="impersonation-bar d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2" role="status">
       <span class="small"><i class="fa-solid fa-user-secret me-2" aria-hidden="true"></i><strong>Modo suporte:</strong> vendo como {{user.username}}. Dados pessoais e de segurança ficam bloqueados.</span>
-      <form method="post" action="/conta/personificacao/sair" class="m-0">
+      <form method="post" action="/meus-dados/personificacao/sair" class="m-0">
         <input type="hidden" name="_csrf" value="{{csrf}}">
         <button class="btn btn-warning btn-sm" type="submit">Voltar à minha conta</button>
       </form>

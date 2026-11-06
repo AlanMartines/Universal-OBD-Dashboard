@@ -188,9 +188,9 @@ describe('fluxo pelo navegador', () => {
     assert.match(raw, /Path=\//);
     adminCookie = cookieOf(res);
     const panel = await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } });
-    assert.equal(panel.headers.location, '/conta/senha');
-    const csrf = await csrfOf(adminCookie, '/conta/senha');
-    const changed = await post('/conta/senha', { _csrf: csrf, currentPassword: ADMIN.password, newPassword: 'nova frase longa do administrador', confirm: 'nova frase longa do administrador' }, adminCookie);
+    assert.equal(panel.headers.location, '/meus-dados/senha');
+    const csrf = await csrfOf(adminCookie, '/meus-dados/senha');
+    const changed = await post('/meus-dados/senha', { _csrf: csrf, currentPassword: ADMIN.password, newPassword: 'nova frase longa do administrador', confirm: 'nova frase longa do administrador' }, adminCookie);
     assert.equal(changed.statusCode, 303);
     assert.equal((await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } })).statusCode, 200);
   });
@@ -360,7 +360,7 @@ describe('fluxo pelo navegador', () => {
   });
 
   test('Meus Dados: foto por envio real, iniciais, e foto só com login', async () => {
-    const page = await web.inject({ method: 'GET', url: '/conta', headers: { cookie: adminCookie } });
+    const page = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie: adminCookie } });
     assert.match(page.body, /sidebar-avatar[\s\S]*?<span aria-hidden="true">[A-Z?]+<\/span>/);
     const csrf = field(page.body, '_csrf');
     // PNG válido de 1 × 1.
@@ -372,24 +372,24 @@ describe('fluxo pelo navegador', () => {
         content,
         Buffer.from(`\r\n--${b}--\r\n`),
       ]);
-      return web.inject({ method: 'POST', url: '/conta/foto', payload, headers: { ...browser(adminCookie), 'content-type': `multipart/form-data; boundary=${b}` } });
+      return web.inject({ method: 'POST', url: '/meus-dados/foto', payload, headers: { ...browser(adminCookie), 'content-type': `multipart/form-data; boundary=${b}` } });
     };
     const fake = await send2(Buffer.from('<svg onload="alert(1)"/>'), 'foto.png');
     assert.equal(fake.statusCode, 400);
     assert.equal((await send2(png, 'foto.png')).statusCode, 303);
     const after2 = await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } });
-    const src = /src="(\/conta\/foto\?v=\d+)"/.exec(after2.body)[1];
+    const src = /src="(\/meus-dados\/foto\?v=\d+)"/.exec(after2.body)[1];
     const img = await web.inject({ method: 'GET', url: src, headers: { cookie: adminCookie } });
     assert.equal(img.headers['content-type'], 'image/webp');
     assert.match(img.headers['cache-control'], /private/);
     assert.equal((await web.inject({ method: 'GET', url: src })).headers.location, '/login');
-    const noCsrf = await post('/conta/foto/remover', {}, adminCookie);
+    const noCsrf = await post('/meus-dados/foto/remover', {}, adminCookie);
     assert.equal(noCsrf.statusCode, 403);
-    assert.equal((await post('/conta/foto/remover', { _csrf: csrf }, adminCookie)).statusCode, 303);
+    assert.equal((await post('/meus-dados/foto/remover', { _csrf: csrf }, adminCookie)).statusCode, 303);
   });
 
   test('foto acima do limite volta à tela com mensagem, sem página de erro', async () => {
-    const page = await web.inject({ method: 'GET', url: '/conta', headers: { cookie: adminCookie } });
+    const page = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie: adminCookie } });
     const csrf = field(page.body, '_csrf');
     const b = 'limite-grande';
     const payload = Buffer.concat([
@@ -397,17 +397,17 @@ describe('fluxo pelo navegador', () => {
       Buffer.alloc(5 * 1024 * 1024 + 10),
       Buffer.from(`\r\n--${b}--\r\n`),
     ]);
-    const res = await web.inject({ method: 'POST', url: '/conta/foto', payload, headers: { ...browser(adminCookie), 'content-type': `multipart/form-data; boundary=${b}` } });
+    const res = await web.inject({ method: 'POST', url: '/meus-dados/foto', payload, headers: { ...browser(adminCookie), 'content-type': `multipart/form-data; boundary=${b}` } });
     assert.equal(res.statusCode, 303);
-    assert.equal(res.headers.location, '/conta?erro=image_too_large');
+    assert.equal(res.headers.location, '/meus-dados?erro=image_too_large');
     const shown = await web.inject({ method: 'GET', url: res.headers.location, headers: { cookie: adminCookie } });
     assert.match(shown.body, /passa de 5 MB/);
-    const injected = await web.inject({ method: 'GET', url: `/conta?erro=${encodeURIComponent('<script>x</script>')}&aviso=${encodeURIComponent('<b>x</b>')}`, headers: { cookie: adminCookie } });
+    const injected = await web.inject({ method: 'GET', url: `/meus-dados?erro=${encodeURIComponent('<script>x</script>')}&aviso=${encodeURIComponent('<b>x</b>')}`, headers: { cookie: adminCookie } });
     assert.ok(!injected.body.includes('<script>x') && !injected.body.includes('<b>x</b>'));
   });
 
   test('formulários carregam validação e medidor com arquivos locais', async () => {
-    const page = await web.inject({ method: 'GET', url: '/conta', headers: { cookie: adminCookie } });
+    const page = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie: adminCookie } });
     assert.match(page.body, /data-password-meter="newPassword"/);
     assert.match(page.body, /id="current-email"/);
     for (const url of ['/vendor/jquery/jquery.min.js', '/vendor/jquery-validation/jquery.validate.min.js', '/static/js/forms.js']) {
@@ -418,22 +418,22 @@ describe('fluxo pelo navegador', () => {
   });
 
   test('link de e-mail: abrir não altera nada; confirmar exige a mesma origem', async () => {
-    const opened = await web.inject({ method: 'GET', url: '/conta/email/confirmar?token=token-invalido-de-teste-1234567890' });
+    const opened = await web.inject({ method: 'GET', url: '/meus-dados/email/confirmar?token=token-invalido-de-teste-1234567890' });
     assert.equal(opened.statusCode, 200);
     assert.match(opened.body, /name="token" value="token-invalido-de-teste-1234567890"/);
-    const cross = await post('/conta/email/confirmar', { token: 'token-invalido-de-teste-1234567890' }, null, { origin: 'https://mau.example', 'sec-fetch-site': 'cross-site' });
+    const cross = await post('/meus-dados/email/confirmar', { token: 'token-invalido-de-teste-1234567890' }, null, { origin: 'https://mau.example', 'sec-fetch-site': 'cross-site' });
     assert.equal(cross.statusCode, 403);
-    const bad = await post('/conta/email/confirmar', { token: 'token-invalido-de-teste-1234567890' });
+    const bad = await post('/meus-dados/email/confirmar', { token: 'token-invalido-de-teste-1234567890' });
     assert.equal(bad.statusCode, 400);
-    const xss = await web.inject({ method: 'GET', url: `/conta/email/confirmar?token=${encodeURIComponent('"><script>alert(1)</script>')}` });
+    const xss = await web.inject({ method: 'GET', url: `/meus-dados/email/confirmar?token=${encodeURIComponent('"><script>alert(1)</script>')}` });
     assert.ok(!xss.body.includes('<script>alert(1)'));
   });
 
   test('perfis: tela do Admin e do Usuário; Super Admin escolhe a conta', async () => {
     const enter = async (username, password, newPassword) => {
       const cookie = cookieOf(await signIn(username, password));
-      const c = await csrfOf(cookie, '/conta/senha');
-      await post('/conta/senha', { _csrf: c, currentPassword: password, newPassword, confirm: newPassword }, cookie);
+      const c = await csrfOf(cookie, '/meus-dados/senha');
+      await post('/meus-dados/senha', { _csrf: c, currentPassword: password, newPassword, confirm: newPassword }, cookie);
       return cookie;
     };
     const senhaDe = (body) => /user-select-all[^"]*">([^<]+)</.exec(body)[1];
@@ -462,8 +462,8 @@ describe('fluxo pelo navegador', () => {
     const panel = await web.inject({ method: 'GET', url: '/painel', headers: { cookie } });
     assert.ok(!panel.body.includes('action="/dispositivos"'));
     assert.ok(!panel.body.includes('Revogar'));
-    const conta = await web.inject({ method: 'GET', url: '/conta', headers: { cookie } });
-    assert.ok(!conta.body.includes('action="/conta/excluir"'));
+    const conta = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie } });
+    assert.ok(!conta.body.includes('action="/meus-dados/excluir"'));
   });
 
   test('menu lateral: só com login, item ativo, por papel e com arquivos locais', async () => {
@@ -473,8 +473,8 @@ describe('fluxo pelo navegador', () => {
     assert.match(panel.body, /id="app-sidebar"/);
     assert.match(panel.body, /href="\/painel"[^>]*class="active"/);
     assert.match(panel.body, /name="_csrf" value="[^"]+"/);
-    const conta = await web.inject({ method: 'GET', url: '/conta', headers: { cookie: adminCookie } });
-    assert.match(conta.body, /href="\/conta"[^>]*class="active"/);
+    const conta = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie: adminCookie } });
+    assert.match(conta.body, /href="\/meus-dados"[^>]*class="active"/);
     assert.match(conta.body, /href="\/admin"/);
     for (const url of ['/static/js/shell.js', '/assets/images/body/bg01.png', '/assets/images/body/bg02.png', '/assets/logos/eletroinfo.svg', '/assets/favicons/favicon-32x32.png', '/vendor/fontawesome/css/all.min.css', '/vendor/fontawesome/webfonts/fa-solid-900.woff2']) {
       assert.equal((await web.inject({ method: 'GET', url })).statusCode, 200, url);
@@ -489,15 +489,15 @@ describe('fluxo pelo navegador', () => {
     const temp = /user-select-all[^"]*">([^<]+)</.exec(made.body)[1];
     const PW = 'uma frase longa para esta conta';
     const cookie = cookieOf(await signIn('comcodigo', temp));
-    await post('/conta/senha', { _csrf: await csrfOf(cookie, '/conta/senha'), currentPassword: temp, newPassword: PW, confirm: PW }, cookie);
-    const accountPage = await web.inject({ method: 'GET', url: '/conta', headers: { cookie } });
+    await post('/meus-dados/senha', { _csrf: await csrfOf(cookie, '/meus-dados/senha'), currentPassword: temp, newPassword: PW, confirm: PW }, cookie);
+    const accountPage = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie } });
     const c = field(accountPage.body, '_csrf');
-    assert.match(accountPage.body, /\/conta\/sessoes/);
-    assert.equal((await post('/conta/2fa/iniciar', { _csrf: c, currentPassword: PW }, cookie)).headers.location, '/conta/2fa');
-    const setup = await web.inject({ method: 'GET', url: '/conta/2fa', headers: { cookie } });
+    assert.match(accountPage.body, /\/meus-dados\/sessoes/);
+    assert.equal((await post('/meus-dados/2fa/iniciar', { _csrf: c, currentPassword: PW }, cookie)).headers.location, '/meus-dados/2fa');
+    const setup = await web.inject({ method: 'GET', url: '/meus-dados/2fa', headers: { cookie } });
     assert.match(setup.body, /src="data:image\/png;base64,/);
     const secret = /user-select-all text-break">([A-Z2-7]+)</.exec(setup.body)[1];
-    const on = await post('/conta/2fa/ativar', { _csrf: c, code: codeForStep(secret, stepAt(Date.now())) }, cookie);
+    const on = await post('/meus-dados/2fa/ativar', { _csrf: c, code: codeForStep(secret, stepAt(Date.now())) }, cookie);
     assert.match(on.body, /Códigos de recuperação/);
     const first = await signIn('comcodigo', PW);
     assert.equal(first.headers.location, '/login/verificacao');
@@ -530,7 +530,10 @@ describe('fluxo pelo navegador', () => {
   });
 
   test('sessões e modo suporte: faixa visível, cartões pessoais ocultos e retorno', async () => {
-    const list = await web.inject({ method: 'GET', url: '/conta/sessoes', headers: { cookie: adminCookie } });
+    const list = await web.inject({ method: 'GET', url: '/meus-dados/sessoes', headers: { cookie: adminCookie } });
+    const old = await web.inject({ method: 'GET', url: '/conta/sessoes?ok=1', headers: { cookie: adminCookie } });
+    assert.equal(old.statusCode, 301);
+    assert.equal(old.headers.location, '/meus-dados/sessoes?ok=1');
     assert.match(list.body, /Sessão atual/);
     assert.match(list.body, /Expira /);
     const admin = await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } });
@@ -538,11 +541,11 @@ describe('fluxo pelo navegador', () => {
     const started = await post(target, { _csrf: field(admin.body, '_csrf') }, adminCookie);
     assert.equal(started.statusCode, 303);
     const support = cookieOf(started);
-    const account = await web.inject({ method: 'GET', url: '/conta', headers: { cookie: support } });
+    const account = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie: support } });
     assert.match(account.body, /Modo suporte/);
-    assert.ok(!account.body.includes('action="/conta/email"'));
-    assert.ok(!account.body.includes('action="/conta/excluir"'));
-    const back = await post('/conta/personificacao/sair', { _csrf: field(account.body, '_csrf') }, support);
+    assert.ok(!account.body.includes('action="/meus-dados/email"'));
+    assert.ok(!account.body.includes('action="/meus-dados/excluir"'));
+    const back = await post('/meus-dados/personificacao/sair', { _csrf: field(account.body, '_csrf') }, support);
     assert.equal(back.headers.location, '/admin');
     adminCookie = cookieOf(back);
     assert.equal((await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } })).statusCode, 200);

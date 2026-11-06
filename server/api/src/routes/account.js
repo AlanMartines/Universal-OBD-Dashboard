@@ -116,7 +116,7 @@ export default function accountRoutes(app, {
             `Foi pedida a inclusão deste e-mail na conta "${user.username}" da Telemetria OBD.`,
             '',
             `Para confirmar, abra este link em até ${EMAIL_LINK_HOURS} hora:`,
-            `${config.appUrl}/conta/email/confirmar?token=${token}`,
+            `${config.appUrl}/meus-dados/email/confirmar?token=${token}`,
             '',
             'Se não foi você, ignore esta mensagem. Nada será alterado.',
           ].join('\n')],
