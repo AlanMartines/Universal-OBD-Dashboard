@@ -29,6 +29,7 @@ export const MESSAGES = {
   mfa_already_enabled: 'A verificação em duas etapas já está ativa.',
   reset_link_invalid: 'Este link é inválido ou já venceu. Peça um novo em "Esqueci minha senha".',
   not_found: 'Não encontrado.',
+  device_is_revoked: 'Este dispositivo foi revogado. Para usar o app de novo, adicione um dispositivo.',
   forbidden: 'Você não tem acesso a esta página.',
   bad_form: 'O formulário expirou. Recarregue a página e tente de novo.',
   internal_error: 'Algo deu errado. Tente novamente.',

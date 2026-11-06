@@ -59,6 +59,12 @@
           <a class="btn btn-outline-primary btn-sm" href="/painel-veiculo?dispositivo={{id}}" title="Painel do veículo" aria-label="Painel do veículo de {{name}}"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></a>{{/if}}
           {{#if (canManage ../user)}}
           {{#unless revokedAt}}
+          {{#if pairedAt}}
+          <form method="post" action="/dispositivos/{{id}}/novo-codigo" class="d-inline" data-confirm="Gerar um novo código de pareamento para {{name}}? Use para trocar de celular ou reinstalar o app sem perder o histórico. Quando o app novo parear, o atual deixa de enviar dados." data-confirm-label="Gerar código" data-confirm-tone="primary">
+            <input type="hidden" name="_csrf" value="{{../csrf}}">
+            <button class="btn btn-outline-primary btn-sm" type="submit" title="Novo código de pareamento" aria-label="Novo código de pareamento para {{name}}"><i class="fa-solid fa-qrcode" aria-hidden="true"></i></button>
+          </form>
+          {{/if}}
           <form method="post" action="/dispositivos/{{id}}/revogar" class="d-inline" data-confirm="Revogar {{name}}? O aparelho deixa de enviar dados." data-confirm-label="Revogar" data-confirm-tone="warning">
             <input type="hidden" name="_csrf" value="{{../csrf}}">
             <button class="btn btn-outline-warning btn-sm" type="submit">Revogar</button>
