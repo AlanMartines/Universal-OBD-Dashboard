@@ -181,8 +181,12 @@ networks:
     internal: true
   backend:
     internal: true
+  # Faixa fixa: a escolhida pelo Docker caiu numa faixa com regras antigas de firewall de outra rede.
   routing:
     internal: true
+    ipam:
+      config:
+        - subnet: 10.88.0.0/24
 
 volumes:
   db-data:
