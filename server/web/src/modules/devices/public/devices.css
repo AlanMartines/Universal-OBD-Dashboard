@@ -203,6 +203,7 @@
 }
 .vehicle-card:hover { box-shadow: var(--app-shadow); }
 .vehicle-card-head { display: flex; align-items: center; gap: var(--space-3); }
+.vehicle-card-note { margin: 0 0 var(--space-3); font-size: .78rem; color: var(--bs-secondary-color); }
 .vehicle-card-icon {
   display: inline-flex; flex: none; align-items: center; justify-content: center;
   width: 40px; height: 40px; font-size: 1.1rem;
@@ -271,3 +272,7 @@
 .route-car.stale .car-halo { animation: none; opacity: 0; }
 @keyframes car-halo { from { transform: scale(.6); opacity: .35; } to { transform: scale(1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .route-car .car-halo, .route-live-dot { animation: none; } }
+
+/* ---------- Relatórios ---------- */
+.report-chart { position: relative; height: 280px; }
+@media (max-width: 575.98px) { .report-chart { height: 220px; } }

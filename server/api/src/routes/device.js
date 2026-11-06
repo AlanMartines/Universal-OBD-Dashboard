@@ -6,6 +6,9 @@ import { normalizePairingCode, randomToken, sha256 } from '../security.js';
 
 const LIVE_MAX_AGE_MS = 5 * 60 * 1000;
 
+/** Métricas do computador de bordo (pc.*) guardadas para o cartão do veículo. */
+const COMPUTER_KEYS = ['rangeReserveKm', 'rangeEmptyKm', 'rangeKmPerL', 'fuelUpKm', 'fuelUpKmPerL', 'recentKmPerL', 'tripAKmPerL'];
+
 export default function deviceRoutes(app, { pool, live, limit }) {
   app.post('/api/v1/devices/register', {
     ...limit(10, '15 minutes'),
@@ -237,6 +240,17 @@ export default function deviceRoutes(app, { pool, live, limit }) {
       await pool.query(
         'UPDATE devices SET odometer_km = $2, odometer_at = now() WHERE id = $1 AND odometer_km IS DISTINCT FROM $2',
         [request.device.id, odometer],
+      );
+    }
+    // Computador de bordo: guarda o último retrato (no máximo 1×/min) para a página inicial do painel.
+    const computer = Object.fromEntries(COMPUTER_KEYS
+      .map((k) => [k, metrics[`pc.${k}`]])
+      .filter(([, v]) => typeof v === 'number' && Number.isFinite(v)));
+    if (Object.keys(computer).length) {
+      await pool.query(
+        `UPDATE devices SET computer = $2::jsonb, computer_at = now()
+          WHERE id = $1 AND (computer_at IS NULL OR computer_at < now() - interval '60 seconds')`,
+        [request.device.id, JSON.stringify(computer)],
       );
     }
     const limits = dashLimitsFrom(metrics);

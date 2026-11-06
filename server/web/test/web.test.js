@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { buildApp, checkFormToken, isSameOriginRequest, issueFormToken } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
 import { ago, describeAgent } from '../src/modules/account/user-agent.js';
+import { buildReport } from '../src/modules/devices/routes.js';
 // A API real, com banco real: o teste atravessa a mesma fronteira da produção.
 import { ADMIN, KEY, sample, startApi } from '../../api/test/helpers.js';
 
@@ -46,6 +47,32 @@ describe('funções puras', () => {
     assert.throws(() => loadConfig(env));
     assert.throws(() => loadConfig({ ...env, APP_URL: ORIGIN, FORM_SECRET: 'curto' }));
     assert.equal(loadConfig({ ...env, APP_URL: ORIGIN }).cookieSecure, true);
+  });
+});
+
+describe('relatórios do dispositivo', () => {
+  test('km/l por tanque e resumo do mês', () => {
+    const d = (iso) => Date.parse(iso);
+    const fuel = {
+      items: [
+        { ts: d('2026-11-20T12:00:00Z'), liters: 40, totalPrice: 260, removedAt: null },
+        { ts: d('2026-11-05T12:00:00Z'), liters: 38, totalPrice: 250, removedAt: null },
+        { ts: d('2026-10-20T12:00:00Z'), liters: 10, totalPrice: 60, removedAt: d('2026-10-21T00:00:00Z') },
+      ],
+      summary: { avgKmPerL: 10.25, intervals: [{ from: d('2026-11-05T12:00:00Z'), to: d('2026-11-20T12:00:00Z'), km: 410, liters: 40, kmPerL: 10.25, fuelType: 'gasoline' }] },
+    };
+    const trips = [{ start: d('2026-11-10T12:00:00Z'), km: 200 }, { start: d('2026-11-12T12:00:00Z'), km: 210 }];
+    const r = buildReport(fuel, trips);
+    assert.deepEqual(r.chart.kmPerL, [10.3]);
+    assert.equal(r.hasChart, true);
+    const nov = r.monthly.find((m) => m.label === '11/2026');
+    assert.equal(nov.km, 410);
+    assert.equal(nov.trips, 2);
+    assert.equal(nov.liters, 78);
+    assert.equal(nov.cost, 510);
+    assert.equal(nov.kmPerL, 10.25);
+    assert.ok(!r.monthly.some((m) => m.label === '10/2026'), 'abastecimento removido não entra');
+    assert.equal(r.lastPrice, 6.5);
   });
 });
 

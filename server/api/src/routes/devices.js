@@ -83,7 +83,7 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
   app.get('/internal/devices/overview', { preValidation: requireReady }, async (request) => {
     const { user } = request.session;
     const { rows } = await pool.query(
-      `SELECT d.id, d.name, d.last_seen_at, u.username AS owner, d.odometer_km AS device_odometer,
+      `SELECT d.id, d.name, d.last_seen_at, u.username AS owner, d.odometer_km AS device_odometer, d.computer, d.computer_at,
               s.ts AS latest_ts, coalesce(s.dtcs, '{}') AS dtcs,
               (s.metrics->>'odometer_km')::float AS odometer_km
          FROM devices d JOIN users u ON u.id = d.user_id
@@ -117,6 +117,8 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
           odometerKm: r.device_odometer ?? r.odometer_km ?? lastFuelOdometer,
           odometerFromFuelUp: r.device_odometer === null && r.odometer_km === null && lastFuelOdometer !== null,
           avgKmPerL: summary.avgKmPerL, monthCost: summary.costByMonth[month] ?? 0,
+          // Último retrato do computador de bordo enviado pelo app (null se nunca enviou).
+          computer: r.computer ? { ...r.computer, at: r.computer_at } : null,
         };
       }),
     };
