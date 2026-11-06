@@ -138,6 +138,15 @@ export default function devicesRoutes(app, {
     await api(request, 'POST', `/internal/devices/${requireUuid(request)}/${action}`);
     return reply.redirect(`/painel?ok=${notice}`, 303);
   };
+  app.post('/dispositivos/:id/novo-codigo', { preHandler: requireUser }, async (request, reply) => {
+    try {
+      const created = await api(request, 'POST', `/internal/devices/${requireUuid(request)}/pairing-code`);
+      return reply.view('modules/devices/views/pairing.hbs', context(request, { title: 'Novo código de pareamento', ...created, ...DEVICE_ASSETS }));
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status >= 500 || error.status === 401) throw error;
+      return panelView(request, reply, error.status, message(error.code));
+    }
+  });
   app.post('/dispositivos/:id/revogar', { preHandler: requireUser }, deviceAction('revoke', 'device_revoked'));
   app.post('/dispositivos/:id/excluir', { preHandler: requireUser }, deviceAction('delete', 'device_deleted'));
 }

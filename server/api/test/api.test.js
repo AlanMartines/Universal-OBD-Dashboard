@@ -195,6 +195,27 @@ describe('API', () => {
       assert.equal(res.statusCode, 400);
     });
 
+    test('novo código no mesmo dispositivo: app novo assume, histórico fica e o token antigo cai', async () => {
+      const old = await pairDevice(app, alice, '44444444-4444-4444-8444-444444444444');
+      assert.equal((await send(app, old.deviceToken, [sample(1)])).statusCode, 200);
+      const fresh = await internal(app, 'POST', `/internal/devices/${old.id}/pairing-code`, { token: alice });
+      assert.equal(fresh.statusCode, 200);
+      assert.equal(fresh.json().id, old.id);
+      // Até o app novo parear, o atual continua enviando.
+      assert.equal((await send(app, old.deviceToken, [sample(2)])).statusCode, 200);
+      const reg = await app.inject({ method: 'POST', url: '/api/v1/devices/register', payload: { code: fresh.json().pairingCode, installationId: '55555555-5555-4555-8555-555555555555' } });
+      assert.equal(reg.statusCode, 200);
+      assert.equal(reg.json().deviceId, old.id);
+      assert.equal((await send(app, old.deviceToken, [sample(3)])).statusCode, 401);
+      assert.equal((await send(app, reg.json().deviceToken, [sample(3)])).statusCode, 200);
+      const { rows } = await pool.query('SELECT count(*)::int AS n FROM telemetry_samples WHERE device_id = $1', [old.id]);
+      assert.equal(rows[0].n, 3);
+      // Só quem gerencia, e não para revogado.
+      assert.equal((await internal(app, 'POST', `/internal/devices/${old.id}/pairing-code`, { token: bob })).statusCode >= 400, true);
+      await internal(app, 'POST', `/internal/devices/${old.id}/revoke`, { token: alice });
+      assert.deepEqual((await internal(app, 'POST', `/internal/devices/${old.id}/pairing-code`, { token: alice })).json(), { error: 'device_is_revoked' });
+    });
+
     test('reparear a mesma instalação invalida o token anterior', async () => {
       const install = '33333333-3333-4333-8333-333333333333';
       const first = await pairDevice(app, alice, install);

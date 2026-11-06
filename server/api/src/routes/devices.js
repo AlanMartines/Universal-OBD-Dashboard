@@ -271,6 +271,21 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     return { total, gapSeconds, trips, points, snapped, snapStatus, snapAvailable: matcher.enabled };
   });
 
+  // Novo código para um dispositivo que já existe (troca de celular, app reinstalado, identificador novo):
+  // o histórico continua no mesmo dispositivo. O app atual segue enviando até o novo parear, e aí o
+  // token antigo deixa de valer (o pareamento grava um token novo).
+  app.post('/internal/devices/:id/pairing-code', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
+    const device = await loadDevice(request);
+    if (device.revoked_at) throw fail(409, 'device_is_revoked');
+    const code = generatePairingCode();
+    await pool.query(
+      `UPDATE devices SET pairing_code_hash = $2, pairing_expires_at = now() + make_interval(mins => $3) WHERE id = $1`,
+      [device.id, sha256(code), PAIRING_MINUTES],
+    );
+    await audit(pool, { actor: request.session.impersonatedBy ?? request.session.user.username, action: 'codigo_pareamento_gerado', target: device.id, ip: request.clientIp });
+    return { id: device.id, name: device.name, pairingCode: formatPairingCode(code), expiresInMinutes: PAIRING_MINUTES, repair: true };
+  });
+
   app.post('/internal/devices/:id/revoke', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
     const device = await loadDevice(request);
     await pool.query(

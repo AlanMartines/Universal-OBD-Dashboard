@@ -255,6 +255,10 @@ describe('fluxo pelo navegador', () => {
 
     const page = await web.inject({ method: 'GET', url: `/dispositivos/${deviceId}`, headers: { cookie: adminCookie } });
     assert.match(page.body, /id="fuel-title"/);
+    const newCode = await post(`/dispositivos/${deviceId}/novo-codigo`, { _csrf: await csrfOf(adminCookie) }, adminCookie);
+    assert.equal(newCode.statusCode, 200);
+    assert.match(newCode.body, /Novo código de pareamento/);
+    assert.match(newCode.body, /font-monospace mb-2">[A-Z0-9-]+</);
     assert.match(page.body, /data-hash="viagens"/);
     assert.match(page.body, /data-hash="falhas"/);
     // Arquivos do painel com versão no endereço: depois de atualizar, o navegador busca o novo
