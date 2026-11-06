@@ -24,7 +24,10 @@
           <div><dt>Consumo real</dt><dd>{{#if avgKmPerL}}{{num avgKmPerL 1}} <small>km/l</small>{{else}}—{{/if}}</dd></div>
           <div><dt>Gasto em {{../monthLabel}}</dt><dd>{{brl monthCost}}</dd></div>
           <div><dt>Hodômetro{{#if odometerFromFuelUp}} <span class="fw-normal">(no último abastecimento)</span>{{/if}}</dt><dd>{{#if odometerKm}}{{num odometerKm 0}} <small>km</small>{{else}}—{{/if}}</dd></div>
+          <div><dt>Autonomia até a reserva</dt><dd>{{#if computer.rangeReserveKm}}{{num computer.rangeReserveKm 0}} <small>km</small>{{else}}—{{/if}}{{#if computer.rangeEmptyKm}} <small class="text-body-secondary">· vazio {{num computer.rangeEmptyKm 0}}</small>{{/if}}</dd></div>
+          <div><dt>Desde o abastecimento</dt><dd>{{#if computer.fuelUpKmPerL}}{{num computer.fuelUpKmPerL 1}} <small>km/l</small>{{else}}—{{/if}}{{#if computer.fuelUpKm}} <small class="text-body-secondary">· {{num computer.fuelUpKm 0}} km</small>{{/if}}</dd></div>
         </dl>
+        {{#if computer}}<p class="vehicle-card-note"><i class="fa-solid fa-gauge-simple me-1" aria-hidden="true"></i>Computador de bordo {{computerAgo}}</p>{{/if}}
         <footer class="vehicle-card-actions">
           <a class="btn btn-primary btn-sm" href="/dispositivos/{{id}}"><i class="fa-solid fa-eye me-1" aria-hidden="true"></i>Detalhes</a>
           <a class="btn btn-outline-primary btn-sm" href="/painel-veiculo?dispositivo={{id}}"><i class="fa-solid fa-gauge-high me-1" aria-hidden="true"></i>Painel do veículo</a>

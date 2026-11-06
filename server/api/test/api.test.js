@@ -372,6 +372,15 @@ describe('API', () => {
       assert.equal(mine.odometerKm, 123456.7);
       assert.equal(mine.odometerFromFuelUp, false);
       assert.match(overview.month, /^\d{4}-\d{2}$/);
+      assert.equal(mine.computer, null);
+      // Computador de bordo: o último retrato ao vivo fica para o cartão da página inicial (no máximo 1×/min)
+      const pc = (metrics) => app.inject({ method: 'POST', url: '/api/v1/live', headers: { authorization: `Bearer ${dev.deviceToken}` }, payload: { ts: Date.now(), metrics } });
+      assert.equal((await pc({ 'pc.rangeReserveKm': 412.5, 'pc.fuelUpKmPerL': 11.2, 'pc.fuelUpKm': 38 })).statusCode, 200);
+      await pc({ 'pc.rangeReserveKm': 1 });
+      const card = (await internal(app, 'GET', '/internal/devices/overview', { token: alice })).json().vehicles.find((v) => v.id === dev.id);
+      assert.equal(card.computer.rangeReserveKm, 412.5);
+      assert.equal(card.computer.fuelUpKmPerL, 11.2);
+      assert.ok(card.computer.at);
     });
 
     test('escalas dos mostradores ficam salvas no dispositivo, sem dados fora da lista ou da faixa', async () => {

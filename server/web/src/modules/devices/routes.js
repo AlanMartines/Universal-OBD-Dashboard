@@ -1,3 +1,4 @@
+import { ago } from '../account/user-agent.js';
 import { Readable } from 'node:stream';
 import { ApiError, message } from '../../shared/errors.js';
 import { pageParam, pagerFor } from '../../shared/pagination.js';
@@ -7,6 +8,40 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function requireUuid(request) {
   if (!UUID.test(request.params.id)) throw new ApiError(404, 'not_found');
   return request.params.id;
+}
+
+const MONTH = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit' });
+const DAY = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' });
+
+/**
+ * Relatórios da tela do dispositivo: km/l de cada tanque (entre tanques cheios) para o gráfico e o resumo
+ * dos últimos 6 meses (km das viagens enviadas, litros e gasto dos abastecimentos, km/l dos tanques fechados no mês).
+ */
+export function buildReport(fuel, trips) {
+  const active = fuel.items.filter((f) => !f.removedAt);
+  const intervals = [...fuel.summary.intervals].reverse().slice(-12);
+  const chart = {
+    labels: intervals.map((i) => `${DAY.format(new Date(i.from))}–${DAY.format(new Date(i.to))}`),
+    kmPerL: intervals.map((i) => Math.round(i.kmPerL * 10) / 10),
+    fuel: intervals.map((i) => i.fuelType),
+    avg: fuel.summary.avgKmPerL ? Math.round(fuel.summary.avgKmPerL * 10) / 10 : null,
+  };
+  const rows = new Map();
+  const row = (key) => {
+    if (!rows.has(key)) rows.set(key, { key, km: 0, liters: 0, cost: 0, tankKm: 0, tankLiters: 0, trips: 0 });
+    return rows.get(key);
+  };
+  for (const t of trips) { const r = row(MONTH.format(new Date(t.start))); r.km += t.km; r.trips += 1; }
+  for (const f of active) { const r = row(MONTH.format(new Date(f.ts))); r.liters += f.liters; r.cost += f.totalPrice ?? 0; }
+  for (const i of fuel.summary.intervals) { const r = row(MONTH.format(new Date(i.to))); r.tankKm += i.km; r.tankLiters += i.liters; }
+  const monthly = [...rows.values()].sort((a, b) => b.key.localeCompare(a.key)).slice(0, 6).map((r) => ({
+    label: r.key.split('-').reverse().join('/'),
+    km: r.km, trips: r.trips, liters: r.liters, cost: r.cost,
+    kmPerL: r.tankLiters > 0 ? r.tankKm / r.tankLiters : null,
+    costPerKm: r.km > 0 && r.cost > 0 ? r.cost / r.km : null,
+  }));
+  const priced = active.find((f) => f.totalPrice && f.liters > 0);
+  return { chart, monthly, hasChart: intervals.length > 0, lastPrice: priced ? priced.totalPrice / priced.liters : null };
 }
 
 export default function devicesRoutes(app, {
@@ -30,7 +65,10 @@ export default function devicesRoutes(app, {
       api(request, 'GET', `/internal/devices?${query}`),
       api(request, 'GET', '/internal/devices/overview'),
     ]);
-    const vehicles = overview.vehicles.map((v) => ({ ...v, status: freshness(v.latestTs ?? v.lastSeenAt), dtcCount: v.dtcs.length }));
+    const vehicles = overview.vehicles.map((v) => ({
+      ...v, status: freshness(v.latestTs ?? v.lastSeenAt), dtcCount: v.dtcs.length,
+      computerAgo: v.computer?.at ? `atualizado ${ago(v.computer.at)}` : '',
+    }));
     return reply.code(status).view('modules/devices/views/devices.hbs', context(request, {
       title: 'Dispositivos', devices, error, vehicles, monthLabel: overview.month.split('-').reverse().join('/'), serverUrl: config.publicOrigin, pager: pagerFor(pagination, request, { path: '/painel' }), pageScripts: ['/modules/devices/devices.js'], ...DEVICE_ASSETS,
     }));
@@ -66,6 +104,14 @@ export default function devicesRoutes(app, {
     ]);
     const months = Object.entries(fuel.summary.costByMonth);
     const lastMonth = months.length ? months[months.length - 1] : null;
+    const report = buildReport(fuel, trips);
+    // Custo da viagem pelo último preço por litro registrado (estimativa, como no app).
+    const price = report.lastPrice;
+    const tripsShown = trips.map((t) => ({
+      ...t,
+      avgSpeed: t.minutes >= 1 && t.km > 0.2 ? t.km / (t.minutes / 60) : null,
+      cost: price && t.liters > 0 ? t.liters * price : null,
+    }));
     return reply.view('modules/devices/views/device.hbs', context(request, {
       fuel: {
         ...fuel,
@@ -73,7 +119,9 @@ export default function devicesRoutes(app, {
         intervals: fuel.summary.intervals.slice(0, 5),
         month: lastMonth ? { label: lastMonth[0].split('-').reverse().join('/'), total: lastMonth[1] } : null,
       },
-      trips,
+      trips: tripsShown,
+      report,
+      reportJson: JSON.stringify(report.chart),
       faults,
       faultsActive: faults.filter((f) => f.active).length,
       title: data.device.name,
@@ -81,7 +129,7 @@ export default function devicesRoutes(app, {
       latestJson: JSON.stringify(data.latest),
       limitsJson: JSON.stringify(data.device.dashLimits),
       ...DEVICE_ASSETS,
-      pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/static/js/tabs.js', '/static/js/dtc-sae.js', '/modules/devices/live.js', '/modules/devices/faults.js', ...(data.locationAllowed ? ['/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js'] : [])],
+      pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/static/js/tabs.js', '/static/js/dtc-sae.js', '/modules/devices/live.js', '/modules/devices/faults.js', '/modules/devices/reports.js', ...(data.locationAllowed ? ['/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js'] : [])],
       pageModules: data.locationAllowed ? ['/modules/devices/route.js'] : [],
       pageCss: ['/modules/devices/devices.css', ...(data.locationAllowed ? ['/vendor/maplibre/maplibre-gl.css'] : [])],
       locationAllowed: data.locationAllowed,

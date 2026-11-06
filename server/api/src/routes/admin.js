@@ -24,6 +24,7 @@ export default function adminRoutes(app, {
     const users = await paged(pool, {
       countSql: 'SELECT count(*)::int AS total FROM users u WHERE $1 OR u.account_id = $2',
       listSql: `SELECT u.id, u.username, u.email, u.role, u.disabled, u.must_change_password, u.created_at,
+              u.totp_enabled_at IS NOT NULL AS mfa,
               a.username AS account,
               (SELECT count(*)::int FROM devices d WHERE d.user_id = u.id AND d.revoked_at IS NULL AND d.paired_at IS NOT NULL) AS devices
          FROM users u LEFT JOIN users a ON a.id = u.account_id
@@ -33,7 +34,18 @@ export default function adminRoutes(app, {
       page: usersPage,
       pageSize,
     });
-    if (!isSuper) return { users: users.rows, usersPagination: users.pagination };
+    // Números do topo da tela (só do que a pessoa pode ver).
+    const { rows: [stats] } = await pool.query(
+      `SELECT (SELECT count(*)::int FROM users u WHERE $1 OR u.account_id = $2) AS users,
+              (SELECT count(*)::int FROM users u WHERE ($1 OR u.account_id = $2) AND NOT u.disabled) AS active,
+              (SELECT count(*)::int FROM users u WHERE ($1 OR u.account_id = $2) AND u.totp_enabled_at IS NOT NULL) AS mfa,
+              (SELECT count(*)::int FROM devices d JOIN users o ON o.id = d.user_id
+                WHERE ($1 OR o.id = $2 OR o.account_id = $2) AND d.paired_at IS NOT NULL AND d.revoked_at IS NULL) AS devices,
+              (SELECT count(*)::int FROM audit_log WHERE $1 AND action IN ('login_recusado', 'codigo_2fa_recusado', 'pareamento_recusado')
+                AND at > now() - interval '24 hours') AS refused`,
+      [isSuper, user.id],
+    );
+    if (!isSuper) return { users: users.rows, usersPagination: users.pagination, stats };
     const auditLog = await paged(pool, {
       countSql: 'SELECT count(*)::int AS total FROM audit_log',
       listSql: 'SELECT at, actor, action, target, ip FROM audit_log ORDER BY at DESC, id DESC',
@@ -48,6 +60,7 @@ export default function adminRoutes(app, {
       audit: auditLog.rows,
       auditPagination: auditLog.pagination,
       accounts: accounts.rows,
+      stats,
     };
   });
 

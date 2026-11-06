@@ -23,6 +23,7 @@
     {{#if locationAllowed}}<li class="nav-item" role="presentation"><button class="nav-link" id="tab-route" data-bs-toggle="tab" data-bs-target="#pane-route" data-hash="percurso" type="button" role="tab" aria-controls="pane-route" aria-selected="false"><i class="fa-solid fa-route me-1" aria-hidden="true"></i>Percurso</button></li>{{/if}}
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-trips" data-bs-toggle="tab" data-bs-target="#pane-trips" data-hash="viagens" type="button" role="tab" aria-controls="pane-trips" aria-selected="false"><i class="fa-solid fa-road me-1" aria-hidden="true"></i>Viagens</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-fuel" data-bs-toggle="tab" data-bs-target="#pane-fuel" data-hash="abastecimentos" type="button" role="tab" aria-controls="pane-fuel" aria-selected="false"><i class="fa-solid fa-gas-pump me-1" aria-hidden="true"></i>Abastecimentos</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-reports" data-bs-toggle="tab" data-bs-target="#pane-reports" data-hash="relatorios" type="button" role="tab" aria-controls="pane-reports" aria-selected="false"><i class="fa-solid fa-chart-column me-1" aria-hidden="true"></i>Relatórios</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-faults" data-bs-toggle="tab" data-bs-target="#pane-faults" data-hash="falhas" type="button" role="tab" aria-controls="pane-faults" aria-selected="false"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Falhas{{#if faultsActive}} <span class="badge text-bg-danger">{{faultsActive}}</span>{{/if}}</button></li>
   </ul>
 
@@ -124,17 +125,47 @@
     <div class="table-responsive">
       <table class="table table-sm table-striped table-hover table-stack align-middle mb-0">
         <thead class="table-dark">
-          <tr><th scope="col">Início</th><th scope="col" class="text-end">Duração</th><th scope="col" class="text-end">Distância</th><th scope="col" class="text-end">Combustível</th><th scope="col" class="text-end">km/l</th><th scope="col" class="text-end">Vel. máx.</th><th scope="col" class="text-end">Temp. máx.</th>{{#if @root.locationAllowed}}<th scope="col" class="text-center">Ação</th>{{/if}}</tr>
+          <tr><th scope="col">Início</th><th scope="col" class="text-end">Duração</th><th scope="col" class="text-end">Distância</th><th scope="col" class="text-end">Combustível</th><th scope="col" class="text-end">Custo</th><th scope="col" class="text-end">km/l</th><th scope="col" class="text-end">Vel. média</th><th scope="col" class="text-end">Vel. máx.</th><th scope="col" class="text-end">Temp. máx.</th>{{#if @root.locationAllowed}}<th scope="col" class="text-center">Ação</th>{{/if}}</tr>
         </thead>
         <tbody>
           {{#each trips}}
-          <tr><td data-label="Início">{{date start}}</td><td data-label="Duração" class="text-end">{{minutes}} min</td><td data-label="Distância" class="text-end">{{num km 1}} km</td><td data-label="Combustível" class="text-end">{{num liters 2}} L</td><td data-label="km/l" class="text-end">{{num kmPerL 1}}</td><td data-label="Vel. máx." class="text-end">{{num maxSpeed 0}} km/h</td><td data-label="Temp. máx." class="text-end">{{num maxCoolant 0}} °C</td>{{#if @root.locationAllowed}}<td data-label="Ação" class="table-actions text-center"><button class="btn btn-outline-primary btn-sm" type="button" data-show-trip="{{id}}" title="Ver no mapa" aria-label="Ver a viagem no mapa"><i class="fa-solid fa-route" aria-hidden="true"></i></button></td>{{/if}}</tr>
+          <tr><td data-label="Início">{{date start}}</td><td data-label="Duração" class="text-end">{{minutes}} min</td><td data-label="Distância" class="text-end">{{num km 1}} km</td><td data-label="Combustível" class="text-end">{{num liters 2}} L</td><td data-label="Custo" class="text-end">{{#if cost}}{{brl cost}}{{else}}—{{/if}}</td><td data-label="km/l" class="text-end">{{num kmPerL 1}}</td><td data-label="Vel. média" class="text-end">{{#if avgSpeed}}{{num avgSpeed 0}} km/h{{else}}—{{/if}}</td><td data-label="Vel. máx." class="text-end">{{num maxSpeed 0}} km/h</td><td data-label="Temp. máx." class="text-end">{{num maxCoolant 0}} °C</td>{{#if @root.locationAllowed}}<td data-label="Ação" class="table-actions text-center"><button class="btn btn-outline-primary btn-sm" type="button" data-show-trip="{{id}}" title="Ver no mapa" aria-label="Ver a viagem no mapa"><i class="fa-solid fa-route" aria-hidden="true"></i></button></td>{{/if}}</tr>
           {{/each}}
         </tbody>
       </table>
     </div>
     {{else}}
     <div class="empty-state"><i class="fa-solid fa-road" aria-hidden="true"></i><p class="mb-0">Nenhuma viagem enviada ainda. Elas aparecem quando o app grava uma captura com a telemetria remota ligada.</p></div>
+    {{/if}}
+  </section>
+  </div>
+
+  <div class="tab-pane fade" id="pane-reports" role="tabpanel" aria-labelledby="tab-reports" tabindex="0">
+  <section class="stat-panel mb-3" aria-labelledby="report-chart-title">
+    <h2 class="h6 mb-1" id="report-chart-title"><i class="fa-solid fa-chart-column me-1" aria-hidden="true"></i>Consumo por tanque</h2>
+    <p class="small text-body-secondary mb-3">km/l real de cada tanque, entre dois abastecimentos de tanque cheio{{#if report.chart.avg}} · média {{num report.chart.avg 1}} km/l{{/if}}.</p>
+    {{#if report.hasChart}}
+    <div class="report-chart"><canvas id="report-chart" data-report="{{reportJson}}" role="img" aria-label="Gráfico de km/l por tanque"></canvas></div>
+    {{else}}
+    <p class="text-body-secondary mb-0">Aparece a partir de dois abastecimentos de tanque cheio com hodômetro.</p>
+    {{/if}}
+  </section>
+  <section class="stat-panel mb-3" aria-labelledby="report-month-title">
+    <h2 class="h6 mb-1" id="report-month-title"><i class="fa-solid fa-calendar-days me-1" aria-hidden="true"></i>Resumo por mês</h2>
+    <p class="small text-body-secondary mb-3">km das viagens enviadas pelo app (no período que o painel guarda); litros e gasto dos abastecimentos; km/l dos tanques fechados no mês.</p>
+    {{#if report.monthly.length}}
+    <div class="table-responsive">
+      <table class="table table-sm table-striped table-hover table-stack align-middle mb-0">
+        <thead class="table-dark"><tr><th scope="col">Mês</th><th scope="col" class="text-end">Viagens</th><th scope="col" class="text-end">km</th><th scope="col" class="text-end">Litros</th><th scope="col" class="text-end">Gasto</th><th scope="col" class="text-end">km/l</th><th scope="col" class="text-end">R$/km</th></tr></thead>
+        <tbody>
+          {{#each report.monthly}}
+          <tr><td data-label="Mês">{{label}}</td><td data-label="Viagens" class="text-end">{{trips}}</td><td data-label="km" class="text-end">{{num km 0}}</td><td data-label="Litros" class="text-end">{{num liters 1}}</td><td data-label="Gasto" class="text-end">{{brl cost}}</td><td data-label="km/l" class="text-end">{{#if kmPerL}}{{num kmPerL 1}}{{else}}—{{/if}}</td><td data-label="R$/km" class="text-end">{{#if costPerKm}}{{brl costPerKm}}{{else}}—{{/if}}</td></tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p class="text-body-secondary mb-0">Sem viagens nem abastecimentos ainda.</p>
     {{/if}}
   </section>
   </div>
