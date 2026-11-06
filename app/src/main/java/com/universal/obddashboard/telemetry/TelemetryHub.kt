@@ -76,6 +76,8 @@ data class DashboardState(
     val userAlarmsLoaded: Int? = null,
     /** Estado da escuta CAN (ESP32) nesta captura; null se ela não está configurada. */
     val canStatus: String? = null,
+    /** Conexão com o ESP32 nesta captura: connecting, connected ou lost; null antes de tentar ou sem escuta. */
+    val canLink: String? = null,
 ) {
     /** Valor de uma saída, se lido há no máximo [maxAgeMs]. */
     fun value(id: String?, now: Long = System.currentTimeMillis(), maxAgeMs: Long = STALE_AFTER_MS): Double? {

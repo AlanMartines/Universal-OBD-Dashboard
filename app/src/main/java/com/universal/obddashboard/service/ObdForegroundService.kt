@@ -570,6 +570,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                     }
                 }
             },
+            onLink = { link -> TelemetryHub.update { it.copy(canLink = link) } },
             onStatus = { text ->
                 TelemetryHub.update { it.copy(canStatus = text) }
                 recorder?.event("esp32_status") { put("text", text) }
@@ -1069,6 +1070,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             s.value(r.coolantTemp)?.let { "%.0f °C".format(it) },
             s.value(r.batteryVolts)?.let { "%.1f V".format(it) },
             "%.1f km".format(s.tripDistanceKm),
+            "CAN sem conexão".takeIf { s.canLink == CanListenLink.LINK_LOST },
         )
         return parts.joinToString(" • ")
     }

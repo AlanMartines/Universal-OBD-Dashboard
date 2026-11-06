@@ -40,6 +40,11 @@ $('ask-permissions').addEventListener('click', () => bridge.requestPermissions()
 $('toggle').addEventListener('click', () => {
   if (lastState && lastState.running) bridge.stopCapture(); else bridge.startCapture();
 });
+$('can-dialog-go').addEventListener('click', () => $('can-dialog').close());
+$('can-dialog-stop').addEventListener('click', () => {
+  $('can-dialog').close();
+  if (lastState && lastState.running) bridge.stopCapture();
+});
 
 setupGauge();
 Dash.mount($('dash-host'));

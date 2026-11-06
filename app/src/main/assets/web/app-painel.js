@@ -74,6 +74,40 @@ const STATUS = {
   RECONNECTING: ['Reconectando', 'pill pill-warn'], ERROR: ['Erro', 'pill pill-bad'],
 };
 
+/* ---------------------------------------------------------------- Etiqueta CAN e aviso do ESP32 */
+const CAN_PILL = {
+  connected: ['CAN · conectado', 'pill pill-ok'],
+  connecting: ['CAN · conectando', 'pill pill-warn'],
+  lost: ['CAN · sem conexão', 'pill pill-bad'],
+};
+/** Tempo para o ESP32 conectar depois de iniciar antes de perguntar se segue só com o OBD. */
+const CAN_WARN_AFTER_MS = 10000;
+let canWarnedFor = null;
+/** Quando esta tela viu a captura começar (a viagem pode ser retomada, com início antigo). */
+let runningSince = null;
+
+/** Com escuta CAN em uso: duas etiquetas (OBD e CAN); sem ela, só a do OBD, como antes. */
+function renderCanPill(s, status) {
+  if (s.running && runningSince === null) runningSince = Date.now();
+  if (!s.running) runningSince = null;
+  const pill = $('can-pill');
+  pill.hidden = !s.canConfigured;
+  if (!s.canConfigured) return;
+  status.textContent = 'OBD · ' + status.textContent;
+  const [text, cls] = s.running ? (CAN_PILL[s.canLink] || CAN_PILL.connecting) : ['CAN · desligado', 'pill'];
+  pill.textContent = text;
+  pill.className = cls;
+  pill.title = s.canStatus || '';
+
+  const dialog = $('can-dialog');
+  if (s.running && s.canLink === 'connected' && dialog.open) dialog.close();
+  // Uma pergunta por captura: só se o ESP32 não conectou nos primeiros segundos.
+  if (!s.running || canWarnedFor === runningSince || s.canLink === 'connected') return;
+  if (Date.now() - runningSince < CAN_WARN_AFTER_MS) return;
+  canWarnedFor = runningSince;
+  if (!dialog.open && typeof dialog.showModal === 'function') dialog.showModal();
+}
+
 /** Chamado pelo app a cada atualização (ligado em app-main.js, depois de tudo carregado). */
 function onTelemetry(s) {
   if (lastState && lastState.profileId !== s.profileId && s.profileId) {
@@ -106,6 +140,7 @@ function onTelemetry(s) {
   status.className = s.power === 'IDLE_CONFIRMATION' ? 'pill pill-warn' : cls;
   status.title = s.statusMessage || '';
   if (s.diagRecording && s.running) status.textContent += ' ● REC';
+  renderCanPill(s, status);
   const toggle = $('toggle');
   toggle.textContent = s.running ? 'Encerrar' : 'Iniciar';
   toggle.className = 'btn ' + (s.running ? 'btn-danger' : 'btn-primary');

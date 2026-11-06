@@ -19,6 +19,8 @@ class CanListenLink(
     private val onStatus: (String) -> Unit = {},
     /** Cada linha recebida, como chegou (gravação de diagnóstico). */
     private val onRaw: ((String) -> Unit)? = null,
+    /** Estado da conexão: [LINK_CONNECTING], [LINK_CONNECTED] ou [LINK_LOST]. */
+    private val onLink: (String) -> Unit = {},
 ) {
     private val decoder = CanDecoder(signals)
 
@@ -51,13 +53,15 @@ class CanListenLink(
     private suspend fun loop(serial: BluetoothSerialManager, names: List<String>) {
         var waitMs = RETRY_MIN_MS
         while (true) {
-            if (!serial.hasConnectPermission()) { onStatus("Sem permissão de Bluetooth"); return }
+            if (!serial.hasConnectPermission()) { onStatus("Sem permissão de Bluetooth"); onLink(LINK_LOST); return }
             val device = serial.findBondedDevice(names)
-            if (device == null) { onStatus("Adaptador de escuta não pareado"); return }
+            if (device == null) { onStatus("Adaptador de escuta não pareado"); onLink(LINK_LOST); return }
             try {
                 onStatus("Conectando à escuta CAN…")
+                onLink(LINK_CONNECTING)
                 serial.connect(device)
                 onStatus("Escuta CAN conectada")
+                onLink(LINK_CONNECTED)
                 waitMs = RETRY_MIN_MS
                 serial.listenLines(::handle)
             } catch (e: CancellationException) {
@@ -65,6 +69,7 @@ class CanListenLink(
             } catch (e: IOException) {
                 Log.i(TAG, "Escuta CAN: ${e.message}")
                 onStatus("Escuta CAN sem conexão; tentando de novo")
+                onLink(LINK_LOST)
             } finally {
                 serial.close()
             }
@@ -73,10 +78,13 @@ class CanListenLink(
         }
     }
 
-    private companion object {
-        const val TAG = "CanListen"
-        const val RETRY_MIN_MS = 5_000L
-        const val RETRY_MAX_MS = 60_000L
+    companion object {
+        const val LINK_CONNECTING = "connecting"
+        const val LINK_CONNECTED = "connected"
+        const val LINK_LOST = "lost"
+        private const val TAG = "CanListen"
+        private const val RETRY_MIN_MS = 5_000L
+        private const val RETRY_MAX_MS = 60_000L
     }
 }
 
