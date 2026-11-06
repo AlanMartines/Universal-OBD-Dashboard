@@ -174,9 +174,11 @@ export default function securityRoutes(app, {
 
   app.get('/internal/account/sessions', { preValidation: requireOwnReady }, async (request) => {
     const { rows } = await pool.query(
-      `SELECT id, ip, user_agent, created_at, last_seen_at, impersonator_id IS NOT NULL AS support, token_hash = $2 AS current
-         FROM sessions WHERE user_id = $1 AND expires_at > now() ORDER BY last_seen_at DESC LIMIT 100`,
-      [request.session.user.id, request.session.tokenHash],
+      // Expira no que vier antes: o limite da sessão ou o tempo parado sem uso.
+      `SELECT id, ip, user_agent, created_at, last_seen_at, impersonator_id IS NOT NULL AS support, token_hash = $2 AS current,
+              LEAST(expires_at, last_seen_at + make_interval(hours => $3)) AS expires_at
+         FROM sessions WHERE user_id = $1 AND expires_at > now() ORDER BY current DESC, last_seen_at DESC LIMIT 100`,
+      [request.session.user.id, request.session.tokenHash, config.sessionIdleHours],
     );
     return { sessions: rows };
   });

@@ -35,3 +35,29 @@
   grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
   gap: 0.25rem 1rem;
 }
+
+/* ---------- Sessões ativas ----------
+   Um cartão por sessão: ícone do aparelho, nome legível, selo da atual e detalhes com ícones. */
+.session-list { display: flex; flex-direction: column; gap: var(--space-3); padding: 0; margin: 0; list-style: none; }
+.session-card {
+  display: flex; gap: var(--space-3); align-items: center; padding: 1rem 1.25rem;
+  background: var(--app-card-bg); border: 1px solid var(--bs-border-color); border-left: 4px solid transparent;
+  border-radius: var(--app-radius-lg); box-shadow: var(--app-shadow-sm);
+}
+.session-card.is-current { border-left-color: var(--bs-primary); }
+.session-icon { flex: none; width: 2.5rem; font-size: 1.5rem; color: var(--bs-secondary-color); text-align: center; }
+.session-body { flex: 1; min-width: 0; }
+.session-title { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: 1.05rem; }
+.session-badge-current { color: var(--bs-primary-text-emphasis); background: var(--bs-primary-bg-subtle); font-weight: 600; }
+.session-badge-current .fa-circle { font-size: .5em; vertical-align: middle; }
+.session-meta {
+  display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; padding: 0; margin: .35rem 0 0; list-style: none;
+  font-size: .9rem; color: var(--bs-secondary-color);
+}
+.session-meta i { margin-right: .4rem; opacity: .8; }
+.session-action { flex: none; margin: 0; }
+@media (max-width: 575.98px) {
+  .session-card { flex-wrap: wrap; align-items: flex-start; }
+  .session-action { width: 100%; }
+  .session-action .btn { width: 100%; }
+}

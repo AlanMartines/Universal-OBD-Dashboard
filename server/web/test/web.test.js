@@ -6,6 +6,7 @@ import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildApp, checkFormToken, isSameOriginRequest, issueFormToken } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
+import { ago, describeAgent } from '../src/modules/account/user-agent.js';
 // A API real, com banco real: o teste atravessa a mesma fronteira da produção.
 import { ADMIN, KEY, sample, startApi } from '../../api/test/helpers.js';
 
@@ -45,6 +46,24 @@ describe('funções puras', () => {
     assert.throws(() => loadConfig(env));
     assert.throws(() => loadConfig({ ...env, APP_URL: ORIGIN, FORM_SECRET: 'curto' }));
     assert.equal(loadConfig({ ...env, APP_URL: ORIGIN }).cookieSecure, true);
+  });
+});
+
+describe('sessões: nome do aparelho', () => {
+  test('navegador e sistema legíveis; celular reconhecido', () => {
+    assert.deepEqual(describeAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0'), { label: 'Firefox — Windows', mobile: false });
+    assert.deepEqual(describeAgent('Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36'), { label: 'Chrome — Android', mobile: true });
+    assert.deepEqual(describeAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'), { label: 'Safari — iPhone', mobile: true });
+    assert.equal(describeAgent('Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 Chrome/130.0 Safari/537.36 Edg/130.0').label, 'Edge — Windows');
+    assert.equal(describeAgent('').label, 'Aparelho não identificado');
+    assert.equal(describeAgent('curl/8.0').label, 'Navegador');
+  });
+  test('tempo desde o último uso', () => {
+    const now = Date.parse('2026-01-01T12:00:00Z');
+    assert.equal(ago(now - 20000, now), 'agora');
+    assert.equal(ago(now - 60000, now), 'há 1 minuto');
+    assert.equal(ago(now - 5 * 3600000, now), 'há 5 horas');
+    assert.equal(ago(now - 2 * 86400000, now), 'há 2 dias');
   });
 });
 
@@ -512,7 +531,8 @@ describe('fluxo pelo navegador', () => {
 
   test('sessões e modo suporte: faixa visível, cartões pessoais ocultos e retorno', async () => {
     const list = await web.inject({ method: 'GET', url: '/conta/sessoes', headers: { cookie: adminCookie } });
-    assert.match(list.body, /Esta sessão/);
+    assert.match(list.body, /Sessão atual/);
+    assert.match(list.body, /Expira /);
     const admin = await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } });
     const target = /action="(\/admin\/usuarios\/[0-9a-f-]+\/personificar)"/.exec(admin.body)[1];
     const started = await post(target, { _csrf: field(admin.body, '_csrf') }, adminCookie);

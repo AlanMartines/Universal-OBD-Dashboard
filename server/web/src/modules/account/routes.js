@@ -1,3 +1,4 @@
+import { ago, describeAgent } from './user-agent.js';
 import QRCode from 'qrcode';
 import { ApiError, message } from '../../shared/errors.js';
 import { requireUuid } from '../devices/routes.js';
@@ -135,7 +136,8 @@ export default function accountRoutes(app, {
 
   app.get('/conta/sessoes', { preHandler: requireUser }, async (request, reply) => {
     const { sessions } = await api(request, 'GET', '/internal/account/sessions');
-    return reply.view('modules/account/views/sessions.hbs', context(request, { title: 'Sessões ativas', sessions }));
+    const shown = sessions.map((sess) => ({ ...sess, device: describeAgent(sess.user_agent), activeAgo: ago(sess.last_seen_at) }));
+    return reply.view('modules/account/views/sessions.hbs', context(request, { title: 'Sessões ativas', sessions: shown, hasOthers: shown.some((x) => !x.current), pageCss: ['/modules/account/account.css'] }));
   });
 
   app.post('/conta/sessoes/encerrar-outras', { preHandler: requireUser }, async (request, reply) => {
