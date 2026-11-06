@@ -19,6 +19,7 @@ import com.universal.obddashboard.obd.DashboardOverride
 import com.universal.obddashboard.obd.ProfileParser
 import com.universal.obddashboard.obd.UserAlarm
 import com.universal.obddashboard.telemetry.PerformanceTimers
+import com.universal.obddashboard.telemetry.TelemetryHub
 import com.universal.obddashboard.orNull
 import com.universal.obddashboard.service.ObdForegroundService
 import kotlinx.coroutines.launch
@@ -37,6 +38,14 @@ class AppBridge(private val activity: MainActivity) {
 
     @JavascriptInterface
     fun stopCapture() = ObdForegroundService.stop(activity)
+
+    /**
+     * Estado atual, pedido pela tela ao terminar de carregar: o envio automático só acontece quando o
+     * estado muda, e o primeiro pode chegar antes de a página estar pronta (com a captura parada, nada
+     * mais muda e o topo ficava só com "Parado").
+     */
+    @JavascriptInterface
+    fun getState(): String = activity.stateJson(TelemetryHub.state.value).toString()
 
     @JavascriptInterface
     fun requestPermissions() = activity.runOnUiThread { activity.requestMissingPermissions() }

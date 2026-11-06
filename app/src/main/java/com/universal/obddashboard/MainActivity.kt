@@ -367,7 +367,7 @@ class MainActivity : ComponentActivity() {
 
     // ---------------- Serialização para o painel web ----------------
 
-    private fun stateJson(s: DashboardState): JSONObject {
+    internal fun stateJson(s: DashboardState): JSONObject {
         val now = System.currentTimeMillis()
         val readings = JSONObject()
         for ((id, r) in s.readings) {

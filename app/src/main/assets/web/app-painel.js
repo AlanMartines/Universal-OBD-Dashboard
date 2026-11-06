@@ -86,14 +86,15 @@ let canWarnedFor = null;
 /** Quando esta tela viu a captura começar (a viagem pode ser retomada, com início antigo). */
 let runningSince = null;
 
-/** Com escuta CAN em uso: duas etiquetas (OBD e CAN); sem ela, só a do OBD, como antes. */
+/** Etiqueta do OBD sempre; a do CAN só com a escuta em uso (perfil com sinais e ESP32 escolhido). */
 function renderCanPill(s, status) {
   if (s.running && runningSince === null) runningSince = Date.now();
   if (!s.running) runningSince = null;
   const pill = $('can-pill');
+  // O OBD (ELM327) é obrigatório: a etiqueta dele aparece sempre; a do CAN, só com a escuta em uso.
+  status.textContent = 'OBD · ' + status.textContent;
   pill.hidden = !s.canConfigured;
   if (!s.canConfigured) return;
-  status.textContent = 'OBD · ' + status.textContent;
   const [text, cls] = s.running ? (CAN_PILL[s.canLink] || CAN_PILL.connecting) : ['CAN · desligado', 'pill'];
   pill.textContent = text;
   pill.className = cls;
