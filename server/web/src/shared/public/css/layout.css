@@ -50,7 +50,6 @@ html {
   flex-direction: column;
   width: var(--sidebar-width);
   overflow: hidden;
-  font-weight: bold;
   color: var(--bs-body-color);
   background-color: var(--app-dark);
   background-image: url('/assets/images/body/bg02.png');
@@ -259,7 +258,6 @@ html {
 }
 
 .sidebar-nav a.active {
-  font-weight: 600;
   color: var(--bs-primary-text-emphasis);
   background: var(--bs-primary-bg-subtle);
   border-left-color: var(--bs-primary);
