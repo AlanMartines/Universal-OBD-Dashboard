@@ -112,7 +112,7 @@ services:
     <<: *hardening
     image: ghcr.io/project-osrm/osrm-backend:v5.27.1
     profiles: [rotas]
-    command: ["osrm-routed", "--algorithm", "mld", "--max-matching-size", "500", "--max-table-size", "0", "--max-trip-size", "0", "/data/regiao.osrm"]
+    command: ["osrm-routed", "--algorithm", "mld", "--max-matching-size", "500", "/data/regiao.osrm"]
     volumes:
       - ${OSRM_DATA_DIR:-./data/osrm}:/data:ro
     networks: [routing]
