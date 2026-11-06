@@ -6,6 +6,22 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.30] - 2026-11-06
+
+### Alterado
+- **Identificador do app:** passa a ser `br.com.eletroinfotecnologia.universalobd` (domínio da Eletro Info invertido), já pensando na publicação na Play Store.
+
+### Atenção: migração
+Com o identificador novo, o Android trata o app como **outro app**: o APK da v0.9.30 instala ao lado do atual, sem atualizar, e os dados não passam sozinhos. Para migrar:
+1. No app atual, **Ajustes → Backup completo → Gerar backup**.
+2. Instale a v0.9.30 e, nela, **Ajustes → Backup completo → Restaurar backup…** com o arquivo gerado.
+3. Se usa o painel web, pareie o app novo de novo.
+4. Confira as viagens e os ajustes e desinstale o app antigo.
+
+### Painel web (já no ar)
+- Menu lateral com foto maior, "Online" e rodapé com Meus Dados, Sessões, Tema e Sair; sessões em cartões com nome do aparelho e expiração.
+- Meus Dados em `/meus-dados` (o endereço antigo redireciona) e verificação em duas etapas mais clara.
+
 ## [0.9.29] - 2026-11-06
 
 ### Adicionado
