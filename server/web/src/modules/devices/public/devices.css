@@ -223,9 +223,10 @@
 /* ---------- Estado vazio ---------- */
 
 /* Sem transmissão: os valores são da última leitura, não do momento atual. */
+/* Sem transmissão: um pouco mais apagado, mas legível (os valores são os últimos válidos). */
 #pane-overview.is-stale #highlights,
 #pane-overview.is-stale #groups {
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 /* Computador de bordo */
@@ -274,3 +275,14 @@
 .stat-skeleton { height: 7.25rem; border-radius: var(--app-radius-lg); }
 .route-skeleton { height: clamp(280px, 50vh, 520px); }
 .route-skeleton[hidden] { display: none; }
+
+/* Nota no rodapé do cartão: o valor mostrado é o último válido, não o do momento. */
+.stat-note {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--bs-secondary-color);
+}
+.stat-note:empty { display: none; }
+.stat-panel > .stat-note { margin-top: 0.75rem; }
