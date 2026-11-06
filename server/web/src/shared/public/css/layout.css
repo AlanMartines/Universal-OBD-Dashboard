@@ -161,13 +161,14 @@ html {
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 64px;
   overflow: hidden;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--app-on-brand);
   background: var(--bs-primary);
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .sidebar-avatar img {
@@ -182,6 +183,26 @@ html {
 
 .sidebar-user-name {
   font-weight: 600;
+}
+
+/* Sessão aberta: o menu é sempre escuro, então usa o verde vivo do app. */
+.sidebar-online {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  color: var(--app-brand);
+}
+.sidebar-online .fa-circle {
+  font-size: 0.5rem;
+}
+
+.sidebar-footer .sidebar-nav {
+  padding: 0.35rem 0 0;
+}
+.sidebar-footer .sidebar-logout,
+.sidebar-footer .sidebar-logout:hover {
+  color: var(--bs-danger);
 }
 
 .sidebar-scroll {
@@ -292,6 +313,10 @@ html {
   }
   .sidebar-collapsed .sidebar-expand {
     display: inline-flex;
+  }
+  .sidebar-collapsed .sidebar-avatar {
+    width: 40px;
+    height: 48px;
   }
   .sidebar-collapsed .sidebar-user {
     justify-content: center;

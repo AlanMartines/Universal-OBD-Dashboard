@@ -73,6 +73,7 @@ export function createHandlebars() {
 function activePageOf(url) {
   if (url.startsWith('/painel-veiculo')) return 'vehicle';
   if (url.startsWith('/admin')) return 'admin';
+  if (url.startsWith('/conta/sessoes')) return 'sessoes';
   if (url.startsWith('/conta')) return 'conta';
   return 'painel';
 }
