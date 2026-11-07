@@ -1,10 +1,13 @@
 'use strict';
 
 /*
- * Painel de instrumentos com três temas sobre a mesma base de dados:
+ * Painel de instrumentos com seis temas sobre a mesma base de dados:
  *   minimal  barra de RPM segmentada no topo, marcha + velocidade ao centro
  *   capsule  dois mostradores de arco preenchido e uma cápsula central com barras e células
  *   hud      moldura neon com escalas na borda e estrada em perspectiva animada pela velocidade
+ *   sport    conta-giros grande em setores com a marcha ao centro, luzes de troca e células com barras
+ *   classic  dois mostradores redondos com ponteiro e coluna central de dados
+ *   horizon  arco largo de velocidade em degradê, com colunas de dados dos lados
  *
  * Todos mostram as mesmas três telas de seis campos (Estrada, Motor, Viagem), a troca automática
  * de tela, as luzes-espia, o alerta em camada própria e o modo dia/noite. Recebe o mesmo estado
@@ -16,7 +19,7 @@
  */
 window.Dash = (function () {
   const SVGNS = 'http://www.w3.org/2000/svg';
-  const LOOKS = [['minimal', 'Minimal'], ['capsule', 'Cápsula'], ['hud', 'HUD']];
+  const LOOKS = [['minimal', 'Minimal'], ['capsule', 'Cápsula'], ['hud', 'HUD'], ['sport', 'Pista'], ['classic', 'Clássico'], ['horizon', 'Horizonte']];
   const MODES = ['auto', 'day', 'night'];
   // Rótulos distintos: o rodapé também tem o botão "Telas auto" (troca automática de tela).
   const MODE_LABEL = { auto: 'Luz auto', day: 'Luz dia', night: 'Luz noite' };
@@ -298,6 +301,61 @@ window.Dash = (function () {
     },
   };
 
+  /* ================================================================ Degradê verde → vermelho */
+  /** Cor ao longo da escala (0 = início, 1 = fim): verde, amarelo, laranja, vermelho. */
+  const heat = (t) => `hsl(${Math.round(135 * (1 - clamp(t, 0, 1)) ** 1.15)} 82% ${52 - 6 * clamp(t, 0, 1)}%)`;
+  /**
+   * Faixa de arco em degradê: N pedaços com a cor de cada trecho da escala, revelados até o valor por uma
+   * máscara (traço com stroke-dashoffset) que também esmaece de fora (forte) para dentro (fraco).
+   * Atualizar o valor mexe só num atributo da máscara.
+   */
+  function heatArc(parent, defs, id, o) {
+    const g = svg('g', { mask: `url(#${id}m)`, class: o.cls || '' }, parent);
+    const n = o.color ? 1 : 64;
+    for (let i = 0; i < n; i++) {
+      const a0 = o.start + o.sweep * i / n;
+      const a1 = o.start + o.sweep * Math.min(1, (i + 1.6) / n); // leve sobreposição: sem frestas
+      svg('path', { class: 'heat-seg', d: o.arc(o.r, a0, a1), stroke: o.color || heat((i + 0.5) / n), 'stroke-width': o.w }, g);
+    }
+    const cx = o.cx == null ? 100 : o.cx;
+    const cy = o.cy == null ? 100 : o.cy;
+    const fade = svg('radialGradient', { id: id + 'r', gradientUnits: 'userSpaceOnUse', cx, cy, r: o.r + o.w / 2 }, defs);
+    const inner = (o.r - o.w / 2) / (o.r + o.w / 2);
+    svg('stop', { offset: inner.toFixed(3), 'stop-color': '#fff', 'stop-opacity': o.innerOpacity == null ? '.28' : String(o.innerOpacity) }, fade);
+    svg('stop', { offset: '1', 'stop-color': '#fff', 'stop-opacity': '1' }, fade);
+    const mask = svg('mask', { id: id + 'm', maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: o.box ? o.box[0] : 200, height: o.box ? o.box[1] : 200 }, defs);
+    const reveal = svg('path', {
+      d: o.arc(o.r, o.start, o.start + o.sweep), fill: 'none', stroke: `url(#${id}r)`, 'stroke-width': o.w,
+      pathLength: 1000, 'stroke-dasharray': '1000 1000', 'stroke-dashoffset': 1000,
+    }, mask);
+    return { set(frac) { reveal.setAttribute('stroke-dashoffset', (1000 * (1 - clamp(frac, 0, 1))).toFixed(1)); } };
+  }
+
+  /** Arco em qualquer centro. Ângulos em graus, 0 = 3 h, sentido horário; a1 < a0 = anti-horário. */
+  function arcD(cx, cy, r, a0, a1) {
+    const p = (a) => [cx + r * Math.cos(a * Math.PI / 180), cy + r * Math.sin(a * Math.PI / 180)];
+    const [x0, y0] = p(a0);
+    const [x1, y1] = p(a1);
+    return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 ${Math.abs(a1 - a0) > 180 ? 1 : 0} ${a1 > a0 ? 1 : 0} ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+  }
+  const polar = (cx, cy, r, a) => [cx + r * Math.cos(a * Math.PI / 180), cy + r * Math.sin(a * Math.PI / 180)];
+  /** Escala com marcas e números ao longo de um arco (classes iguais às da Cápsula). */
+  function arcScale(parent, o) {
+    for (let v = o.min; v <= o.max + 1e-9; v += o.minor) {
+      const major = Math.abs((v - o.min) / o.major - Math.round((v - o.min) / o.major)) < 1e-6;
+      const a = o.start + o.sweep * (v - o.min) / (o.max - o.min);
+      const red = o.red != null && v >= o.red;
+      const [x0, y0] = polar(o.cx, o.cy, o.r, a);
+      const [x1, y1] = polar(o.cx, o.cy, o.r - (major ? o.tick : o.tick * 0.5), a);
+      svg('line', { class: 'cap-tick' + (major ? ' major' : '') + (red ? ' red' : ''), x1: x0, y1: y0, x2: x1, y2: y1 }, parent);
+      if (major && o.labelR) {
+        const [lx, ly] = polar(o.cx, o.cy, o.labelR, a);
+        const t = svg('text', { class: (o.labelClass || 'cap-label') + (red ? ' red' : ''), x: lx.toFixed(1), y: ly.toFixed(1) }, parent);
+        t.textContent = String(Math.round(v / o.div));
+      }
+    }
+  }
+
   /* ================================================================ Tema: Cápsula */
   // Mostrador de arco preenchido. Ângulos em graus, 0 = 3 h, sentido horário; sweep negativo = anti-horário.
   function arcGauge(hostEl, o) {
@@ -305,9 +363,6 @@ window.Dash = (function () {
     const id = 'g' + (++uid);
     const root = svg('svg', { viewBox: '0 0 200 200', role: 'img', 'aria-label': o.aria }, hostEl);
     const defs = svg('defs', {}, root);
-    const grad = svg('linearGradient', { id: id + 'f', x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
-    svg('stop', { offset: '0', class: 'cap-fill-a' }, grad);
-    svg('stop', { offset: '1', class: 'cap-fill-b' }, grad);
     const pt = (r, a) => { const rad = a * Math.PI / 180; return [100 + r * Math.cos(rad), 100 + r * Math.sin(rad)]; };
     const arc = (r, a0, a1) => {
       const [x0, y0] = pt(r, a0);
@@ -318,7 +373,8 @@ window.Dash = (function () {
     const end = o.start + o.sweep;
     const R = 80;
     svg('path', { class: 'cap-track', d: arc(R, o.start, end) }, root);
-    const fill = svg('path', { class: 'cap-fill', d: arc(R, o.start, end), stroke: `url(#${id}f)`, pathLength: 1000, 'stroke-dasharray': '1000 1000', 'stroke-dashoffset': 1000 }, root);
+    // Faixa até o valor: do verde ao vermelho ao longo da escala, mais forte na borda de fora
+    const fill = heatArc(root, defs, id, { arc, r: R, w: 22, start: o.start, sweep: o.sweep });
     svg('path', { class: 'cap-rim', d: arc(99, o.start, end) }, root);
     if (o.red !== null && o.red < o.max) svg('path', { class: 'cap-red', d: arc(99, ang(o.red), end) }, root);
     for (let v = o.min; v <= o.max + 1e-9; v += o.minor) {
@@ -338,9 +394,7 @@ window.Dash = (function () {
     const sub = svg('text', { class: 'cap-sub', x: 100, y: 140 }, root);
     return {
       set(v) {
-        const frac = v === null ? 0 : (clamp(v, o.min, o.max) - o.min) / (o.max - o.min);
-        fill.setAttribute('stroke-dashoffset', (1000 * (1 - frac)).toFixed(1));
-        fill.classList.toggle('hot', v !== null && o.red !== null && v >= o.red);
+        fill.set(v === null ? 0 : (clamp(v, o.min, o.max) - o.min) / (o.max - o.min));
       },
       text(m, s, hint) {
         if (main.textContent !== m) main.textContent = m;
@@ -557,7 +611,321 @@ window.Dash = (function () {
     },
   };
 
-  const THEMES = { minimal, capsule, hud };
+  /* ================================================================ Tema: Pista */
+  // Conta-giros em setores (cada 250 rpm), marcha no miolo, luzes de troca e células com barra.
+  const sport = {
+    dimLights: true,
+    markup() {
+      return `
+        <div class="sp-tach" data-ui="tachHost"></div>
+        <div class="sp-side">
+          <div class="sp-top">
+            <div class="sp-rpm"><b data-ui="rpmNum">--</b><small>rpm</small></div>
+            <div class="sp-shift" data-ui="shift" aria-hidden="true"></div>
+            <div class="sp-speed"><b data-ui="speedNum">--</b><small>km/h</small></div>
+          </div>
+          <div class="sp-lights" data-ui="lights"></div>
+          <div class="sp-cells">${fields(6)}</div>
+          <div class="sp-bars">${ecoLeaf()}${bar('fuelBar', 'fuel', ['E', 'F'])}${bar('tempBar', 'temp', ['C', 'H'])}</div>
+        </div>
+        ${foot({ trip: true })}`;
+    },
+    build() {
+      const d = dashCfg();
+      const max = rpmTop();
+      const host = ui.tachHost;
+      host.innerHTML = '';
+      const root = svg('svg', { viewBox: '0 0 200 200', role: 'img', 'aria-label': 'Conta-giros' }, host);
+      const start = 135;
+      const sweep = 270;
+      const step = 250;
+      const n = Math.round(max / step);
+      this.wedges = [];
+      for (let i = 0; i < n; i++) {
+        const a0 = start + sweep * i / n + 0.6;
+        const a1 = start + sweep * (i + 1) / n - 0.6;
+        const [ox0, oy0] = polar(100, 100, 95, a0);
+        const [ox1, oy1] = polar(100, 100, 95, a1);
+        const [ix1, iy1] = polar(100, 100, 58, a1);
+        const [ix0, iy0] = polar(100, 100, 58, a0);
+        const rpmAt = (i + 1) * step;
+        const cls = rpmAt > d.rpmRedline ? 'sp-w red' : rpmAt > d.rpmRedline - 1500 ? 'sp-w warm' : 'sp-w';
+        this.wedges.push(svg('path', {
+          class: cls,
+          d: `M ${ox0.toFixed(2)} ${oy0.toFixed(2)} A 95 95 0 0 1 ${ox1.toFixed(2)} ${oy1.toFixed(2)} L ${ix1.toFixed(2)} ${iy1.toFixed(2)} A 58 58 0 0 0 ${ix0.toFixed(2)} ${iy0.toFixed(2)} Z`,
+        }, root));
+      }
+      arcScale(root, { cx: 100, cy: 100, r: 99.5, min: 0, max, major: 1000, minor: 500, tick: 7, labelR: 76, div: 1000, red: d.rpmRedline, start, sweep, labelClass: 'sp-label' });
+      svg('circle', { class: 'sp-hub', cx: 100, cy: 100, r: 50 }, root);
+      this.gear = svg('text', { class: 'sp-gear', x: 100, y: 98 }, root);
+      this.gearSub = svg('text', { class: 'sp-gear-sub', x: 100, y: 134 }, root);
+      this.lit = -1;
+      // Luzes de troca: 10 pontos de (faixa vermelha − 2.500) até a faixa vermelha
+      ui.shift.innerHTML = '';
+      this.dots = [];
+      for (let i = 0; i < 10; i++) this.dots.push(ui.shift.appendChild(el('i', i < 4 ? 'g' : i < 7 ? 'y' : 'r')));
+    },
+    paint(sh) {
+      const n = sh.rpm === null ? 0 : Math.round(clamp(sh.rpm / rpmTop(), 0, 1) * this.wedges.length);
+      if (n === this.lit) return;
+      this.lit = n;
+      this.wedges.forEach((w, i) => w.classList.toggle('on', i < n));
+    },
+    render(c) {
+      big(ui.rpmNum, c.rpm == null ? '--' : num(c.rpm));
+      big(ui.speedNum, num(c.speed));
+      const g = c.gear ? String(c.gear) : c.rpm != null && (c.speed || 0) < 3 ? 'N' : '–';
+      if (this.gear.textContent !== g) this.gear.textContent = g;
+      this.gearSub.textContent = c.shift ? '▲ ' + c.recommended + 'ª' : 'marcha';
+      this.gearSub.classList.toggle('hint', c.shift);
+      const red = dashCfg().rpmRedline;
+      const from = red - 2500;
+      const lit = c.rpm == null ? 0 : clamp(Math.floor((c.rpm - from) / 250) + 1, 0, 10);
+      ui.shift.dataset.state = c.redline ? 'redline' : c.shift ? 'shift' : '';
+      this.dots.forEach((d, i) => d.classList.toggle('on', c.shift || c.redline || i < lit));
+    },
+  };
+
+  /* ================================================================ Tema: Clássico */
+  // Dois mostradores redondos: aro metálico, marcas densas, ponteiro curto junto à borda, número fino no
+  // miolo com a legenda num colchete, arco de progresso à esquerda e faixa vermelha em degradê.
+  function needleGauge(hostEl, o) {
+    hostEl.innerHTML = '';
+    const id = 'n' + (++uid);
+    const root = svg('svg', { viewBox: '0 0 200 200', role: 'img', 'aria-label': o.aria }, hostEl);
+    const defs = svg('defs', {}, root);
+    const metal = svg('linearGradient', { id: id + 'm', x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+    svg('stop', { offset: '0', class: 'cl2-metal-a' }, metal);
+    svg('stop', { offset: '.5', class: 'cl2-metal-b' }, metal);
+    svg('stop', { offset: '1', class: 'cl2-metal-c' }, metal);
+    const red = svg('radialGradient', { id: id + 'r', gradientUnits: 'userSpaceOnUse', cx: 100, cy: 100, r: 92 }, defs);
+    svg('stop', { offset: '.6', class: 'cl2-red-a' }, red);
+    svg('stop', { offset: '1', class: 'cl2-red-b' }, red);
+    // Arcos de moldura por fora
+    svg('path', { class: 'cl2-frame', d: arcD(100, 100, 106, 200, 250) }, root);
+    svg('path', { class: 'cl2-frame', d: arcD(100, 100, 106, 110, 160) }, root);
+    svg('path', { class: 'cl2-frame', d: arcD(100, 100, 106, 290, 340) }, root);
+    svg('path', { class: 'cl2-frame', d: arcD(100, 100, 106, 20, 70) }, root);
+    svg('circle', { class: 'cl2-face', cx: 100, cy: 100, r: 96 }, root);
+    svg('circle', { class: 'cl2-ring', cx: 100, cy: 100, r: 96, stroke: `url(#${id}m)` }, root);
+    const start = 135;
+    const sweep = 270;
+    const ang = (v) => start + sweep * (clamp(v, o.min, o.max) - o.min) / (o.max - o.min);
+    if (o.red != null) {
+      const a0 = ang(o.red);
+      const a1 = start + sweep;
+      const [ox0, oy0] = polar(100, 100, 92, a0);
+      const [ox1, oy1] = polar(100, 100, 92, a1);
+      const [ix1, iy1] = polar(100, 100, 50, a1);
+      const [ix0, iy0] = polar(100, 100, 50, a0);
+      svg('path', { class: 'cl2-red', fill: `url(#${id}r)`, d: `M ${ox0} ${oy0} A 92 92 0 0 1 ${ox1} ${oy1} L ${ix1} ${iy1} A 50 50 0 0 0 ${ix0} ${iy0} Z` }, root);
+    }
+    arcScale(root, { cx: 100, cy: 100, r: 92, min: o.min, max: o.max, major: o.major, minor: o.minor, tick: 8, labelR: o.max / o.div >= 100 ? 70 : 72, div: o.div, red: o.red, start, sweep, labelClass: o.max / o.div >= 100 ? 'cl2-label wide' : 'cl2-label' });
+    svg('circle', { class: 'cl2-inner', cx: 100, cy: 100, r: 48 }, root);
+    // Progresso à esquerda do círculo interno: de baixo para cima
+    const ps = 125;
+    const pw = 120;
+    svg('path', { class: 'cl2-prog-track', d: arcD(100, 100, 44, ps, ps + pw) }, root);
+    const prog = svg('path', { class: 'cl2-prog', d: arcD(100, 100, 44, ps, ps + pw), pathLength: 1000, 'stroke-dasharray': '1000 1000', 'stroke-dashoffset': 1000 }, root);
+    const main = svg('text', { class: 'cl2-main', x: 100, y: 96 }, root);
+    svg('path', { class: 'cl2-bracket', d: 'M 74 146 L 74 132 L 81 125 L 119 125 L 126 132 L 126 146' }, root);
+    const subLabel = svg('text', { class: 'cl2-sub', x: 100, y: 133 }, root);
+    const subValue = svg('text', { class: 'cl2-subval', x: 100, y: 146 }, root);
+    const unit = svg('text', { class: 'cl2-unit', x: 100, y: 178 }, root);
+    unit.textContent = o.unit;
+    const needle = svg('line', { class: 'cl2-needle', x1: 100 + 52, y1: 100, x2: 100 + 92, y2: 100 }, root);
+    return {
+      set(v) { needle.setAttribute('transform', `rotate(${ang(v == null ? o.min : v).toFixed(2)} 100 100)`); },
+      progress(f) { prog.setAttribute('stroke-dashoffset', (1000 * (1 - clamp(f == null ? 0 : f, 0, 1))).toFixed(1)); },
+      text(m, label, value, hint) {
+        if (main.textContent !== m) main.textContent = m;
+        main.classList.toggle('empty', isEmpty(m));
+        subLabel.textContent = label;
+        subValue.textContent = value;
+        subValue.classList.toggle('hint', !!hint);
+      },
+    };
+  }
+  /** Barra curva dos lados da coluna central (tanque à esquerda, temperatura à direita), enche de baixo. */
+  function curvedBar(hostEl, side, o) {
+    hostEl.innerHTML = '';
+    const root = svg('svg', { viewBox: '0 0 44 160', preserveAspectRatio: 'xMidYMid meet', 'aria-hidden': 'true' }, hostEl);
+    const d = side === 'left' ? 'M 34 148 Q 8 80 34 12' : 'M 10 148 Q 36 80 10 12';
+    svg('path', { class: 'cl2-cbar-edge', d: side === 'left' ? 'M 26 152 Q -4 80 26 8' : 'M 18 152 Q 48 80 18 8' }, root);
+    svg('path', { class: 'cl2-cbar-track', d }, root);
+    const fill = svg('path', { class: 'cl2-cbar-fill', d, pathLength: 1000, 'stroke-dasharray': '1000 1000', 'stroke-dashoffset': 1000 }, root);
+    const top = svg('text', { class: 'cl2-cbar-end', x: side === 'left' ? 40 : 4, y: 8 }, root);
+    top.textContent = o.top;
+    const bot = svg('text', { class: 'cl2-cbar-end', x: side === 'left' ? 40 : 4, y: 156 }, root);
+    bot.textContent = o.bottom;
+    return {
+      set(frac, st) {
+        fill.setAttribute('stroke-dashoffset', (1000 * (1 - clamp(frac == null ? 0 : frac, 0, 1))).toFixed(1));
+        fill.dataset.state = st || '';
+      },
+    };
+  }
+  const classic = {
+    dimLights: true,
+    markup() {
+      return `
+        <div class="cl2-g" data-ui="rpmHost"></div>
+        <div class="cl2-mid">
+          <div class="cl2-lights" data-ui="lights"></div>
+          <div class="cl2-body">
+            <div class="cl2-side"><div class="cl2-cbar" data-ui="fuelArc"></div><div class="cl2-cinfo"><em>${icon('fuel')}</em><b data-ui="fuelPct">--</b></div></div>
+            <div class="cl2-list">${fields(6)}</div>
+            <div class="cl2-side cl2-side-r"><div class="cl2-cinfo"><em>${icon('temp')}</em><b data-ui="tempVal">--</b></div><div class="cl2-cbar" data-ui="tempArc"></div></div>
+          </div>
+          <div class="cl2-trip"><span>Trip <b data-ui="tripKm">--</b> km</span>${ecoLeaf()}<span>Total <b data-ui="totalKm">--</b> km</span></div>
+        </div>
+        <div class="cl2-g" data-ui="speedHost"></div>
+        ${foot({})}`;
+    },
+    build() {
+      const d = dashCfg();
+      this.rg = needleGauge(ui.rpmHost, { aria: 'Conta-giros', min: 0, max: rpmTop(), major: 1000, minor: 100, div: 1000, red: d.rpmRedline, unit: '1/min × 1000 RPM' });
+      const top = speedTop();
+      this.sg = needleGauge(ui.speedHost, { aria: 'Velocímetro', min: 0, max: top, major: 20, minor: 5, div: 1, red: null, unit: 'km/h' });
+      const t = thermal();
+      this.fuel = curvedBar(ui.fuelArc, 'left', { top: '100', bottom: '0' });
+      this.temp = curvedBar(ui.tempArc, 'right', { top: String(t ? t.criticalC + 10 : 120), bottom: '40' });
+    },
+    paint(sh) { this.rg.set(sh.rpm); this.sg.set(sh.speed); },
+    render(c) {
+      const d = (state && state.derived) || {};
+      const tps = reading('throttle');
+      this.rg.text(c.rpm == null ? '--' : num(c.rpm), c.shift ? 'trocar' : 'acelerador',
+        c.shift ? '▲ ' + c.recommended + 'ª' : tps == null ? '--' : num(tps, 1) + ' %', c.shift);
+      this.rg.progress(tps == null ? null : tps / 100);
+      const tf = tankFrac(d);
+      this.sg.text(num(c.speed), c.gear ? 'marcha' : 'tanque', c.gear ? c.gear + 'ª' : tf == null ? '--' : num(tf * 100) + ' %');
+      this.sg.progress(tf);
+      const cool = reading('coolant');
+      const band = tempBand(cool)[0];
+      this.fuel.set(tf, reserve(d) ? 'warn' : '');
+      ui.fuelPct.textContent = tf == null ? '--' : num(tf * 100) + '%';
+      this.temp.set(coolantFrac(cool), band === 'bad' || band === 'warn' ? band : '');
+      ui.tempVal.textContent = cool == null ? '--' : num(cool) + '°C';
+    },
+  };
+
+  /* ================================================================ Tema: Horizonte */
+  // Arco largo de RPM em ciano com brilho e números dentro da faixa; faixa vermelha em escada pela borda;
+  // velocidade grande no centro; réguas curvas de tanque e temperatura abraçando o arco; painéis dos lados.
+  const horizon = {
+    dimLights: true,
+    markup() {
+      return `
+        <div class="hz-lights" data-ui="lights"></div>
+        <div class="hz-panel hz-left">${fields(3)}<div class="hz-foot"><small>Trip</small> <b data-ui="tripKm">--</b> km <span class="hz-eco">${ecoLeaf()}</span></div></div>
+        <div class="hz-arc"><div class="hz-svg" data-ui="arcHost"></div></div>
+        <div class="hz-panel hz-right">${fields(3)}<div class="hz-foot"><b data-ui="totalKm">--</b> km</div></div>
+        ${foot({})}`;
+    },
+    build() {
+      const d = dashCfg();
+      const host = ui.arcHost;
+      host.innerHTML = '';
+      const W = 400;
+      const H = 236;
+      const cx = 200;
+      const cy = 218;
+      const R = 150;
+      const BW = 40;
+      const root = svg('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Conta-giros e velocímetro' }, host);
+      const defs = svg('defs', {}, root);
+      const start = 196;
+      const sweep = 148;
+      const id = 'hz' + (++uid);
+      const arc = (r, a0, a1) => arcD(cx, cy, r, a0, a1);
+      const top = rpmTop();
+      const ang = (v) => start + sweep * clamp(v / top, 0, 1);
+      // Faixa, brilho ciano até o valor e bordas finas
+      svg('path', { class: 'hz-band', d: arc(R, start, start + sweep), 'stroke-width': BW }, root);
+      this.fill = heatArc(root, defs, id, { arc, r: R, w: BW, start, sweep, cx, cy, box: [W, H], color: '#21d4ff', cls: 'hz-glow', innerOpacity: 0.35 });
+      svg('path', { class: 'hz-edge', d: arc(R + BW / 2 + 1, start - 2, start + sweep + 2) }, root);
+      svg('path', { class: 'hz-edge thin', d: arc(R - BW / 2 - 4, start - 6, start + sweep + 6) }, root);
+      // Marcas na borda de fora e números dentro da faixa
+      for (let v = 0; v <= top + 1e-9; v += 250) {
+        const a = ang(v);
+        const major = v % 1000 === 0;
+        const [x0, y0] = polar(cx, cy, R + BW / 2 - 1, a);
+        const [x1, y1] = polar(cx, cy, R + BW / 2 - (major ? 9 : 4), a);
+        svg('line', { class: 'hz-tick' + (major ? ' major' : ''), x1: x0, y1: y0, x2: x1, y2: y1 }, root);
+        if (major) {
+          const [lx, ly] = polar(cx, cy, R - 3, a);
+          const t = svg('text', { class: 'hz-label', x: lx.toFixed(1), y: ly.toFixed(1) }, root);
+          t.textContent = String(v / 1000);
+        }
+      }
+      // Faixa vermelha em escada pela borda de fora
+      this.ladder = [];
+      const steps = Math.max(4, Math.round((top - d.rpmRedline) / 125));
+      for (let i = 0; i < steps; i++) {
+        const v0 = d.rpmRedline + (top - d.rpmRedline) * i / steps;
+        const v1 = d.rpmRedline + (top - d.rpmRedline) * (i + 0.8) / steps;
+        this.ladder.push({ v: v0, el: svg('path', { class: 'hz-ladder', d: arc(R + BW / 2 + 8, ang(v0), ang(v1)) }, root) });
+      }
+      // Réguas curvas: tanque (esquerda, de baixo para cima) e temperatura (direita)
+      const tape = (a0, a1, ends, cls) => {
+        const r = R + BW / 2 + 22;
+        svg('path', { class: 'hz-bracket', d: arc(r + 8, a0, a1) }, root);
+        const segs = [];
+        const n = 14;
+        for (let i = 0; i < n; i++) {
+          const b0 = a0 + (a1 - a0) * i / n;
+          const b1 = a0 + (a1 - a0) * (i + 0.6) / n;
+          segs.push(svg('path', { class: 'hz-tape ' + cls, d: arc(r, b0, b1) }, root));
+        }
+        const [ex, ey] = polar(cx, cy, r + 22, a0);
+        const [fx, fy] = polar(cx, cy, r + 22, a1);
+        svg('text', { class: 'hz-tape-end', x: ex.toFixed(1), y: ey.toFixed(1) }, root).textContent = ends[0];
+        svg('text', { class: 'hz-tape-end', x: fx.toFixed(1), y: fy.toFixed(1) }, root).textContent = ends[1];
+        return segs;
+      };
+      this.fuelTape = tape(186, 222, ['E', 'F'], 'fuel');
+      this.tempTape = tape(354, 318, ['C', 'H'], 'temp');
+      this.fuelTxt = svg('text', { class: 'hz-tape-val', x: 34, y: 228 }, root);
+      this.tempTxt = svg('text', { class: 'hz-tape-val', x: 366, y: 228 }, root);
+      // Centro: km/h, velocidade, linha, RPM
+      svg('text', { class: 'hz-unit', x: cx, y: 112 }, root).textContent = 'km/h';
+      this.main = svg('text', { class: 'hz-main', x: cx, y: 150 }, root);
+      svg('line', { class: 'hz-div', x1: cx - 64, y1: 174, x2: cx + 64, y2: 174 }, root);
+      this.rpm = svg('text', { class: 'hz-rpmnum', x: cx, y: 192 }, root);
+      this.rpmSub = svg('text', { class: 'hz-unit', x: cx, y: 222 }, root);
+      this.rpmSub.textContent = 'RPM';
+      // Linha do "capô" embaixo
+      svg('path', { class: 'hz-hood', d: `M -40 ${H} C 90 ${H} 120 ${H - 8} ${cx} ${H - 8} C 280 ${H - 8} 310 ${H} 440 ${H}` }, root);
+    },
+    paint(sh) {
+      const f = sh.rpm == null ? 0 : sh.rpm / rpmTop();
+      this.fill.set(f);
+      this.ladder.forEach((s) => s.el.classList.toggle('on', sh.rpm != null && sh.rpm >= s.v));
+    },
+    render(c) {
+      const m = num(c.speed);
+      if (this.main.textContent !== m) this.main.textContent = m;
+      this.main.classList.toggle('empty', isEmpty(m));
+      this.rpm.textContent = c.rpm == null ? '--' : num(c.rpm);
+      this.rpmSub.textContent = c.shift ? '▲ ' + c.recommended + 'ª' : c.gear ? 'RPM · ' + c.gear + 'ª' : 'RPM';
+      this.rpmSub.classList.toggle('hint', c.shift);
+      const d = (state && state.derived) || {};
+      const tf = tankFrac(d);
+      const nf = tf == null ? 0 : Math.round(clamp(tf, 0, 1) * this.fuelTape.length);
+      this.fuelTape.forEach((s, i) => s.classList.toggle('on', i < nf));
+      this.fuelTxt.textContent = tf == null ? '--' : num(tf * 100) + '%';
+      this.fuelTxt.classList.toggle('warn', reserve(d));
+      const cool = reading('coolant');
+      const cf = coolantFrac(cool);
+      const nt = cf == null ? 0 : Math.round(clamp(cf, 0, 1) * this.tempTape.length);
+      const hot = ['bad', 'warn'].includes(tempBand(cool)[0]);
+      this.tempTape.forEach((s, i) => { s.classList.toggle('on', i < nt); s.classList.toggle('hot', hot); });
+      this.tempTxt.textContent = cool == null ? '--' : num(cool) + '°C';
+    },
+  };
+
+  const THEMES = { minimal, capsule, hud, sport, classic, horizon };
 
   /* ================================================================ Montagem e controle */
   function mount(hostEl) {
