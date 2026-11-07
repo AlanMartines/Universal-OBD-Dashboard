@@ -15,7 +15,7 @@
     intake: 'intake_temp', engineLoad: 'engine_load', timing: 'timing_advance', stft: 'stft_b1', ltft: 'ltft_b1', lambda: 'lambda_v',
     milOn: null, dtcCount: null,
   };
-  var DERIVED = ['fuelLph', 'instantKmPerL', 'tripKmPerL', 'tripFuelUsedL', 'fuelRemainingL', 'realKmPerL', 'recommendedGear', 'estimatedGear', 'estimatedLoadPct', 'tripCost'];
+  var DERIVED = ['fuelLph', 'shiftUp', 'instantKmPerL', 'tripKmPerL', 'tripFuelUsedL', 'fuelRemainingL', 'realKmPerL', 'recommendedGear', 'estimatedGear', 'estimatedLoadPct', 'tripCost'];
   var DEFAULT_DASH = { rpmMax: 8000, rpmRedline: 6500, speedMax: 220, voltageMin: 11, voltageMax: 15 };
 
   var status = document.getElementById('vehicle-status');
@@ -75,6 +75,8 @@
       tripDistanceKm: replay ? replay.km : readings.trip_distance_km,
       tripStartedAt: replay ? replay.t0 : typeof readings['trip.startedAt'] === 'number' ? readings['trip.startedAt'] : null,
       now: replay ? replay.t : undefined,
+      // Total: o do app (hodômetro informado + viagens); na gravação, o odômetro lido do carro
+      totalKm: typeof readings['app.odometer_km'] === 'number' ? readings['app.odometer_km'] : typeof readings.odometer_km === 'number' ? readings.odometer_km : null,
       // Indicador de economia (folha): só com o carro enviando
       computer: { ecoBand: fresh && typeof readings['pc.ecoBand'] === 'number' ? readings['pc.ecoBand'] : null },
     });
@@ -212,10 +214,28 @@
       lastDtcs = Array.isArray(a.dtcs) ? a.dtcs : [];
       lastAlerts = [];
       var speedNow = typeof readings.speed === 'number' ? readings.speed : 0;
-      replay.km = a.km + (k > 0 ? speedNow * (replay.t - a.ms) / 3600000 : 0);
+      var lphNow = typeof derived.fuelLph === 'number' ? derived.fuelLph : 0;
+      var dtH = k > 0 ? (replay.t - a.ms) / 3600000 : 0;
+      replay.km = a.km + speedNow * dtH;
+      fillDerived(replay.km, a.liters + lphNow * dtH, speedNow);
+      lastGps = a.gps && typeof a.gps.speedKmh === 'number' ? { speedKmh: a.gps.speedKmh, accuracyM: a.gps.accuracyM || 5, ageMs: 0 } : null;
       push();
       if (document.activeElement !== seek) seek.value = String(Math.round(1000 * (replay.t - replay.t0) / Math.max(1, replay.t1 - replay.t0)));
       timeText.textContent = clock(replay.t) + ' · ' + span(replay.t - replay.t0) + ' / ' + span(replay.t1 - replay.t0);
+    }
+    /**
+     * Viagens gravadas antes da versão do app que guarda os cálculos: refaz aqui o que dá para refazer
+     * com as leituras (km/l, combustível e média da viagem, litros no tanque). Marcha e folha não.
+     */
+    function fillDerived(km, liters, speed) {
+      var lph = derived.fuelLph;
+      if (derived.instantKmPerL === undefined && typeof lph === 'number' && lph > 0.05 && speed > 3) derived.instantKmPerL = speed / lph;
+      if (derived.tripFuelUsedL === undefined) derived.tripFuelUsedL = liters;
+      if (derived.tripKmPerL === undefined && liters > 0.05 && km > 0.5) derived.tripKmPerL = km / liters;
+      var tank = saved['dash.tankL'];
+      if (derived.fuelRemainingL === undefined && typeof readings.fuel_level_pct === 'number' && typeof tank === 'number') {
+        derived.fuelRemainingL = tank * Math.min(100, Math.max(0, readings.fuel_level_pct)) / 100;
+      }
     }
     function setPlaying(on) {
       if (on && replay.t >= replay.t1) replay.t = replay.t0;
@@ -243,13 +263,17 @@
       .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
       .then(function (data) {
         var km = 0;
+        var liters = 0;
         var prev = null;
         replay.frames = (data.samples || []).map(function (s) {
           var ms = new Date(s.ts).getTime();
           var metrics = s.metrics || {};
-          // Distância da viagem somada pela velocidade, como na aba Viagens
-          if (prev && ms - prev.ms <= GAP_MS && typeof prev.metrics.speed === 'number') km += prev.metrics.speed * (ms - prev.ms) / 3600000;
-          prev = { ms: ms, metrics: metrics, dtcs: s.dtcs, km: km };
+          // Distância e combustível da viagem somados no tempo, como na aba Viagens
+          if (prev && ms - prev.ms <= GAP_MS) {
+            if (typeof prev.metrics.speed === 'number') km += prev.metrics.speed * (ms - prev.ms) / 3600000;
+            if (typeof prev.metrics['derived.fuelLph'] === 'number') liters += prev.metrics['derived.fuelLph'] * (ms - prev.ms) / 3600000;
+          }
+          prev = { ms: ms, metrics: metrics, dtcs: s.dtcs, gps: s.gps, km: km, liters: liters };
           return prev;
         }).filter(function (f) { return Number.isFinite(f.ms); });
         if (!replay.frames.length) throw new Error('vazia');

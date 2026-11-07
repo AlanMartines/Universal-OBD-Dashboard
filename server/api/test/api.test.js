@@ -364,6 +364,7 @@ describe('API', () => {
       assert.equal(replay.samples[0].metrics.rpm, 2000);
       assert.ok(new Date(replay.samples[30].ts) > new Date(replay.samples[0].ts));
       assert.deepEqual(replay.samples[30].dtcs, ['P0171']);
+      assert.ok(replay.samples.every((s) => !s.gps || (s.gps.lat === undefined && s.gps.lon === undefined)), 'sem posição');
       assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}/trips/999/samples`, { token: alice })).statusCode, 404);
       assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}/trips/abc/samples`, { token: alice })).statusCode, 400);
       assert.notEqual((await internal(app, 'GET', `/internal/devices/${dev.id}/trips/77/samples`, { token: bob })).statusCode, 200, 'outro usuário não vê');

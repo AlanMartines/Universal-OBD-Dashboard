@@ -70,6 +70,7 @@ import com.universal.obddashboard.telemetry.ActiveAlert
 import com.universal.obddashboard.telemetry.CapturePolicy
 import com.universal.obddashboard.telemetry.ConnectionStatus
 import com.universal.obddashboard.telemetry.DashboardState
+import com.universal.obddashboard.telemetry.DerivedMetrics
 import com.universal.obddashboard.telemetry.GpsFix
 import com.universal.obddashboard.telemetry.PowerState
 import com.universal.obddashboard.telemetry.TelemetryEngine
@@ -632,6 +633,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                             "derived.estimatedLoadPct" to d.estimatedLoadPct,
                             "derived.tripCost" to d.tripCost,
                             "derived.estimatedGear" to d.estimatedGear?.toDouble(),
+                            "derived.shiftUp" to if (d.shiftUp) 1.0 else 0.0,
                             "trip_distance_km" to s.tripDistanceKm,
                             "trip.startedAt" to s.tripStartedAt?.toDouble(),
                             "dash.rpmMax" to dash.rpmMax,
@@ -674,6 +676,10 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         for ((id, reading) in s.readings) {
             if (id !in roleIds && now - reading.timestamp <= DashboardState.STALE_AFTER_MS) extras.put(id, reading.value)
         }
+        // Cálculos do app junto com as leituras: o painel web reproduz a viagem como ela apareceu aqui.
+        for ((id, value) in derivedForHistory(s.derived)) {
+            if (value != null && value.isFinite()) extras.put(id, value)
+        }
         val gps = s.gps?.takeIf { now - it.timestamp < 5000 }
         return TelemetryLogEntity(
             tripId = tripId,
@@ -698,6 +704,20 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             extraJson = if (extras.length() > 0) extras.toString() else null,
         )
     }
+
+    /** Valores calculados que vão no histórico da viagem (mesmos nomes da leitura ao vivo). */
+    private fun derivedForHistory(d: DerivedMetrics): Map<String, Double?> = mapOf(
+        "derived.instantKmPerL" to d.instantKmPerL,
+        "derived.tripKmPerL" to d.tripKmPerL,
+        "derived.tripFuelUsedL" to d.tripFuelUsedL,
+        "derived.fuelRemainingL" to d.fuelRemainingL,
+        "derived.recommendedGear" to d.recommendedGear?.toDouble(),
+        "derived.estimatedGear" to d.estimatedGear?.toDouble(),
+        "derived.shiftUp" to if (d.shiftUp) 1.0 else 0.0,
+        "derived.estimatedLoadPct" to d.estimatedLoadPct,
+        "derived.tripCost" to d.tripCost,
+        "pc.ecoBand" to d.ecoBand?.toDouble(),
+    )
 
     /**
      * Alerta quando o carro anda sem posição de GPS (na viagem de teste o GPS parou em 24 s e

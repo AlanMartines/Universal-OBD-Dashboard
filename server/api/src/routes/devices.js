@@ -191,8 +191,8 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     if (!total) throw fail(404, 'not_found');
     const step = Math.max(1, Math.ceil(total / REPLAY_MAX_SAMPLES));
     const { rows } = await pool.query(
-      `SELECT ts, metrics, dtcs FROM (
-         SELECT ts, metrics, coalesce(dtcs, '{}') AS dtcs, row_number() OVER (ORDER BY ts) AS n, count(*) OVER () AS c
+      `SELECT ts, metrics, dtcs, gps_speed, gps_accuracy FROM (
+         SELECT ts, metrics, coalesce(dtcs, '{}') AS dtcs, gps_speed, gps_accuracy, row_number() OVER (ORDER BY ts) AS n, count(*) OVER () AS c
            FROM telemetry_samples WHERE device_id = $1 AND trip_id = $2::bigint
        ) t WHERE n % $3 = 1 OR $3 = 1 OR n = c ORDER BY ts`,
       [device.id, tripId, step],
@@ -200,7 +200,11 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     return {
       trip: { id: Number(tripId), start: rows[0].ts, end: rows[rows.length - 1].ts, total },
       step,
-      samples: rows.map((r) => ({ ts: r.ts, metrics: r.metrics, dtcs: r.dtcs })),
+      // Do GPS só a velocidade e a precisão (sem posição): servem ao campo "Vel. GPS".
+      samples: rows.map((r) => ({
+        ts: r.ts, metrics: r.metrics, dtcs: r.dtcs,
+        gps: r.gps_speed === null ? null : { speedKmh: r.gps_speed, accuracyM: r.gps_accuracy },
+      })),
     };
   });
 
