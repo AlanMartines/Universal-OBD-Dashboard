@@ -357,6 +357,16 @@ describe('API', () => {
       assert.ok(Math.abs(trip.liters - 0.06) < 1e-6, String(trip.liters));
       assert.equal(trip.maxCoolant, 90);
       assert.equal(trip.minutes, 1);
+      // Leituras da viagem para reproduzir no painel, em ordem
+      const replay = (await internal(app, 'GET', `/internal/devices/${dev.id}/trips/77/samples`, { token: alice })).json();
+      assert.equal(replay.samples.length, 31);
+      assert.equal(replay.trip.total, 31);
+      assert.equal(replay.samples[0].metrics.rpm, 2000);
+      assert.ok(new Date(replay.samples[30].ts) > new Date(replay.samples[0].ts));
+      assert.deepEqual(replay.samples[30].dtcs, ['P0171']);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}/trips/999/samples`, { token: alice })).statusCode, 404);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}/trips/abc/samples`, { token: alice })).statusCode, 400);
+      assert.notEqual((await internal(app, 'GET', `/internal/devices/${dev.id}/trips/77/samples`, { token: bob })).statusCode, 200, 'outro usuário não vê');
       const { faults } = (await internal(app, 'GET', `/internal/devices/${dev.id}/faults`, { token: alice })).json();
       const p0171 = faults.find((f) => f.code === 'P0171');
       assert.equal(p0171.readings, 2);

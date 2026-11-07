@@ -218,10 +218,12 @@ window.Dash = (function () {
     if (rpm < 100 && v < 11.8) return ['warn', 'bateria fraca'];
     return [null, rpm > 600 ? 'carregando' : 'motor desligado'];
   }
+  /** Hora do quadro: a da gravação quando o painel reproduz uma viagem (state.now), senão a do relógio. */
+  const nowOf = (s) => (s && typeof s.now === 'number' ? s.now : Date.now());
   /** Duração da viagem; sem captura em andamento não há relógio correndo (antes seguia contando). */
   function elapsed(s) {
     if (!s.tripStartedAt || !s.running) return '--';
-    const m = Math.max(0, Math.floor((Date.now() - s.tripStartedAt) / 60000));
+    const m = Math.max(0, Math.floor((nowOf(s) - s.tripStartedAt) / 60000));
     return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
   }
 
@@ -246,7 +248,6 @@ window.Dash = (function () {
       <button type="button" class="cl-chip" id="dash-autopage" data-ui="autoBtn" title="Trocar de tela sozinho: Viagem quando parado">Telas auto</button>
       <span class="cl-spacer"></span>
       ${opts.tint ? '<button type="button" class="cl-chip" id="dash-tint" data-ui="tintBtn" title="Cor dos mostradores"></button>' : ''}
-      ${opts.trip ? '<span class="cl-trip"><b data-ui="tripKm">--</b> km · <b data-ui="tripTime">--</b></span>' : ''}
       <button type="button" class="cl-chip" id="dash-look" data-ui="lookBtn" title="Trocar tema"></button>
       <button type="button" class="cl-chip" id="dash-mode" data-ui="modeBtn" title="Dia / noite"></button>
     </div>`;
@@ -265,10 +266,10 @@ window.Dash = (function () {
           <div class="cl-gear" data-ui="gear"><b data-ui="gearNum">–</b><small data-ui="gearSub">marcha</small></div>
           <span class="cl-divider"></span>
           <div class="cl-speed"><b data-ui="speedNum">--</b><small>km/h</small></div>
-          <div class="cl-eco">${ecoLeaf()}</div>
+          <div class="cl-eco"><span class="in-trip">Viagem <b data-ui="tripKm">--</b><em>km</em></span>${ecoLeaf()}<span class="in-trip">Tempo <b data-ui="tripTime">--</b></span></div>
         </div>
         <div class="cl-side cl-right">${fields(3)}</div>
-        ${foot({ lights: true, trip: true })}`;
+        ${foot({ lights: true })}`;
     },
     build() {
       const d = dashCfg();
@@ -635,8 +636,9 @@ window.Dash = (function () {
           <div class="sp-lights" data-ui="lights"></div>
           <div class="sp-cells">${fields(6)}</div>
           <div class="sp-bars">${ecoLeaf()}${bar('fuelBar', 'fuel', ['E', 'F'])}${bar('tempBar', 'temp', ['C', 'H'])}</div>
+          <div class="sp-trip"><span class="in-trip">Viagem <b data-ui="tripKm">--</b><em>km</em></span><span class="in-trip">Tempo <b data-ui="tripTime">--</b></span></div>
         </div>
-        ${foot({ trip: true })}`;
+        ${foot({})}`;
     },
     build() {
       const d = dashCfg();
@@ -1075,7 +1077,7 @@ window.Dash = (function () {
 
   function autoSwitch() {
     const speed = reading('speed');
-    const now = Date.now();
+    const now = nowOf(state);
     if (speed !== null && speed < 1) {
       if (stoppedSince === null) stoppedSince = now;
       if (autoPage && page !== 'trip' && now - stoppedSince > STOP_TO_TRIP_MS) { page = 'trip'; applyPage(); }
@@ -1148,7 +1150,7 @@ window.Dash = (function () {
     const streaming = s.connection === 'STREAMING';
     ui.status.dataset.state = streaming ? 'ok' : s.connection === 'ERROR' ? 'bad' : s.running ? 'warn' : '';
     ui.statusText.textContent = streaming
-      ? (s.power === 'IDLE_CONFIRMATION' ? 'Parado: encerrar captura?' : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
+      ? (s.power === 'IDLE_CONFIRMATION' ? 'Parado: encerrar captura?' : new Date(nowOf(s)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
       : (s.statusMessage || 'Desconectado');
     ui.rec.hidden = !(s.diagRecording && s.running);
     if (ui.tripKm) ui.tripKm.textContent = num(s.tripDistanceKm, 1);

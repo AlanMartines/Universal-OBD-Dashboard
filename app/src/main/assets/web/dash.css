@@ -100,8 +100,11 @@
 .cl-chip { border: 1px solid var(--c-line); }
 .cl-chip[aria-pressed="true"] { color: var(--c-accent); border-color: var(--c-accent); }
 .cl-tab:focus-visible, .cl-chip:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 1px; }
-.cl-trip { white-space: nowrap; }
-@container dash (max-width: 560px) { .cl-trip, .cl-rec, #dash-autopage { display: none; } }
+@container dash (max-width: 560px) { .cl-rec, #dash-autopage { display: none; } }
+/* Viagem e tempo dentro do tema (Minimal e Pista) */
+.in-trip { font-size: clamp(10px, 2.8cqmin, 18px); color: var(--c-muted); text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+.in-trip b { color: var(--c-text); font-family: var(--f-num); margin-left: .3em; }
+.in-trip em { font-style: normal; text-transform: none; margin-left: .2em; }
 
 /* Luzes-espia */
 .cl-lights, .cap-lights, .hud-lights, .sp-lights, .cl2-lights, .hz-lights { display: flex; gap: 1.6cqmin; align-items: center; }
@@ -328,7 +331,7 @@
 .eco-leaf[data-band="0"] { color: var(--c-ok); opacity: 1; }
 .eco-leaf[data-band="1"] { color: var(--c-text); opacity: .85; }
 .eco-leaf[data-band="2"] { color: var(--c-bad); opacity: 1; }
-.cl-eco { position: absolute; left: 50%; bottom: 1.5cqmin; transform: translateX(-50%); font-size: 4.5cqmin; }
+.cl-eco { position: absolute; left: 50%; bottom: 1.5cqmin; transform: translateX(-50%); font-size: 4.5cqmin; display: flex; align-items: center; gap: 3cqmin; }
 .cap-bars .eco-leaf, .hud-tab-bot .eco-leaf { font-size: 1.1em; }
 @media (prefers-reduced-motion: reduce) { .eco-leaf { transition: none; } }
 
@@ -380,6 +383,7 @@
 .sp-cells .cl-field { padding: 1.4cqmin 1.6cqmin; background: color-mix(in srgb, var(--c-seg-off) 60%, transparent); border-radius: 4px; }
 .sp-cells .cl-field-value { font-size: clamp(15px, 5.4cqmin, 40px); }
 .sp-cells .cl-fbar { display: block !important; }
+.sp-trip { display: flex; justify-content: space-between; gap: 2cqmin; padding-top: 1.4cqmin; border-top: 1px solid var(--c-line); }
 .sp-bars { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); gap: 3cqmin; align-items: center; }
 .cluster[data-look="sport"] .cl-light:not([data-on]) { opacity: .35; }
 
@@ -514,3 +518,8 @@
 .hz-foot b { font-family: var(--f-label); font-weight: 400; font-size: 1.3em; }
 .cluster[data-look="horizon"] .cl-light:not([data-on]) { opacity: .35; }
 .cluster[data-look="sport"] .cl-alert, .cluster[data-look="classic"] .cl-alert, .cluster[data-look="horizon"] .cl-alert { top: 4cqh; }
+/* Minimal em pé: viagem, folha e tempo numa linha própria abaixo da marcha e da velocidade */
+@container dash (orientation: portrait) {
+  .cluster[data-look="minimal"] .cl-center { flex-wrap: wrap; align-content: center; row-gap: 2cqmin; }
+  .cluster[data-look="minimal"] .cl-eco { position: static; transform: none; flex-basis: 100%; justify-content: center; }
+}

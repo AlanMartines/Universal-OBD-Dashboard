@@ -154,6 +154,13 @@ export default function devicesRoutes(app, {
     return api(request, 'GET', `/internal/devices/${requireUuid(request)}/route?${params}`);
   });
 
+  // Leituras de uma viagem para a simulação no Painel do veículo.
+  app.get('/dispositivos/:id/viagens/:viagem/leituras', { preHandler: requireUser }, async (request) => {
+    const trip = String(request.params.viagem ?? '');
+    if (!/^[0-9]{1,15}$/.test(trip)) throw new ApiError(400, 'invalid_request');
+    return api(request, 'GET', `/internal/devices/${requireUuid(request)}/trips/${trip}/samples`);
+  });
+
   app.get('/dispositivos/:id/historico', { preHandler: requireUser }, async (request) => {
     const params = new URLSearchParams({ metric: String(request.query.metric ?? '') });
     if (request.query.minutes !== undefined) params.set('minutes', String(request.query.minutes));
