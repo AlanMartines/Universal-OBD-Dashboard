@@ -496,10 +496,8 @@
 <path d="M31.35,36.27 L31.35,38.81" fill="none" stroke="#1976d2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M36.43,56.59 L38.97,56.59" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M36.43,56.59 L38.97,56.59" fill="none" stroke="#263238" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M3.41,59.13 L5.95,59.13" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M3.41,59.13 L5.95,59.13" fill="none" stroke="#d32f2f" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M28.81,59.13 L28.81,56.59 L28.81,56.59 L31.35,56.59" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M28.81,59.13 L28.81,56.59 L28.81,56.59 L31.35,56.59" fill="none" stroke="#7b1fa2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M31.35,64.21 L31.35,61.67 L31.35,59.13 L31.35,56.59" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M31.35,64.21 L31.35,61.67 L31.35,59.13 L31.35,56.59" fill="none" stroke="#7b1fa2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M46.59,38.81 L46.59,41.35 L46.59,43.89 L46.59,46.43 L46.59,48.97 L46.59,51.51 L46.59,54.05 L46.59,56.59 L46.59,59.13 L46.59,61.67 L46.59,64.21" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M46.59,38.81 L46.59,41.35 L46.59,43.89 L46.59,46.43 L46.59,48.97 L46.59,51.51 L46.59,54.05 L46.59,56.59 L46.59,59.13 L46.59,61.67 L46.59,64.21" fill="none" stroke="#1976d2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <rect x="4.65" y="7.03" width="38.16" height="2.6" rx="0.3" fill="#212121"/>
@@ -640,9 +638,9 @@
 <circle cx="41.51" cy="56.59" r="1.15" fill="none" stroke="#d32f2f" stroke-width="0.4"/>
 <rect x="39.87" y="54.14" width="3.28" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="41.51" y="54.99" font-size="1.0" fill="#d32f2f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OUT+</text>
-<circle cx="3.41" cy="59.13" r="1.15" fill="none" stroke="#d32f2f" stroke-width="0.4"/>
-<rect x="0.87" y="56.55" width="5.08" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="3.41" y="57.53" font-size="1.15" fill="#d32f2f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OBD 16</text>
+<circle cx="31.35" cy="64.21" r="1.15" fill="none" stroke="#7b1fa2" stroke-width="0.4"/>
+<rect x="30.24" y="65.63" width="2.23" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="31.35" y="66.61" font-size="1.15" fill="#7b1fa2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">16</text>
 <circle cx="41.51" cy="64.21" r="1.15" fill="none" stroke="#263238" stroke-width="0.4"/>
 <rect x="40.75" y="65.63" width="1.51" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="41.51" y="66.61" font-size="1.15" fill="#263238" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">4</text>
@@ -652,12 +650,6 @@
 <circle cx="46.59" cy="64.21" r="1.15" fill="none" stroke="#1976d2" stroke-width="0.4"/>
 <rect x="45.48" y="65.63" width="2.23" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="46.59" y="66.61" font-size="1.15" fill="#1976d2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">14</text>
-<text x="37.47" y="67.11" font-size="1.2" fill="#5d4037" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">cabo OBD:</text>
-<rect x="4.95" y="58.13" width="2" height="2" fill="none" stroke="#7b1fa2" stroke-width="0.35"/>
-<rect x="4.95" y="63.21" width="2" height="2" fill="none" stroke="#7b1fa2" stroke-width="0.35"/>
-<rect x="27.81" y="58.13" width="2" height="2" fill="none" stroke="#7b1fa2" stroke-width="0.35"/>
-<rect x="27.81" y="63.21" width="2" height="2" fill="none" stroke="#7b1fa2" stroke-width="0.35"/>
-<rect x="7.15" y="61.15" width="17.91" height="1.38" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="16.11" y="62.17" font-size="1.2" fill="#7b1fa2" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">clipes do porta-fusível</text>
+<text x="29.55" y="67.11" font-size="1.2" fill="#5d4037" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">cabo OBD:</text>
 <text x="25.00" y="73.50" font-size="1.7" fill="#5d4037" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">ETAPA 1 · vista de cima, antes de encaixar o ESP32 e os módulos</text>
 </svg>

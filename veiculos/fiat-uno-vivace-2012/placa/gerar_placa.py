@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gera a placa ilhada 5 x 7 cm da escuta CAN do Uno Vivace: ESP32 DevKit V1 + TJA1050 + RT8272.
+"""Gera a placa ilhada 5 x 7 cm (18 x 24 furos, tamanho padrão) da escuta CAN do Uno Vivace: ESP32 DevKit V1 + TJA1050 + RT8272.
 
 Desenhos (SVG), na mesma pasta deste script:
 - esquema.svg: ligação elétrica em blocos;
@@ -47,8 +47,8 @@ RES = [
 # Ilhas de ligação dos módulos e do cabo
 TJA_PADS = {'RX': (11, 14), 'CANH': (12, 14), 'GND': (15, 14), 'VCC': (16, 14), 'TX': (17, 14), 'CANL': (18, 14)}
 BUCK_PADS = {'IN+': (12, 21), 'IN-': (14, 21), 'OUT-': (15, 21), 'OUT+': (16, 21)}
-OBD_PADS = {'16': (1, 22), '4': (16, 24), '5': (17, 24), '14': (18, 24)}
-FUSE = {'a': [(2, 22), (2, 24)], 'b': [(11, 22), (11, 24)]}
+OBD_PADS = {'16': (12, 24), '4': (16, 24), '5': (17, 24), '14': (18, 24)}
+# Fusível de 1 A no fio do pino 16, fora da placa, perto do conector OBD
 
 # Trilhas de solda (lado de baixo): fio estanhado passando pelos furos, sempre em linha reta
 TRACKS = [
@@ -62,8 +62,7 @@ TRACKS = [
     ('RX', YEL, [(11, 13), (11, 14)]),
     ('CANH', BLU, [(12, 13), (12, 14)]),
     ('GND → IN−', BLK, [(14, 21), (15, 21)]),
-    ('12 V', RED, [(1, 22), (2, 22)]),
-    ('12 V com fusível', PUR, [(11, 22), (11, 21), (12, 21)]),
+    ('12 V com fusível', PUR, [(12, 24), (12, 21)]),
     ('CAN-L', BLU, [(18, 14), (18, 24)]),
 ]
 # Fios isolados por cima da placa, passando embaixo do ESP32
@@ -226,16 +225,6 @@ def header_footprint(s):
             s.text(x, yy, n, 1.0, col, weight='bold' if n in ESP_USED else 'normal')
 
 
-def fuse_art(s):
-    (xa, ya), (xb, _) = hp(*FUSE['a'][0]), hp(*FUSE['b'][0])
-    _, yc = hp(2, 23)
-    for x in (xa, xb):
-        s.add(f'<rect x="{x - 2.0:.2f}" y="{yc - 3.3:.2f}" width="4.0" height="6.6" rx="0.6" fill="#cfd8dc" stroke="#78909c" stroke-width="0.25"/>')
-    s.add(f'<rect x="{xa:.2f}" y="{yc - 2.5:.2f}" width="{xb - xa:.2f}" height="5" rx="2.4" fill="#e3f2fd" stroke="#90a4ae" stroke-width="0.25" opacity=".95"/>')
-    s.add(f'<line x1="{xa + 1:.2f}" y1="{yc:.2f}" x2="{xb - 1:.2f}" y2="{yc:.2f}" stroke="#78909c" stroke-width="0.25"/>')
-    s.text((xa + xb) / 2, yc + 0.55, 'fusível 1 A · 5×20 mm', 1.4, PUR, weight='bold')
-
-
 def tja_art(s):
     c0, r0, c1, r1 = TJA_BOX
     x0, y0 = hp(c0, r0)
@@ -295,12 +284,8 @@ def view_top(stage, scale):
         for name, (c, r) in BUCK_PADS.items():
             pad_mark(s, c, r, {'IN+': PUR, 'IN-': BLK, 'OUT-': BLK, 'OUT+': RED}[name], name, 'below' if name == 'OUT-' else 'above', size=1.0)
         for pin, (c, r) in OBD_PADS.items():
-            pad_mark(s, c, r, {'16': RED, '4': BLK, '5': BLK, '14': BLU}[pin], pin if pin != '16' else 'OBD 16', 'below' if pin != '16' else 'above')
-        s.text(hp(15, 24)[0] - 1.5, hp(15, 24)[1] + 2.9, 'cabo OBD:', 1.2, '#5d4037', anchor='end')
-        for c, r in FUSE['a'] + FUSE['b']:
-            x, y = hp(c, r)
-            s.add(f'<rect x="{x - 1.0:.2f}" y="{y - 1.0:.2f}" width="2" height="2" fill="none" stroke="{PUR}" stroke-width="0.35"/>')
-        s.text(hp(6, 23)[0], hp(6, 23)[1] + 0.5, 'clipes do porta-fusível', 1.2, PUR, bg=True)
+            pad_mark(s, c, r, {'16': PUR, '4': BLK, '5': BLK, '14': BLU}[pin], pin, 'below')
+        s.text(hp(12, 24)[0] - 1.8, hp(12, 24)[1] + 2.9, 'cabo OBD:', 1.2, '#5d4037', anchor='end')
         s.text(W / 2, H + 3.5, 'ETAPA 1 · vista de cima, antes de encaixar o ESP32 e os módulos', 1.7, '#5d4037', weight='bold')
     else:
         header_footprint(s)
@@ -308,21 +293,16 @@ def view_top(stage, scale):
             resistor(s, a, b, n, show_label=False)
         for name, col, pts, _ in JUMPERS:
             jumper(s, pts, col, name)
-        fuse_art(s)
         buck_art(s)
         tja_art(s)
         esp32_art(s)
         for pin, (c, r) in OBD_PADS.items():
             x, y = hp(c, r)
-            col = {'16': RED, '4': BLK, '5': BLK, '14': BLU}[pin]
-            # fio do cabo OBD saindo da placa
-            if pin == '16':
-                s.add(f'<path d="M{x:.2f},{y:.2f} L-4,{y:.2f}" stroke="#37474f" stroke-width="1.1"/><path d="M{x:.2f},{y:.2f} L-4,{y:.2f}" stroke="{col}" stroke-width="0.75"/>')
-                s.text(-4.4, y - 1.0, 'OBD 16 (+12 V)', 1.2, col, anchor='start', weight='bold')
-            else:
-                s.add(f'<path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="#37474f" stroke-width="1.1"/><path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="{col}" stroke-width="0.75"/>')
-                s.text(x, H + 5.4, pin, 1.3, col, weight='bold')
-        s.text(hp(17, 24)[0] - 9, H + 5.4, 'cabo OBD:', 1.3, '#5d4037', anchor='end')
+            col = {'16': PUR, '4': BLK, '5': BLK, '14': BLU}[pin]
+            # fio do cabo OBD saindo da placa (o 16 já vem com o fusível no fio)
+            s.add(f'<path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="#37474f" stroke-width="1.1"/><path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="{col}" stroke-width="0.75"/>')
+            s.text(x, H + 5.4, pin, 1.3, col, weight='bold')
+        s.text(hp(12, 24)[0] - 2, H + 5.4, 'cabo OBD:', 1.3, '#5d4037', anchor='end')
         s.text(W / 2, -3.4, 'ETAPA 2 · placa montada, vista de cima', 1.7, '#5d4037', weight='bold')
     return s.svg()
 
@@ -338,7 +318,6 @@ def view_bottom(scale):
         legs |= {a, b}
     for row in (2, 12):
         legs |= {(c, row) for c in range(2, 17)}
-    legs |= set(FUSE['a'] + FUSE['b'])
     for c, r in legs:
         x, y = hp(c, r)
         s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')
@@ -348,8 +327,8 @@ def view_bottom(scale):
             s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.7" fill="none" stroke="{col}" stroke-width="0.35"/>')
             s.text(X(x) + (1.6 if c < 12 else -1.6), y + 0.45, name, 1.05, '#37474f', anchor='middle')
     # nomes das trilhas
-    labels = {'GND': (15, 18.5, BLK), '5 V': (16, 17.5, RED), 'CAN-L': (18, 19.5, BLU), '12 V com fusível': (12, 22.4, PUR),
-              '12 V': (1.5, 21, RED), 'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG)}
+    labels = {'GND': (15, 18.5, BLK), '5 V': (16, 17.5, RED), 'CAN-L': (18, 19.5, BLU), '12 V com fusível': (12, 22.6, PUR),
+              'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG)}
     for t, (c, r, col) in labels.items():
         x, y = MX + (c - 1) * P, MY + (r - 1) * P
         s.text(X(x), y + 0.5, t, 1.25, col, weight='bold', bg=True)
@@ -393,7 +372,7 @@ def schematic():
     x16, y16 = obd['16 +12 V']
     line([(x16, y16), (26, y16), (26, buck['IN+'][1]), buck['IN+']], RED)
     s.add(f'<rect x="{24.5}" y="{(y16 + buck["IN+"][1]) / 2 - 3}" width="3" height="6" rx="1" fill="#fff" stroke="{PUR}" stroke-width="0.5"/>')
-    s.text(28.5, (y16 + buck['IN+'][1]) / 2 + 0.6, 'fusível 1 A', 1.7, PUR, anchor='start', weight='bold')
+    s.text(28.5, (y16 + buck['IN+'][1]) / 2 + 0.6, 'fusível 1 A (no fio)', 1.7, PUR, anchor='start', weight='bold')
     # GND comum: 4, 5, IN−, OUT−, GND ESP32, GND TJA
     gy = 36
     x4, y4 = obd['4 chassi']

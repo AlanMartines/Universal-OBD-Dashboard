@@ -1,6 +1,6 @@
 # Placa ilhada da escuta CAN (Uno Vivace)
 
-Placa perfurada de ilhas soltas, 5 × 7 cm (grade de 2,54 mm), com o ESP32 DevKit V1, o transceptor TJA1050 e o conversor RT8272. A ligação elétrica é a de [ligacao-can.md](../ligacao-can.md): só o pino 14 (CAN-L) vai ao transceptor e o CANH fica em 3,3 V por 1 kΩ. O TX do TJA1050 fica preso nos 5 V, então o transceptor nunca transmite.
+Placa perfurada de ilhas soltas no tamanho padrão de 5 × 7 cm (18 × 24 furos, grade de 2,54 mm), com o ESP32 DevKit V1, o transceptor TJA1050 e o conversor RT8272. O fusível fica no fio do pino 16, fora da placa. A ligação elétrica é a de [ligacao-can.md](../ligacao-can.md): só o pino 14 (CAN-L) vai ao transceptor e o CANH fica em 3,3 V por 1 kΩ. O TX do TJA1050 fica preso nos 5 V, então o transceptor nunca transmite.
 
 > **Situação: provisória.** As posições usam medidas de catálogo, que variam entre fabricantes. Antes de soldar, confira com as medidas da tabela abaixo e gere de novo.
 
@@ -16,7 +16,7 @@ Placa perfurada de ilhas soltas, 5 × 7 cm (grade de 2,54 mm), com o ESP32 DevKi
 
 **Etapa 2: placa montada** (vista de cima). O ESP32 fica deitado, com a antena para fora da placa à esquerda e o USB à direita:
 
-![Etapa 2: ESP32, TJA1050, RT8272 e porta-fusível montados](etapa2.svg)
+![Etapa 2: ESP32, TJA1050 e RT8272 montados](etapa2.svg)
 
 **Vista de baixo** (lado da solda, espelhada). Trilhas de fio estanhado, sempre em linha reta:
 
@@ -35,8 +35,9 @@ Para gerar de novo: `python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py`
   - R4 vai do 3V3 ao CANH, pelo fio J2.
 - **TJA1050:** preso com fita dupla-face nas linhas 15 a 19, à direita. Os pinos vão às ilhas da linha 14 por fios curtos (ou por barra de pinos, se a ordem bater).
 - **RT8272:** preso com fita à esquerda, nas linhas 15 a 20. Os quatro fios dele vão às ilhas da linha 21.
-- **Porta-fusível 5 × 20 mm de 1 A:** na parte de baixo, com os clipes nas colunas 2 e 11.
-- **Cabo OBD:** pino 16 na borda esquerda (1,22); pinos 4, 5 e 14 embaixo, à direita.
+- **Fusível de 1 A, fora da placa:** porta-fusível de linha no fio do pino 16, o mais perto possível do conector OBD, para proteger o fio inteiro. Serve um de lâmina mini ou um de 5 × 20 mm.
+- **Cabo OBD:** os quatro fios entram pela borda de baixo: 16 (12,24), 4 (16,24), 5 (17,24) e 14 (18,24).
+- **Placa perfurada:** 5 × 7 cm com 18 × 24 furos, o tamanho padrão mais comum. Uma de 4 × 6 cm não serve, porque as barras do ESP32 precisam de 15 colunas.
 
 Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio OUT+ ainda solto.
 
@@ -48,8 +49,7 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio OUT+ ainda solto.
 |---|---|
 | TJA1050 | RX (11,14) · CANH (12,14) · GND (15,14) · VCC (16,14) · TX (17,14) · CANL (18,14) |
 | RT8272 | IN+ (12,21) · IN− (14,21) · OUT− (15,21) · OUT+ (16,21) |
-| Cabo OBD | 16 (1,22) · 4 (16,24) · 5 (17,24) · 14 (18,24) |
-| Porta-fusível | clipe A (2,22) e (2,24) · clipe B (11,22) e (11,24) |
+| Cabo OBD | 16, já com o fusível (12,24) · 4 (16,24) · 5 (17,24) · 14 (18,24) |
 
 **Trilhas de solda (lado de baixo)**
 
@@ -64,8 +64,7 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio OUT+ ainda solto.
 | TX preso no 5 V | (16,14) – (17,14) |
 | RX (fim do J1) | (11,13) – (11,14) |
 | CANH (fim do J2) | (12,13) – (12,14) |
-| 12 V do OBD → fusível | (1,22) – (2,22) |
-| 12 V com fusível → IN+ | (11,22) – (11,21) – (12,21) |
+| 12 V com fusível → IN+ | (12,24) → (12,21) |
 | CAN-L | (18,14) → (18,24) |
 
 As trilhas de GND (coluna 15) e de 5 V (coluna 16) correm lado a lado nas linhas 12 a 21: confira com lupa e com o multímetro que não encostam.
@@ -86,7 +85,7 @@ As trilhas de GND (coluna 15) e de 5 V (coluna 16) correm lado a lado nas linhas
 | J1 | (11,3) → coluna 17 → (11,13) | R1 → RX do TJA1050 |
 | J2 | (16,7) → coluna 18 → (12,13) | R4 → CANH do TJA1050 |
 
-**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,22), (12,21) ou (16,12). Com o ESP32 fora das barras e o OUT+ do RT8272 solto, regule a saída em 5,0 V. Depois de ligar o OUT+ e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
+**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (12,24), (12,21) ou (16,12). Com o ESP32 fora das barras e o OUT+ do RT8272 solto, regule a saída em 5,0 V. Depois de ligar o OUT+ e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
 
 ## Medidas dos componentes
 
@@ -94,7 +93,7 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 
 | Componente | Medida | Valor | Data |
 |---|---|---|---|
-| Placa perfurada | Tamanho (mm) e número de furos (colunas × linhas) | | |
+| Placa perfurada | Tamanho (mm) e número de furos (colunas × linhas) | Padrão de 5 × 7 cm, 18 × 24 furos (a comprar) | 07/11/2026 |
 | ESP32 DevKit V1 (30 pinos) | Comprimento × largura da placa (mm) | 50 × 28; 15 pinos por lado, fileira de 15 com 38 mm (passo de 2,54 mm) | 07/11/2026 |
 | | Distância entre as duas fileiras de pinos (mm) | 24,5 por dentro e 25,5 a 26 por fora; cerca de 25,4 de centro a centro (10 furos, linhas 2 e 12) | 07/11/2026 |
 | | Ordem dos pinos, com o USB para baixo (confirmar 3V3, GND, VIN e D21) | Confirmada pela foto: com o USB para cima, à esquerda 3V3, GND, D15, D2, D4, RX2, TX2, D5, D18, D19, D21, RX0, TX0, D22, D23; à direita VIN, GND, D13, D12, D14, D27, D26, D25, D33, D32, D35, D34, VN, VP, EN. Igual ao desenho | 07/11/2026 |
@@ -103,7 +102,7 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 | | Resistência entre CANH e CANL (Ω). Se der cerca de 120 Ω, o resistor de terminação sai | | |
 | RT8272 | Comprimento × largura (mm) | | |
 | | Posição das ilhas IN+, IN−, OUT+, OUT− | | |
-| Porta-fusível 5 × 20 | Distância entre os pinos dos dois clipes (mm) | | |
+| Fusível de 1 A | Fica no fio do pino 16, fora da placa; não precisa de medida | | 07/11/2026 |
 | SN65HVD230 (reserva, a caminho) | Comprimento × largura e ordem dos pinos | | |
 | Conector OBD2 macho (a caminho) | Pinos montados (precisa de 4, 5, 14 e 16) | | |
 | Cabo Y OBD2 (a caminho) | Pinos ligados em cada ramo | | |

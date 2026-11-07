@@ -46,7 +46,7 @@
 <text x="39.50" y="68.30" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">CANL</text>
 <path d="M20.00,25.00 L26.00,25.00 L26.00,11.00 L38.00,11.00" fill="none" stroke="#d32f2f" stroke-width="0.55" stroke-linejoin="round"/>
 <rect x="24.5" y="15.0" width="3" height="6" rx="1" fill="#fff" stroke="#7b1fa2" stroke-width="0.5"/>
-<text x="28.50" y="18.60" font-size="1.7" fill="#7b1fa2" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">fusível 1 A</text>
+<text x="28.50" y="18.60" font-size="1.7" fill="#7b1fa2" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">fusível 1 A (no fio)</text>
 <path d="M20.00,31.75 L30.00,31.75 L30.00,36.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
 <path d="M20.00,38.50 L30.00,38.50" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
 <path d="M38.00,20.00 L34.00,20.00 L34.00,36.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
