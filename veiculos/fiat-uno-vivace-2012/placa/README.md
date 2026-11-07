@@ -2,7 +2,7 @@
 
 Placa perfurada de ilhas soltas no tamanho padrão de 5 × 7 cm (18 × 24 furos, grade de 2,54 mm), com o ESP32 DevKit V1, o transceptor TJA1050 e o conversor RT8272. O fusível fica no fio do pino 16, fora da placa. A ligação elétrica é a de [ligacao-can.md](../ligacao-can.md): só o pino 14 (CAN-L) vai ao transceptor e o CANH fica em 3,3 V por 1 kΩ. O TX do TJA1050 fica preso nos 5 V, então o transceptor nunca transmite.
 
-> **Situação:** desenho feito com as medidas de 07/11/2026. Antes de soldar, encaixe o RT8272 e o TJA1050 pelos pinos para conferir, e meça a resistência entre CANH e CANL.
+> **Situação:** desenho feito com as medidas de 07/11/2026. Antes de soldar, encaixe o RT8272 e o TJA1050 pelos pinos para conferir.
 
 ## Desenho
 
@@ -102,7 +102,7 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 | | Ordem dos pinos, com o USB para baixo (confirmar 3V3, GND, VIN e D21) | Confirmada pela foto: com o USB para cima, à esquerda 3V3, GND, D15, D2, D4, RX2, TX2, D5, D18, D19, D21, RX0, TX0, D22, D23; à direita VIN, GND, D13, D12, D14, D27, D26, D25, D33, D32, D35, D34, VN, VP, EN. Igual ao desenho | 07/11/2026 |
 | TJA1050 | Comprimento × largura (mm) | 22 × 11 | 07/11/2026 |
 | | Posição e ordem dos pinos | Barra de 4 pinos numa ponta (VCC, TX, RX, GND, passo de 2,54 mm); CANH e CANL na outra, alinhados com TX e RX, a cerca de 19,4 mm (fora da grade) | 07/11/2026 |
-| | Resistência entre CANH e CANL (Ω). Se der cerca de 120 Ω, o resistor de terminação sai | | |
+| | Resistência entre CANH e CANL (Ω). Se der cerca de 120 Ω, o resistor de terminação sai | Cerca de 50 kΩ (medição anterior, de memória): sem terminação ligada; o módulo fica como está | 07/11/2026 |
 | RT8272 (HW-108) | Comprimento × largura (mm) | 21 × 21 | 07/11/2026 |
 | | Posição das ilhas IN+, IN−, OUT+, OUT− | Com a bobina embaixo à direita: EN, IN−, IN+ na borda direita, de cima para baixo; OUT−, OUT+ embaixo, à esquerda. Quase 18 mm por fora entre os pinos das pontas, cerca de 17,8 mm de centro a centro (7 furos). Confirmar encaixando na placa | 07/11/2026 |
 | Fusível de 1 A | Fica no fio do pino 16, fora da placa; não precisa de medida | | 07/11/2026 |
