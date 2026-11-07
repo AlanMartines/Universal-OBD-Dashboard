@@ -11,7 +11,7 @@ Desenhos (SVG), na mesma pasta deste script:
 Só biblioteca padrão do Python 3:
     python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py
 
-PROVISÓRIO: ESP32 e RT8272 medidos; o TJA1050 ainda usa medidas de catálogo (README.md).
+Medidas de 07/11/2026 (README.md). Confira o RT8272 e o TJA1050 encaixando pelos pinos antes de soldar.
 """
 import os
 
@@ -45,8 +45,12 @@ RES = [
     ('R4', (16, 3), (16, 7), '3V3 → CANH'),
 ]
 # Ilhas de ligação dos módulos e do cabo
-TJA_PADS = {'RX': (11, 14), 'CANH': (12, 14), 'GND': (15, 14), 'VCC': (16, 14), 'TX': (17, 14), 'CANL': (18, 14)}
-OBD_PADS = {'16': (8, 24), '4': (16, 24), '5': (17, 24), '14': (18, 24)}
+# TJA1050: módulo de 22 x 11 mm. Barra de 4 pinos (VCC, TX, RX, GND) soldada na coluna 10, linhas 19 a 22; o módulo
+# fica deitado para a direita. CANH e CANL ficam na outra ponta, cerca de 19,4 mm adiante, fora da grade: ligados por fio.
+TJA_PINS = {'VCC': (10, 19), 'TX': (10, 20), 'RX': (10, 21), 'GND': (10, 22)}
+TJA_CAN = {'CANH': (10 + 19.4 / P, 20), 'CANL': (10 + 19.4 / P, 21)}
+CANL_HOLE = (18, 23)
+OBD_PADS = {'16': (8, 24), '4': (9, 24), '5': (10, 24), '14': (18, 24)}
 # Fusível de 1 A no fio do pino 16, fora da placa, perto do conector OBD
 
 # Trilhas de solda (lado de baixo): fio estanhado passando pelos furos, sempre em linha reta
@@ -54,24 +58,24 @@ TRACKS = [
     ('D21', YEL, [(6, 2), (6, 3), (7, 3)]),
     ('D21', YEL, [(6, 3), (6, 4)]),
     ('Divisor', YEL, [(6, 8), (7, 8)]),
-    ('GND', BLK, [(11, 8), (15, 8), (15, 24), (17, 24)]),
+    ('GND', BLK, [(11, 8), (15, 8), (15, 13), (9, 13), (9, 24), (10, 24)]),
+    ('GND do TJA1050', BLK, [(9, 22), (10, 22)]),
+    ('GND → IN−', BLK, [(8, 16), (9, 16)]),
     ('3V3', ORG, [(16, 2), (16, 3)]),
-    ('5 V', RED, [(16, 12), (16, 21)]),
-    ('5 V → TX', RED, [(16, 14), (17, 14)]),
-    ('RX', YEL, [(11, 13), (11, 14)]),
-    ('CANH', BLU, [(12, 13), (12, 14)]),
-    ('GND → IN−', BLK, [(8, 16), (15, 16)]),
+    ('5 V', RED, [(16, 12), (16, 18), (10, 18), (10, 20)]),
+    ('5 V', RED, [(10, 17), (10, 18)]),
+    ('RX', YEL, [(10, 21), (17, 21), (17, 17)]),
     ('12 V com fusível', PUR, [(8, 24), (8, 17)]),
     ('OUT+ → J3', RED, [(1, 22), (1, 23)]),
-    ('CAN-L', BLU, [(18, 14), (18, 24)]),
+    ('CAN-L', BLU, [(18, 23), (18, 24)]),
 ]
 # Fios isolados por cima da placa (J1 e J2 passam embaixo do ESP32)
 JUMPERS = [
-    ('J1', YEL, [(11, 3), (17, 3), (17, 13), (11, 13)], 'R1 → RX do TJA1050'),
-    ('J2', BLU, [(16, 7), (18, 7), (18, 12.6), (12, 12.6), (12, 13)], 'R4 → CANH do TJA1050'),
-    ('J3', RED, [(1, 23), (16, 23), (16, 21)], 'OUT+ do RT8272 → 5 V'),
+    ('J1', YEL, [(11, 3), (17, 3), (17, 17)], 'R1 → RX do TJA1050'),
+    ('J2', BLU, [(16, 7), (18, 7), (18, 20), TJA_CAN['CANH']], 'R4 → pino CANH do TJA1050'),
+    ('J3', RED, [(1, 23), (9, 23), (9, 17), (10, 17)], 'OUT+ do RT8272 → 5 V'),
 ]
-TJA_BOX = (10, 15, 18, 19.5)     # colunas e linhas que o módulo ocupa (fita dupla-face)
+TJA_MM = (22.0, 11.0)
 # RT8272 (HW-108): 21 x 21 mm, fileiras a cerca de 17,8 mm (7 furos), medido em 07/11/2026.
 # Soldado na placa por barra de pinos, com a bobina embaixo à direita: EN, IN-, IN+ na coluna 8 (linhas 15 a 17);
 # OUT-, OUT+ na coluna 1 (linhas 21 e 22). IN- e OUT- são o mesmo GND dentro do módulo; o EN fica sem ligação.
@@ -232,20 +236,28 @@ def header_footprint(s):
 
 
 def tja_art(s):
-    c0, r0, c1, r1 = TJA_BOX
-    x0, y0 = hp(c0, r0)
-    x1, y1 = hp(c1, r1) if isinstance(r1, int) else (hp(c1, 1)[0], MY + (r1 - 1) * P)
-    s.add(f'<rect x="{x0 - 1.4:.2f}" y="{y0 - 0.5:.2f}" width="{x1 - x0 + 2.8:.2f}" height="{y1 - y0 + 1.2:.2f}" rx="0.8" fill="#1565c0" stroke="#0d47a1" stroke-width="0.3"/>')
-    mx = (x0 + x1) / 2
-    s.add(f'<rect x="{mx - 3:.2f}" y="{y0 + 2.6:.2f}" width="6" height="4" rx="0.3" fill="#212121"/>')
-    s.text(mx, y0 + 5.1, 'TJA1050', 1.2, '#eceff1', weight='bold')
-    s.text(mx, y0 + 9.6, 'módulo CAN · fita dupla-face', 1.15, '#e3f2fd')
-    # pinos do módulo, ligados às ilhas por fios curtos
-    for name, (c, r) in TJA_PADS.items():
-        x, y = hp(c, r)
-        s.add(f'<line x1="{x:.2f}" y1="{y:.2f}" x2="{x:.2f}" y2="{y0 + 0.6:.2f}" stroke="#90a4ae" stroke-width="0.45"/>')
-        s.add(f'<circle cx="{x:.2f}" cy="{y0 + 1.1:.2f}" r="0.55" fill="#d4af37"/>')
-        s.text(x, y0 + 3.0 if name not in ('RX', 'CANH') else y0 + 3.0, name, 0.95, '#fff', weight='bold')
+    """Módulo TJA1050 de 22 x 11 mm sobre a barra de 4 pinos, deitado para a direita."""
+    x0 = hp(*TJA_PINS['VCC'])[0] - 1.2
+    yc = (hp(*TJA_PINS['VCC'])[1] + hp(*TJA_PINS['GND'])[1]) / 2
+    y0 = yc - TJA_MM[1] / 2
+    s.add(f'<rect x="{x0:.2f}" y="{y0:.2f}" width="{TJA_MM[0]}" height="{TJA_MM[1]}" rx="0.6" fill="#1565c0" stroke="#0d47a1" stroke-width="0.3"/>')
+    for dx in (TJA_MM[0] - 2.2,):
+        for dy in (1.8, TJA_MM[1] - 1.8):
+            s.add(f'<circle cx="{x0 + dx:.2f}" cy="{y0 + dy:.2f}" r="1.1" fill="#e3f2fd"/>')
+    s.add(f'<rect x="{x0 + 5.0:.2f}" y="{yc - 2.6:.2f}" width="5.6" height="5.2" rx="0.3" fill="#212121"/>')
+    s.text(x0 + 7.8, yc + 0.5, 'TJA1050', 1.05, '#eceff1', weight='bold')
+    s.add(f'<rect x="{x0 + 12.4:.2f}" y="{y0 + 1.0:.2f}" width="2.4" height="1.4" fill="#212121"/>')
+    s.text(x0 + 13.6, y0 + 3.6, '121', 0.9, '#e3f2fd')
+    for n, (c, r) in list(TJA_PINS.items()) + list(TJA_CAN.items()):
+        x, y = MX + (c - 1) * P, MY + (r - 1) * P
+        s.add(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="0.65" fill="#d4af37"/>')
+        can = n.startswith('CAN')
+        s.text(x + (-1.1 if can else 1.1), y + 0.4, n, 0.95, '#fff', anchor='end' if can else 'start', weight='bold')
+    # fio curto do CANL até a ilha da linha 23
+    x, y = MX + (TJA_CAN['CANL'][0] - 1) * P, MY + (TJA_CAN['CANL'][1] - 1) * P
+    tx, ty = hp(*CANL_HOLE)
+    d = f'M{x:.2f},{y:.2f} L{tx:.2f},{y:.2f} L{tx:.2f},{ty:.2f}'
+    s.add(f'<path d="{d}" fill="none" stroke="#37474f" stroke-width="0.95" stroke-linejoin="round"/><path d="{d}" fill="none" stroke="{BLU}" stroke-width="0.6" stroke-linejoin="round"/>')
 
 
 def buck_art(s):
@@ -282,8 +294,12 @@ def view_top(stage, scale):
             resistor(s, a, b, n)
         for name, col, pts, _ in JUMPERS:
             jumper(s, pts, col, name)
-        for name, (c, r) in TJA_PADS.items():
-            pad_mark(s, c, r, BLU if name.startswith('CAN') else (RED if name in ('VCC', 'TX') else (BLK if name == 'GND' else YEL)), name, 'below')
+        for name, (c, r) in TJA_PINS.items():
+            x, y = hp(c, r)
+            s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
+            s.text(x + 1.8, y + 0.45, name, 1.0, {'VCC': RED, 'TX': RED, 'RX': YEL, 'GND': BLK}[name], anchor='start', weight='bold', bg=True)
+        s.text(MX + 13.5 * P, MY + 19.5 * P, 'pinos do TJA1050', 1.15, '#1565c0', bg=True)
+        pad_mark(s, *CANL_HOLE, BLU, 'CANL', 'above', size=1.0)
         for name, (c, r) in BUCK_PINS.items():
             x, y = hp(c, r)
             s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
@@ -324,17 +340,19 @@ def view_bottom(scale):
         legs |= {a, b}
     for row in (2, 12):
         legs |= {(c, row) for c in range(2, 17)}
-    legs |= set(BUCK_PINS.values())
+    legs |= set(BUCK_PINS.values()) | set(TJA_PINS.values())
     for c, r in legs:
         x, y = hp(c, r)
         s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')
     for name, col, pts, _ in JUMPERS:
         for c, r in (pts[0], pts[-1]):
+            if c != int(c):
+                continue   # ponta soldada direto no pino do módulo, não num furo
             x, y = (MX + (c - 1) * P, MY + (r - 1) * P)
             s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.7" fill="none" stroke="{col}" stroke-width="0.35"/>')
             s.text(X(x) + (1.6 if c < 12 else -1.6), y + 0.45, name, 1.05, '#37474f', anchor='middle')
     # nomes das trilhas
-    labels = {'GND': (15, 18.5, BLK), '5 V': (16, 17.5, RED), 'CAN-L': (18, 19.5, BLU), '12 V com fusível': (8, 20.5, PUR),
+    labels = {'GND': (9, 19.5, BLK), '5 V': (13, 18, RED), 'RX': (14, 21, YEL), 'CAN-L': (18, 23.5, BLU), '12 V com fusível': (7.2, 20.5, PUR),
               'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG)}
     for t, (c, r, col) in labels.items():
         x, y = MX + (c - 1) * P, MY + (r - 1) * P
