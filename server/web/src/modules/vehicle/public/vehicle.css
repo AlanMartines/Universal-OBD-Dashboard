@@ -22,3 +22,50 @@
     height: calc(100dvh - 8.5rem);
   }
 }
+
+/* Simulação de viagem: barra de controle acima dos mostradores (também em tela cheia). */
+.replay-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--app-radius);
+  background: var(--bs-tertiary-bg);
+}
+
+.replay-seek {
+  flex: 1 1 12rem;
+  min-width: 8rem;
+}
+
+.replay-time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#vehicle-root.is-replay #dash-host {
+  height: calc(100dvh - 10.5rem);
+}
+
+#vehicle-root.is-replay:fullscreen {
+  padding: 0.5rem;
+}
+
+#vehicle-root.is-replay:fullscreen .replay-bar {
+  background: #111;
+  border-color: #333;
+  color: #ddd;
+}
+
+#vehicle-root.is-replay:fullscreen #dash-host {
+  height: calc(100dvh - 4.5rem);
+}
+
+@media (max-width: 991.98px) {
+  #vehicle-root.is-replay #dash-host {
+    height: calc(100dvh - 14rem);
+  }
+}

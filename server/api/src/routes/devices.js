@@ -7,6 +7,8 @@ import { deviceName, MAX_LIVE_PER_USER, PAIRING_MINUTES, uuidParam } from '../sc
 import { formatPairingCode, generatePairingCode, sha256 } from '../security.js';
 
 const ROUTE_MAX_POINTS = 2000;
+/** Viagem reproduzida no painel: leituras a cada 2 s dão ~11 h antes de resumir. */
+const REPLAY_MAX_SAMPLES = 20000;
 
 export default function devicesRoutes(app, { config, pool, live, limit, requireReady, requireManager, loadDevice, publicDevice, locationAllowed }) {
   const matcher = createMatcher({ url: config.osrmUrl });
@@ -164,6 +166,41 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
           kmPerL: liters > 0.05 && km > 0.5 ? km / liters : null, maxSpeed: r.max_speed, maxCoolant: r.max_coolant,
         };
       }),
+    };
+  });
+
+  // Leituras de uma viagem, em ordem, para reproduzir nos mostradores do painel (só leitura).
+  // Viagem longa é resumida: no máximo REPLAY_MAX_SAMPLES leituras, sempre com a primeira e a última.
+  app.get('/internal/devices/:id/trips/:tripId/samples', {
+    preValidation: requireReady,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id', 'tripId'],
+        additionalProperties: false,
+        properties: { id: uuidParam.properties.id, tripId: { type: 'string', pattern: '^[0-9]{1,15}$' } },
+      },
+    },
+  }, async (request) => {
+    const device = await loadDevice(request);
+    const tripId = request.params.tripId;
+    const { rows: [{ total }] } = await pool.query(
+      'SELECT count(*)::int AS total FROM telemetry_samples WHERE device_id = $1 AND trip_id = $2::bigint',
+      [device.id, tripId],
+    );
+    if (!total) throw fail(404, 'not_found');
+    const step = Math.max(1, Math.ceil(total / REPLAY_MAX_SAMPLES));
+    const { rows } = await pool.query(
+      `SELECT ts, metrics, dtcs FROM (
+         SELECT ts, metrics, coalesce(dtcs, '{}') AS dtcs, row_number() OVER (ORDER BY ts) AS n, count(*) OVER () AS c
+           FROM telemetry_samples WHERE device_id = $1 AND trip_id = $2::bigint
+       ) t WHERE n % $3 = 1 OR $3 = 1 OR n = c ORDER BY ts`,
+      [device.id, tripId, step],
+    );
+    return {
+      trip: { id: Number(tripId), start: rows[0].ts, end: rows[rows.length - 1].ts, total },
+      step,
+      samples: rows.map((r) => ({ ts: r.ts, metrics: r.metrics, dtcs: r.dtcs })),
     };
   });
 

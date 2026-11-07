@@ -13,7 +13,20 @@
   {{/if}}
 </div>
 {{#if deviceId}}
-<div id="vehicle-root" data-device-id="{{deviceId}}" data-sample="{{latestJson}}" data-limits="{{limitsJson}}">
+<div id="vehicle-root" data-device-id="{{deviceId}}" data-sample="{{latestJson}}" data-limits="{{limitsJson}}"{{#if replayTrip}} data-replay-trip="{{replayTrip}}" class="is-replay"{{/if}}>
+  {{#if replayTrip}}
+  <div class="replay-bar" id="replay-bar" aria-label="Simulação da viagem">
+    <button class="btn btn-primary btn-sm" type="button" id="replay-play" title="Reproduzir" aria-label="Reproduzir" disabled><i class="fa-solid fa-play" aria-hidden="true"></i></button>
+    <div class="btn-group btn-group-sm" role="group" aria-label="Velocidade da simulação">
+      <button class="btn btn-outline-secondary active" type="button" data-replay-speed="1" aria-pressed="true">1×</button>
+      <button class="btn btn-outline-secondary" type="button" data-replay-speed="5" aria-pressed="false">5×</button>
+      <button class="btn btn-outline-secondary" type="button" data-replay-speed="16" aria-pressed="false">16×</button>
+    </div>
+    <input class="form-range replay-seek" type="range" id="replay-seek" min="0" max="1000" step="1" value="0" aria-label="Posição na viagem" disabled>
+    <span class="replay-time small" id="replay-time">--:--</span>
+    <a class="btn btn-outline-secondary btn-sm" href="/painel-veiculo?dispositivo={{deviceId}}" title="Sair da simulação"><i class="fa-solid fa-xmark me-1" aria-hidden="true"></i>Sair</a>
+  </div>
+  {{/if}}
   <div id="dash-host" class="cluster-host" aria-label="Painel de instrumentos"></div>
 </div>
 {{else}}

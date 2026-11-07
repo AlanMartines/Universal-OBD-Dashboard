@@ -55,7 +55,9 @@
     status.className = 'badge ' + cls;
   }
 
-  function isFresh() { return lastTs > 0 && Date.now() - lastTs <= STALE_MS; }
+  // Na simulação, o "agora" é a hora da gravação e a leitura reproduzida vale como atual.
+  var replay = null;
+  function isFresh() { return replay ? replay.ready : lastTs > 0 && Date.now() - lastTs <= STALE_MS; }
 
   function push() {
     var fresh = isFresh();
@@ -70,8 +72,9 @@
       confirmedDtcs: fresh ? lastDtcs : [],
       pendingDtcs: [],
       gps: fresh ? lastGps : null,
-      tripDistanceKm: readings.trip_distance_km,
-      tripStartedAt: typeof readings['trip.startedAt'] === 'number' ? readings['trip.startedAt'] : null,
+      tripDistanceKm: replay ? replay.km : readings.trip_distance_km,
+      tripStartedAt: replay ? replay.t0 : typeof readings['trip.startedAt'] === 'number' ? readings['trip.startedAt'] : null,
+      now: replay ? replay.t : undefined,
       // Indicador de economia (folha): só com o carro enviando
       computer: { ecoBand: fresh && typeof readings['pc.ecoBand'] === 'number' ? readings['pc.ecoBand'] : null },
     });
@@ -112,6 +115,18 @@
   window.Dash.setMeta(metaFrom());
   metaKey = JSON.stringify(metaFrom());
 
+  var fullscreen = document.getElementById('vehicle-fullscreen');
+  if (fullscreen && root.requestFullscreen) {
+    fullscreen.addEventListener('click', function () { root.requestFullscreen().catch(function () {}); });
+  } else if (fullscreen) {
+    fullscreen.hidden = true;
+  }
+
+  if (root.dataset.replayTrip) {
+    startReplay(root.dataset.replayTrip);
+    return;
+  }
+
   var initial = null;
   try { initial = JSON.parse(root.dataset.sample); } catch (e) { /* sem dados */ }
   apply(initial);
@@ -141,10 +156,138 @@
     tick();
   });
 
-  var fullscreen = document.getElementById('vehicle-fullscreen');
-  if (fullscreen && root.requestFullscreen) {
-    fullscreen.addEventListener('click', function () { root.requestFullscreen().catch(function () {}); });
-  } else if (fullscreen) {
-    fullscreen.hidden = true;
+  /* ---------------------------------------------------------------- Simulação de uma viagem gravada */
+  // Reproduz as leituras guardadas no tempo da gravação (1×, 5×, 16×). Entre duas leituras próximas os
+  // números andam em linha reta; num buraco maior que GAP_MS fica a última leitura.
+  function startReplay(tripId) {
+    var GAP_MS = 30000;
+    var TICK_MS = 100;
+    var playBtn = document.getElementById('replay-play');
+    var seek = document.getElementById('replay-seek');
+    var timeText = document.getElementById('replay-time');
+    var speedBtns = Array.prototype.slice.call(document.querySelectorAll('[data-replay-speed]'));
+    replay = { ready: false, t: 0, t0: 0, t1: 0, km: 0, speed: 1, playing: false, frames: [] };
+    setStatus('Carregando viagem…', 'text-bg-secondary');
+
+    function clock(ms) {
+      return new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    function span(ms) {
+      var s = Math.max(0, Math.round(ms / 1000));
+      var h = Math.floor(s / 3600);
+      var m = Math.floor((s % 3600) / 60);
+      var pad = function (n) { return String(n).padStart(2, '0'); };
+      return (h ? h + ':' + pad(m) : String(m)) + ':' + pad(s % 60);
+    }
+    /** Última leitura com hora <= t (busca binária). */
+    function indexAt(t) {
+      var f = replay.frames;
+      var lo = 0;
+      var hi = f.length - 1;
+      while (lo < hi) {
+        var mid = (lo + hi + 1) >> 1;
+        if (f[mid].ms <= t) lo = mid; else hi = mid - 1;
+      }
+      return lo;
+    }
+    function show() {
+      var f = replay.frames;
+      var i = indexAt(replay.t);
+      var a = f[i];
+      var b = f[i + 1];
+      var k = b && b.ms - a.ms <= GAP_MS ? Math.min(1, Math.max(0, (replay.t - a.ms) / (b.ms - a.ms))) : 0;
+      readings = {};
+      derived = {};
+      Object.keys(a.metrics).forEach(function (id) {
+        var v = a.metrics[id];
+        if (typeof v !== 'number') return;
+        var w = k > 0 && typeof b.metrics[id] === 'number' ? v + (b.metrics[id] - v) * k : v;
+        if (id.indexOf('dash.') === 0) saved[id] = v;
+        if (id.indexOf('derived.') === 0) {
+          if (DERIVED.indexOf(id.slice(8)) >= 0) derived[id.slice(8)] = w;
+        } else {
+          readings[id] = w;
+        }
+      });
+      lastDtcs = Array.isArray(a.dtcs) ? a.dtcs : [];
+      lastAlerts = [];
+      var speedNow = typeof readings.speed === 'number' ? readings.speed : 0;
+      replay.km = a.km + (k > 0 ? speedNow * (replay.t - a.ms) / 3600000 : 0);
+      push();
+      if (document.activeElement !== seek) seek.value = String(Math.round(1000 * (replay.t - replay.t0) / Math.max(1, replay.t1 - replay.t0)));
+      timeText.textContent = clock(replay.t) + ' · ' + span(replay.t - replay.t0) + ' / ' + span(replay.t1 - replay.t0);
+    }
+    function setPlaying(on) {
+      if (on && replay.t >= replay.t1) replay.t = replay.t0;
+      replay.playing = on;
+      var icon = document.createElement('i');
+      icon.className = 'fa-solid ' + (on ? 'fa-pause' : 'fa-play');
+      icon.setAttribute('aria-hidden', 'true');
+      playBtn.replaceChildren(icon);
+      playBtn.title = on ? 'Pausar' : 'Reproduzir';
+      playBtn.setAttribute('aria-label', playBtn.title);
+      setStatus((on ? 'Simulação ' : 'Pausado ') + replay.speed + '×', on ? 'text-bg-info' : 'text-bg-secondary');
+    }
+    var last = 0;
+    function step() {
+      var now = performance.now();
+      if (replay.playing) {
+        replay.t = Math.min(replay.t1, replay.t + (now - last) * replay.speed);
+        show();
+        if (replay.t >= replay.t1) setPlaying(false);
+      }
+      last = now;
+    }
+
+    fetch('/dispositivos/' + encodeURIComponent(root.dataset.deviceId) + '/viagens/' + encodeURIComponent(tripId) + '/leituras', { headers: { accept: 'application/json' } })
+      .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+      .then(function (data) {
+        var km = 0;
+        var prev = null;
+        replay.frames = (data.samples || []).map(function (s) {
+          var ms = new Date(s.ts).getTime();
+          var metrics = s.metrics || {};
+          // Distância da viagem somada pela velocidade, como na aba Viagens
+          if (prev && ms - prev.ms <= GAP_MS && typeof prev.metrics.speed === 'number') km += prev.metrics.speed * (ms - prev.ms) / 3600000;
+          prev = { ms: ms, metrics: metrics, dtcs: s.dtcs, km: km };
+          return prev;
+        }).filter(function (f) { return Number.isFinite(f.ms); });
+        if (!replay.frames.length) throw new Error('vazia');
+        replay.t0 = replay.frames[0].ms;
+        replay.t1 = replay.frames[replay.frames.length - 1].ms;
+        replay.t = replay.t0;
+        replay.ready = true;
+        var meta = metaFrom();
+        metaKey = JSON.stringify(meta);
+        window.Dash.setMeta(meta);
+        playBtn.disabled = false;
+        seek.disabled = false;
+        show();
+        last = performance.now();
+        setPlaying(true);
+        setInterval(step, TICK_MS);
+      })
+      .catch(function () {
+        setStatus('Viagem não encontrada', 'text-bg-warning');
+        timeText.textContent = '--:--';
+      });
+
+    playBtn.addEventListener('click', function () { setPlaying(!replay.playing); });
+    speedBtns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        replay.speed = Number(b.dataset.replaySpeed) || 1;
+        speedBtns.forEach(function (x) {
+          var on = x === b;
+          x.classList.toggle('active', on);
+          x.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        setPlaying(replay.playing);
+      });
+    });
+    seek.addEventListener('input', function () {
+      if (!replay.ready) return;
+      replay.t = replay.t0 + (replay.t1 - replay.t0) * Number(seek.value) / 1000;
+      show();
+    });
   }
 }());
