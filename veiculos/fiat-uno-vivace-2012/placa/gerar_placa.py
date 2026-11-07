@@ -11,7 +11,7 @@ Desenhos (SVG), na mesma pasta deste script:
 Só biblioteca padrão do Python 3:
     python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py
 
-PROVISÓRIO: posições com medidas de catálogo. Confira com as medidas reais (README.md).
+PROVISÓRIO: ESP32 e RT8272 medidos; o TJA1050 ainda usa medidas de catálogo (README.md).
 """
 import os
 
@@ -46,8 +46,7 @@ RES = [
 ]
 # Ilhas de ligação dos módulos e do cabo
 TJA_PADS = {'RX': (11, 14), 'CANH': (12, 14), 'GND': (15, 14), 'VCC': (16, 14), 'TX': (17, 14), 'CANL': (18, 14)}
-BUCK_PADS = {'IN+': (12, 21), 'IN-': (14, 21), 'OUT-': (15, 21), 'OUT+': (16, 21)}
-OBD_PADS = {'16': (12, 24), '4': (16, 24), '5': (17, 24), '14': (18, 24)}
+OBD_PADS = {'16': (8, 24), '4': (16, 24), '5': (17, 24), '14': (18, 24)}
 # Fusível de 1 A no fio do pino 16, fora da placa, perto do conector OBD
 
 # Trilhas de solda (lado de baixo): fio estanhado passando pelos furos, sempre em linha reta
@@ -61,17 +60,24 @@ TRACKS = [
     ('5 V → TX', RED, [(16, 14), (17, 14)]),
     ('RX', YEL, [(11, 13), (11, 14)]),
     ('CANH', BLU, [(12, 13), (12, 14)]),
-    ('GND → IN−', BLK, [(14, 21), (15, 21)]),
-    ('12 V com fusível', PUR, [(12, 24), (12, 21)]),
+    ('GND → IN−', BLK, [(8, 16), (15, 16)]),
+    ('12 V com fusível', PUR, [(8, 24), (8, 17)]),
+    ('OUT+ → J3', RED, [(1, 22), (1, 23)]),
     ('CAN-L', BLU, [(18, 14), (18, 24)]),
 ]
-# Fios isolados por cima da placa, passando embaixo do ESP32
+# Fios isolados por cima da placa (J1 e J2 passam embaixo do ESP32)
 JUMPERS = [
     ('J1', YEL, [(11, 3), (17, 3), (17, 13), (11, 13)], 'R1 → RX do TJA1050'),
     ('J2', BLU, [(16, 7), (18, 7), (18, 12.6), (12, 12.6), (12, 13)], 'R4 → CANH do TJA1050'),
+    ('J3', RED, [(1, 23), (16, 23), (16, 21)], 'OUT+ do RT8272 → 5 V'),
 ]
 TJA_BOX = (10, 15, 18, 19.5)     # colunas e linhas que o módulo ocupa (fita dupla-face)
-BUCK_BOX = (2, 15, 9, 20)
+# RT8272 (HW-108): 21 x 21 mm, fileiras a cerca de 17,8 mm (7 furos), medido em 07/11/2026.
+# Soldado na placa por barra de pinos, com a bobina embaixo à direita: EN, IN-, IN+ na coluna 8 (linhas 15 a 17);
+# OUT-, OUT+ na coluna 1 (linhas 21 e 22). IN- e OUT- são o mesmo GND dentro do módulo; o EN fica sem ligação.
+BUCK_MM = 21.0
+BUCK_PINS = {'EN': (8, 15), 'IN-': (8, 16), 'IN+': (8, 17), 'OUT-': (1, 21), 'OUT+': (1, 22)}
+BUCK_COL = {'EN': '#9e9e9e', 'IN-': BLK, 'IN+': PUR, 'OUT-': BLK, 'OUT+': RED}
 
 
 def expand(pts):
@@ -243,26 +249,23 @@ def tja_art(s):
 
 
 def buck_art(s):
-    c0, r0, c1, r1 = BUCK_BOX
-    x0, y0 = hp(c0, r0)
-    x1, y1 = hp(c1, r1)
-    s.add(f'<rect x="{x0 - 1.2:.2f}" y="{y0 - 0.8:.2f}" width="{x1 - x0 + 2.4:.2f}" height="{y1 - y0 + 1.6:.2f}" rx="0.8" fill="#0d47a1" stroke="#082a5e" stroke-width="0.3"/>')
-    s.add(f'<rect x="{x0 + 5.5:.2f}" y="{y0 + 1.5:.2f}" width="8" height="8" rx="0.6" fill="#212121"/>')
-    s.text(x0 + 9.5, y0 + 6.0, '4R7', 1.2, '#9e9e9e')
-    s.add(f'<rect x="{x0 + 0.6:.2f}" y="{y0 + 1.8:.2f}" width="3.4" height="3.4" rx="0.4" fill="#1e88e5"/><circle cx="{x0 + 2.3:.2f}" cy="{y0 + 3.5:.2f}" r="0.9" fill="#fdd835"/>')
-    s.text(x0 + 2.3, y0 + 7.0, 'ajuste', 1.0, '#bbdefb')
-    s.text((x0 + x1) / 2, y1 + 0.2, 'RT8272 · regular 5,0 V · fita', 1.15, '#e3f2fd', weight='bold')
-    # pads do módulo à direita, com fios até as ilhas da linha 21
-    names = ['IN+', 'IN-', 'OUT-', 'OUT+']
-    for i, n in enumerate(names):
-        px, py = x1 + 0.2, y0 + 1.5 + i * 2.6
-        s.add(f'<circle cx="{px:.2f}" cy="{py:.2f}" r="0.6" fill="#d4af37"/>')
-        s.text(px - 1.0, py + 0.4, n, 1.0, '#fff', anchor='end', weight='bold')
-        tx, ty = hp(*BUCK_PADS[n])
-        col = {'IN+': PUR, 'IN-': BLK, 'OUT-': BLK, 'OUT+': RED}[n]
-        midx = px + 1.5 + i * 0.6
-        d = f'M{px:.2f},{py:.2f} L{midx:.2f},{py:.2f} L{midx:.2f},{ty - 1.6 - i * 0.0:.2f} L{tx:.2f},{ty - 1.6:.2f} L{tx:.2f},{ty:.2f}'
-        s.add(f'<path d="{d}" fill="none" stroke="#37474f" stroke-width="0.95" stroke-linejoin="round"/><path d="{d}" fill="none" stroke="{col}" stroke-width="0.6" stroke-linejoin="round"/>')
+    """Módulo HW-108 de 21 x 21 mm sobre a barra de pinos (bobina 4R7 embaixo à direita)."""
+    x0 = hp(*BUCK_PINS['OUT-'])[0] - 1.5
+    y0 = hp(*BUCK_PINS['EN'])[1] - 1.2
+    s.add(f'<rect x="{x0:.2f}" y="{y0:.2f}" width="{BUCK_MM}" height="{BUCK_MM}" rx="0.6" fill="#0d47a1" stroke="#082a5e" stroke-width="0.3"/>')
+    s.add(f'<rect x="{x0 + 10.5:.2f}" y="{y0 + 9.5:.2f}" width="9" height="9" rx="1.2" fill="#212121"/>')
+    s.add(f'<circle cx="{x0 + 15:.2f}" cy="{y0 + 14:.2f}" r="3.6" fill="none" stroke="#424242" stroke-width="0.4"/>')
+    s.text(x0 + 15, y0 + 14.5, '4R7', 1.3, '#9e9e9e')
+    s.add(f'<rect x="{x0 + 5.5:.2f}" y="{y0 + 2.0:.2f}" width="6" height="5" rx="0.4" fill="#212121"/>')
+    s.text(x0 + 8.5, y0 + 4.9, 'RT8272', 1.0, '#bdbdbd')
+    s.add(f'<rect x="{x0 + 0.8:.2f}" y="{y0 + 0.8:.2f}" width="3.4" height="3.4" rx="0.4" fill="#cfd8dc"/><circle cx="{x0 + 2.5:.2f}" cy="{y0 + 2.5:.2f}" r="0.9" fill="#78909c"/>')
+    s.text(x0 + 2.5, y0 + 5.9, 'ajuste', 1.0, '#bbdefb')
+    s.text(x0 + 7.5, y0 + 9.6, 'regular 5,0 V', 1.1, '#e3f2fd', weight='bold')
+    for n, (c, r) in BUCK_PINS.items():
+        px, py = hp(c, r)
+        s.add(f'<circle cx="{px:.2f}" cy="{py:.2f}" r="0.65" fill="#d4af37"/>')
+        left = n.startswith('OUT')
+        s.text(px + (1.2 if left else -1.2), py + 0.4, n, 1.0, '#fff', anchor='start' if left else 'end', weight='bold')
 
 
 def view_top(stage, scale):
@@ -281,11 +284,14 @@ def view_top(stage, scale):
             jumper(s, pts, col, name)
         for name, (c, r) in TJA_PADS.items():
             pad_mark(s, c, r, BLU if name.startswith('CAN') else (RED if name in ('VCC', 'TX') else (BLK if name == 'GND' else YEL)), name, 'below')
-        for name, (c, r) in BUCK_PADS.items():
-            pad_mark(s, c, r, {'IN+': PUR, 'IN-': BLK, 'OUT-': BLK, 'OUT+': RED}[name], name, 'below' if name == 'OUT-' else 'above', size=1.0)
+        for name, (c, r) in BUCK_PINS.items():
+            x, y = hp(c, r)
+            s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
+            s.text(x + (1.8 if c == 1 else -1.8), y + 0.45, name, 1.0, BUCK_COL[name], anchor='start' if c == 1 else 'end', weight='bold', bg=True)
+        s.text(MX + 3.5 * P, hp(1, 19)[1], 'pinos do RT8272', 1.15, '#0d47a1', bg=True)
         for pin, (c, r) in OBD_PADS.items():
             pad_mark(s, c, r, {'16': PUR, '4': BLK, '5': BLK, '14': BLU}[pin], pin, 'below')
-        s.text(hp(12, 24)[0] - 1.8, hp(12, 24)[1] + 2.9, 'cabo OBD:', 1.2, '#5d4037', anchor='end')
+        s.text(hp(8, 24)[0] - 1.8, hp(8, 24)[1] + 2.9, 'cabo OBD:', 1.2, '#5d4037', anchor='end')
         s.text(W / 2, H + 3.5, 'ETAPA 1 · vista de cima, antes de encaixar o ESP32 e os módulos', 1.7, '#5d4037', weight='bold')
     else:
         header_footprint(s)
@@ -302,7 +308,7 @@ def view_top(stage, scale):
             # fio do cabo OBD saindo da placa (o 16 já vem com o fusível no fio)
             s.add(f'<path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="#37474f" stroke-width="1.1"/><path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="{col}" stroke-width="0.75"/>')
             s.text(x, H + 5.4, pin, 1.3, col, weight='bold')
-        s.text(hp(12, 24)[0] - 2, H + 5.4, 'cabo OBD:', 1.3, '#5d4037', anchor='end')
+        s.text(hp(8, 24)[0] - 2, H + 5.4, 'cabo OBD:', 1.3, '#5d4037', anchor='end')
         s.text(W / 2, -3.4, 'ETAPA 2 · placa montada, vista de cima', 1.7, '#5d4037', weight='bold')
     return s.svg()
 
@@ -318,6 +324,7 @@ def view_bottom(scale):
         legs |= {a, b}
     for row in (2, 12):
         legs |= {(c, row) for c in range(2, 17)}
+    legs |= set(BUCK_PINS.values())
     for c, r in legs:
         x, y = hp(c, r)
         s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')
@@ -327,7 +334,7 @@ def view_bottom(scale):
             s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.7" fill="none" stroke="{col}" stroke-width="0.35"/>')
             s.text(X(x) + (1.6 if c < 12 else -1.6), y + 0.45, name, 1.05, '#37474f', anchor='middle')
     # nomes das trilhas
-    labels = {'GND': (15, 18.5, BLK), '5 V': (16, 17.5, RED), 'CAN-L': (18, 19.5, BLU), '12 V com fusível': (12, 22.6, PUR),
+    labels = {'GND': (15, 18.5, BLK), '5 V': (16, 17.5, RED), 'CAN-L': (18, 19.5, BLU), '12 V com fusível': (8, 20.5, PUR),
               'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG)}
     for t, (c, r, col) in labels.items():
         x, y = MX + (c - 1) * P, MY + (r - 1) * P

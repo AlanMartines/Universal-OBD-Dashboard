@@ -10,9 +10,9 @@ Placa perfurada de ilhas soltas no tamanho padrão de 5 × 7 cm (18 × 24 furos,
 
 ![Esquema: OBD, fusível, RT8272, ESP32 e TJA1050 com os resistores](esquema.svg)
 
-**Etapa 1: antes de encaixar o ESP32 e os módulos** (vista de cima). Barras fêmea do ESP32, resistores, fios isolados J1 e J2 e as ilhas de cada módulo:
+**Etapa 1: antes de encaixar o ESP32 e os módulos** (vista de cima). Barras fêmea do ESP32, resistores, fios isolados J1 a J3, ilhas do TJA1050 e pinos do RT8272:
 
-![Etapa 1: barras do ESP32, resistores R1 a R4, fios J1 e J2 e ilhas dos módulos](etapa1.svg)
+![Etapa 1: barras do ESP32, resistores R1 a R4, fios J1 a J3, ilhas do TJA1050 e pinos do RT8272](etapa1.svg)
 
 **Etapa 2: placa montada** (vista de cima). O ESP32 fica deitado, com a antena para fora da placa à esquerda e o USB à direita:
 
@@ -34,12 +34,12 @@ Para gerar de novo: `python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py`
   - R2 e R3, em série, vão do D21 ao GND. É o divisor que leva os 5 V do RX a 3,3 V;
   - R4 vai do 3V3 ao CANH, pelo fio J2.
 - **TJA1050:** preso com fita dupla-face nas linhas 15 a 19, à direita. Os pinos vão às ilhas da linha 14 por fios curtos (ou por barra de pinos, se a ordem bater).
-- **RT8272:** preso com fita à esquerda, nas linhas 15 a 20. Os quatro fios dele vão às ilhas da linha 21.
+- **RT8272 (módulo HW-108, 21 × 21 mm):** soldado na placa por barra de pinos macho, à esquerda, com a bobina (4R7) embaixo à direita. As duas fileiras de pinos do módulo ficam a 7 furos uma da outra: EN, IN− e IN+ na coluna 8 (linhas 15 a 17); OUT− e OUT+ na coluna 1 (linhas 21 e 22). IN− e OUT− são o mesmo GND dentro do módulo, então só o IN− vai ao GND da placa. O EN fica sem ligação. **Antes de soldar, encaixe o módulo com os pinos na placa e veja se os cinco entram nos furos.** Se não entrarem, use fita dupla-face e fios curtos até os mesmos furos.
 - **Fusível de 1 A, fora da placa:** porta-fusível de linha no fio do pino 16, o mais perto possível do conector OBD, para proteger o fio inteiro. Serve um de lâmina mini ou um de 5 × 20 mm.
-- **Cabo OBD:** os quatro fios entram pela borda de baixo: 16 (12,24), 4 (16,24), 5 (17,24) e 14 (18,24).
+- **Cabo OBD:** os quatro fios entram pela borda de baixo: 16 (8,24), 4 (16,24), 5 (17,24) e 14 (18,24).
 - **Placa perfurada:** 5 × 7 cm com 18 × 24 furos, o tamanho padrão mais comum. Uma de 4 × 6 cm não serve, porque as barras do ESP32 precisam de 15 colunas.
 
-Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio OUT+ ainda solto.
+Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio J3 ainda fora da placa.
 
 ## Ilhas, trilhas, resistores e fios
 
@@ -48,8 +48,8 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio OUT+ ainda solto.
 | Onde | Furos |
 |---|---|
 | TJA1050 | RX (11,14) · CANH (12,14) · GND (15,14) · VCC (16,14) · TX (17,14) · CANL (18,14) |
-| RT8272 | IN+ (12,21) · IN− (14,21) · OUT− (15,21) · OUT+ (16,21) |
-| Cabo OBD | 16, já com o fusível (12,24) · 4 (16,24) · 5 (17,24) · 14 (18,24) |
+| RT8272 (pinos) | EN (8,15), sem ligação · IN− (8,16) · IN+ (8,17) · OUT− (1,21), sem ligação · OUT+ (1,22) |
+| Cabo OBD | 16, já com o fusível (8,24) · 4 (16,24) · 5 (17,24) · 14 (18,24) |
 
 **Trilhas de solda (lado de baixo)**
 
@@ -57,14 +57,15 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio OUT+ ainda solto.
 |---|---|
 | D21 → R1 e R2 | (6,2) – (6,3) – (7,3) e (6,3) – (6,4) |
 | R2 → R3 | (6,8) – (7,8) |
-| GND | (11,8) → (15,8) → (15,24) → (17,24). Passa pelo GND do ESP32 (15,12), pelo GND do TJA1050 (15,14), pelo OUT− (15,21) e chega aos pinos 4 e 5 do OBD |
-| IN− no GND | (14,21) – (15,21) |
+| GND | (11,8) → (15,8) → (15,24) → (17,24). Passa pelo GND do ESP32 (15,12), pelo GND do TJA1050 (15,14) e chega aos pinos 4 e 5 do OBD |
+| IN− no GND | (8,16) → (15,16) |
 | 3V3 → R4 | (16,2) – (16,3) |
-| 5 V | (16,12) → (16,21). Passa pelo VCC do TJA1050 (16,14) e chega ao OUT+ |
+| 5 V | (16,12) → (16,21). Passa pelo VCC do TJA1050 (16,14) e chega ao fim do J3 |
 | TX preso no 5 V | (16,14) – (17,14) |
 | RX (fim do J1) | (11,13) – (11,14) |
 | CANH (fim do J2) | (12,13) – (12,14) |
-| 12 V com fusível → IN+ | (12,24) → (12,21) |
+| 12 V com fusível → IN+ | (8,24) → (8,17) |
+| OUT+ → começo do J3 | (1,22) – (1,23) |
 | CAN-L | (18,14) → (18,24) |
 
 As trilhas de GND (coluna 15) e de 5 V (coluna 16) correm lado a lado nas linhas 12 a 21: confira com lupa e com o multímetro que não encostam.
@@ -78,14 +79,15 @@ As trilhas de GND (coluna 15) e de 5 V (coluna 16) correm lado a lado nas linhas
 | R3 | (7,8) – (11,8) | R2 → GND (divisor) |
 | R4 | (16,3) – (16,7) | 3V3 → J2 → CANH |
 
-**Fios isolados (por cima da placa, embaixo do ESP32)**
+**Fios isolados (por cima da placa; J1 e J2 embaixo do ESP32)**
 
 | | Caminho | Função |
 |---|---|---|
 | J1 | (11,3) → coluna 17 → (11,13) | R1 → RX do TJA1050 |
 | J2 | (16,7) → coluna 18 → (12,13) | R4 → CANH do TJA1050 |
+| J3 | (1,23) → linha 23 → (16,23) → (16,21) | OUT+ do RT8272 → 5 V |
 
-**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (12,24), (12,21) ou (16,12). Com o ESP32 fora das barras e o OUT+ do RT8272 solto, regule a saída em 5,0 V. Depois de ligar o OUT+ e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
+**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (8,24), (1,22) ou (16,12). Com o ESP32 fora das barras e o J3 ainda fora da placa, regule a saída em 5,0 V. Depois de soldar o J3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
 
 ## Medidas dos componentes
 
@@ -100,8 +102,8 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 | TJA1050 (Teknimas) | Comprimento × largura (mm) | | |
 | | Posição e ordem dos pinos | | |
 | | Resistência entre CANH e CANL (Ω). Se der cerca de 120 Ω, o resistor de terminação sai | | |
-| RT8272 | Comprimento × largura (mm) | | |
-| | Posição das ilhas IN+, IN−, OUT+, OUT− | | |
+| RT8272 (HW-108) | Comprimento × largura (mm) | 21 × 21 | 07/11/2026 |
+| | Posição das ilhas IN+, IN−, OUT+, OUT− | Com a bobina embaixo à direita: EN, IN−, IN+ na borda direita, de cima para baixo; OUT−, OUT+ embaixo, à esquerda. Quase 18 mm por fora entre os pinos das pontas, cerca de 17,8 mm de centro a centro (7 furos). Confirmar encaixando na placa | 07/11/2026 |
 | Fusível de 1 A | Fica no fio do pino 16, fora da placa; não precisa de medida | | 07/11/2026 |
 | SN65HVD230 (reserva, a caminho) | Comprimento × largura e ordem dos pinos | | |
 | Conector OBD2 macho (a caminho) | Pinos montados (precisa de 4, 5, 14 e 16) | | |

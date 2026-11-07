@@ -494,10 +494,12 @@
 <path d="M28.81,36.27 L28.81,38.81" fill="none" stroke="#f9a825" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M31.35,36.27 L31.35,38.81" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M31.35,36.27 L31.35,38.81" fill="none" stroke="#1976d2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M36.43,56.59 L38.97,56.59" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M36.43,56.59 L38.97,56.59" fill="none" stroke="#263238" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M31.35,64.21 L31.35,61.67 L31.35,59.13 L31.35,56.59" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M31.35,64.21 L31.35,61.67 L31.35,59.13 L31.35,56.59" fill="none" stroke="#7b1fa2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M21.19,43.89 L23.73,43.89 L26.27,43.89 L28.81,43.89 L31.35,43.89 L33.89,43.89 L36.43,43.89 L38.97,43.89" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M21.19,43.89 L23.73,43.89 L26.27,43.89 L28.81,43.89 L31.35,43.89 L33.89,43.89 L36.43,43.89 L38.97,43.89" fill="none" stroke="#263238" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M21.19,64.21 L21.19,61.67 L21.19,59.13 L21.19,56.59 L21.19,54.05 L21.19,51.51 L21.19,48.97 L21.19,46.43" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M21.19,64.21 L21.19,61.67 L21.19,59.13 L21.19,56.59 L21.19,54.05 L21.19,51.51 L21.19,48.97 L21.19,46.43" fill="none" stroke="#7b1fa2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M3.41,59.13 L3.41,61.67" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M3.41,59.13 L3.41,61.67" fill="none" stroke="#d32f2f" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M46.59,38.81 L46.59,41.35 L46.59,43.89 L46.59,46.43 L46.59,48.97 L46.59,51.51 L46.59,54.05 L46.59,56.59 L46.59,59.13 L46.59,61.67 L46.59,64.21" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M46.59,38.81 L46.59,41.35 L46.59,43.89 L46.59,46.43 L46.59,48.97 L46.59,51.51 L46.59,54.05 L46.59,56.59 L46.59,59.13 L46.59,61.67 L46.59,64.21" fill="none" stroke="#1976d2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <rect x="4.65" y="7.03" width="38.16" height="2.6" rx="0.3" fill="#212121"/>
@@ -608,6 +610,13 @@
 <text x="38.97" y="35.75" font-size="1.3" fill="#fff" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">J2</text>
 <rect x="37.37" y="34.50" width="3.2" height="1.6" rx="0.5" fill="#1976d2" stroke="#37474f" stroke-width="0.15"/>
 <text x="38.97" y="35.73" font-size="1.2" fill="#fff" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">J2</text>
+<path d="M3.41,61.67 L41.51,61.67 L41.51,56.59" fill="none" stroke="#37474f" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3.41,61.67 L41.51,61.67 L41.51,56.59" fill="none" stroke="#d32f2f" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="3.41" cy="61.67" r="0.55" fill="#cfd8dc" stroke="#37474f" stroke-width="0.2"/>
+<circle cx="41.51" cy="56.59" r="0.55" fill="#cfd8dc" stroke="#37474f" stroke-width="0.2"/>
+<text x="22.46" y="62.17" font-size="1.3" fill="#fff" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">J3</text>
+<rect x="20.86" y="60.92" width="3.2" height="1.6" rx="0.5" fill="#d32f2f" stroke="#37474f" stroke-width="0.15"/>
+<text x="22.46" y="62.15" font-size="1.2" fill="#fff" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">J3</text>
 <circle cx="28.81" cy="38.81" r="1.15" fill="none" stroke="#f9a825" stroke-width="0.4"/>
 <rect x="27.70" y="40.23" width="2.23" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="28.81" y="41.21" font-size="1.15" fill="#f9a825" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">RX</text>
@@ -626,21 +635,26 @@
 <circle cx="46.59" cy="38.81" r="1.15" fill="none" stroke="#1976d2" stroke-width="0.4"/>
 <rect x="44.76" y="40.23" width="3.65" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="46.59" y="41.21" font-size="1.15" fill="#1976d2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANL</text>
-<circle cx="31.35" cy="56.59" r="1.15" fill="none" stroke="#7b1fa2" stroke-width="0.4"/>
-<rect x="30.02" y="54.14" width="2.66" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="31.35" y="54.99" font-size="1.0" fill="#7b1fa2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">IN+</text>
-<circle cx="36.43" cy="56.59" r="1.15" fill="none" stroke="#263238" stroke-width="0.4"/>
-<rect x="35.10" y="54.14" width="2.66" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="36.43" y="54.99" font-size="1.0" fill="#263238" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">IN-</text>
-<circle cx="38.97" cy="56.59" r="1.15" fill="none" stroke="#263238" stroke-width="0.4"/>
-<rect x="37.33" y="58.14" width="3.28" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="38.97" y="58.99" font-size="1.0" fill="#263238" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OUT-</text>
-<circle cx="41.51" cy="56.59" r="1.15" fill="none" stroke="#d32f2f" stroke-width="0.4"/>
-<rect x="39.87" y="54.14" width="3.28" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="41.51" y="54.99" font-size="1.0" fill="#d32f2f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OUT+</text>
-<circle cx="31.35" cy="64.21" r="1.15" fill="none" stroke="#7b1fa2" stroke-width="0.4"/>
-<rect x="30.24" y="65.63" width="2.23" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="31.35" y="66.61" font-size="1.15" fill="#7b1fa2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">16</text>
+<rect x="19.99" y="40.15" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="20.79" y="40.95" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="17.75" y="40.95" width="2.04" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="19.39" y="41.80" font-size="1.0" fill="#9e9e9e" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">EN</text>
+<rect x="19.99" y="42.69" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="20.79" y="43.49" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="17.13" y="43.49" width="2.66" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="19.39" y="44.34" font-size="1.0" fill="#263238" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">IN-</text>
+<rect x="19.99" y="45.23" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="20.79" y="46.03" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="17.13" y="46.03" width="2.66" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="19.39" y="46.88" font-size="1.0" fill="#7b1fa2" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">IN+</text>
+<rect x="2.21" y="55.39" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="3.01" y="56.19" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="4.81" y="56.19" width="3.28" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="5.21" y="57.04" font-size="1.0" fill="#263238" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OUT-</text>
+<rect x="2.21" y="57.93" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="3.01" y="58.73" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="4.81" y="58.73" width="3.28" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="5.21" y="59.58" font-size="1.0" fill="#d32f2f" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OUT+</text>
+<rect x="6.55" y="50.53" width="11.50" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="12.30" y="51.51" font-size="1.15" fill="#0d47a1" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">pinos do RT8272</text>
+<circle cx="21.19" cy="64.21" r="1.15" fill="none" stroke="#7b1fa2" stroke-width="0.4"/>
+<rect x="20.08" y="65.63" width="2.23" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="21.19" y="66.61" font-size="1.15" fill="#7b1fa2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">16</text>
 <circle cx="41.51" cy="64.21" r="1.15" fill="none" stroke="#263238" stroke-width="0.4"/>
 <rect x="40.75" y="65.63" width="1.51" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="41.51" y="66.61" font-size="1.15" fill="#263238" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">4</text>
@@ -650,6 +664,6 @@
 <circle cx="46.59" cy="64.21" r="1.15" fill="none" stroke="#1976d2" stroke-width="0.4"/>
 <rect x="45.48" y="65.63" width="2.23" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="46.59" y="66.61" font-size="1.15" fill="#1976d2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">14</text>
-<text x="29.55" y="67.11" font-size="1.2" fill="#5d4037" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">cabo OBD:</text>
+<text x="19.39" y="67.11" font-size="1.2" fill="#5d4037" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">cabo OBD:</text>
 <text x="25.00" y="73.50" font-size="1.7" fill="#5d4037" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">ETAPA 1 · vista de cima, antes de encaixar o ESP32 e os módulos</text>
 </svg>
