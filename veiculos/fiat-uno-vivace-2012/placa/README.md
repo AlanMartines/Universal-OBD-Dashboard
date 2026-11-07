@@ -95,8 +95,8 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 | Componente | Medida | Valor | Data |
 |---|---|---|---|
 | Placa perfurada | Tamanho (mm) e número de furos (colunas × linhas) | | |
-| ESP32 DevKit V1 (30 pinos) | Comprimento × largura da placa (mm) | | |
-| | Distância entre as duas fileiras de pinos (mm) | | |
+| ESP32 DevKit V1 (30 pinos) | Comprimento × largura da placa (mm) | 50 × 28; 15 pinos por lado, fileira de 15 com 38 mm (passo de 2,54 mm) | 07/11/2026 |
+| | Distância entre as duas fileiras de pinos (mm) | 24,5 por dentro e 25,5 a 26 por fora; cerca de 25,4 de centro a centro (10 furos, linhas 2 e 12) | 07/11/2026 |
 | | Ordem dos pinos, com o USB para baixo (confirmar 3V3, GND, VIN e D21) | | |
 | TJA1050 (Teknimas) | Comprimento × largura (mm) | | |
 | | Posição e ordem dos pinos | | |
@@ -108,4 +108,4 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 | Conector OBD2 macho (a caminho) | Pinos montados (precisa de 4, 5, 14 e 16) | | |
 | Cabo Y OBD2 (a caminho) | Pinos ligados em cada ramo | | |
 
-Medidas de catálogo usadas por enquanto: ESP32 DevKit V1 com cerca de 28,3 × 51,5 mm e fileiras a cerca de 25,4 mm; TJA1050 com cerca de 22 × 11,5 mm.
+Medidas de catálogo usadas por enquanto: TJA1050 com cerca de 22 × 11,5 mm.

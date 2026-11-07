@@ -622,17 +622,17 @@
 <circle cx="46.59" cy="42.45" r="0.55" fill="#d4af37"/>
 <text x="46.59" y="44.35" font-size="0.95" fill="#fff" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANL</text>
 <g opacity="1">
-<rect x="-2.02" y="6.88" width="51.5" height="28.3" rx="1.2" fill="#1a237e" stroke="#0d1442" stroke-width="0.3"/>
-<rect x="-1.02" y="12.03" width="25.5" height="18" rx="0.6" fill="#263238"/>
-<rect x="5.48" y="13.03" width="18" height="16" rx="0.5" fill="#b0bec5" stroke="#78909c" stroke-width="0.2"/>
-<text x="14.48" y="21.53" font-size="1.5" fill="#37474f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">ESP32-WROOM-32</text>
-<path d="M-0.02,14.03 L3.48,15.43 L-0.02,16.83 L3.48,18.23 L-0.02,19.63 L3.48,21.03 L-0.02,22.43 L3.48,23.83 L-0.02,25.23 L3.48,26.63 L-0.02,28.03" fill="none" stroke="#c9a227" stroke-width="0.45"/>
-<text x="1.78" y="29.03" font-size="1.1" fill="#c9a227" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">antena</text>
-<rect x="43.98" y="17.23" width="6.5" height="7.6" rx="0.6" fill="#cfd8dc" stroke="#90a4ae" stroke-width="0.25"/>
-<text x="47.18" y="26.63" font-size="1.2" fill="#eceff1" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">USB</text>
-<rect x="37.98" y="11.53" width="3.4" height="2.4" rx="0.3" fill="#eeeeee"/><circle cx="39.68" cy="12.73" r="0.7" fill="#424242"/>
-<rect x="37.98" y="29.23" width="3.4" height="2.4" rx="0.3" fill="#eeeeee"/><circle cx="39.68" cy="30.43" r="0.7" fill="#424242"/>
-<text x="32.48" y="21.53" font-size="1.6" fill="#e8eaf6" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">ESP32 DevKit V1</text>
+<rect x="-1.27" y="7.03" width="50.0" height="28.0" rx="1.2" fill="#1a237e" stroke="#0d1442" stroke-width="0.3"/>
+<rect x="-0.27" y="12.03" width="25.5" height="18" rx="0.6" fill="#263238"/>
+<rect x="6.23" y="13.03" width="18" height="16" rx="0.5" fill="#b0bec5" stroke="#78909c" stroke-width="0.2"/>
+<text x="15.23" y="21.53" font-size="1.5" fill="#37474f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">ESP32-WROOM-32</text>
+<path d="M0.73,14.03 L4.23,15.43 L0.73,16.83 L4.23,18.23 L0.73,19.63 L4.23,21.03 L0.73,22.43 L4.23,23.83 L0.73,25.23 L4.23,26.63 L0.73,28.03" fill="none" stroke="#c9a227" stroke-width="0.45"/>
+<text x="2.53" y="29.03" font-size="1.1" fill="#c9a227" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">antena</text>
+<rect x="43.23" y="17.23" width="6.5" height="7.6" rx="0.6" fill="#cfd8dc" stroke="#90a4ae" stroke-width="0.25"/>
+<text x="46.43" y="26.63" font-size="1.2" fill="#eceff1" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">USB</text>
+<rect x="38.73" y="11.53" width="3.4" height="2.4" rx="0.3" fill="#eeeeee"/><circle cx="40.43" cy="12.73" r="0.7" fill="#424242"/>
+<rect x="38.73" y="29.23" width="3.4" height="2.4" rx="0.3" fill="#eeeeee"/><circle cx="40.43" cy="30.43" r="0.7" fill="#424242"/>
+<text x="33.23" y="21.53" font-size="1.6" fill="#e8eaf6" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">ESP32 DevKit V1</text>
 <rect x="4.85" y="7.23" width="2.2" height="2.2" fill="#111" stroke="#555" stroke-width="0.15"/><circle cx="5.95" cy="8.33" r="0.45" fill="#d4af37"/>
 <text x="5.95" y="10.83" font-size="1.05" fill="#c5cae9" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D23</text>
 <rect x="7.39" y="7.23" width="2.2" height="2.2" fill="#111" stroke="#555" stroke-width="0.15"/><circle cx="8.49" cy="8.33" r="0.45" fill="#d4af37"/>

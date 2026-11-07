@@ -34,6 +34,7 @@ def hp(c, r):
 # ESP32 deitado: antena para a esquerda (fora da placa), USB para a direita. Barras fêmea nas linhas 2 e 12, colunas 2 a 16.
 ESP_TOP = ['D23', 'D22', 'TX0', 'RX0', 'D21', 'D19', 'D18', 'D5', 'TX2', 'RX2', 'D4', 'D2', 'D15', 'GND', '3V3']
 ESP_BOT = ['EN', 'VP', 'VN', 'D34', 'D35', 'D32', 'D33', 'D25', 'D26', 'D27', 'D14', 'D12', 'D13', 'GND', 'VIN']
+ESP_L, ESP_W = 50.0, 28.0   # medidas do paquímetro; fileiras a 25,4 mm (10 furos)
 ESP_USED = {'D21': YEL, '3V3': ORG, 'GND': BLK, 'VIN': RED}
 
 # Resistores 1 kΩ (marrom, preto, vermelho)
@@ -180,14 +181,14 @@ def jumper(s, pts, color, name, X=lambda x: x):
 
 
 def esp32_art(s, ghost=False):
-    x0 = hp(2, 1)[0] - 6.65 - 0.0   # barra de 15 pinos centrada na placa de 51,5 mm
+    # placa de 50 x 28 mm (paquímetro, 07/11/2026), barras de 15 pinos centradas
     cx = (hp(2, 2)[0] + hp(16, 2)[0]) / 2
-    x0 = cx - 25.75
+    x0 = cx - ESP_L / 2
     cy = (hp(2, 2)[1] + hp(2, 12)[1]) / 2
-    y0 = cy - 14.15
+    y0 = cy - ESP_W / 2
     op = '0.35' if ghost else '1'
     s.add(f'<g opacity="{op}">')
-    s.add(f'<rect x="{x0:.2f}" y="{y0:.2f}" width="51.5" height="28.3" rx="1.2" fill="#1a237e" stroke="#0d1442" stroke-width="0.3"/>')
+    s.add(f'<rect x="{x0:.2f}" y="{y0:.2f}" width="{ESP_L}" height="{ESP_W}" rx="1.2" fill="#1a237e" stroke="#0d1442" stroke-width="0.3"/>')
     # módulo ESP-WROOM-32 com antena (à esquerda)
     s.add(f'<rect x="{x0 + 1.0:.2f}" y="{cy - 9:.2f}" width="25.5" height="18" rx="0.6" fill="#263238"/>')
     s.add(f'<rect x="{x0 + 7.5:.2f}" y="{cy - 8:.2f}" width="18" height="16" rx="0.5" fill="#b0bec5" stroke="#78909c" stroke-width="0.2"/>')
@@ -196,8 +197,8 @@ def esp32_art(s, ghost=False):
     s.add(f'<path d="{zig}" fill="none" stroke="#c9a227" stroke-width="0.45"/>')
     s.text(x0 + 3.8, cy + 8.0, 'antena', 1.1, '#c9a227')
     # USB à direita, botões
-    s.add(f'<rect x="{x0 + 46:.2f}" y="{cy - 3.8:.2f}" width="6.5" height="7.6" rx="0.6" fill="#cfd8dc" stroke="#90a4ae" stroke-width="0.25"/>')
-    s.text(x0 + 49.2, cy + 5.6, 'USB', 1.2, '#eceff1')
+    s.add(f'<rect x="{x0 + 44.5:.2f}" y="{cy - 3.8:.2f}" width="6.5" height="7.6" rx="0.6" fill="#cfd8dc" stroke="#90a4ae" stroke-width="0.25"/>')
+    s.text(x0 + 47.7, cy + 5.6, 'USB', 1.2, '#eceff1')
     for by, nm in ((cy - 9.5, 'BOOT'), (cy + 8.2, 'EN')):
         s.add(f'<rect x="{x0 + 40:.2f}" y="{by:.2f}" width="3.4" height="2.4" rx="0.3" fill="#eeeeee"/><circle cx="{x0 + 41.7:.2f}" cy="{by + 1.2:.2f}" r="0.7" fill="#424242"/>')
     s.text(x0 + 34.5, cy + 0.5, 'ESP32 DevKit V1', 1.6, '#e8eaf6', weight='bold')
