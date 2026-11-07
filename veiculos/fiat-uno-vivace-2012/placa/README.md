@@ -97,7 +97,7 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 | Placa perfurada | Tamanho (mm) e número de furos (colunas × linhas) | | |
 | ESP32 DevKit V1 (30 pinos) | Comprimento × largura da placa (mm) | 50 × 28; 15 pinos por lado, fileira de 15 com 38 mm (passo de 2,54 mm) | 07/11/2026 |
 | | Distância entre as duas fileiras de pinos (mm) | 24,5 por dentro e 25,5 a 26 por fora; cerca de 25,4 de centro a centro (10 furos, linhas 2 e 12) | 07/11/2026 |
-| | Ordem dos pinos, com o USB para baixo (confirmar 3V3, GND, VIN e D21) | | |
+| | Ordem dos pinos, com o USB para baixo (confirmar 3V3, GND, VIN e D21) | Confirmada pela foto: com o USB para cima, à esquerda 3V3, GND, D15, D2, D4, RX2, TX2, D5, D18, D19, D21, RX0, TX0, D22, D23; à direita VIN, GND, D13, D12, D14, D27, D26, D25, D33, D32, D35, D34, VN, VP, EN. Igual ao desenho | 07/11/2026 |
 | TJA1050 (Teknimas) | Comprimento × largura (mm) | | |
 | | Posição e ordem dos pinos | | |
 | | Resistência entre CANH e CANL (Ω). Se der cerca de 120 Ω, o resistor de terminação sai | | |
