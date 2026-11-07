@@ -25,8 +25,8 @@
   --c-accent: #0072ad; --c-seg-off: #dce1e7; --c-ok: #11854a; --c-warn: #a96400; --c-bad: #cf1515;
   --c-ring: #d3d8de; --c-fill-a: #20252b; --c-fill-b: #6c737c; --c-glow: transparent;
 }
-.cluster[data-look="capsule"][data-scheme="night"] { --c-line: #4a5059; --c-accent: #e8ebee; }
-.cluster[data-look="capsule"][data-scheme="day"] { --c-bg: #e6e9ec; --c-line: #7f8690; --c-accent: #20252b; }
+.cluster[data-look="capsule"][data-scheme="night"] { --c-line: #4a5059; --c-accent: #e8ebee; --c-ring: #1b1f23; --c-cap-ok: #8fbf32; --c-cap-hot: #d0161d; }
+.cluster[data-look="capsule"][data-scheme="day"] { --c-bg: #e6e9ec; --c-line: #7f8690; --c-accent: #20252b; --c-cap-ok: #5f9a17; --c-cap-hot: #c0121a; }
 .cluster[data-look="hud"][data-scheme="night"] { --c-bg: #01080b; --c-line: #123b49; --c-text: #e9f8ff; --c-muted: #6c97a7; --c-accent: #58d6ff; --c-seg-off: #0b1d24; }
 .cluster[data-look="hud"][data-scheme="day"] { --c-bg: #e9f1f4; --c-line: #a6c7d3; --c-text: #04212c; --c-muted: #4d6c78; --c-accent: #00739c; --c-seg-off: #d0e1e8; }
 
@@ -212,7 +212,10 @@
 .cap-track { fill: none; stroke: var(--c-ring); stroke-width: 22; }
 .heat-seg { fill: none; }
 .cap-rim { fill: none; stroke: var(--c-line); stroke-width: 1.6; }
-.cap-red { fill: none; stroke: var(--c-bad); stroke-width: 3; }
+.cap-fill .heat-seg { stroke: color-mix(in srgb, var(--c-cap-ok) var(--k, 100%), var(--c-ring)); }
+.cluster[data-tint="red"] .cap-fill .heat-seg { stroke: color-mix(in srgb, var(--c-cap-hot) var(--k, 100%), var(--c-ring)); }
+.cap-needle { stroke: var(--c-text); stroke-width: 2.4; stroke-linecap: round; filter: drop-shadow(0 0 2px rgba(0, 0, 0, .6)); }
+.cap-needle.off { display: none; }
 .cap-tick { stroke: var(--c-muted); stroke-width: 1; }
 .cap-tick.major { stroke: var(--c-text); stroke-width: 2.2; }
 .cap-tick.red { stroke: var(--c-bad); }
@@ -221,6 +224,8 @@
   paint-order: stroke; stroke: var(--c-bg); stroke-width: 3px; stroke-linejoin: round;
 }
 .cap-label.red { fill: var(--c-bad); }
+.cluster[data-look="capsule"] .cap-label { font-family: var(--f-label); font-weight: 600; font-size: 15px; stroke: none; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .7)); }
+.cluster[data-look="capsule"][data-scheme="day"] .cap-label { filter: none; }
 .cap-main { fill: var(--c-text); font-family: var(--f-num); font-weight: 500; font-size: 44px; text-anchor: middle; dominant-baseline: central; }
 .cap-main.empty { fill: var(--c-muted); font-size: 26px; font-weight: 400; letter-spacing: .2em; }
 .cap-underline { stroke: var(--c-line); stroke-width: 1.4; }

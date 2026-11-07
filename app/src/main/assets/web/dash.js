@@ -94,6 +94,9 @@ window.Dash = (function () {
   let mode = MODES.includes(store.get('mode', 'auto')) ? store.get('mode', 'auto') : 'auto';
   let userPage = PAGES.some((p) => p[0] === store.get('page', 'road')) ? store.get('page', 'road') : 'road';
   let autoPage = store.get('autoPage', '1') === '1';
+  /** Cor dos mostradores da Cápsula: verde ou vermelho. */
+  const TINTS = [['green', 'Verde'], ['red', 'Vermelho']];
+  let tint = TINTS.some((t) => t[0] === store.get('tint', 'green')) ? store.get('tint', 'green') : 'green';
   let page = userPage;
   let stoppedSince = null;
   const target = { rpm: null, speed: null };
@@ -242,6 +245,7 @@ window.Dash = (function () {
       <span class="cl-pages" data-ui="pages" role="tablist"></span>
       <button type="button" class="cl-chip" id="dash-autopage" data-ui="autoBtn" title="Trocar de tela sozinho: Viagem quando parado">Telas auto</button>
       <span class="cl-spacer"></span>
+      ${opts.tint ? '<button type="button" class="cl-chip" id="dash-tint" data-ui="tintBtn" title="Cor dos mostradores"></button>' : ''}
       ${opts.trip ? '<span class="cl-trip"><b data-ui="tripKm">--</b> km · <b data-ui="tripTime">--</b></span>' : ''}
       <button type="button" class="cl-chip" id="dash-look" data-ui="lookBtn" title="Trocar tema"></button>
       <button type="button" class="cl-chip" id="dash-mode" data-ui="modeBtn" title="Dia / noite"></button>
@@ -301,21 +305,22 @@ window.Dash = (function () {
     },
   };
 
-  /* ================================================================ Degradê verde → vermelho */
-  /** Cor ao longo da escala (0 = início, 1 = fim): verde, amarelo, laranja, vermelho. */
-  const heat = (t) => `hsl(${Math.round(135 * (1 - clamp(t, 0, 1)) ** 1.15)} 82% ${52 - 6 * clamp(t, 0, 1)}%)`;
+  /* ================================================================ Faixa de arco esmaecida */
   /**
-   * Faixa de arco em degradê: N pedaços com a cor de cada trecho da escala, revelados até o valor por uma
-   * máscara (traço com stroke-dashoffset) que também esmaece de fora (forte) para dentro (fraco).
+   * Faixa de arco de cor única (definida no CSS pela classe), revelada até o valor por uma máscara
+   * (traço com stroke-dashoffset) que também esmaece de fora (forte) para dentro (fraco).
+   * Com o.ramp, a cor vai de fraca no início da escala a forte no fim.
    * Atualizar o valor mexe só num atributo da máscara.
    */
   function heatArc(parent, defs, id, o) {
     const g = svg('g', { mask: `url(#${id}m)`, class: o.cls || '' }, parent);
-    const n = o.color ? 1 : 64;
+    const n = o.ramp ? 48 : 1;
     for (let i = 0; i < n; i++) {
       const a0 = o.start + o.sweep * i / n;
       const a1 = o.start + o.sweep * Math.min(1, (i + 1.6) / n); // leve sobreposição: sem frestas
-      svg('path', { class: 'heat-seg', d: o.arc(o.r, a0, a1), stroke: o.color || heat((i + 0.5) / n), 'stroke-width': o.w }, g);
+      const seg = svg('path', { class: 'heat-seg', d: o.arc(o.r, a0, a1), 'stroke-width': o.w }, g);
+      // Cor opaca misturada ao fundo da faixa (não soma nas emendas como a transparência)
+      if (o.ramp) seg.style.setProperty('--k', (100 * (o.ramp + (1 - o.ramp) * ((i + 0.5) / n) ** 1.3)).toFixed(1) + '%');
     }
     const cx = o.cx == null ? 100 : o.cx;
     const cy = o.cy == null ? 100 : o.cy;
@@ -328,7 +333,7 @@ window.Dash = (function () {
       d: o.arc(o.r, o.start, o.start + o.sweep), fill: 'none', stroke: `url(#${id}r)`, 'stroke-width': o.w,
       pathLength: 1000, 'stroke-dasharray': '1000 1000', 'stroke-dashoffset': 1000,
     }, mask);
-    return { set(frac) { reveal.setAttribute('stroke-dashoffset', (1000 * (1 - clamp(frac, 0, 1))).toFixed(1)); } };
+    return { el: g, set(frac) { reveal.setAttribute('stroke-dashoffset', (1000 * (1 - clamp(frac, 0, 1))).toFixed(1)); } };
   }
 
   /** Arco em qualquer centro. Ângulos em graus, 0 = 3 h, sentido horário; a1 < a0 = anti-horário. */
@@ -373,10 +378,9 @@ window.Dash = (function () {
     const end = o.start + o.sweep;
     const R = 80;
     svg('path', { class: 'cap-track', d: arc(R, o.start, end) }, root);
-    // Faixa até o valor: do verde ao vermelho ao longo da escala, mais forte na borda de fora
-    const fill = heatArc(root, defs, id, { arc, r: R, w: 22, start: o.start, sweep: o.sweep });
+    // Faixa até o valor na cor escolhida (verde ou vermelho): fraca no início da escala, forte no fim
+    const fill = heatArc(root, defs, id, { arc, r: R, w: 22, start: o.start, sweep: o.sweep, cls: 'cap-fill', innerOpacity: 0.12, ramp: 0.18 });
     svg('path', { class: 'cap-rim', d: arc(99, o.start, end) }, root);
-    if (o.red !== null && o.red < o.max) svg('path', { class: 'cap-red', d: arc(99, ang(o.red), end) }, root);
     for (let v = o.min; v <= o.max + 1e-9; v += o.minor) {
       const major = Math.abs((v - o.min) / o.major - Math.round((v - o.min) / o.major)) < 1e-6;
       const a = ang(v);
@@ -389,12 +393,16 @@ window.Dash = (function () {
         t.textContent = String(Math.round(v / o.labelDiv));
       }
     }
+    // Traço claro no valor atual, de dentro da faixa até o aro
+    const needle = svg('line', { class: 'cap-needle', x1: 100 + R - 12, y1: 100, x2: 100 + 99, y2: 100 }, root);
     const main = svg('text', { class: 'cap-main', x: 100, y: 100 }, root);
     svg('line', { class: 'cap-underline', x1: 58, y1: 124, x2: 142, y2: 124 }, root);
     const sub = svg('text', { class: 'cap-sub', x: 100, y: 140 }, root);
     return {
       set(v) {
         fill.set(v === null ? 0 : (clamp(v, o.min, o.max) - o.min) / (o.max - o.min));
+        needle.classList.toggle('off', v === null);
+        if (v !== null) needle.setAttribute('transform', `rotate(${ang(v).toFixed(2)} 100 100)`);
       },
       text(m, s, hint) {
         if (main.textContent !== m) main.textContent = m;
@@ -418,7 +426,7 @@ window.Dash = (function () {
           <div class="cap-trip"><span>Viagem <b data-ui="tripKm">--</b> km</span><span>Tempo <b data-ui="tripTime">--</b></span><span>Total <b data-ui="totalKm">--</b> km</span></div>
         </div>
         <div class="cap-g cap-rpm" data-ui="rpmHost"></div>
-        ${foot({})}`;
+        ${foot({ tint: true })}`;
     },
     build() {
       const d = dashCfg();
@@ -842,7 +850,7 @@ window.Dash = (function () {
       const ang = (v) => start + sweep * clamp(v / top, 0, 1);
       // Faixa, brilho ciano até o valor e bordas finas
       svg('path', { class: 'hz-band', d: arc(R, start, start + sweep), 'stroke-width': BW }, root);
-      this.fill = heatArc(root, defs, id, { arc, r: R, w: BW, start, sweep, cx, cy, box: [W, H], color: '#21d4ff', cls: 'hz-glow', innerOpacity: 0.35 });
+      this.fill = heatArc(root, defs, id, { arc, r: R, w: BW, start, sweep, cx, cy, box: [W, H], cls: 'hz-glow', innerOpacity: 0.35 });
       svg('path', { class: 'hz-edge', d: arc(R + BW / 2 + 1, start - 2, start + sweep + 2) }, root);
       svg('path', { class: 'hz-edge thin', d: arc(R - BW / 2 - 4, start - 6, start + sweep + 6) }, root);
       // Marcas na borda de fora e números dentro da faixa
@@ -988,6 +996,8 @@ window.Dash = (function () {
       setLook(LOOKS[(i + 1) % LOOKS.length][0]);
     });
     ui.lookBtn.textContent = LOOKS.find((l) => l[0] === look)[1];
+    if (ui.tintBtn) ui.tintBtn.addEventListener('click', () => setTint(tint === 'green' ? 'red' : 'green'));
+    applyTint();
 
     theme.build();
     applyScheme();
@@ -1015,6 +1025,12 @@ window.Dash = (function () {
   }
 
   function setLook(l) { if (THEMES[l] && root) { look = l; store.set('look', l); applyLook(); } }
+  function applyTint() {
+    if (!root) return;
+    root.dataset.tint = tint;
+    if (ui.tintBtn) ui.tintBtn.textContent = TINTS.find((t) => t[0] === tint)[1];
+  }
+  function setTint(t) { if (TINTS.some((x) => x[0] === t)) { tint = t; store.set('tint', t); applyTint(); } }
   function setMode(m) { if (MODES.includes(m)) { mode = m; store.set('mode', m); applyScheme(); } }
   /** Escolha manual: vira a tela "de casa" e vale até a próxima parada. */
   function setPage(p) {
