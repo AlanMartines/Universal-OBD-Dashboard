@@ -608,8 +608,8 @@
 <text x="5.70" y="65.75" font-size="0.95" fill="#ffcdd2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">IN</text>
 <text x="18.90" y="65.75" font-size="0.95" fill="#e1bee7" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OUT</text>
 <rect x="25.07" y="49.82" width="22.0" height="11.0" rx="0.6" fill="#1565c0" stroke="#0d47a1" stroke-width="0.3"/>
-<circle cx="44.87" cy="51.62" r="1.1" fill="#e3f2fd"/>
-<circle cx="44.87" cy="59.02" r="1.1" fill="#e3f2fd"/>
+<circle cx="44.17" cy="51.62" r="1.1" fill="#e3f2fd"/>
+<circle cx="44.17" cy="59.02" r="1.1" fill="#e3f2fd"/>
 <rect x="30.07" y="52.72" width="5.6" height="5.2" rx="0.3" fill="#212121"/>
 <text x="32.87" y="55.82" font-size="1.05" fill="#eceff1" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">TJA1050</text>
 <rect x="37.47" y="50.82" width="2.4" height="1.4" fill="#212121"/>
@@ -626,7 +626,7 @@
 <text x="44.57" y="54.45" font-size="0.95" fill="#fff" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANH</text>
 <circle cx="45.67" cy="56.59" r="0.65" fill="#d4af37"/>
 <text x="44.57" y="56.99" font-size="0.95" fill="#fff" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANL</text>
-<path d="M45.67,56.59 L46.59,56.59 L46.59,61.67" fill="none" stroke="#37474f" stroke-width="0.95" stroke-linejoin="round"/><path d="M45.67,56.59 L46.59,56.59 L46.59,61.67" fill="none" stroke="#1976d2" stroke-width="0.6" stroke-linejoin="round"/>
+<path d="M45.67,56.59 L45.67,61.67 L46.59,61.67" fill="none" stroke="#37474f" stroke-width="0.95" stroke-linejoin="round"/><path d="M45.67,56.59 L45.67,61.67 L46.59,61.67" fill="none" stroke="#1976d2" stroke-width="0.6" stroke-linejoin="round"/>
 <g opacity="1">
 <rect x="-1.27" y="7.03" width="50.0" height="28.0" rx="1.2" fill="#1a237e" stroke="#0d1442" stroke-width="0.3"/>
 <rect x="-0.27" y="12.03" width="25.5" height="18" rx="0.6" fill="#263238"/>

@@ -255,7 +255,7 @@ def tja_art(s):
     yc = (hp(*TJA_PINS['VCC'])[1] + hp(*TJA_PINS['GND'])[1]) / 2
     y0 = yc - TJA_MM[1] / 2
     s.add(f'<rect x="{x0:.2f}" y="{y0:.2f}" width="{TJA_MM[0]}" height="{TJA_MM[1]}" rx="0.6" fill="#1565c0" stroke="#0d47a1" stroke-width="0.3"/>')
-    for dx in (TJA_MM[0] - 2.2,):
+    for dx in (TJA_MM[0] - 2.9,):
         for dy in (1.8, TJA_MM[1] - 1.8):
             s.add(f'<circle cx="{x0 + dx:.2f}" cy="{y0 + dy:.2f}" r="1.1" fill="#e3f2fd"/>')
     s.add(f'<rect x="{x0 + 5.0:.2f}" y="{yc - 2.6:.2f}" width="5.6" height="5.2" rx="0.3" fill="#212121"/>')
@@ -267,10 +267,10 @@ def tja_art(s):
         s.add(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="0.65" fill="#d4af37"/>')
         can = n.startswith('CAN')
         s.text(x + (-1.1 if can else 1.1), y + 0.4, n, 0.95, '#fff', anchor='end' if can else 'start', weight='bold')
-    # fio curto do CANL até a ilha da linha 23
+    # fio curto do CANL: desce reto do pino até a linha 23 e só ali vai à ilha (longe do J2, na coluna 18)
     x, y = MX + (TJA_CAN['CANL'][0] - 1) * P, MY + (TJA_CAN['CANL'][1] - 1) * P
     tx, ty = hp(*CANL_HOLE)
-    d = f'M{x:.2f},{y:.2f} L{tx:.2f},{y:.2f} L{tx:.2f},{ty:.2f}'
+    d = f'M{x:.2f},{y:.2f} L{x:.2f},{ty:.2f} L{tx:.2f},{ty:.2f}'
     s.add(f'<path d="{d}" fill="none" stroke="#37474f" stroke-width="0.95" stroke-linejoin="round"/><path d="{d}" fill="none" stroke="{BLU}" stroke-width="0.6" stroke-linejoin="round"/>')
 
 
