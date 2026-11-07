@@ -7,14 +7,14 @@
  *   hud      moldura neon com escalas na borda e estrada em perspectiva animada pela velocidade
  *   sport    conta-giros grande em setores com a marcha ao centro, luzes de troca e células com barras
  *   classic  dois mostradores redondos com ponteiro e coluna central de dados
- *   horizon  arco largo de velocidade em degradê, com colunas de dados dos lados
+ *   horizon  arco largo de RPM em ciano com a velocidade ao centro, réguas curvas e painéis laterais
  *
  * Todos mostram as mesmas três telas de seis campos (Estrada, Motor, Viagem), a troca automática
  * de tela, as luzes-espia, o alerta em camada própria e o modo dia/noite. Recebe o mesmo estado
  * que window.onTelemetry (MainActivity.stateJson) e os metadados do perfil (profileMetaJson).
  *
  *   Dash.mount(hostElement)  ·  Dash.setMeta(meta)  ·  Dash.update(state)
- *   Dash.setLook('minimal'|'capsule'|'hud'), Dash.setMode('auto'|'day'|'night'),
+ *   Dash.setLook('minimal'|'capsule'|'hud'|'sport'|'classic'|'horizon'), Dash.setMode('auto'|'day'|'night'),
  *   Dash.setPage('road'|'engine'|'trip'), Dash.setAutoPage(bool)
  */
 window.Dash = (function () {

@@ -15,7 +15,7 @@ The app UI and most documentation are in Brazilian Portuguese; this page is a sh
 
 ## Features
 
-- **Dashboards:** three themes (Minimal, Capsule, HUD) with day/night modes, landscape full screen and three pages (road, engine, trip).
+- **Dashboards:** six themes (Minimal, Capsule, HUD, Track, Classic, Horizon) with day/night modes, landscape full screen and three pages (road, engine, trip).
 - **Background capture:** a foreground service keeps reading with the screen off. Capture starts automatically when the adapter or the car's head unit connects and resumes after short disconnections.
 - **Trip black box:** a local Room/SQLite database with trips, 2-second telemetry samples, trouble codes and freeze frames, plus CSV/GPX export.
 - **Fuel log:** real consumption between full tanks, cost per km and monthly spend, and when ethanol pays off in this car. Consumption calibration comes from your own fill-ups.
