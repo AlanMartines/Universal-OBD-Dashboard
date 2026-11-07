@@ -6,6 +6,19 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.33] - 2026-11-07
+
+### Adicionado
+- **Painel: três temas novos.** Pista (conta-giros em setores, marcha no miolo e luzes de troca), Clássico (dois mostradores redondos com aro metálico e ponteiro curto) e Horizonte (arco largo de RPM em ciano, com a velocidade no centro). Cada um tem modo dia e noite.
+- **Cápsula: botão de cor** no rodapé, que alterna entre verde e vermelho. A escolha fica gravada e vai no backup.
+- **Histórico da viagem com os cálculos do app:** km/l, média, combustível usado, litros no tanque, marcha, sugestão de troca e folha de economia. Assim o painel web reproduz a viagem como ela apareceu no app.
+- **Painel web: simulação de viagem.** Na aba Viagens, o botão ▶ reproduz a viagem nos mostradores em 1×, 5× ou 16×, com linha do tempo. Nas viagens antigas, km/l, média, combustível e tanque são refeitos a partir das leituras gravadas.
+
+### Alterado
+- **Cápsula:** o preenchimento ganhou cor única, fraca no início da escala e forte no topo, com um traço claro no valor atual. Os números perderam o contorno grosso.
+- **Minimal e Pista:** Viagem e Tempo saíram do rodapé e foram para dentro do tema.
+- **Painel web:** o Total (km) aparece nos mostradores.
+
 ## [0.9.32] - 2026-11-06
 
 ### Corrigido
