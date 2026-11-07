@@ -728,7 +728,6 @@ window.Dash = (function () {
     svg('path', { class: 'cl2-prog-track', d: arcD(100, 100, 44, ps, ps + pw) }, root);
     const prog = svg('path', { class: 'cl2-prog', d: arcD(100, 100, 44, ps, ps + pw), pathLength: 1000, 'stroke-dasharray': '1000 1000', 'stroke-dashoffset': 1000 }, root);
     const main = svg('text', { class: 'cl2-main', x: 100, y: 96 }, root);
-    svg('path', { class: 'cl2-bracket', d: 'M 74 146 L 74 132 L 81 125 L 119 125 L 126 132 L 126 146' }, root);
     const subLabel = svg('text', { class: 'cl2-sub', x: 100, y: 133 }, root);
     const subValue = svg('text', { class: 'cl2-subval', x: 100, y: 146 }, root);
     const unit = svg('text', { class: 'cl2-unit', x: 100, y: 178 }, root);

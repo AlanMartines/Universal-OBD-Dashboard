@@ -331,7 +331,8 @@
    Tema Pista: conta-giros em setores, marcha no miolo, luzes de troca e células com barra
    ===================================================================================== */
 /* Dia e noite com as mesmas cores (as do dia), a pedido: o desenho claro é o aprovado */
-.cluster[data-look="sport"][data-scheme] { --c-bg: #f3f5f7; --c-line: #d2d8df; --c-text: #090c0f; --c-muted: #56616d; --c-accent: #0072ad; --c-seg-off: #dce1e7; --c-ok: #11854a; --c-warn: #a96400; --c-bad: #cf1515; --c-ring: #d3d8de; --c-fill-a: #20252b; --c-fill-b: #6c737c; --c-glow: transparent; --c-bg: #eef0f2; --c-line: #c4cad1; --c-accent: #15191d; --c-seg-off: #d7dce1; }
+.cluster[data-look="sport"][data-scheme="day"] { --c-bg: #f3f5f7; --c-line: #d2d8df; --c-text: #090c0f; --c-muted: #56616d; --c-accent: #0072ad; --c-seg-off: #dce1e7; --c-ok: #11854a; --c-warn: #a96400; --c-bad: #cf1515; --c-ring: #d3d8de; --c-fill-a: #20252b; --c-fill-b: #6c737c; --c-glow: transparent; --c-bg: #eef0f2; --c-line: #c4cad1; --c-accent: #15191d; --c-seg-off: #d7dce1; }
+.cluster[data-look="sport"][data-scheme="night"] { --c-bg: #07090b; --c-line: #262c33; --c-text: #f2f4f6; --c-muted: #8b95a0; --c-accent: #f2f4f6; --c-seg-off: #1a1f25; --c-ok: #2fcf6f; --c-warn: #f2a516; --c-bad: #ff3b30; --c-glow: transparent; }
 .cluster[data-look="sport"] {
   column-gap: 3cqmin; row-gap: 1.4cqmin; padding: 2cqmin 3cqmin 1.6cqmin;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
@@ -413,7 +414,6 @@
 .cl2-prog { fill: none; stroke: var(--c-accent); stroke-width: 3; stroke-linecap: round; }
 .cl2-main { fill: var(--c-text); font-family: var(--f-label); font-weight: 400; font-size: 31px; text-anchor: middle; dominant-baseline: central; letter-spacing: .01em; }
 .cl2-main.empty { fill: var(--c-muted); font-size: 18px; letter-spacing: .2em; }
-.cl2-bracket { fill: none; stroke: var(--c-muted); stroke-width: 1.4; stroke-linejoin: round; }
 .cl2-sub { fill: var(--c-muted); font-family: var(--f-label); font-size: 8px; letter-spacing: .14em; text-anchor: middle; text-transform: uppercase; }
 .cl2-subval { fill: var(--c-text); font-family: var(--f-label); font-size: 10px; text-anchor: middle; opacity: .85; }
 .cl2-subval.hint { fill: var(--c-ok); font-weight: 600; }
