@@ -12,6 +12,7 @@ Só biblioteca padrão do Python 3:
     python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py
 
 Medidas de 07/11/2026 (README.md). Confira o RT8272 e o TJA1050 encaixando pelos pinos antes de soldar.
+O suporte do fusível (Keystone 3568) está com as medidas do catálogo: confira com a peça antes de furar.
 """
 import os
 
@@ -50,8 +51,16 @@ RES = [
 TJA_PINS = {'VCC': (10, 19), 'TX': (10, 20), 'RX': (10, 21), 'GND': (10, 22)}
 TJA_CAN = {'CANH': (10 + 19.4 / P, 20), 'CANL': (10 + 19.4 / P, 21)}
 CANL_HOLE = (18, 23)
-OBD_PADS = {'16': (8, 24), '4': (9, 24), '5': (10, 24), '14': (18, 24)}
-# Fusível de 1 A no fio do pino 16, fora da placa, perto do conector OBD
+OBD_PADS = {'16': (1, 24), '4': (9, 24), '5': (10, 24), '14': (18, 24)}
+# Suporte de fusível mini lâmina para placa (Keystone 3568 ou equivalente), com fusível mini de 1 A.
+# Catálogo: corpo de 16,0 x 6,73 mm; 4 pinos de 1,57 mm, a 9,72 mm (comprimento) x 3,40 mm (largura);
+# cada presilha tem 2 pinos. Fora da grade: 4 furos de 1,7 mm abertos à mão. Fica embaixo do RT8272, deitado na
+# horizontal; presilha da esquerda = entrada (12 V do OBD), da direita = saída (12 V com fusível).
+FUSE_MM = (16.0, 6.73)
+FUSE_C = (4.5, 24.43)   # centro (coluna, linha): 0,8 mm abaixo do RT8272 e 1,3 mm acima da borda
+_dx, _dy = 9.72 / 2 / P, 3.40 / 2 / P
+FUSE_PINS = {'IN': [(FUSE_C[0] - _dx, FUSE_C[1] - _dy), (FUSE_C[0] - _dx, FUSE_C[1] + _dy)],
+             'OUT': [(FUSE_C[0] + _dx, FUSE_C[1] - _dy), (FUSE_C[0] + _dx, FUSE_C[1] + _dy)]}
 
 # Trilhas de solda (lado de baixo): fio estanhado passando pelos furos, sempre em linha reta
 TRACKS = [
@@ -66,14 +75,19 @@ TRACKS = [
     ('5 V', RED, [(10, 17), (10, 18)]),
     ('RX', YEL, [(10, 21), (17, 21), (17, 17)]),
     ('12 V com fusível', PUR, [(8, 24), (8, 17)]),
-    ('OUT+ → J3', RED, [(1, 22), (1, 23)]),
+    ('OUT+ → J3', RED, [(1, 22), (2, 22), (2, 14)]),
     ('CAN-L', BLU, [(18, 23), (18, 24)]),
 ]
 # Fios isolados por cima da placa (J1 e J2 passam embaixo do ESP32)
+# Fio estanhado curto, lado de baixo, da ilha até o pino do suporte do fusível (fora da grade)
+LINKS = [
+    ('12 V do OBD → fusível', RED, (1, 24), FUSE_PINS['IN'][0]),
+    ('fusível → 12 V com fusível', PUR, FUSE_PINS['OUT'][0], (8, 24)),
+]
 JUMPERS = [
     ('J1', YEL, [(11, 3), (17, 3), (17, 17)], 'R1 → RX do TJA1050'),
     ('J2', BLU, [(16, 7), (18, 7), (18, 20), TJA_CAN['CANH']], 'R4 → pino CANH do TJA1050'),
-    ('J3', RED, [(1, 23), (9, 23), (9, 17), (10, 17)], 'OUT+ do RT8272 → 5 V'),
+    ('J3', RED, [(2, 14), (9, 14), (9, 17), (10, 17)], 'OUT+ do RT8272 → 5 V'),
 ]
 TJA_MM = (22.0, 11.0)
 # RT8272 (HW-108): 21 x 21 mm, fileiras a cerca de 17,8 mm (7 furos), medido em 07/11/2026.
@@ -280,6 +294,27 @@ def buck_art(s):
         s.text(px + (1.2 if left else -1.2), py + 0.4, n, 1.0, '#fff', anchor='start' if left else 'end', weight='bold')
 
 
+def fuse_footprint(s, drill=True):
+    """Contorno do suporte e os 4 furos de 1,7 mm (vista de cima)."""
+    cx, cy = MX + (FUSE_C[0] - 1) * P, MY + (FUSE_C[1] - 1) * P
+    s.add(f'<rect x="{cx - FUSE_MM[0] / 2:.2f}" y="{cy - FUSE_MM[1] / 2:.2f}" width="{FUSE_MM[0]}" height="{FUSE_MM[1]}" rx="0.5" fill="none" stroke="{PUR}" stroke-width="0.3" stroke-dasharray="0.9 0.5"/>')
+    for side, pins in FUSE_PINS.items():
+        for c, r in pins:
+            x, y = MX + (c - 1) * P, MY + (r - 1) * P
+            s.add(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="0.85" fill="#fff" stroke="{PUR}" stroke-width="0.3"/>'
+                  f'<path d="M{x - 1.3:.2f},{y:.2f} L{x + 1.3:.2f},{y:.2f} M{x:.2f},{y - 1.3:.2f} L{x:.2f},{y + 1.3:.2f}" stroke="{PUR}" stroke-width="0.15"/>')
+
+
+def fuse_art(s):
+    """Suporte Keystone 3568 com o fusível mini de 1 A (preto) encaixado."""
+    cx, cy = MX + (FUSE_C[0] - 1) * P, MY + (FUSE_C[1] - 1) * P
+    s.add(f'<rect x="{cx - FUSE_MM[0] / 2:.2f}" y="{cy - FUSE_MM[1] / 2:.2f}" width="{FUSE_MM[0]}" height="{FUSE_MM[1]}" rx="0.6" fill="#37474f" stroke="#212121" stroke-width="0.3"/>')
+    s.add(f'<rect x="{cx - 5.45:.2f}" y="{cy - 1.9:.2f}" width="10.9" height="3.8" rx="0.8" fill="#111" stroke="#616161" stroke-width="0.2"/>')
+    s.text(cx, cy + 0.55, '1 A', 1.5, '#fff', weight='bold')
+    s.text(cx - 6.6, cy + 0.45, 'IN', 0.95, '#ffcdd2', weight='bold')
+    s.text(cx + 6.6, cy + 0.45, 'OUT', 0.95, '#e1bee7', weight='bold')
+
+
 def view_top(stage, scale):
     s = Svg(W, H, scale)
     board(s)
@@ -289,6 +324,8 @@ def view_top(stage, scale):
     if stage == 1:
         for name, col, pts in TRACKS:
             track(s, expand(pts), col, lambda x: x, width=0.45, opacity=0.45)
+        for name, col, a, b in LINKS:
+            track(s, [a, b], col, lambda x: x, width=0.45, opacity=0.45)
         header_footprint(s)
         for n, a, b, _ in RES:
             resistor(s, a, b, n)
@@ -305,9 +342,11 @@ def view_top(stage, scale):
             s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
             s.text(x + (1.8 if c == 1 else -1.8), y + 0.45, name, 1.0, BUCK_COL[name], anchor='start' if c == 1 else 'end', weight='bold', bg=True)
         s.text(MX + 3.5 * P, hp(1, 19)[1], 'pinos do RT8272', 1.15, '#0d47a1', bg=True)
+        fuse_footprint(s)
+        s.text(MX + 3.5 * P, MY + (FUSE_C[1] - 1) * P + 0.45, 'furar 4 × 1,7 mm', 1.0, PUR, weight='bold', bg=True)
         for pin, (c, r) in OBD_PADS.items():
-            pad_mark(s, c, r, {'16': PUR, '4': BLK, '5': BLK, '14': BLU}[pin], pin, 'below')
-        s.text(hp(8, 24)[0] - 1.8, hp(8, 24)[1] + 2.9, 'cabo OBD:', 1.2, '#5d4037', anchor='end')
+            pad_mark(s, c, r, {'16': RED, '4': BLK, '5': BLK, '14': BLU}[pin], pin, 'below')
+        s.text(hp(1, 24)[0] - 1.8, hp(1, 24)[1] + 2.9, 'cabo OBD:', 1.2, '#5d4037', anchor='end')
         s.text(W / 2, H + 3.5, 'ETAPA 1 · vista de cima, antes de encaixar o ESP32 e os módulos', 1.7, '#5d4037', weight='bold')
     else:
         header_footprint(s)
@@ -316,15 +355,16 @@ def view_top(stage, scale):
         for name, col, pts, _ in JUMPERS:
             jumper(s, pts, col, name)
         buck_art(s)
+        fuse_art(s)
         tja_art(s)
         esp32_art(s)
         for pin, (c, r) in OBD_PADS.items():
             x, y = hp(c, r)
-            col = {'16': PUR, '4': BLK, '5': BLK, '14': BLU}[pin]
-            # fio do cabo OBD saindo da placa (o 16 já vem com o fusível no fio)
+            col = {'16': RED, '4': BLK, '5': BLK, '14': BLU}[pin]
+            # fio do cabo OBD saindo da placa
             s.add(f'<path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="#37474f" stroke-width="1.1"/><path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="{col}" stroke-width="0.75"/>')
             s.text(x, H + 5.4, pin, 1.3, col, weight='bold')
-        s.text(hp(8, 24)[0] - 2, H + 5.4, 'cabo OBD:', 1.3, '#5d4037', anchor='end')
+        s.text(hp(1, 24)[0] - 2, H + 5.4, 'cabo OBD:', 1.3, '#5d4037', anchor='end')
         s.text(W / 2, -3.4, 'ETAPA 2 · placa montada, vista de cima', 1.7, '#5d4037', weight='bold')
     return s.svg()
 
@@ -334,6 +374,13 @@ def view_bottom(scale):
     X = board(s, mirror=True)
     for name, col, pts in TRACKS:
         track(s, expand(pts), col, X, width=1.05)
+    for name, col, a, b in LINKS:
+        track(s, [a, b], col, X, width=0.8)
+    # suporte do fusível: 4 furos de 1,7 mm com os pinos
+    for side, pins in FUSE_PINS.items():
+        for c, r in pins:
+            x, y = MX + (c - 1) * P, MY + (r - 1) * P
+            s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.85" fill="#fff" stroke="{PUR}" stroke-width="0.3"/><circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.6" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')
     # furos com perna de componente ou pino
     legs = set()
     for _, a, b, _ in RES:
@@ -353,6 +400,7 @@ def view_bottom(scale):
             s.text(X(x) + (1.6 if c < 12 else -1.6), y + 0.45, name, 1.05, '#37474f', anchor='middle')
     # nomes das trilhas
     labels = {'GND': (9, 19.5, BLK), '5 V': (13, 18, RED), 'RX': (14, 21, YEL), 'CAN-L': (18, 23.5, BLU), '12 V com fusível': (7.2, 20.5, PUR),
+              'OUT+': (2, 18, RED), 'fusível': (FUSE_C[0], FUSE_C[1] + 0.2, PUR), '12 V': (1, 25.2, RED),
               'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG)}
     for t, (c, r, col) in labels.items():
         x, y = MX + (c - 1) * P, MY + (r - 1) * P
@@ -397,7 +445,7 @@ def schematic():
     x16, y16 = obd['16 +12 V']
     line([(x16, y16), (26, y16), (26, buck['IN+'][1]), buck['IN+']], RED)
     s.add(f'<rect x="{24.5}" y="{(y16 + buck["IN+"][1]) / 2 - 3}" width="3" height="6" rx="1" fill="#fff" stroke="{PUR}" stroke-width="0.5"/>')
-    s.text(28.5, (y16 + buck['IN+'][1]) / 2 + 0.6, 'fusível 1 A (no fio)', 1.7, PUR, anchor='start', weight='bold')
+    s.text(28.5, (y16 + buck['IN+'][1]) / 2 + 0.6, 'fusível 1 A (na placa)', 1.7, PUR, anchor='start', weight='bold')
     # GND comum: 4, 5, IN−, OUT−, GND ESP32, GND TJA
     gy = 36
     x4, y4 = obd['4 chassi']
