@@ -33,7 +33,7 @@ Para ver como a placa fica montada, com as alturas, há duas opções. As posiç
 - **No navegador:** abra [`modelo3d.html`](modelo3d.html) com os arquivos `modelo3d-dados.js` e `visor3d.js` na mesma pasta (no GitHub, baixe a pasta; a página não abre pelo site). Não precisa de internet. Arraste para girar, botão direito ou Shift + arrastar para mover e roda (ou pinça no celular) para aproximar. Há vistas de cima, de baixo (espelhada, como a [vista de baixo](baixo.svg)) e de lado, e dá para esconder o ESP32, os módulos, o fusível, os fios e as trilhas para ver o que fica embaixo.
 - **No OpenSCAD:** abra [`modelo3d.scad`](modelo3d.scad) e aperte F5. As variáveis `mostrar_...` no topo do arquivo escondem partes. Dá para exportar STL, por exemplo para desenhar uma caixa.
 
-Os dois são gerados pelo `gerar_3d.py`, chamado pelo `gerar_placa.py`. Não edite `modelo3d-dados.js` nem `modelo3d.scad` à mão.
+O mesmo visor aparece no painel web, na página pública `/projeto/placa`. O `gerar_3d.py`, chamado pelo `gerar_placa.py`, gera os dois arquivos e copia o modelo para `server/web/src/modules/projeto/public/`. Um teste do painel confere se a cópia está igual. Não edite `modelo3d-dados.js` nem `modelo3d.scad` à mão.
 
 ## Montagem prevista
 

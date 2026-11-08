@@ -29,7 +29,8 @@
     }
     button:hover { border-color: var(--suave); }
     #camadas { display: flex; flex-wrap: wrap; gap: 4px 14px; }
-    #camadas label { white-space: nowrap; cursor: pointer; }
+    #camadas .camada { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+    #camadas label, #camadas input { cursor: pointer; }
     .cores { color: var(--suave); font-size: 12.5px; }
     canvas { flex: 1; width: 100%; min-height: 300px; display: block; touch-action: none; cursor: grab; }
     #aviso { padding: 16px; }
