@@ -4,7 +4,7 @@
 Gera, na mesma pasta:
 - modelo3d-dados.js: peças para o visor modelo3d.html (WebGL próprio em visor3d.js, sem bibliotecas externas);
 - modelo3d.scad: o mesmo modelo para o OpenSCAD (F5 para ver, variáveis no topo para esconder partes);
-- cópia de modelo3d-dados.js e visor3d.js em server/web/src/modules/projeto/public (página /projeto/placa do painel).
+- cópia de modelo3d-dados.js em server/web/src/modules/projeto/public: o painel (/projeto/placa) monta o modelo\n  detalhado com Three.js (placa3d.mjs) a partir das posições em 'detalhe'.
 
 As posições na placa vêm de gerar_placa.py. As alturas são estimativas (barras de pinos e componentes comuns),
 não medidas: servem para ver o encaixe, não para projetar caixa com folga justa.
@@ -14,7 +14,6 @@ não medidas: servem para ver o encaixe, não para projetar caixa com folga just
 import json
 import math
 import os
-import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -210,13 +209,61 @@ for pins in g.FUSE_PINS.values():
         x, y = xy(c, r)
         cyl('trilhas', TIN, (x, y, -0.8), (x, y, 0), 1.0)
 
+# ---------------------------------------------------------------- Posições para o visor detalhado do painel
+# O visor do painel (server/web/.../projeto/public/placa3d.mjs) monta as peças com detalhe a partir daqui.
+def rr(v):
+    return [round(float(a), 3) for a in v]
+
+
+def esp_pins():
+    out = []
+    for row, names in ((2, g.ESP_TOP), (12, g.ESP_BOT)):
+        for i, n in enumerate(names):
+            out.append({'n': n, 'p': rr(xy(2 + i, row)), 'usado': n in g.ESP_USED and (n != 'GND' or row == 12)})
+    return out
+
+
+def jumper_paths():
+    out = []
+    for name, col, pts, desc in g.JUMPERS:
+        (c0, r0), (c1, r1) = pts[0], pts[-1]
+        full = [(*xy(c0, r0), T)] + [(*xy(c, r), WIRE_Z) for c, r in pts]
+        full.append((*xy(c1, r1), T if is_hole(c1, r1) else T + 1.2))
+        out.append({'n': f'{name}: {desc}', 'cor': col, 'r': 0.5, 'pts': [rr(p) for p in full],
+                    'pontas': [rr(xy(c, r)) for c, r in (pts[0], pts[-1]) if is_hole(c, r)]})
+    lx, ly = xy(*g.TJA_CAN['CANL'])
+    hx, hy = xy(*g.CANL_HOLE)
+    out.append({'n': 'Fio do CANL até a ilha', 'cor': g.BLU, 'r': 0.45,
+                'pts': [rr(p) for p in [(lx, ly, T + 1.2), (lx, hy, T + 0.9), (hx, hy, T + 0.9), (hx, hy, T)]], 'pontas': [rr((hx, hy))]})
+    nomes = {'16': 'Cabo OBD, pino 16 (+12 V)', '4': 'Cabo OBD, pino 4 (chassi)', '5': 'Cabo OBD, pino 5 (GND de sinal)', '14': 'Cabo OBD, pino 14 (CAN-L)'}
+    for pin, (c, r) in g.OBD_PADS.items():
+        x, y = xy(c, r)
+        out.append({'n': nomes[pin], 'cor': OBD_COL[pin], 'r': 0.7, 'pts': [rr(p) for p in [(x, y, T), (x, y, T + 1.3), (x, g.H + 14, T + 1.3)]], 'pontas': [rr((x, y))]})
+    return out
+
+
+DET = {
+    'alturas': {'T': T, 'FEM_H': FEM_H, 'MALE_H': MALE_H, 'ESP_Z': ESP_Z, 'MOD_Z': MOD_Z, 'MOD_T': MOD_T, 'WIRE_Z': WIRE_Z, 'BOT_Z': BOT_Z, 'FUSE_H': FUSE_H},
+    'esp32': {'x0': round(x0, 3), 'y0': round(y0, 3), 'l': g.ESP_L, 'w': g.ESP_W, 'pinos': esp_pins()},
+    'tja': {'x0': round(tx0, 3), 'y0': round(ty0, 3), 'l': g.TJA_MM[0], 'w': g.TJA_MM[1],
+            'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.TJA_PINS.items()],
+            'can': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.TJA_CAN.items()]},
+    'rt': {'x0': round(bx0, 3), 'y0': round(by0, 3), 'lado': g.BUCK_MM, 'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.BUCK_PINS.items()]},
+    'resistores': [{'n': f'{name} 1 kΩ: {desc}', 'a': rr(xy(*a)), 'b': rr(xy(*b))} for name, a, b, desc in g.RES],
+    'fusivel': {'c': rr((fcx, fcy)), 'w': fw, 'd': fd, 'h': FUSE_H, 'pinos': [rr(xy(*cr)) for pins in g.FUSE_PINS.values() for cr in pins]},
+    'fios': jumper_paths(),
+    'trilhas': [{'n': name, 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts in g.TRACKS]
+               + [{'n': name, 'cor': col, 'pts': [rr(xy(*a)), rr(xy(*b))]} for name, col, a, b in g.LINKS],
+    'solda': [rr(xy(c, r)) for c, r in sorted(legs)],
+}
+
 GRID = {'cols': g.COLS, 'rows': g.ROWS, 'mx': round(g.MX, 3), 'my': round(g.MY, 3), 'p': P, 't': T}
 LAYERS = [('esp32', 'ESP32'), ('modulos', 'TJA1050 e RT8272'), ('fusivel', 'Fusível'), ('fios', 'Fios por cima'), ('trilhas', 'Trilhas por baixo')]
 
 
 # ---------------------------------------------------------------- Saídas
 def write_js():
-    data = {'W': g.W, 'H': g.H, 'grid': GRID, 'layers': LAYERS, 'parts': parts}
+    data = {'W': g.W, 'H': g.H, 'grid': GRID, 'layers': LAYERS, 'parts': parts, 'detalhe': DET}
     text = ('// Gerado por gerar_3d.py: não edite à mão.\n'
             'window.PLACA3D = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
     with open(os.path.join(OUT, 'modelo3d-dados.js'), 'w', encoding='utf-8') as fh:
@@ -224,7 +271,6 @@ def write_js():
     if os.path.isdir(WEB):
         with open(os.path.join(WEB, 'modelo3d-dados.js'), 'w', encoding='utf-8') as fh:
             fh.write(text)
-        shutil.copyfile(os.path.join(OUT, 'visor3d.js'), os.path.join(WEB, 'visor3d.js'))
 
 
 def scad_v(v):

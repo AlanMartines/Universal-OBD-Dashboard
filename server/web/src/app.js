@@ -170,6 +170,7 @@ export async function buildApp({ config, logger }) {
   for (const [prefix, dir, allowed] of [
     ['/vendor/maplibre/', 'node_modules/maplibre-gl/dist', ['/maplibre-gl.mjs', '/maplibre-gl-worker.mjs', '/maplibre-gl.css']],
     ['/vendor/pmtiles/', 'node_modules/pmtiles/dist', ['/pmtiles.js']],
+    ['/vendor/three/', 'node_modules/three/build', ['/three.module.js', '/three.core.js']],
     ['/vendor/basemaps/', 'node_modules/@protomaps/basemaps/dist', ['/basemaps.js']],
     ['/vendor/inter/', 'node_modules/@fontsource-variable/inter/files', ['/inter-latin-wght-normal.woff2', '/inter-latin-ext-wght-normal.woff2']],
   ]) {
