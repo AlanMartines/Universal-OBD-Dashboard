@@ -13,7 +13,7 @@
   var ROLES = {
     rpm: 'rpm', speed: 'speed', coolant: 'coolant_temp', voltage: 'battery_volts', throttle: 'throttle', map: 'map',
     intake: 'intake_temp', engineLoad: 'engine_load', timing: 'timing_advance', stft: 'stft_b1', ltft: 'ltft_b1', lambda: 'lambda_v',
-    milOn: null, dtcCount: null,
+    milOn: null, dtcCount: null, cabinTemp: 'cabin_temp',
   };
   var DERIVED = ['fuelLph', 'shiftUp', 'instantKmPerL', 'tripKmPerL', 'tripFuelUsedL', 'fuelRemainingL', 'realKmPerL', 'recommendedGear', 'estimatedGear', 'estimatedLoadPct', 'tripCost'];
   var DEFAULT_DASH = { rpmMax: 8000, rpmRedline: 6500, speedMax: 220, voltageMin: 11, voltageMax: 15 };

@@ -108,7 +108,7 @@ window.Dash = (function () {
   const roles = () => Object.assign({
     rpm: 'rpm', speed: 'speed', coolant: 'coolant_temp', voltage: 'battery_volts', throttle: 'throttle', map: 'map',
     intake: 'intake_temp', engineLoad: 'engine_load', timing: 'timing_advance', stft: 'stft_b1', ltft: 'ltft_b1',
-    lambda: 'lambda_b1s1_v', milOn: 'mil_on', dtcCount: 'dtc_count',
+    lambda: 'lambda_b1s1_v', milOn: 'mil_on', dtcCount: 'dtc_count', cabinTemp: 'cabin_temp',
   }, meta.roles || {});
   const reading = (key) => {
     const id = roles()[key];
@@ -1149,8 +1149,11 @@ window.Dash = (function () {
     // Rodapé e viagem
     const streaming = s.connection === 'STREAMING';
     ui.status.dataset.state = streaming ? 'ok' : s.connection === 'ERROR' ? 'bad' : s.running ? 'warn' : '';
+    // Relógio e, com o sensor do ESP32 (BMP180), a temperatura interna ao lado, como no painel de um carro
+    const cabin = reading('cabinTemp');
+    const clock = new Date(nowOf(s)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (cabin == null ? '' : ' · ' + num(cabin) + '°C');
     ui.statusText.textContent = streaming
-      ? (s.power === 'IDLE_CONFIRMATION' ? 'Parado: encerrar captura?' : new Date(nowOf(s)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
+      ? (s.power === 'IDLE_CONFIRMATION' ? 'Parado: encerrar captura?' : clock)
       : (s.statusMessage || 'Desconectado');
     ui.rec.hidden = !(s.diagRecording && s.running);
     if (ui.tripKm) ui.tripKm.textContent = num(s.tripDistanceKm, 1);

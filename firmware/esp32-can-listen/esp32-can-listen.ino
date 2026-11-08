@@ -49,7 +49,7 @@ RTC_NOINIT_ATTR uint32_t restMark;
 const int I2C_SDA = 25;
 const int I2C_SCL = 26;
 const uint8_t BMP_ADDR = 0x77;
-const unsigned long AMB_MS = 10000;
+const unsigned long AMB_MS = 5000;   // o app descarta leituras com mais de 10 s
 
 BluetoothSerial bt;
 unsigned long lastAmb = 0;

@@ -48,6 +48,20 @@ object Slcan {
         if (hex.length != len * 2) return null
         return Frame(m.groupValues[1].toInt(16), IntArray(len) { hex.substring(it * 2, it * 2 + 2).toInt(16) })
     }
+
+    /** Leitura do sensor BMP180 do ESP32 (no módulo, não na rede do carro). */
+    const val CABIN_TEMP = "cabin_temp"
+    const val CABIN_PRESSURE = "cabin_pressure"
+    private val BMP = Regex("^# bmp180 temp=(-?\\d+(?:\\.\\d+)?)C pressao=(\\d+(?:\\.\\d+)?)hPa$")
+
+    /** `# bmp180 temp=24.3C pressao=1013.2hPa` → temperatura (°C) e pressão (hPa); fora da faixa do sensor, null. */
+    fun parseAmbient(line: String): Map<String, Double>? {
+        val m = BMP.matchEntire(line.trim()) ?: return null
+        val t = m.groupValues[1].toDouble()
+        val p = m.groupValues[2].toDouble()
+        if (t !in -40.0..85.0 || p !in 300.0..1100.0) return null
+        return mapOf(CABIN_TEMP to t, CABIN_PRESSURE to p)
+    }
 }
 
 /** Converte quadros em leituras com os sinais do perfil. Valor fora de min/max é descartado. */
