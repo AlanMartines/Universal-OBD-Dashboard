@@ -18,7 +18,9 @@ export default function projetoRoutes(app) {
     ...PAGE,
     title: 'Placa em 3D',
     activeTab: 'placa',
-    // Cópias geradas por veiculos/fiat-uno-vivace-2012/placa/gerar_3d.py (o teste confere se estão iguais).
-    pageScripts: ['/modules/projeto/modelo3d-dados.js', '/modules/projeto/visor3d.js'],
+    // Posições geradas por veiculos/fiat-uno-vivace-2012/placa/gerar_3d.py (o teste confere se a cópia está igual);
+    // placa3d.mjs monta as peças com detalhe usando o Three.js local.
+    pageScripts: ['/modules/projeto/modelo3d-dados.js'],
+    pageModules: ['/modules/projeto/placa3d.mjs'],
   }));
 }

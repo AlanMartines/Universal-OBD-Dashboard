@@ -16,7 +16,7 @@ A `web` não alcança o banco. A `api`, o `worker` e o `db` não têm saída par
 
 ## Área pública
 
-`/projeto`, `/sobre` e `/projeto/placa` abrem sem login: apresentação, propósito do projeto e a placa da escuta CAN em 3D, com link para o GitHub. Não mostram dado de ninguém. O modelo 3D em `web/src/modules/projeto/public/` é uma cópia gerada por `veiculos/fiat-uno-vivace-2012/placa/gerar_3d.py`, e um teste confere se está igual.
+`/projeto`, `/sobre` e `/projeto/placa` abrem sem login: apresentação, propósito do projeto e a placa da escuta CAN em 3D, com link para o GitHub. Não mostram dado de ninguém. O visor 3D (`placa3d.mjs`) usa o Three.js do `node_modules`, servido em `/vendor/three/` como as outras bibliotecas. As posições das peças (`modelo3d-dados.js`) são uma cópia gerada por `veiculos/fiat-uno-vivace-2012/placa/gerar_3d.py`, e um teste confere se está igual.
 
 ## Organização do código
 

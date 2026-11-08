@@ -128,9 +128,8 @@ describe('arquivos', () => {
   test('página da placa usa o mesmo modelo 3D da pasta do veículo', () => {
     const placa = join(HERE, '../../../veiculos/fiat-uno-vivace-2012/placa');
     if (!existsSync(placa)) return;
-    for (const name of ['visor3d.js', 'modelo3d-dados.js']) {
-      assert.ok(readFileSync(join(HERE, '../src/modules/projeto/public', name)).equals(readFileSync(join(placa, name))), `${name}: rode gerar_placa.py`);
-    }
+    const name = 'modelo3d-dados.js';
+    assert.ok(readFileSync(join(HERE, '../src/modules/projeto/public', name)).equals(readFileSync(join(placa, name))), `${name}: rode gerar_placa.py`);
   });
 
   test('cada módulo publica o próprio JS e CSS', async () => {
@@ -194,9 +193,13 @@ describe('fluxo pelo navegador', () => {
       assert.ok(!res.body.includes('app-sidebar'), url);
     }
     const placa = (await web.inject({ method: 'GET', url: '/projeto/placa' })).body;
-    for (const src of ['/modules/projeto/modelo3d-dados.js', '/modules/projeto/visor3d.js']) {
+    for (const src of ['/modules/projeto/modelo3d-dados.js', '/modules/projeto/placa3d.mjs']) {
       assert.ok(placa.includes(`src="${src}?v=`), src);
       assert.equal((await web.inject({ method: 'GET', url: src })).statusCode, 200, src);
+    }
+    // Three.js local: só os dois arquivos que o visor importa
+    for (const [url, status] of [['/vendor/three/three.module.js', 200], ['/vendor/three/three.core.js', 200], ['/vendor/three/three.cjs', 404]]) {
+      assert.equal((await web.inject({ method: 'GET', url })).statusCode, status, url);
     }
     assert.ok((await web.inject({ method: 'GET', url: '/login' })).body.includes('href="/projeto"'));
   });
