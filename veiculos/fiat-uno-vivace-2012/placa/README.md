@@ -22,7 +22,7 @@ Placa perfurada de ilhas soltas no tamanho padrão de 5 × 7 cm (18 × 24 furos,
 
 ![Vista de baixo: trilhas de GND, 5 V, 12 V, CAN-L e sinais](baixo.svg)
 
-Cores: vermelho 12 V e 5 V, roxo 12 V depois do fusível, preto GND, laranja 3V3, amarelo RX e D21, azul CAN. Furos indicados como (coluna, linha), na numeração das bordas. Em tamanho real (1:1), para imprimir em 100%: [`etapa1-real.svg`](etapa1-real.svg), [`etapa2-real.svg`](etapa2-real.svg) e [`baixo-real.svg`](baixo-real.svg).
+Cores: vermelho 12 V e 5 V, roxo 12 V depois do fusível, preto GND, laranja 3V3, amarelo RX e D21, azul CAN, ciano e verde o I2C do BMP180 (SDA e SCL). Furos indicados como (coluna, linha), na numeração das bordas. Em tamanho real (1:1), para imprimir em 100%: [`etapa1-real.svg`](etapa1-real.svg), [`etapa2-real.svg`](etapa2-real.svg) e [`baixo-real.svg`](baixo-real.svg).
 
 Para gerar de novo (desenhos e modelo 3D): `python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py`.
 
@@ -45,6 +45,7 @@ Para ver como a placa fica montada, com as alturas, há duas opções. As posiç
 - **TJA1050 (22 × 11 mm):** soldado pela barra de 4 pinos na coluna 10, linhas 19 a 22 (VCC, TX, RX e GND, de cima para baixo), deitado para a direita. CANH e CANL ficam na outra ponta, fora da grade (cerca de 1 mm antes da coluna 18). Solde uma perna curta, que pode ser a sobra cortada de uma perna de resistor, em cada um: ela desce direto até a ilha logo abaixo, CANH em (18,20) e CANL em (18,21). As duas pernas também apoiam essa ponta do módulo. A ligação segue por baixo, em fio estanhado.
 - **RT8272 (módulo HW-108, 21 × 21 mm):** soldado na placa por barra de pinos macho, à esquerda, com a bobina (4R7) embaixo à direita. As duas fileiras de pinos do módulo ficam a 7 furos uma da outra: EN, IN− e IN+ na coluna 8 (linhas 15 a 17); OUT− e OUT+ na coluna 1 (linhas 21 e 22). IN− e OUT− são o mesmo GND dentro do módulo, então só o IN− vai ao GND da placa. O EN fica sem ligação. **Antes de soldar, encaixe o módulo com os pinos na placa e veja se os cinco entram nos furos.** Se não entrarem, use fita dupla-face e fios curtos até os mesmos furos.
 - **Fusível de 1 A, na placa:** fusível mini lâmina (ATM, corpo preto) num suporte para placa Keystone 3568 ou equivalente, deitado na horizontal embaixo do RT8272, entre as colunas 1 e 8. Os pinos do suporte (4, de 1,57 mm, a 9,72 × 3,40 mm pelo catálogo) não caem na grade: imprima o [`etapa1-real.svg`](etapa1-real.svg) em 100%, marque as cruzes e abra **4 furos de 1,7 mm**. Os furos (2,24), (3,24), (6,24) e (7,24) se perdem; nenhum é usado. Por baixo, um fio estanhado curto leva a ilha (1,24) ao pino de cima da presilha esquerda (entrada) e outro leva o pino de cima da presilha direita (saída) à ilha (8,24). **Meça o suporte comprado antes de furar.**
+- **Conector do BMP180:** barra de 4 pinos macho na linha 17, colunas 12 a 15: SDA, SCL, GND e VCC, da esquerda para a direita. O sensor fica na ponta de um cabo de 4 fios, longe do calor da placa. O VCC é 5 V: use o **GY-68**, que tem regulador próprio, e ligue o fio no pino **VCC** dele, nunca no 3.3V. O SDA e o SCL vêm do D25 e do D26 por **fio isolado por baixo** (F1 e F2), soldado direto nos pinos do ESP32 e do conector, passando por cima da trilha de GND da linha 13.
 - **Cabo OBD:** os quatro fios entram pela borda de baixo: 16 (1,24), 4 (9,24), 5 (10,24) e 14 (18,24).
 - **Placa perfurada:** 5 × 7 cm com 18 × 24 furos, o tamanho padrão mais comum. Uma de 4 × 6 cm não serve, porque as barras do ESP32 precisam de 15 colunas.
 
@@ -60,6 +61,7 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio J3 ainda fora da 
 | Pernas do CANH e do CANL | CANH (18,20) · CANL (18,21), embaixo da ponta do TJA1050 |
 | RT8272 (pinos) | EN (8,15), sem ligação · IN− (8,16) · IN+ (8,17) · OUT− (1,21), sem ligação · OUT+ (1,22) |
 | Suporte do fusível | 4 furos de 1,7 mm fora da grade (cruzes no desenho): presilha esquerda = entrada, direita = saída |
+| Conector do BMP180 | SDA (12,17) · SCL (13,17) · GND (14,17) · VCC (15,17) |
 | Cabo OBD | 16 (1,24) · 4 (9,24) · 5 (10,24) · 14 (18,24) |
 
 **Trilhas de solda (lado de baixo)**
@@ -81,8 +83,10 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio J3 ainda fora da 
 | OUT+ → começo do J3 | (1,22) → (2,22) → (2,14) |
 | CANH (fim do J2) | (18,17) → (18,20) |
 | CAN-L | (18,21) → (18,24) |
+| GND do BMP180 | (14,13) → (14,17) |
+| 5 V do BMP180 | (15,17) – (16,17) |
 
-As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 17 a 24, as de GND (coluna 15) e 5 V (coluna 16) nas linhas 12 e 13, a de 5 V (coluna 2) passa ao lado do pino OUT− (1,21), que é GND, e as de RX (coluna 17) e CANH/CAN-L (coluna 18) correm lado a lado nas linhas 17 a 21. Na coluna 18, o CANH termina em (18,20) e o CAN-L começa em (18,21): não pode haver solda unindo as duas. Confira com lupa e com o multímetro que não encostam.
+As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 17 a 24, as de GND (coluna 15) e 5 V (coluna 16) nas linhas 12 e 13, a de 5 V (coluna 2) passa ao lado do pino OUT− (1,21), que é GND, e as de RX (coluna 17) e CANH/CAN-L (coluna 18) correm lado a lado nas linhas 17 a 21. Na coluna 18, o CANH termina em (18,20) e o CAN-L começa em (18,21): não pode haver solda unindo as duas. O SDA (12,17) e o SCL (13,17) ficam logo acima da trilha de 5 V da linha 18, e a solda do D25 (9,12) fica ao lado da trilha de GND (9,13). Confira com lupa e com o multímetro que não encostam.
 
 **Resistores (1 kΩ, 1/4 W: marrom, preto, vermelho)**
 
@@ -101,7 +105,14 @@ As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 
 | J2 | (16,7) → (18,7) → coluna 18 → (18,17) | R4 → CANH (segue por baixo) |
 | J3 | (2,14) → linha 14, acima do RT8272 → (9,14) → coluna 9 → (10,17) | OUT+ do RT8272 → 5 V |
 
-**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (8,24), (2,14), (16,12), (10,21), (18,20) ou (18,21). Entre (18,20) e (18,21) também não pode haver continuidade. Sem o fusível no suporte, (1,24) e (8,24) não têm continuidade entre si; com ele, têm. Com o ESP32 fora das barras e o J3 ainda fora da placa, regule a saída em 5,0 V. Depois de soldar o J3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
+**Fios isolados por baixo (soldados direto nos pinos)**
+
+| | Caminho | Função |
+|---|---|---|
+| F1 | pino D25 (9,12) → entre as ilhas, por cima do GND da linha 13 → (12,17) | SDA do BMP180 |
+| F2 | pino D26 (10,12) → entre as ilhas, por cima do GND da linha 13 → (13,17) | SCL do BMP180 |
+
+**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (8,24), (2,14), (16,12), (10,21), (18,20), (18,21), (12,17), (13,17) ou (15,17). Entre (18,20) e (18,21) também não pode haver continuidade. Sem o fusível no suporte, (1,24) e (8,24) não têm continuidade entre si; com ele, têm. Com o ESP32 fora das barras e o J3 ainda fora da placa, regule a saída em 5,0 V. Depois de soldar o J3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
 
 ## Medidas dos componentes
 

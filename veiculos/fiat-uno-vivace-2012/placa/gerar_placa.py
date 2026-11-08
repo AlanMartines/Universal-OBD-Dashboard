@@ -24,7 +24,7 @@ COLS, ROWS = 18, 24
 MX = (W - (COLS - 1) * P) / 2
 MY = (H - (ROWS - 1) * P) / 2
 
-RED, BLK, YEL, BLU, ORG, GRN, PUR = '#d32f2f', '#263238', '#f9a825', '#1976d2', '#ef6c00', '#2e7d32', '#7b1fa2'
+RED, BLK, YEL, BLU, ORG, GRN, PUR, CYA = '#d32f2f', '#263238', '#f9a825', '#1976d2', '#ef6c00', '#2e7d32', '#7b1fa2', '#00838f'
 FONT = 'DejaVu Sans, Arial, sans-serif'
 
 
@@ -37,7 +37,7 @@ def hp(c, r):
 ESP_TOP = ['D23', 'D22', 'TX0', 'RX0', 'D21', 'D19', 'D18', 'D5', 'TX2', 'RX2', 'D4', 'D2', 'D15', 'GND', '3V3']
 ESP_BOT = ['EN', 'VP', 'VN', 'D34', 'D35', 'D32', 'D33', 'D25', 'D26', 'D27', 'D14', 'D12', 'D13', 'GND', 'VIN']
 ESP_L, ESP_W = 50.0, 28.0   # medidas do paquímetro; fileiras a 25,4 mm (10 furos)
-ESP_USED = {'D21': YEL, '3V3': ORG, 'GND': BLK, 'VIN': RED}
+ESP_USED = {'D21': YEL, '3V3': ORG, 'GND': BLK, 'VIN': RED, 'D25': CYA, 'D26': GRN}
 
 # Resistores 1 kΩ (marrom, preto, vermelho)
 RES = [
@@ -64,6 +64,11 @@ _dx, _dy = 9.72 / 2 / P, 3.40 / 2 / P
 FUSE_PINS = {'IN': [(FUSE_C[0] - _dx, FUSE_C[1] - _dy), (FUSE_C[0] - _dx, FUSE_C[1] + _dy)],
              'OUT': [(FUSE_C[0] + _dx, FUSE_C[1] - _dy), (FUSE_C[0] + _dx, FUSE_C[1] + _dy)]}
 
+# Conector de 4 pinos para o cabo do sensor BMP180 (o sensor fica longe do calor da placa), acima do TJA1050.
+# Ordem: SDA, SCL, GND, VCC. VCC vem do 5 V: use o GY-68, que tem regulador próprio (pinos VCC e 3.3V).
+BMP_PINS = {'SDA': (12, 17), 'SCL': (13, 17), 'GND': (14, 17), 'VCC': (15, 17)}
+BMP_COL = {'SDA': CYA, 'SCL': GRN, 'GND': BLK, 'VCC': RED}
+
 # Trilhas de solda (lado de baixo): fio estanhado passando pelos furos, sempre em linha reta
 TRACKS = [
     ('D21', YEL, [(6, 2), (6, 3), (7, 3)]),
@@ -80,6 +85,14 @@ TRACKS = [
     ('OUT+ → J3', RED, [(1, 22), (2, 22), (2, 14)]),
     ('CANH', BLU, [(18, 17), (18, 20)]),
     ('CAN-L', BLU, [(18, 21), (18, 24)]),
+    ('GND do BMP180', BLK, [(14, 13), (14, 17)]),
+    ('5 V do BMP180', RED, [(15, 17), (16, 17)]),
+]
+# Fios isolados por baixo, soldados nos pinos: o I2C do BMP180 cruza a trilha de GND da linha 13 sem encostar.
+# Pontos em meio furo (x.5) passam entre as ilhas.
+BOTTOM_WIRES = [
+    ('F1', CYA, [(9, 12), (9.5, 12.5), (9.5, 13.5), (11.5, 13.5), (11.5, 16.5), (12, 17)], 'SDA: D25 → conector do BMP180'),
+    ('F2', GRN, [(10, 12), (10.5, 12.5), (12.5, 12.5), (12.5, 16.5), (13, 17)], 'SCL: D26 → conector do BMP180'),
 ]
 # Fios isolados por cima da placa (J1 e J2 passam embaixo do ESP32)
 # Fio estanhado curto, lado de baixo, da ilha até o pino do suporte do fusível (fora da grade)
@@ -318,6 +331,19 @@ def fuse_art(s):
     s.text(cx + 6.6, cy + 0.45, 'OUT', 0.95, '#e1bee7', weight='bold')
 
 
+def bmp_header(s, labels):
+    """Barra de 4 pinos macho do conector do BMP180 (vista de cima)."""
+    xs = [hp(c, r)[0] for c, r in BMP_PINS.values()]
+    _, y = hp(*BMP_PINS['SDA'])
+    s.add(f'<rect x="{min(xs) - 1.27:.2f}" y="{y - 1.27:.2f}" width="{max(xs) - min(xs) + P:.2f}" height="{P:.2f}" rx="0.3" fill="#212121"/>')
+    for n, (c, r) in BMP_PINS.items():
+        x, _ = hp(c, r)
+        s.add(f'<rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
+        if labels:
+            s.text(x, y - 1.9, n, 0.85, BMP_COL[n], weight='bold', bg=True)
+    s.text((min(xs) + max(xs)) / 2, y + (2.6 if labels else -1.7), 'BMP180 (cabo)', 0.95, '#00838f', weight='bold', bg=True)
+
+
 def view_top(stage, scale):
     s = Svg(W, H, scale)
     board(s)
@@ -346,6 +372,7 @@ def view_top(stage, scale):
             s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
             s.text(x + (1.8 if c == 1 else -1.8), y + 0.45, name, 1.0, BUCK_COL[name], anchor='start' if c == 1 else 'end', weight='bold', bg=True)
         s.text(MX + 3.5 * P, hp(1, 19)[1], 'pinos do RT8272', 1.15, '#0d47a1', bg=True)
+        bmp_header(s, labels=True)
         fuse_footprint(s)
         s.text(MX + 3.5 * P, MY + (FUSE_C[1] - 1) * P + 0.45, 'furar 4 × 1,7 mm', 1.0, PUR, weight='bold', bg=True)
         for pin, (c, r) in OBD_PADS.items():
@@ -361,6 +388,7 @@ def view_top(stage, scale):
         buck_art(s)
         fuse_art(s)
         tja_art(s)
+        bmp_header(s, labels=False)
         esp32_art(s)
         for pin, (c, r) in OBD_PADS.items():
             x, y = hp(c, r)
@@ -391,7 +419,7 @@ def view_bottom(scale):
         legs |= {a, b}
     for row in (2, 12):
         legs |= {(c, row) for c in range(2, 17)}
-    legs |= set(BUCK_PINS.values()) | set(TJA_PINS.values()) | set(CAN_HOLES.values())
+    legs |= set(BUCK_PINS.values()) | set(TJA_PINS.values()) | set(CAN_HOLES.values()) | set(BMP_PINS.values())
     for c, r in legs:
         x, y = hp(c, r)
         s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')
@@ -402,10 +430,12 @@ def view_bottom(scale):
             x, y = (MX + (c - 1) * P, MY + (r - 1) * P)
             s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.7" fill="none" stroke="{col}" stroke-width="0.35"/>')
             s.text(X(x) + (1.6 if c < 12 else -1.6), y + 0.45, name, 1.05, '#37474f', anchor='middle')
+    for name, col, pts, _ in BOTTOM_WIRES:
+        jumper(s, pts, col, name, X=X)
     # nomes das trilhas
     labels = {'GND': (9, 19.5, BLK), '5 V': (13, 18, RED), 'RX': (14, 21, YEL), 'CAN-L': (18, 23.5, BLU), 'CANH': (18, 18.5, BLU), '12 V com fusível': (7.2, 20.5, PUR),
               'OUT+': (2, 18, RED), 'fusível': (FUSE_C[0], FUSE_C[1] + 0.2, PUR), '12 V': (1, 25.2, RED),
-              'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG)}
+              'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG), 'BMP180': (13.5, 17.9, CYA)}
     for t, (c, r, col) in labels.items():
         x, y = MX + (c - 1) * P, MY + (r - 1) * P
         s.text(X(x), y + 0.5, t, 1.25, col, weight='bold', bg=True)
@@ -418,8 +448,8 @@ def view_bottom(scale):
 
 
 def schematic():
-    s = Svg(124, 78, 1.6, pad=3)
-    s.add('<rect x="-3" y="-3" width="130" height="84" fill="#fff"/>')
+    s = Svg(150, 78, 1.6, pad=3)
+    s.add('<rect x="-3" y="-3" width="156" height="84" fill="#fff"/>')
 
     def box(x, y, w, h, title, color, pins):
         s.add(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="1.5" fill="#fafafa" stroke="{color}" stroke-width="0.5"/>')
@@ -435,7 +465,8 @@ def schematic():
 
     obd = box(2, 18, 18, 30, 'OBD', BLK, [('16 +12 V', 'R', 0), ('4 chassi', 'R', 1.5), ('5 sinal', 'R', 3), ('14 CAN-L', 'R', 4.5)])
     buck = box(38, 4, 26, 18, 'RT8272 (5,0 V)', GRN, [('IN+', 'L', 0), ('IN−', 'L', 2), ('OUT+', 'R', 0), ('OUT−', 'R', 2)])
-    esp = box(88, 4, 28, 34, 'ESP32 DevKit', '#283593', [('VIN', 'L', 0), ('GND', 'L', 1.5), ('3V3', 'L', 3), ('D21', 'L', 5)])
+    esp = box(88, 4, 28, 34, 'ESP32 DevKit', '#283593', [('VIN', 'L', 0), ('GND', 'L', 1.5), ('3V3', 'L', 3), ('D21', 'L', 5), ('D25', 'R', 2), ('D26', 'R', 3)])
+    bmp = box(126, 8, 21, 30, 'BMP180', CYA, [('SDA', 'L', 0.6), ('SCL', 'L', 1.6), ('VCC', 'L', 3), ('GND', 'L', 4)])
     tja = box(38, 40, 26, 28, 'TJA1050', BLU, [('VCC', 'R', 0), ('TX', 'R', 1), ('GND', 'R', 2), ('RX', 'R', 3), ('CANH', 'L', 3.5), ('CANL', 'L', 4.6)])
 
     def line(pts, col, w=0.55):
@@ -494,7 +525,15 @@ def schematic():
     # CAN-L
     x14, y14 = obd['14 CAN-L']
     line([(x14, y14), (28, y14), (28, tja['CANL'][1]), tja['CANL']], BLU)
-    s.text(62, 1, 'Esquema de ligação (fora de escala)', 2.0, '#5d4037', weight='bold')
+    # BMP180 no cabo: SDA no D25, SCL no D26, VCC no 5 V (regulador do GY-68)
+    line([esp['D25'], (121, esp['D25'][1]), (121, bmp['SDA'][1]), bmp['SDA']], CYA)
+    line([esp['D26'], (123, esp['D26'][1]), (123, bmp['SCL'][1]), bmp['SCL']], GRN)
+    for pin, txt, col in (('VCC', '5 V', RED), ('GND', 'GND', BLK)):
+        x, y = bmp[pin]
+        line([(x - 6, y), (x, y)], col)
+        s.text(x - 6.5, y + 0.6, txt, 1.6, col, anchor='end', weight='bold')
+    s.text(136.5, 44, 'no cabo, longe do calor', 1.5, '#5d4037')
+    s.text(75, 1, 'Esquema de ligação (fora de escala)', 2.0, '#5d4037', weight='bold')
     return s.svg()
 
 

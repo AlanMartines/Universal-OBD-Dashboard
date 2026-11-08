@@ -555,6 +555,20 @@ function iniciar() {
     barraMacho(R.pinos.filter((p) => p.n.startsWith('OUT')).map((p) => p.p), topo, 'modulos', 'Pinos do RT8272: OUT− (sem ligação), OUT+');
   }
 
+  // ------------------------------------------------------------ conector do cabo do BMP180 (barra de 4 pinos macho)
+  if (X.bmp) {
+    const g = new THREE.Group();
+    const xs = X.bmp.map((p) => p.p[0]);
+    const y = X.bmp[0].p[1];
+    g.add(caixa(Math.max(...xs) - Math.min(...xs) + P, A.MALE_H, P, M.preto, (Math.min(...xs) + Math.max(...xs)) / 2, y, A.T));
+    for (const p of X.bmp) {
+      const pino = new THREE.Mesh(new THREE.BoxGeometry(0.64, A.MALE_H + 6.9, 0.64), M.ouro);
+      pino.position.copy(W(p.p[0], p.p[1], -0.95 + (A.MALE_H + 6.9) / 2 + 0.0));
+      g.add(pino);
+    }
+    poe(g, 'placa', 'Conector do cabo do BMP180: SDA, SCL, GND, VCC (5 V)');
+  }
+
   // ------------------------------------------------------------ resistores de 1 kΩ (corpo em "osso", faixas marrom, preto, vermelho, ouro)
   {
     const texR = textura(4, 24, (ctx) => {
@@ -656,6 +670,11 @@ function iniciar() {
     const m = new THREE.Mesh(new THREE.TubeGeometry(caminho(pts, 0.6), 120, 0.36, 8), mat);
     trilhas.push(mat);
     poe(m, 'trilhas', `Trilha (fio estanhado): ${t.n}`);
+  }
+  // fios isolados por baixo (I2C do BMP180), passando por cima das trilhas
+  for (const f of X.fios_baixo || []) {
+    const pts = f.pts.map(([x, y]) => [x, y, -1.05]);
+    poe(new THREE.Mesh(new THREE.TubeGeometry(caminho(pts, 0.8), 120, 0.45, 10), std(new THREE.Color(f.cor), 0.42)), 'trilhas', f.n);
   }
   {
     const g = new THREE.Group();

@@ -181,17 +181,25 @@ for pin, (c, r) in g.OBD_PADS.items():
     cyl('fios', SILVER, (x, y, -0.8), (x, y, T), 0.35)
     tube('fios', OBD_COL[pin], [(x, y, T), (x, y, T + 1.3), (x, g.H + 14, T + 1.3)], 0.7)
 
+# ---------------------------------------------------------------- Conector do cabo do BMP180 (barra de 4 pinos macho)
+bx = [xy(*cr) for cr in g.BMP_PINS.values()]
+box('placa', '#111111', min(p[0] for p in bx) - P / 2, bx[0][1] - P / 2, T, 4 * P, P, MALE_H)
+for x, y in bx:
+    cyl('placa', GOLD, (x, y, -1.0), (x, y, T + MALE_H + 6.0), 0.32)
+
 # ---------------------------------------------------------------- Lado de baixo: fio estanhado e solda
 for name, col, pts in g.TRACKS:
     tube('trilhas', col, [(*xy(c, r), BOT_Z) for c, r in pts], 0.38)
 for name, col, a, b in g.LINKS:
     tube('trilhas', col, [(*xy(*a), BOT_Z), (*xy(*b), BOT_Z)], 0.32)
+for name, col, pts, _ in g.BOTTOM_WIRES:   # fio isolado por baixo, por cima das trilhas
+    tube('trilhas', col, [(*xy(c, r), -1.0) for c, r in pts], 0.45)
 legs = set()
 for _, a, b, _ in g.RES:
     legs |= {a, b}
 for row in (2, 12):
     legs |= {(c, row) for c in range(2, 17)}
-legs |= set(g.BUCK_PINS.values()) | set(g.TJA_PINS.values()) | set(g.OBD_PADS.values()) | set(g.CAN_HOLES.values())
+legs |= set(g.BUCK_PINS.values()) | set(g.TJA_PINS.values()) | set(g.OBD_PADS.values()) | set(g.CAN_HOLES.values()) | set(g.BMP_PINS.values())
 for _, _, pts, _ in g.JUMPERS:
     legs |= {p for p in (pts[0], pts[-1]) if is_hole(*p)}
 for track_pts in [t[2] for t in g.TRACKS]:
@@ -246,6 +254,8 @@ DET = {
     'trilhas': [{'n': name, 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts in g.TRACKS]
                + [{'n': name, 'cor': col, 'pts': [rr(xy(*a)), rr(xy(*b))]} for name, col, a, b in g.LINKS],
     'solda': [rr(xy(c, r)) for c, r in sorted(legs)],
+    'bmp': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.BMP_PINS.items()],
+    'fios_baixo': [{'n': f'{name}: {desc}', 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts, desc in g.BOTTOM_WIRES],
 }
 
 GRID = {'cols': g.COLS, 'rows': g.ROWS, 'mx': round(g.MX, 3), 'my': round(g.MY, 3), 'p': P, 't': T}

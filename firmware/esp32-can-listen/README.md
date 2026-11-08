@@ -29,7 +29,7 @@ Temperatura e pressão do lugar onde o módulo fica, no I2C. Serve o módulo GY-
 | SCL | D26 |
 | 3.3V (só no GY-68) | sem ligação |
 
-O D21 e o D22, que são as portas de I2C de costume, ficam com o CAN. A cada 5 s aparece `# bmp180 temp=24.3C pressao=1013.2hPa`. Sem o sensor, aparece uma vez `# bmp180 ausente` e o resto funciona igual. A leitura é direta, pelas fórmulas do datasheet, então não precisa de biblioteca.
+Na placa ilhada, o conector do cabo leva o VCC no 5 V: aí use o GY-68, que tem regulador, ligando no pino VCC dele ([placa](../../veiculos/fiat-uno-vivace-2012/placa/README.md)). O D21 e o D22, que são as portas de I2C de costume, ficam com o CAN. A cada 5 s aparece `# bmp180 temp=24.3C pressao=1013.2hPa`. Sem o sensor, aparece uma vez `# bmp180 ausente` e o resto funciona igual. A leitura é direta, pelas fórmulas do datasheet, então não precisa de biblioteca.
 
 Embaixo do painel, perto do OBD, a temperatura medida é a daquele canto, e o calor do ESP32 e do conversor também chega até o sensor. Para medir a temperatura da cabine, leve o sensor com um cabo de quatro fios para um lugar ventilado e longe do sol direto. A pressão serve como está: o interior do carro não é vedado, então ela acompanha a pressão do lado de fora e a altitude.
 
