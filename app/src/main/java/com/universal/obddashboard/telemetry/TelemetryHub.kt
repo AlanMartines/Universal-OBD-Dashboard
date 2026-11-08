@@ -41,6 +41,10 @@ data class DerivedMetrics(
     val estimatedGear: Int? = null,
     val shiftUp: Boolean = false,
     val estimatedLoadPct: Double? = null,
+    /** Vácuo do coletor (kPa): pressão atmosférica menos o MAP, com o motor ligado. */
+    val vacuumKpa: Double? = null,
+    /** Desvio do sensor MAP em relação ao sensor ambiente do ESP32 (kPa), medido com o motor parado. */
+    val mapOffsetKpa: Double? = null,
     val tripCost: Double? = null,
     /** Consumo instantâneo suavizado (L/h): o que interessa com o carro parado e o motor ligado. */
     val instantLph: Double? = null,

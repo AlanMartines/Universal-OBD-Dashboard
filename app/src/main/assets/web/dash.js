@@ -155,10 +155,18 @@ window.Dash = (function () {
     iat: { label: 'Ar admitido', value: () => [num(reading('intake')), '°C'], state: () => { const v = reading('intake'); return v != null && v > 60 ? 'warn' : null; } },
     volts: { label: 'Bateria', value: () => [num(reading('voltage'), 1), 'V'], note: () => voltNote()[1], state: () => voltNote()[0] },
     tps: { label: 'Acelerador', value: () => [num(reading('throttle')), '%'], bar: () => pct('throttle') },
+    // Com a pressão atmosférica (sensor do ESP32 ou referência do motor parado), a faixa é relativa a ela:
+    // na serra, pé no fundo também é carga plena. Sem referência, vale o MAP em kPa.
     map: {
       label: 'Coletor', value: () => [num(reading('map')), 'kPa'],
-      note: () => { const m = reading('map'); return m == null ? '' : m < 40 ? 'vácuo alto' : m > 85 ? 'carga plena' : 'carga parcial'; },
-      bar: () => { const m = reading('map'); return m == null ? null : { frac: m / 105 }; },
+      note: (s, d) => {
+        const m = reading('map');
+        if (m == null) return '';
+        const r = d.estimatedLoadPct != null ? d.estimatedLoadPct / 100 : m / 100;
+        const faixa = r < 0.4 ? 'vácuo alto' : r > 0.85 ? 'carga plena' : 'carga parcial';
+        return d.vacuumKpa != null ? faixa + ' · vácuo ' + num(d.vacuumKpa) : faixa;
+      },
+      bar: (s, d) => { const m = reading('map'); return m == null ? null : { frac: d.estimatedLoadPct != null ? d.estimatedLoadPct / 100 : m / 105 }; },
     },
     load: {
       label: 'Carga',

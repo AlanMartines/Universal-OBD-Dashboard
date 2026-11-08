@@ -25,6 +25,23 @@ class DrivingInsightsTest {
         assertEquals("leitura impossível não vira referência", 95.0, load.atmosphericKpa!!, 0.0)
     }
 
+    @Test fun ambientSensorGivesLiveLoadVacuumAndMapOffset() {
+        val load = EstimatedLoad(95.0)
+        // Na serra a pressão caiu para 90 kPa: pé no fundo (MAP 90) é carga plena, não 95%
+        assertEquals(100.0, load.update(3000.0, 90.0, 90.0)!!, 1e-9)
+        assertEquals(90.0, load.atmosphericKpa!!, 0.0)
+        assertEquals(50.0, load.update(2000.0, 45.0, 90.0)!!, 1e-9)
+        assertEquals("vácuo = atmosférica − MAP", 45.0, load.vacuumKpa!!, 1e-9)
+        // Motor parado: o MAP deveria bater com o sensor; a diferença é o desvio do MAP
+        assertNull(load.update(0.0, 92.0, 90.0))
+        assertNull("sem vácuo com o motor parado", load.vacuumKpa)
+        assertEquals(2.0, load.mapOffsetKpa!!, 1e-9)
+        load.update(0.0, 91.0, 90.0)
+        assertEquals("desvio suavizado", 1.8, load.mapOffsetKpa!!, 1e-9)
+        assertEquals("com o sensor, o MAP parado não vira referência", 90.0, load.atmosphericKpa!!, 0.0)
+        assertNull("leitura do sensor fora da faixa é ignorada", EstimatedLoad(null).update(2000.0, 45.0, 0.0))
+    }
+
     private fun drive(vararg points: Pair<Long, Double>): List<TimedRun> {
         val timers = PerformanceTimers()
         return points.flatMap { (t, v) -> timers.onSpeed(t, v) }

@@ -187,6 +187,40 @@ box('placa', '#111111', min(p[0] for p in bx) - P / 2, bx[0][1] - P / 2, T, 4 * 
 for x, y in bx:
     cyl('placa', GOLD, (x, y, -1.0), (x, y, T + MALE_H + 6.0), 0.32)
 
+# ---------------------------------------------------------------- Sensor BMP180 (GY-68) na ponta do cabo
+# Deitado ao lado da placa, com a barra de 5 pinos virada para ela; cabo de 4 fios com conector fêmea nas duas pontas.
+BMP_MOD = {'x0': g.W + 5.0, 'y0': 37.0, 'l': 15.0, 'w': 13.0, 'z0': -0.9}
+BMP_MOD_PINS = ['3.3V', 'SDA', 'SCL', 'GND', 'VCC']   # de cima para baixo, na borda do lado da placa
+BMP_WIRE = {'SDA': g.CYA, 'SCL': g.GRN, 'GND': g.BLK, 'VCC': g.RED}
+HOUSING_H = 8.5                                       # conector fêmea Dupont sobre os pinos
+CON_TOP = T + MALE_H + HOUSING_H
+
+
+def bmp_mod_pin(n):
+    i = BMP_MOD_PINS.index(n)
+    return BMP_MOD['x0'] + 1.4, BMP_MOD['y0'] + BMP_MOD['w'] / 2 + (i - 2) * P
+
+
+MOD_TOP = BMP_MOD['z0'] + 1.6 + MALE_H + HOUSING_H
+
+
+def bmp_cable(n):
+    x, y = xy(*g.BMP_PINS[n])
+    mx, my = bmp_mod_pin(n)
+    return [(x, y, CON_TOP), (x, y, CON_TOP + 3), ((x + mx) / 2, (y + my) / 2, CON_TOP + 5), (mx, my, MOD_TOP + 3), (mx, my, MOD_TOP)]
+
+
+bx = [xy(*cr) for cr in g.BMP_PINS.values()]
+box('bmp180', '#1b1b1b', min(p[0] for p in bx) - P / 2, bx[0][1] - P / 2, T + MALE_H, 4 * P, P, HOUSING_H)
+m = BMP_MOD
+box('bmp180', '#1565c0', m['x0'], m['y0'], m['z0'], m['l'], m['w'], 1.6)
+box('bmp180', '#c0c0c0', m['x0'] + 8.0, m['y0'] + 4.6, m['z0'] + 1.6, 3.8, 3.6, 0.95)   # BMP180
+box('bmp180', '#212121', m['x0'] + 5.2, m['y0'] + 2.0, m['z0'] + 1.6, 2.9, 1.6, 1.1)    # regulador
+box('bmp180', '#111111', m['x0'] + 0.13, m['y0'] + m['w'] / 2 - 2.5 * P, m['z0'] + 1.6, P, 5 * P, MALE_H)
+box('bmp180', '#1b1b1b', m['x0'] + 0.13, m['y0'] + m['w'] / 2 - 2.5 * P, m['z0'] + 1.6 + MALE_H, P, 5 * P, HOUSING_H)
+for n, col in BMP_WIRE.items():
+    tube('bmp180', col, bmp_cable(n), 0.55)
+
 # ---------------------------------------------------------------- Lado de baixo: fio estanhado e solda
 for name, col, pts in g.TRACKS:
     tube('trilhas', col, [(*xy(c, r), BOT_Z) for c, r in pts], 0.38)
@@ -255,11 +289,14 @@ DET = {
                + [{'n': name, 'cor': col, 'pts': [rr(xy(*a)), rr(xy(*b))]} for name, col, a, b in g.LINKS],
     'solda': [rr(xy(c, r)) for c, r in sorted(legs)],
     'bmp': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.BMP_PINS.items()],
+    'bmp_modulo': {**{k: round(v, 3) for k, v in BMP_MOD.items()}, 'housing': HOUSING_H,
+                   'pinos': [{'n': n, 'p': rr(bmp_mod_pin(n))} for n in BMP_MOD_PINS],
+                   'cabo': [{'n': n, 'cor': BMP_WIRE[n], 'pts': [rr(p) for p in bmp_cable(n)]} for n in BMP_WIRE]},
     'fios_baixo': [{'n': f'{name}: {desc}', 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts, desc in g.BOTTOM_WIRES],
 }
 
 GRID = {'cols': g.COLS, 'rows': g.ROWS, 'mx': round(g.MX, 3), 'my': round(g.MY, 3), 'p': P, 't': T}
-LAYERS = [('esp32', 'ESP32'), ('modulos', 'TJA1050 e RT8272'), ('fusivel', 'Fusível'), ('fios', 'Fios por cima'), ('trilhas', 'Trilhas por baixo')]
+LAYERS = [('esp32', 'ESP32'), ('modulos', 'TJA1050 e RT8272'), ('fusivel', 'Fusível'), ('bmp180', 'BMP180'), ('fios', 'Fios por cima'), ('trilhas', 'Trilhas por baixo')]
 
 
 # ---------------------------------------------------------------- Saídas

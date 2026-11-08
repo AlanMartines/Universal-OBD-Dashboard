@@ -26,6 +26,7 @@
     'derived.fuelRemainingL': ['No tanque', 'L', 1], 'derived.tripDistanceKm': ['Distância', 'km', 1], 'derived.estimatedGear': ['Marcha', '', 0],
     'derived.recommendedGear': ['Marcha sugerida', '', 0],
     'derived.estimatedLoadPct': ['Carga estimada', '%', 0], 'derived.tripCost': ['Custo da viagem', 'R$', 2],
+    'derived.vacuumKpa': ['Vácuo do coletor', 'kPa', 0], 'derived.mapOffsetKpa': ['Desvio do sensor MAP', 'kPa', 1],
     fuel_level_pct: ['Nível do tanque', '%', 0],
     // Sinais da escuta CAN (ESP32), lidos da rede do painel do carro
     can_speed: ['Velocidade (painel)', 'km/h', 0], can_rpm: ['Rotação (painel)', 'RPM', 0],
@@ -39,7 +40,7 @@
   // desligado) mostraria zeros enganosos. Tanque, hodômetro, temperaturas e tensão continuam valendo parado.
   var MOMENTARY = ['speed', 'rpm', 'can_speed', 'can_rpm', 'map', 'maf', 'throttle', 'engine_load', 'timing_advance',
     'stft_b1', 'ltft_b1', 'lambda_v', 'can_fuel_lph', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.estimatedLoadPct',
-    'derived.estimatedGear', 'derived.recommendedGear'];
+    'derived.estimatedGear', 'derived.recommendedGear', 'derived.vacuumKpa'];
   function momentary(id) { return MOMENTARY.indexOf(id) >= 0 || /^lambda_/.test(id); }
   var shown = {};
   var isStale = false;
@@ -85,7 +86,7 @@
     });
   }
   var GROUPS = [
-    ['Motor', ['derived.estimatedLoadPct', 'engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear', 'can_rpm', 'can_coolant_temp']],
+    ['Motor', ['derived.estimatedLoadPct', 'derived.vacuumKpa', 'derived.mapOffsetKpa', 'engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear', 'can_rpm', 'can_coolant_temp']],
     ['Combustível', ['fuel_level_pct', 'can_fuel_lph', 'derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
     ['Viagem', ['can_speed', 'trip_distance_km', 'derived.tripDistanceKm', 'trip_km', 'odometer_km']],
     ['Elétrica', ['can_voltage']],

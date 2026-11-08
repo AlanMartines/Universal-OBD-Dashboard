@@ -3,22 +3,50 @@ package com.universal.obddashboard.telemetry
 import kotlin.math.abs
 
 /** Carga pela pressão do coletor sobre a atmosférica, medida com o motor parado. Para ECUs cuja carga informada não acompanha o motor. */
+/**
+ * Carga estimada pelo coletor: MAP ÷ pressão atmosférica.
+ *
+ * A pressão atmosférica vem do sensor ambiente do ESP32 (BMP180) quando ele manda leitura: vale ao vivo,
+ * também numa subida de serra. Sem o sensor, é o MAP lido com a chave ligada e o motor parado, guardado
+ * entre viagens. Com os dois, mede também o vácuo do coletor e o desvio do sensor MAP (só diagnóstico:
+ * o consumo não é corrigido por ele, porque a calibração pelos abastecimentos já absorve o erro médio).
+ */
 class EstimatedLoad(atmosphericKpa: Double?) {
     var atmosphericKpa: Double? = atmosphericKpa
         private set
+    /** Pressão atmosférica menos o MAP, com o motor ligado (kPa). */
+    var vacuumKpa: Double? = null
+        private set
+    /** MAP menos a pressão do sensor ambiente, com o motor parado (kPa), suavizado. */
+    var mapOffsetKpa: Double? = null
+        private set
 
-    fun update(rpm: Double?, mapKpa: Double?): Double? {
+    /** @param ambientKpa pressão do sensor ambiente (kPa), se houver leitura recente. */
+    fun update(rpm: Double?, mapKpa: Double?, ambientKpa: Double? = null): Double? {
+        val ambient = ambientKpa?.takeIf { it in ATMOSPHERIC_RANGE }
+        if (ambient != null) atmosphericKpa = ambient
+        vacuumKpa = null
         if (rpm == null || mapKpa == null) return null
         if (rpm < ENGINE_RUNNING_RPM) {
-            if (mapKpa in ATMOSPHERIC_RANGE) atmosphericKpa = mapKpa
+            if (ambient != null) {
+                if (mapKpa in ATMOSPHERIC_RANGE) {
+                    val d = mapKpa - ambient
+                    mapOffsetKpa = mapOffsetKpa?.let { it + (d - it) * OFFSET_SMOOTHING } ?: d
+                }
+            } else if (mapKpa in ATMOSPHERIC_RANGE) {
+                atmosphericKpa = mapKpa
+            }
             return null
         }
-        return atmosphericKpa?.let { (mapKpa / it * 100).coerceIn(0.0, 100.0) }
+        val atm = atmosphericKpa ?: return null
+        vacuumKpa = (atm - mapKpa).coerceAtLeast(0.0)
+        return (mapKpa / atm * 100).coerceIn(0.0, 100.0)
     }
 
     private companion object {
         const val ENGINE_RUNNING_RPM = 300.0
         val ATMOSPHERIC_RANGE = 50.0..110.0
+        const val OFFSET_SMOOTHING = 0.2
     }
 }
 
