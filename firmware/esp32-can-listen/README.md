@@ -11,11 +11,27 @@ Faça isto com a placa desligada do carro.
 1. Na Arduino IDE, instale o pacote **esp32**, da Espressif (*Ferramentas → Placa → Gerenciador de placas*).
 2. Abra `esp32-can-listen.ino` e escolha a placa **ESP32 Dev Module**.
 3. Grave na placa. Se a IDE ficar parada em `Connecting...`, segure o botão BOOT até a gravação começar.
-4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.1` e `# listen-only 50 kbps`.
+4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.2` e `# listen-only 50 kbps`.
 
 Se faltar memória ao compilar, escolha *Ferramentas → Partition Scheme → Huge APP*.
 
 A velocidade é fixa em `TWAI_TIMING_CONFIG_50KBITS()`, a da rede do Uno Vivace. Em outro carro, ajuste esse valor e o aviso `# listen-only` logo abaixo.
+
+## Sensor BMP180 (opcional)
+
+Temperatura e pressão do lugar onde o módulo fica, no I2C. Serve o módulo GY-68 (com VCC e 3.3V) ou o HW-596 (VIN):
+
+| BMP180 | ESP32 |
+|---|---|
+| VCC (ou VIN) | 3V3 |
+| GND | GND |
+| SDA | D25 |
+| SCL | D26 |
+| 3.3V (só no GY-68) | sem ligação |
+
+O D21 e o D22, que são as portas de I2C de costume, ficam com o CAN. A cada 5 s aparece `# bmp180 temp=24.3C pressao=1013.2hPa`. Sem o sensor, aparece uma vez `# bmp180 ausente` e o resto funciona igual. A leitura é direta, pelas fórmulas do datasheet, então não precisa de biblioteca.
+
+Embaixo do painel, perto do OBD, a temperatura medida é a daquele canto, e o calor do ESP32 e do conversor também chega até o sensor. Para medir a temperatura da cabine, leve o sensor com um cabo de quatro fios para um lugar ventilado e longe do sol direto. A pressão serve como está: o interior do carro não é vedado, então ela acompanha a pressão do lado de fora e a altitude.
 
 ## Modo descanso
 

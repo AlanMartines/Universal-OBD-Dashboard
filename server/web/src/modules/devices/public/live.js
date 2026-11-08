@@ -31,6 +31,8 @@
     can_speed: ['Velocidade (painel)', 'km/h', 0], can_rpm: ['Rotação (painel)', 'RPM', 0],
     can_coolant_temp: ['Temperatura do motor (painel)', '°C', 0], can_voltage: ['Tensão da bateria (painel)', 'V', 1],
     can_fuel_lph: ['Consumo da injeção (painel)', 'L/h', 1],
+    // Sensor BMP180 no ESP32 (no módulo, não na rede do carro)
+    cabin_temp: ['Temperatura interna', '°C', 1], cabin_pressure: ['Pressão do ar', 'hPa', 1],
   };
   var HIGHLIGHTS = ['speed', 'rpm', 'coolant_temp', 'battery_volts'];
   // Valores que só valem com o motor rodando: sem transmissão, a última leitura (em geral, motor já
@@ -87,7 +89,7 @@
     ['Combustível', ['fuel_level_pct', 'can_fuel_lph', 'derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
     ['Viagem', ['can_speed', 'trip_distance_km', 'derived.tripDistanceKm', 'trip_km', 'odometer_km']],
     ['Elétrica', ['can_voltage']],
-    ['Ambiente', ['intake_temp']],
+    ['Ambiente', ['cabin_temp', 'cabin_pressure', 'intake_temp']],
     ['Outros', []],
   ];
 

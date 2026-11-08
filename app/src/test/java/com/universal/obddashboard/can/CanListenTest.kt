@@ -24,6 +24,16 @@ class CanListenTest {
         assertNull("RTR não traz dados", Slcan.parse("r2A00"))
     }
 
+    @Test fun parsesBmp180Line() {
+        val v = Slcan.parseAmbient("# bmp180 temp=24.3C pressao=1013.2hPa")!!
+        assertEquals(24.3, v[Slcan.CABIN_TEMP]!!, 1e-9)
+        assertEquals(1013.2, v[Slcan.CABIN_PRESSURE]!!, 1e-9)
+        assertEquals(-0.5, Slcan.parseAmbient("# bmp180 temp=-0.5C pressao=921.0hPa")!![Slcan.CABIN_TEMP]!!, 1e-9)
+        assertNull("fora da faixa do sensor", Slcan.parseAmbient("# bmp180 temp=24.3C pressao=0.0hPa"))
+        assertNull(Slcan.parseAmbient("# bmp180 ausente"))
+        assertNull("não é quadro", Slcan.parse("# bmp180 temp=24.3C pressao=1013.2hPa"))
+    }
+
     @Test fun unoProfileDecodesConfirmedSignals() {
         assertEquals(56.0, decode("t2A04038000DE")["can_speed"]!!, 1e-9)
         assertEquals(39.0, decode("t3808000000000027FF00")["fuel_level_pct"]!!, 1e-9)

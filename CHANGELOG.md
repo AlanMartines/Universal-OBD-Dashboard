@@ -7,6 +7,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ## [Não lançado]
 
 ### Adicionado
+- **Firmware do ESP32 (esp32-can-listen 1.2): sensor BMP180 opcional.** Lê a temperatura e a pressão no I2C (SDA no D25, SCL no D26) a cada 5 s, numa linha de estado `# bmp180 temp=… pressao=…`. Sem o sensor, segue igual. A leitura é direta, sem biblioteca.
+- **Temperatura interna no painel:** com o BMP180 no ESP32, o app mostra a temperatura ao lado do relógio, no rodapé de todos os temas, e grava temperatura e pressão no histórico (`cabin_temp`, `cabin_pressure`). O painel web mostra o mesmo e lista as duas em Ambiente.
 - **Firmware do ESP32 (esp32-can-listen 1.1): modo descanso.** Depois de 2 min sem quadros na rede, desliga o Bluetooth e o TWAI e entra em sono leve. Acorda com o primeiro sinal da rede no RX e volta a escutar em cerca de 2 s. Assim o ESP32 pode ficar ligado no OBD o tempo todo, com consumo estimado em torno de 10 mA em descanso. Nada é enviado à rede para acordá-la.
 
 ## [0.9.33] - 2026-11-07
