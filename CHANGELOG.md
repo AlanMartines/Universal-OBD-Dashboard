@@ -6,6 +6,14 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Vácuo do coletor e desvio do sensor MAP**, com o BMP180 do ESP32. O vácuo é a pressão atmosférica menos o MAP, com o motor ligado. O desvio do MAP é a diferença para o sensor ambiente, medida com a chave ligada e o motor parado. Os dois vão para o histórico e para o painel web (grupo Motor). O desvio é só diagnóstico: o consumo não é corrigido por ele, porque a calibração pelos abastecimentos já absorve o erro médio.
+- **Placa 3D:** o sensor BMP180 (GY-68) aparece na ponta do cabo, com os conectores e os fios de cada sinal, e ganhou caixa própria para esconder ou mostrar.
+
+### Alterado
+- **Carga estimada pelo coletor:** com o BMP180, usa a pressão atmosférica ao vivo. Funciona mesmo se a captura começar com o motor ligado e acompanha a altitude numa subida de serra. Sem o sensor, continua com a pressão lida com o motor parado.
+- **Mostrador do coletor:** as faixas "vácuo alto", "carga parcial" e "carga plena" passam a ser relativas à pressão atmosférica, e a nota mostra o vácuo.
+
 ## [0.9.34] - 2026-11-08
 
 ### Adicionado

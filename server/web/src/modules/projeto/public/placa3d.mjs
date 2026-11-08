@@ -569,6 +569,70 @@ function iniciar() {
     poe(g, 'placa', 'Conector do cabo do BMP180: SDA, SCL, GND, VCC (5 V)');
   }
 
+  // ------------------------------------------------------------ sensor BMP180 (GY-68) na ponta do cabo
+  if (X.bmp_modulo && X.bmp) {
+    const B = X.bmp_modulo;
+    const g = new THREE.Group();
+    // conector fêmea do cabo, encaixado nos pinos da placa
+    const xs = X.bmp.map((p) => p.p[0]);
+    const y = X.bmp[0].p[1];
+    g.add(caixa(Math.max(...xs) - Math.min(...xs) + P, B.housing, P, M.nylon, (Math.min(...xs) + Math.max(...xs)) / 2, y, A.T + A.MALE_H));
+    // placa do módulo, com a serigrafia desenhada
+    const tex = textura(B.l, B.w, (ctx) => {
+      ctx.fillStyle = '#1565c9';
+      ctx.fillRect(0, 0, B.l, B.w);
+      B.pinos.forEach((p, k) => {
+        const px = p.p[0] - B.x0, py = p.p[1] - B.y0;
+        ilha(ctx, px, py, 0.8, k === 0);
+        texto(ctx, p.n, px + 4.1, py, 0.75, '#ffffff', { alinha: 'left' });
+      });
+      contorno(ctx, 0.25, B.w / 2 - 6.6, 2.4, 13.2, 'rgba(255,255,255,0.85)', 0.12);
+      for (const hy of [2.6, B.w - 2.6]) {
+        ctx.fillStyle = '#e3c06a';
+        ctx.beginPath();
+        ctx.arc(B.l - 2.6, hy, 1.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0c1a2e';
+        ctx.beginPath();
+        ctx.arc(B.l - 2.6, hy, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      texto(ctx, 'GY-68', 10.2, 1.0, 0.7, '#ffffff');
+      texto(ctx, 'U3', 3.6, B.w - 0.7, 0.6, '#ffffff');
+    });
+    g.add(placaModulo(B.x0, B.y0, B.l, B.w, B.z0, 1.6, PCB.tja, tex));
+    const topo = B.z0 + 1.6;
+    // BMP180: cápsula metálica com o furo de ventilação
+    const texS = textura(3.8, 3.6, (ctx) => {
+      ctx.fillStyle = '#c9ced2';
+      ctx.fillRect(0, 0, 3.8, 3.6);
+      texto(ctx, 'U3V', 1.9, 1.0, 0.55, '#6d7378', { peso: 500 });
+      ctx.fillStyle = '#2b2b2b';
+      ctx.beginPath();
+      ctx.arc(1.0, 2.6, 0.28, 0, Math.PI * 2);
+      ctx.fill();
+    }, 80);
+    const sensor = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.95, 3.6), [M.niquel, M.niquel, std(0xffffff, 0.35, 0.8, { map: texS }), M.niquel, M.niquel, M.niquel]);
+    sensor.position.copy(W(B.x0 + 9.9, B.y0 + 6.4, topo + 0.475));
+    g.add(sensor);
+    g.add(caixa(2.9, 1.1, 1.6, M.preto, B.x0 + 6.6, B.y0 + 2.8, topo));
+    g.add(smd(B.x0 + 6.4, B.y0 + 8.4, topo, 1.6, 0.8, M.resistor, false, '472'));
+    g.add(smd(B.x0 + 6.4, B.y0 + 10.0, topo, 1.6, 0.8, M.resistor, false, '472'));
+    g.add(smd(B.x0 + 6.4, B.y0 + 5.4, topo, 1.6, 0.8, M.ceramica));
+    // barra de 5 pinos do módulo e o conector fêmea do cabo
+    const ys = B.pinos.map((p) => p.p[1]);
+    const px = B.pinos[0].p[0];
+    g.add(caixa(P, A.MALE_H, Math.max(...ys) - Math.min(...ys) + P, M.preto, px, (Math.min(...ys) + Math.max(...ys)) / 2, topo));
+    g.add(caixa(P, B.housing, Math.max(...ys) - Math.min(...ys) + P, M.nylon, px, (Math.min(...ys) + Math.max(...ys)) / 2, topo + A.MALE_H));
+    for (const p of B.pinos) g.add(solda(p.p[0], p.p[1], B.z0, 0.7, 0.5, true));
+    poe(g, 'bmp180', 'Sensor BMP180 (GY-68): pressão e temperatura, na ponta do cabo, longe do calor da placa');
+    // cabo de 4 fios
+    for (const f of B.cabo) {
+      const curva = new THREE.CatmullRomCurve3(f.pts.map(([x, y, z]) => W(x, y, z)), false, 'centripetal');
+      poe(new THREE.Mesh(new THREE.TubeGeometry(curva, 80, 0.55, 10), std(new THREE.Color(f.cor), 0.42)), 'bmp180', `Cabo do BMP180: ${f.n}`);
+    }
+  }
+
   // ------------------------------------------------------------ resistores de 1 kΩ (corpo em "osso", faixas marrom, preto, vermelho, ouro)
   {
     const texR = textura(4, 24, (ctx) => {
@@ -693,7 +757,7 @@ function iniciar() {
     baixo: { yaw: Math.PI, pitch: -1.5607, dist: 135 },
     lado: { yaw: 0, pitch: 0.08, dist: 105 },
   };
-  const alvoPadrao = () => new THREE.Vector3(0, 5, 0);
+  const alvoPadrao = () => new THREE.Vector3(8, 5, 0);
   const cam = { yaw: 0, pitch: 0, dist: 150, alvo: alvoPadrao() };
   const meta = { ...cam, alvo: alvoPadrao() };
   function vista(nome) {

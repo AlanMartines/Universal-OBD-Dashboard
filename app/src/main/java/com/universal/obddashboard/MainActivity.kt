@@ -398,6 +398,7 @@ class MainActivity : ComponentActivity() {
                     .put("fuelRemainingL", (d.fuelRemainingL ?: AppSettings.fuelLevel(this).takeIf { !ObdForegroundService.isRunning }).orNull())
                     .put("realKmPerL", realKmPerL.orNull())
                     .put("estimatedLoadPct", d.estimatedLoadPct.orNull())
+                    .put("vacuumKpa", d.vacuumKpa.orNull())
                     .put("tripCost", d.tripCost.orNull())
                     .put("recommendedGear", d.recommendedGear ?: JSONObject.NULL)
                     .put("estimatedGear", d.estimatedGear ?: JSONObject.NULL)

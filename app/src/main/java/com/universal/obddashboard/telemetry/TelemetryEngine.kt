@@ -1,6 +1,7 @@
 package com.universal.obddashboard.telemetry
 
 import android.location.Location
+import com.universal.obddashboard.can.Slcan
 import com.universal.obddashboard.db.TripEntity
 import com.universal.obddashboard.obd.CompiledAlert
 import com.universal.obddashboard.obd.FormulaEvaluator
@@ -98,7 +99,8 @@ class TelemetryEngine(
         }
         val tripKmL = trip?.let { if (it.fuelUsedL > 0.05) it.distanceKm / it.fuelUsedL else null }
         val advice = shiftAdvisor?.advise(speed, rpm, tps)
-        val loadPct = estimatedLoad.update(rpm, v(roles.map))
+        // Pressão do sensor ambiente do ESP32 (hPa → kPa), quando houver: carga ao vivo, vácuo e desvio do MAP
+        val loadPct = estimatedLoad.update(rpm, v(roles.map), v(Slcan.CABIN_PRESSURE)?.div(10.0))
         val fuelUsed = trip?.fuelUsedL ?: 0.0
         val speedReading = state.readings[roles.speed]
         val timedRuns = if (speedReading != null && speedReading.timestamp != lastSpeedAt) {
@@ -118,6 +120,8 @@ class TelemetryEngine(
             estimatedGear = advice?.estimatedGear,
             shiftUp = advice?.shiftUp ?: false,
             estimatedLoadPct = loadPct,
+            vacuumKpa = estimatedLoad.vacuumKpa,
+            mapOffsetKpa = estimatedLoad.mapOffsetKpa,
             tripCost = fuelPricePerL?.let { it * fuelUsed },
             instantLph = sLph,
             ecoBand = ecoBand,

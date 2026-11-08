@@ -631,6 +631,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                             "derived.fuelRemainingL" to d.fuelRemainingL,
                             "derived.recommendedGear" to d.recommendedGear?.toDouble(),
                             "derived.estimatedLoadPct" to d.estimatedLoadPct,
+                            "derived.vacuumKpa" to d.vacuumKpa,
+                            "derived.mapOffsetKpa" to d.mapOffsetKpa,
                             "derived.tripCost" to d.tripCost,
                             "derived.estimatedGear" to d.estimatedGear?.toDouble(),
                             "derived.shiftUp" to if (d.shiftUp) 1.0 else 0.0,
@@ -715,6 +717,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         "derived.estimatedGear" to d.estimatedGear?.toDouble(),
         "derived.shiftUp" to if (d.shiftUp) 1.0 else 0.0,
         "derived.estimatedLoadPct" to d.estimatedLoadPct,
+        "derived.vacuumKpa" to d.vacuumKpa,
+        "derived.mapOffsetKpa" to d.mapOffsetKpa,
         "derived.tripCost" to d.tripCost,
         "pc.ecoBand" to d.ecoBand?.toDouble(),
     )
