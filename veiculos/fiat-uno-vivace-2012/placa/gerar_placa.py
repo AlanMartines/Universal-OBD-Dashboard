@@ -48,10 +48,11 @@ RES = [
 ]
 # Ilhas de ligação dos módulos e do cabo
 # TJA1050: módulo de 22 x 11 mm. Barra de 4 pinos (VCC, TX, RX, GND) soldada na coluna 10, linhas 19 a 22; o módulo
-# fica deitado para a direita. CANH e CANL ficam na outra ponta, cerca de 19,4 mm adiante, fora da grade: ligados por fio.
+# fica deitado para a direita. CANH e CANL ficam na outra ponta, cerca de 19,4 mm adiante, fora da grade: cada um desce por
+# uma perna curta (sobra de perna de resistor) até a ilha da coluna 18 logo abaixo, e a ligação segue por baixo.
 TJA_PINS = {'VCC': (10, 19), 'TX': (10, 20), 'RX': (10, 21), 'GND': (10, 22)}
 TJA_CAN = {'CANH': (10 + 19.4 / P, 20), 'CANL': (10 + 19.4 / P, 21)}
-CANL_HOLE = (18, 23)
+CAN_HOLES = {'CANH': (18, 20), 'CANL': (18, 21)}
 OBD_PADS = {'16': (1, 24), '4': (9, 24), '5': (10, 24), '14': (18, 24)}
 # Suporte de fusível mini lâmina para placa (Keystone 3568 ou equivalente), com fusível mini de 1 A.
 # Catálogo: corpo de 16,0 x 6,73 mm; 4 pinos de 1,57 mm, a 9,72 mm (comprimento) x 3,40 mm (largura);
@@ -77,7 +78,8 @@ TRACKS = [
     ('RX', YEL, [(10, 21), (17, 21), (17, 17)]),
     ('12 V com fusível', PUR, [(8, 24), (8, 17)]),
     ('OUT+ → J3', RED, [(1, 22), (2, 22), (2, 14)]),
-    ('CAN-L', BLU, [(18, 23), (18, 24)]),
+    ('CANH', BLU, [(18, 17), (18, 20)]),
+    ('CAN-L', BLU, [(18, 21), (18, 24)]),
 ]
 # Fios isolados por cima da placa (J1 e J2 passam embaixo do ESP32)
 # Fio estanhado curto, lado de baixo, da ilha até o pino do suporte do fusível (fora da grade)
@@ -87,7 +89,7 @@ LINKS = [
 ]
 JUMPERS = [
     ('J1', YEL, [(11, 3), (17, 3), (17, 17)], 'R1 → RX do TJA1050'),
-    ('J2', BLU, [(16, 7), (18, 7), (18, 20), TJA_CAN['CANH']], 'R4 → pino CANH do TJA1050'),
+    ('J2', BLU, [(16, 7), (18, 7), (18, 17)], 'R4 → CANH (segue por baixo até a perna do CANH)'),
     ('J3', RED, [(2, 14), (9, 14), (9, 17), (10, 17)], 'OUT+ do RT8272 → 5 V'),
 ]
 TJA_MM = (22.0, 11.0)
@@ -268,11 +270,11 @@ def tja_art(s):
         s.add(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="0.65" fill="#d4af37"/>')
         can = n.startswith('CAN')
         s.text(x + (-1.1 if can else 1.1), y + 0.4, n, 0.95, '#fff', anchor='end' if can else 'start', weight='bold')
-    # fio curto do CANL: desce reto do pino até a linha 23 e só ali vai à ilha (longe do J2, na coluna 18)
-    x, y = MX + (TJA_CAN['CANL'][0] - 1) * P, MY + (TJA_CAN['CANL'][1] - 1) * P
-    tx, ty = hp(*CANL_HOLE)
-    d = f'M{x:.2f},{y:.2f} L{x:.2f},{ty:.2f} L{tx:.2f},{ty:.2f}'
-    s.add(f'<path d="{d}" fill="none" stroke="#37474f" stroke-width="0.95" stroke-linejoin="round"/><path d="{d}" fill="none" stroke="{BLU}" stroke-width="0.6" stroke-linejoin="round"/>')
+    # pernas curtas do CANH e do CANL até as ilhas da coluna 18, logo abaixo do módulo
+    for n, (c, r) in TJA_CAN.items():
+        x, y = MX + (c - 1) * P, MY + (r - 1) * P
+        tx, ty = hp(*CAN_HOLES[n])
+        s.add(f'<path d="M{x:.2f},{y:.2f} L{tx:.2f},{ty:.2f}" stroke="#9e9e9e" stroke-width="0.45" stroke-linecap="round"/>')
 
 
 def buck_art(s):
@@ -337,7 +339,8 @@ def view_top(stage, scale):
             s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
             s.text(x + 1.8, y + 0.45, name, 1.0, {'VCC': RED, 'TX': RED, 'RX': YEL, 'GND': BLK}[name], anchor='start', weight='bold', bg=True)
         s.text(MX + 13.5 * P, MY + 19.5 * P, 'pinos do TJA1050', 1.15, '#1565c0', bg=True)
-        pad_mark(s, *CANL_HOLE, BLU, 'CANL', 'above', size=1.0)
+        pad_mark(s, *CAN_HOLES['CANH'], BLU, 'CANH', 'above', size=0.9)
+        pad_mark(s, *CAN_HOLES['CANL'], BLU, 'CANL', 'below', size=0.9)
         for name, (c, r) in BUCK_PINS.items():
             x, y = hp(c, r)
             s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
@@ -388,7 +391,7 @@ def view_bottom(scale):
         legs |= {a, b}
     for row in (2, 12):
         legs |= {(c, row) for c in range(2, 17)}
-    legs |= set(BUCK_PINS.values()) | set(TJA_PINS.values())
+    legs |= set(BUCK_PINS.values()) | set(TJA_PINS.values()) | set(CAN_HOLES.values())
     for c, r in legs:
         x, y = hp(c, r)
         s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')
@@ -400,7 +403,7 @@ def view_bottom(scale):
             s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.7" fill="none" stroke="{col}" stroke-width="0.35"/>')
             s.text(X(x) + (1.6 if c < 12 else -1.6), y + 0.45, name, 1.05, '#37474f', anchor='middle')
     # nomes das trilhas
-    labels = {'GND': (9, 19.5, BLK), '5 V': (13, 18, RED), 'RX': (14, 21, YEL), 'CAN-L': (18, 23.5, BLU), '12 V com fusível': (7.2, 20.5, PUR),
+    labels = {'GND': (9, 19.5, BLK), '5 V': (13, 18, RED), 'RX': (14, 21, YEL), 'CAN-L': (18, 23.5, BLU), 'CANH': (18, 18.5, BLU), '12 V com fusível': (7.2, 20.5, PUR),
               'OUT+': (2, 18, RED), 'fusível': (FUSE_C[0], FUSE_C[1] + 0.2, PUR), '12 V': (1, 25.2, RED),
               'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG)}
     for t, (c, r, col) in labels.items():

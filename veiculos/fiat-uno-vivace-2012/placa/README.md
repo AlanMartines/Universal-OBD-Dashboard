@@ -42,7 +42,7 @@ Para ver como a placa fica montada, com as alturas, há duas opções. As posiç
   - R1 vai do D21 ao RX do TJA1050, pelo fio J1;
   - R2 e R3, em série, vão do D21 ao GND. É o divisor que leva os 5 V do RX a 3,3 V;
   - R4 vai do 3V3 ao CANH, pelo fio J2.
-- **TJA1050 (22 × 11 mm):** soldado pela barra de 4 pinos na coluna 10, linhas 19 a 22 (VCC, TX, RX e GND, de cima para baixo), deitado para a direita. Apoie a outra ponta com um pedaço de fita dupla-face grossa. CANH e CANL ficam nessa outra ponta, fora da grade, e vão por fio: o J2 sai do R4 e é soldado direto no pino CANH; um fio curto leva o CANL até (18,23).
+- **TJA1050 (22 × 11 mm):** soldado pela barra de 4 pinos na coluna 10, linhas 19 a 22 (VCC, TX, RX e GND, de cima para baixo), deitado para a direita. CANH e CANL ficam na outra ponta, fora da grade (cerca de 1 mm antes da coluna 18). Solde uma perna curta, que pode ser a sobra cortada de uma perna de resistor, em cada um: ela desce direto até a ilha logo abaixo, CANH em (18,20) e CANL em (18,21). As duas pernas também apoiam essa ponta do módulo. A ligação segue por baixo, em fio estanhado.
 - **RT8272 (módulo HW-108, 21 × 21 mm):** soldado na placa por barra de pinos macho, à esquerda, com a bobina (4R7) embaixo à direita. As duas fileiras de pinos do módulo ficam a 7 furos uma da outra: EN, IN− e IN+ na coluna 8 (linhas 15 a 17); OUT− e OUT+ na coluna 1 (linhas 21 e 22). IN− e OUT− são o mesmo GND dentro do módulo, então só o IN− vai ao GND da placa. O EN fica sem ligação. **Antes de soldar, encaixe o módulo com os pinos na placa e veja se os cinco entram nos furos.** Se não entrarem, use fita dupla-face e fios curtos até os mesmos furos.
 - **Fusível de 1 A, na placa:** fusível mini lâmina (ATM, corpo preto) num suporte para placa Keystone 3568 ou equivalente, deitado na horizontal embaixo do RT8272, entre as colunas 1 e 8. Os pinos do suporte (4, de 1,57 mm, a 9,72 × 3,40 mm pelo catálogo) não caem na grade: imprima o [`etapa1-real.svg`](etapa1-real.svg) em 100%, marque as cruzes e abra **4 furos de 1,7 mm**. Os furos (2,24), (3,24), (6,24) e (7,24) se perdem; nenhum é usado. Por baixo, um fio estanhado curto leva a ilha (1,24) ao pino de cima da presilha esquerda (entrada) e outro leva o pino de cima da presilha direita (saída) à ilha (8,24). **Meça o suporte comprado antes de furar.**
 - **Cabo OBD:** os quatro fios entram pela borda de baixo: 16 (1,24), 4 (9,24), 5 (10,24) e 14 (18,24).
@@ -57,7 +57,7 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio J3 ainda fora da 
 | Onde | Furos |
 |---|---|
 | TJA1050 (pinos) | VCC (10,19) · TX (10,20) · RX (10,21) · GND (10,22). CANH e CANL na outra ponta do módulo, por fio |
-| Fio do CANL | (18,23) |
+| Pernas do CANH e do CANL | CANH (18,20) · CANL (18,21), embaixo da ponta do TJA1050 |
 | RT8272 (pinos) | EN (8,15), sem ligação · IN− (8,16) · IN+ (8,17) · OUT− (1,21), sem ligação · OUT+ (1,22) |
 | Suporte do fusível | 4 furos de 1,7 mm fora da grade (cruzes no desenho): presilha esquerda = entrada, direita = saída |
 | Cabo OBD | 16 (1,24) · 4 (9,24) · 5 (10,24) · 14 (18,24) |
@@ -79,9 +79,10 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio J3 ainda fora da 
 | Fusível → 12 V com fusível | Pino de cima da presilha direita → (8,24) (fio curto) |
 | 12 V com fusível → IN+ | (8,24) → (8,17) |
 | OUT+ → começo do J3 | (1,22) → (2,22) → (2,14) |
-| CAN-L | (18,23) – (18,24) |
+| CANH (fim do J2) | (18,17) → (18,20) |
+| CAN-L | (18,21) → (18,24) |
 
-As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 17 a 24, as de GND (coluna 15) e 5 V (coluna 16) nas linhas 12 e 13, e a de 5 V (coluna 2) passa ao lado do pino OUT− (1,21), que é GND: confira com lupa e com o multímetro que não encostam.
+As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 17 a 24, as de GND (coluna 15) e 5 V (coluna 16) nas linhas 12 e 13, a de 5 V (coluna 2) passa ao lado do pino OUT− (1,21), que é GND, e as de RX (coluna 17) e CANH/CAN-L (coluna 18) correm lado a lado nas linhas 17 a 21. Na coluna 18, o CANH termina em (18,20) e o CAN-L começa em (18,21): não pode haver solda unindo as duas. Confira com lupa e com o multímetro que não encostam.
 
 **Resistores (1 kΩ, 1/4 W: marrom, preto, vermelho)**
 
@@ -97,10 +98,10 @@ As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 
 | | Caminho | Função |
 |---|---|---|
 | J1 | (11,3) → coluna 17 → (17,17) | R1 → RX do TJA1050 |
-| J2 | (16,7) → coluna 18 → pino CANH do TJA1050 | R4 → CANH |
+| J2 | (16,7) → (18,7) → coluna 18 → (18,17) | R4 → CANH (segue por baixo) |
 | J3 | (2,14) → linha 14, acima do RT8272 → (9,14) → coluna 9 → (10,17) | OUT+ do RT8272 → 5 V |
 
-**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (8,24), (2,14), (16,12), (10,21) ou (18,23). Sem o fusível no suporte, (1,24) e (8,24) não têm continuidade entre si; com ele, têm. Com o ESP32 fora das barras e o J3 ainda fora da placa, regule a saída em 5,0 V. Depois de soldar o J3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
+**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (8,24), (2,14), (16,12), (10,21), (18,20) ou (18,21). Entre (18,20) e (18,21) também não pode haver continuidade. Sem o fusível no suporte, (1,24) e (8,24) não têm continuidade entre si; com ele, têm. Com o ESP32 fora das barras e o J3 ainda fora da placa, regule a saída em 5,0 V. Depois de soldar o J3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
 
 ## Medidas dos componentes
 
@@ -122,4 +123,4 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 | Conector OBD2 macho (a caminho) | Pinos montados (precisa de 4, 5, 14 e 16) | | |
 | Cabo Y OBD2 (a caminho) | Pinos ligados em cada ramo | | |
 
-A distância entre a barra de 4 pinos e os pinos CANH/CANL do TJA1050 foi estimada pela foto. Como esses dois vão por fio, ela não muda a placa.
+A distância entre a barra de 4 pinos e os pinos CANH/CANL do TJA1050 foi estimada pela foto (cerca de 19,4 mm). As pernas curtas absorvem a diferença até a coluna 18 (20,3 mm); meça antes de soldar.

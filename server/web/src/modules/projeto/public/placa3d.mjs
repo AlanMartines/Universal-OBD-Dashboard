@@ -464,12 +464,16 @@ function iniciar() {
     g.add(smd(T.x0 + 14.2, T.y0 + 2.6, topo, 2.0, 1.25, M.resistor, false, '121'));
     g.add(smd(T.x0 + 14.2, T.y0 + 6.4, topo, 2.0, 1.25, M.resistor, false, '000'));
     g.add(smd(T.x0 + 14.2, T.y0 + 9.0, topo, 2.0, 1.25, M.ceramica));
-    // CANH e CANL: pino curto para baixo, com o fio soldado
-    for (const p of T.can) {
-      g.add(cilindro(W(p.p[0], p.p[1], A.T + 0.9), W(p.p[0], p.p[1], topo + 0.6), 0.32, M.ouro, 4));
-      g.add(solda(p.p[0], p.p[1], topo, 0.75, 0.5, false));
-    }
     poe(g, 'modulos', 'TJA1050: transceptor CAN, só escuta (TX preso nos 5 V)');
+    // CANH e CANL: perna curta (sobra de perna de resistor) do pino até a ilha logo abaixo; a ligação segue por baixo
+    for (const p of T.can) {
+      const perna = new THREE.Group();
+      const [x, y] = p.p, [hx, hy] = p.furo;
+      const curva = new THREE.CatmullRomCurve3([W(x, y, topo + 0.6), W(x, y, topo - 0.2), W(x, y, A.T + 1.6), W(hx, hy, A.T + 0.3), W(hx, hy, -0.9)], false, 'centripetal');
+      perna.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 40, 0.3, 8), M.estanho));
+      perna.add(solda(x, y, topo, 0.75, 0.5, false));
+      poe(perna, 'modulos', `Perna do ${p.n}: do pino do TJA1050 até a ilha (${p.n === 'CANH' ? '18,20' : '18,21'})`);
+    }
     barraMacho(T.pinos.map((p) => p.p), topo, 'modulos', 'Barra de 4 pinos do TJA1050: VCC, TX, RX, GND');
   }
 
@@ -802,6 +806,7 @@ function iniciar() {
       return;
     }
     dica.textContent = o.userData.nome;
+    dica.style.left = '0px';   // mede a etiqueta inteira antes de posicionar perto da borda
     dica.hidden = false;
     const x = Math.min(e.clientX - r.left + 14, r.width - dica.offsetWidth - 6);
     dica.style.left = `${Math.max(6, x)}px`;

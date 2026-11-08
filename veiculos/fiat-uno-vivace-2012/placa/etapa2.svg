@@ -569,13 +569,13 @@
 <text x="44.05" y="29.15" font-size="1.3" fill="#fff" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">J1</text>
 <rect x="42.45" y="27.90" width="3.2" height="1.6" rx="0.5" fill="#f9a825" stroke="#37474f" stroke-width="0.15"/>
 <text x="44.05" y="29.13" font-size="1.2" fill="#3e2723" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">J1</text>
-<path d="M41.51,21.03 L46.59,21.03 L46.59,54.05 L45.67,54.05" fill="none" stroke="#37474f" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M41.51,21.03 L46.59,21.03 L46.59,54.05 L45.67,54.05" fill="none" stroke="#1976d2" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41.51,21.03 L46.59,21.03 L46.59,46.43" fill="none" stroke="#37474f" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41.51,21.03 L46.59,21.03 L46.59,46.43" fill="none" stroke="#1976d2" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="41.51" cy="21.03" r="0.55" fill="#cfd8dc" stroke="#37474f" stroke-width="0.2"/>
-<circle cx="45.67" cy="54.05" r="0.55" fill="#cfd8dc" stroke="#37474f" stroke-width="0.2"/>
-<text x="46.59" y="38.04" font-size="1.3" fill="#fff" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">J2</text>
-<rect x="44.99" y="36.79" width="3.2" height="1.6" rx="0.5" fill="#1976d2" stroke="#37474f" stroke-width="0.15"/>
-<text x="46.59" y="38.02" font-size="1.2" fill="#fff" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">J2</text>
+<circle cx="46.59" cy="46.43" r="0.55" fill="#cfd8dc" stroke="#37474f" stroke-width="0.2"/>
+<text x="46.59" y="34.23" font-size="1.3" fill="#fff" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">J2</text>
+<rect x="44.99" y="32.98" width="3.2" height="1.6" rx="0.5" fill="#1976d2" stroke="#37474f" stroke-width="0.15"/>
+<text x="46.59" y="34.21" font-size="1.2" fill="#fff" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">J2</text>
 <path d="M5.95,38.81 L23.73,38.81 L23.73,46.43 L26.27,46.43" fill="none" stroke="#37474f" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M5.95,38.81 L23.73,38.81 L23.73,46.43 L26.27,46.43" fill="none" stroke="#d32f2f" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="5.95" cy="38.81" r="0.55" fill="#cfd8dc" stroke="#37474f" stroke-width="0.2"/>
@@ -626,7 +626,8 @@
 <text x="44.57" y="54.45" font-size="0.95" fill="#fff" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANH</text>
 <circle cx="45.67" cy="56.59" r="0.65" fill="#d4af37"/>
 <text x="44.57" y="56.99" font-size="0.95" fill="#fff" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANL</text>
-<path d="M45.67,56.59 L45.67,61.67 L46.59,61.67" fill="none" stroke="#37474f" stroke-width="0.95" stroke-linejoin="round"/><path d="M45.67,56.59 L45.67,61.67 L46.59,61.67" fill="none" stroke="#1976d2" stroke-width="0.6" stroke-linejoin="round"/>
+<path d="M45.67,54.05 L46.59,54.05" stroke="#9e9e9e" stroke-width="0.45" stroke-linecap="round"/>
+<path d="M45.67,56.59 L46.59,56.59" stroke="#9e9e9e" stroke-width="0.45" stroke-linecap="round"/>
 <g opacity="1">
 <rect x="-1.27" y="7.03" width="50.0" height="28.0" rx="1.2" fill="#1a237e" stroke="#0d1442" stroke-width="0.3"/>
 <rect x="-0.27" y="12.03" width="25.5" height="18" rx="0.6" fill="#263238"/>

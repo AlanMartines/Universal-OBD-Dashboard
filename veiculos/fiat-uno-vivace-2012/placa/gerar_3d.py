@@ -131,9 +131,10 @@ box('modulos', '#212121', tx0 + 5.0, yc - 2.6, mt, 5.6, 5.2, 1.5)
 box('modulos', '#212121', tx0 + 12.4, ty0 + 1.0, mt, 2.4, 1.4, 0.5)
 for dy in (1.8, g.TJA_MM[1] - 1.8):
     cyl('modulos', '#e3f2fd', (tx0 + g.TJA_MM[0] - 2.9, ty0 + dy, mt), (tx0 + g.TJA_MM[0] - 2.9, ty0 + dy, mt + 0.05), 1.1)
-for c, r in g.TJA_CAN.values():   # CANH e CANL: pino para baixo, fio soldado nele
+for n, (c, r) in g.TJA_CAN.items():   # CANH e CANL: perna curta do pino até a ilha da coluna 18
     x, y = xy(c, r)
-    cyl('modulos', GOLD, (x, y, T + 0.9), (x, y, mt + 0.6), 0.32)
+    hx, hy = xy(*g.CAN_HOLES[n])
+    tube('modulos', SILVER, [(x, y, mt + 0.6), (x, y, T + 1.4), (hx, hy, T), (hx, hy, -0.8)], 0.3)
 
 # ---------------------------------------------------------------- RT8272 (HW-108, 21 x 21 mm)
 ex, ey = xy(*g.BUCK_PINS['EN'])
@@ -174,12 +175,6 @@ for name, col, pts, _ in g.JUMPERS:
             x, y = xy(c, r)
             cyl('fios', SILVER, (x, y, -0.8), (x, y, T), 0.3)
 
-lx, ly = xy(*g.TJA_CAN['CANL'])
-hx, hy = xy(*g.CANL_HOLE)
-zc = T + 0.9
-tube('fios', g.BLU, [(lx, ly, zc + 0.3), (lx, hy, zc), (hx, hy, zc), (hx, hy, T)], 0.45)
-cyl('fios', SILVER, (hx, hy, -0.8), (hx, hy, T), 0.3)
-
 OBD_COL = {'16': g.RED, '4': g.BLK, '5': g.BLK, '14': g.BLU}
 for pin, (c, r) in g.OBD_PADS.items():
     x, y = xy(c, r)
@@ -196,7 +191,7 @@ for _, a, b, _ in g.RES:
     legs |= {a, b}
 for row in (2, 12):
     legs |= {(c, row) for c in range(2, 17)}
-legs |= set(g.BUCK_PINS.values()) | set(g.TJA_PINS.values()) | set(g.OBD_PADS.values()) | {g.CANL_HOLE}
+legs |= set(g.BUCK_PINS.values()) | set(g.TJA_PINS.values()) | set(g.OBD_PADS.values()) | set(g.CAN_HOLES.values())
 for _, _, pts, _ in g.JUMPERS:
     legs |= {p for p in (pts[0], pts[-1]) if is_hole(*p)}
 for track_pts in [t[2] for t in g.TRACKS]:
@@ -231,10 +226,6 @@ def jumper_paths():
         full.append((*xy(c1, r1), T if is_hole(c1, r1) else T + 1.2))
         out.append({'n': f'{name}: {desc}', 'cor': col, 'r': 0.5, 'pts': [rr(p) for p in full],
                     'pontas': [rr(xy(c, r)) for c, r in (pts[0], pts[-1]) if is_hole(c, r)]})
-    lx, ly = xy(*g.TJA_CAN['CANL'])
-    hx, hy = xy(*g.CANL_HOLE)
-    out.append({'n': 'Fio do CANL até a ilha', 'cor': g.BLU, 'r': 0.45,
-                'pts': [rr(p) for p in [(lx, ly, T + 1.2), (lx, hy, T + 0.9), (hx, hy, T + 0.9), (hx, hy, T)]], 'pontas': [rr((hx, hy))]})
     nomes = {'16': 'Cabo OBD, pino 16 (+12 V)', '4': 'Cabo OBD, pino 4 (chassi)', '5': 'Cabo OBD, pino 5 (GND de sinal)', '14': 'Cabo OBD, pino 14 (CAN-L)'}
     for pin, (c, r) in g.OBD_PADS.items():
         x, y = xy(c, r)
@@ -247,7 +238,7 @@ DET = {
     'esp32': {'x0': round(x0, 3), 'y0': round(y0, 3), 'l': g.ESP_L, 'w': g.ESP_W, 'pinos': esp_pins()},
     'tja': {'x0': round(tx0, 3), 'y0': round(ty0, 3), 'l': g.TJA_MM[0], 'w': g.TJA_MM[1],
             'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.TJA_PINS.items()],
-            'can': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.TJA_CAN.items()]},
+            'can': [{'n': n, 'p': rr(xy(*cr)), 'furo': rr(xy(*g.CAN_HOLES[n]))} for n, cr in g.TJA_CAN.items()]},
     'rt': {'x0': round(bx0, 3), 'y0': round(by0, 3), 'lado': g.BUCK_MM, 'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.BUCK_PINS.items()]},
     'resistores': [{'n': f'{name} 1 kΩ: {desc}', 'a': rr(xy(*a)), 'b': rr(xy(*b))} for name, a, b, desc in g.RES],
     'fusivel': {'c': rr((fcx, fcy)), 'w': fw, 'd': fd, 'h': FUSE_H, 'pinos': [rr(xy(*cr)) for pins in g.FUSE_PINS.values() for cr in pins]},
