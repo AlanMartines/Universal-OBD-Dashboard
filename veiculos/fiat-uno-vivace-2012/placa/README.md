@@ -24,7 +24,16 @@ Placa perfurada de ilhas soltas no tamanho padrão de 5 × 7 cm (18 × 24 furos,
 
 Cores: vermelho 12 V e 5 V, roxo 12 V depois do fusível, preto GND, laranja 3V3, amarelo RX e D21, azul CAN. Furos indicados como (coluna, linha), na numeração das bordas. Em tamanho real (1:1), para imprimir em 100%: [`etapa1-real.svg`](etapa1-real.svg), [`etapa2-real.svg`](etapa2-real.svg) e [`baixo-real.svg`](baixo-real.svg).
 
-Para gerar de novo: `python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py`.
+Para gerar de novo (desenhos e modelo 3D): `python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py`.
+
+## Modelo 3D
+
+Para ver como a placa fica montada, com as alturas, há duas opções. As posições são as mesmas do desenho. As alturas (barras de pinos, módulos, fusível) são estimadas: servem para ver o encaixe, não para projetar caixa com folga justa.
+
+- **No navegador:** abra [`modelo3d.html`](modelo3d.html) com os arquivos `modelo3d-dados.js` e `visor3d.js` na mesma pasta (no GitHub, baixe a pasta; a página não abre pelo site). Não precisa de internet. Arraste para girar, botão direito ou Shift + arrastar para mover e roda (ou pinça no celular) para aproximar. Há vistas de cima, de baixo (espelhada, como a [vista de baixo](baixo.svg)) e de lado, e dá para esconder o ESP32, os módulos, o fusível, os fios e as trilhas para ver o que fica embaixo.
+- **No OpenSCAD:** abra [`modelo3d.scad`](modelo3d.scad) e aperte F5. As variáveis `mostrar_...` no topo do arquivo escondem partes. Dá para exportar STL, por exemplo para desenhar uma caixa.
+
+Os dois são gerados pelo `gerar_3d.py`, chamado pelo `gerar_placa.py`. Não edite `modelo3d-dados.js` nem `modelo3d.scad` à mão.
 
 ## Montagem prevista
 

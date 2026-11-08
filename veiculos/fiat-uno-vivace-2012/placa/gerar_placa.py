@@ -6,7 +6,8 @@ Desenhos (SVG), na mesma pasta deste script:
 - etapa1.svg: o que fica embaixo do ESP32 (resistores, pontes e fios), vista de cima;
 - etapa2.svg: placa montada, vista de cima;
 - baixo.svg: lado da solda (espelhado);
-- *-real.svg: as vistas da placa em tamanho real (1:1), para imprimir em 100%.
+- *-real.svg: as vistas da placa em tamanho real (1:1), para imprimir em 100%;
+- modelo3d-dados.js e modelo3d.scad: modelo 3D (gerar_3d.py), para modelo3d.html e o OpenSCAD.
 
 Só biblioteca padrão do Python 3:
     python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py
@@ -508,3 +509,5 @@ if __name__ == '__main__':
         if os.path.exists(p):
             os.remove(p)
     print('ok:', ', '.join(files))
+    import gerar_3d   # modelo 3D com as mesmas posições
+    gerar_3d.main()
