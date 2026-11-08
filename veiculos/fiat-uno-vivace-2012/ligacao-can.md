@@ -138,7 +138,7 @@ Cuidados:
 - Meça em Ω entre CANH e CANL: deve dar bem acima de 120 Ω. Se der cerca de 120 Ω, o resistor de terminação está ligado e precisa sair. Se der bem mais, não mexa no módulo, mesmo que haja um resistor "121" na placa.
 - Solde a montagem. Um mau contato no divisor faz o D21 passar de 3,3 V. Depois de soldar, meça o D21: até 3,4 V, estável.
 - Regule o conversor em 5,0 V antes de ligar o ESP32, e deixe o EN dele sem ligação. Nunca ligue 12 V direto no ESP32.
-- O pino 16 tem energia com o carro desligado, e o programa ainda não tem modo de dormir: desconecte o adaptador ao estacionar.
+- O pino 16 tem energia com o carro desligado. O firmware 1.1 entra em descanso depois de 2 min de rede parada e acorda com a rede, gastando em torno de 10 mA nesse tempo ([modo descanso](../../firmware/esp32-can-listen/README.md#modo-descanso)). Com o firmware 1.0, desconecte o adaptador ao estacionar.
 
 ## Alternativa com SN65HVD230
 
