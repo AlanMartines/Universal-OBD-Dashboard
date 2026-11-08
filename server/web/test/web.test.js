@@ -125,6 +125,14 @@ describe('arquivos', () => {
     assert.ok(readFileSync(join(HERE, '../src/shared/public/js/dtc-sae.js')).equals(readFileSync(join(app, 'dtc-sae.js'))), 'dtc-sae.js');
   });
 
+  test('página da placa usa o mesmo modelo 3D da pasta do veículo', () => {
+    const placa = join(HERE, '../../../veiculos/fiat-uno-vivace-2012/placa');
+    if (!existsSync(placa)) return;
+    for (const name of ['visor3d.js', 'modelo3d-dados.js']) {
+      assert.ok(readFileSync(join(HERE, '../src/modules/projeto/public', name)).equals(readFileSync(join(placa, name))), `${name}: rode gerar_placa.py`);
+    }
+  });
+
   test('cada módulo publica o próprio JS e CSS', async () => {
     assert.ok(all.some((f) => f.endsWith('modules/devices/public/live.js')));
     assert.ok(all.some((f) => f.endsWith('modules/account/public/account.css')));
@@ -174,6 +182,23 @@ describe('fluxo pelo navegador', () => {
     await web.close();
     await apiCtx.app.close();
     await apiCtx.pool.end();
+  });
+
+  test('área pública do projeto abre sem login', async () => {
+    for (const [url, text] of [['/projeto', 'Universal OBD Dashboard'], ['/sobre', 'Todo mundo pode contribuir'], ['/projeto/placa', 'id="cena"']]) {
+      const res = await web.inject({ method: 'GET', url });
+      assert.equal(res.statusCode, 200, url);
+      assert.ok(res.body.includes(text), url);
+      assert.ok(res.body.includes('href="https://github.com/AlanMartines/Universal-OBD-Dashboard"'), url);
+      assert.ok(res.body.includes('href="/login"'), url);
+      assert.ok(!res.body.includes('app-sidebar'), url);
+    }
+    const placa = (await web.inject({ method: 'GET', url: '/projeto/placa' })).body;
+    for (const src of ['/modules/projeto/modelo3d-dados.js', '/modules/projeto/visor3d.js']) {
+      assert.ok(placa.includes(`src="${src}?v=`), src);
+      assert.equal((await web.inject({ method: 'GET', url: src })).statusCode, 200, src);
+    }
+    assert.ok((await web.inject({ method: 'GET', url: '/login' })).body.includes('href="/projeto"'));
   });
 
   test('cabeçalhos de segurança', async () => {

@@ -1,0 +1,44 @@
+<section class="projeto-hero mb-4">
+  <h1 class="h2 mb-3">Universal OBD Dashboard</h1>
+  <p class="lead mb-4">Aplicativo Android de código aberto que lê o carro pela porta OBD-II (ELM327 por Bluetooth) e mostra painel, consumo e falhas do motor. Um servidor próprio, opcional, guarda o histórico e acompanha tudo pela web.</p>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-primary" href="{{repoUrl}}" target="_blank" rel="noopener"><i class="fa-brands fa-github me-2" aria-hidden="true"></i>Código no GitHub</a>
+    <a class="btn btn-outline-primary" href="/sobre"><i class="fa-solid fa-heart me-2" aria-hidden="true"></i>Por que existe</a>
+    <a class="btn btn-outline-primary" href="/projeto/placa"><i class="fa-solid fa-cube me-2" aria-hidden="true"></i>Placa em 3D</a>
+  </div>
+</section>
+
+<div class="row g-3">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h6 card-title"><i class="fa-solid fa-mobile-screen fa-fw me-2 text-primary" aria-hidden="true"></i>App Android</h2>
+        <p class="card-text small mb-0">Painel no celular com vários temas, consumo real, abastecimentos, viagens e códigos de falha. Cada veículo tem seu perfil em JSON.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h6 card-title"><i class="fa-solid fa-server fa-fw me-2 text-primary" aria-hidden="true"></i>Servidor próprio</h2>
+        <p class="card-text small mb-0">API e painel web em Docker: telemetria ao vivo, percurso no mapa e relatórios. Os dados ficam no servidor de quem instala.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h6 card-title"><i class="fa-solid fa-microchip fa-fw me-2 text-primary" aria-hidden="true"></i>Escuta CAN</h2>
+        <p class="card-text small mb-0">Um ESP32 escuta a rede CAN do carro e manda ao celular por Bluetooth, junto com o ELM327. A placa está documentada, com <a href="/projeto/placa">modelo 3D</a>.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h6 card-title"><i class="fa-solid fa-shield-halved fa-fw me-2 text-primary" aria-hidden="true"></i>Só leitura</h2>
+        <p class="card-text small mb-0">O app só consulta: não apaga falhas nem manda comandos ao carro. A escuta CAN não transmite, por ligação do próprio hardware.</p>
+      </div>
+    </div>
+  </div>
+</div>

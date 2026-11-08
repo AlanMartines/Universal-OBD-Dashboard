@@ -56,6 +56,23 @@
     </main>
   </div>
   {{> confirmModal}}
+  {{else if publicPage}}
+  <header class="auth-header gap-2">
+    <a class="sidebar-link-plain" href="/projeto"><img class="brand-logo" src="/assets/logos/eletroinfo.svg" alt=""><span class="d-none d-sm-inline">Telemetria OBD</span></a>
+    <nav class="public-nav ms-auto d-flex align-items-center gap-1 gap-sm-2" aria-label="Projeto">
+      <a class="btn btn-sm {{#if (eq activeTab "projeto")}}btn-secondary{{else}}btn-outline-secondary{{/if}}" href="/projeto" {{#if (eq activeTab "projeto")}}aria-current="page"{{/if}}><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span class="d-none d-md-inline ms-1">Projeto</span></a>
+      <a class="btn btn-sm {{#if (eq activeTab "sobre")}}btn-secondary{{else}}btn-outline-secondary{{/if}}" href="/sobre" {{#if (eq activeTab "sobre")}}aria-current="page"{{/if}}><i class="fa-solid fa-heart" aria-hidden="true"></i><span class="d-none d-md-inline ms-1">Sobre</span></a>
+      <a class="btn btn-sm {{#if (eq activeTab "placa")}}btn-secondary{{else}}btn-outline-secondary{{/if}}" href="/projeto/placa" {{#if (eq activeTab "placa")}}aria-current="page"{{/if}}><i class="fa-solid fa-cube" aria-hidden="true"></i><span class="d-none d-md-inline ms-1">Placa 3D</span></a>
+      <a class="btn btn-sm btn-outline-secondary" href="{{repoUrl}}" target="_blank" rel="noopener" title="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i><span class="d-none d-md-inline ms-1">GitHub</span></a>
+      <a class="btn btn-sm btn-primary" href="/login"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i><span class="d-none d-sm-inline ms-1">Entrar</span></a>
+      <button class="btn topbar-btn" type="button" data-theme-toggle aria-label="Tema">
+        <i class="fa-solid fa-fw fa-circle-half-stroke" data-theme-icon aria-hidden="true"></i>
+      </button>
+    </nav>
+  </header>
+  <main class="public-main">
+    {{{body}}}
+  </main>
   {{else}}
   <header class="auth-header">
     <a class="sidebar-link-plain" href="/"><img class="brand-logo" src="/assets/logos/eletroinfo.svg" alt=""><span>Telemetria OBD</span></a>

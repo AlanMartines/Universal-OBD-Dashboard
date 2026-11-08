@@ -14,6 +14,10 @@ Recebe do app Universal OBD os dados já tratados e mostra tudo em um painel web
 
 A `web` não alcança o banco. A `api`, o `worker` e o `db` não têm saída para a internet; só o `mailer` e a `web` têm. O HTTPS fica no seu proxy reverso.
 
+## Área pública
+
+`/projeto`, `/sobre` e `/projeto/placa` abrem sem login: apresentação, propósito do projeto e a placa da escuta CAN em 3D, com link para o GitHub. Não mostram dado de ninguém. O modelo 3D em `web/src/modules/projeto/public/` é uma cópia gerada por `veiculos/fiat-uno-vivace-2012/placa/gerar_3d.py`, e um teste confere se está igual.
+
 ## Organização do código
 
 ```

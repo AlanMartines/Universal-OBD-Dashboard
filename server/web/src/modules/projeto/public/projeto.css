@@ -1,0 +1,36 @@
+/* Área pública do projeto */
+:root {
+  --fundo-cena: #e9eef2;
+}
+
+[data-bs-theme="dark"] {
+  --fundo-cena: #1b2228;
+}
+
+.public-main {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+}
+
+.public-nav .btn {
+  white-space: nowrap;
+}
+
+.projeto-hero .lead {
+  max-width: 52rem;
+}
+
+.placa3d-cena {
+  display: block;
+  width: 100%;
+  height: min(68vh, 620px);
+  min-height: 320px;
+  border-radius: var(--app-radius);
+  touch-action: none;
+  cursor: grab;
+}
+
+.placa3d-cena:active {
+  cursor: grabbing;
+}

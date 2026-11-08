@@ -274,6 +274,8 @@
   }, { passive: false });
   window.addEventListener('resize', draw);
   if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  // painel web: o tema claro/escuro muda pelo atributo data-bs-theme
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 
   // ------------------------------------------------------------ controles
   for (const btn of document.querySelectorAll('[data-vista]')) {
@@ -281,16 +283,23 @@
   }
   const box_ = document.getElementById('camadas');
   for (const [key, label] of D.layers) {
-    const lab = document.createElement('label');
+    const wrap = document.createElement('div');
+    wrap.className = 'form-check form-check-inline camada';
     const input = document.createElement('input');
     input.type = 'checkbox';
+    input.className = 'form-check-input';
+    input.id = 'camada-' + key;
     input.checked = true;
     input.addEventListener('change', () => {
       visible[key] = input.checked;
       draw();
     });
-    lab.append(input, ' ' + label);
-    box_.append(lab);
+    const lab = document.createElement('label');
+    lab.className = 'form-check-label';
+    lab.htmlFor = input.id;
+    lab.textContent = label;
+    wrap.append(input, lab);
+    box_.append(wrap);
   }
   const inicial = location.hash.slice(1);
   setView(VIEWS[inicial] ? inicial : 'perspectiva');

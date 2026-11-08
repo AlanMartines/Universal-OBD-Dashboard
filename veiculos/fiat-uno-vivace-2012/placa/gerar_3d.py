@@ -3,7 +3,8 @@
 
 Gera, na mesma pasta:
 - modelo3d-dados.js: peças para o visor modelo3d.html (WebGL próprio em visor3d.js, sem bibliotecas externas);
-- modelo3d.scad: o mesmo modelo para o OpenSCAD (F5 para ver, variáveis no topo para esconder partes).
+- modelo3d.scad: o mesmo modelo para o OpenSCAD (F5 para ver, variáveis no topo para esconder partes);
+- cópia de modelo3d-dados.js e visor3d.js em server/web/src/modules/projeto/public (página /projeto/placa do painel).
 
 As posições na placa vêm de gerar_placa.py. As alturas são estimativas (barras de pinos e componentes comuns),
 não medidas: servem para ver o encaixe, não para projetar caixa com folga justa.
@@ -13,12 +14,15 @@ não medidas: servem para ver o encaixe, não para projetar caixa com folga just
 import json
 import math
 import os
+import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gerar_placa as g  # noqa: E402
 
 OUT = g.OUT
+# O painel web publica o mesmo modelo em /projeto/placa: a imagem Docker só enxerga server/web, então vai uma cópia.
+WEB = os.path.normpath(os.path.join(OUT, '../../../server/web/src/modules/projeto/public'))
 P = g.P
 hp = g.hp
 
@@ -217,6 +221,10 @@ def write_js():
             'window.PLACA3D = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
     with open(os.path.join(OUT, 'modelo3d-dados.js'), 'w', encoding='utf-8') as fh:
         fh.write(text)
+    if os.path.isdir(WEB):
+        with open(os.path.join(WEB, 'modelo3d-dados.js'), 'w', encoding='utf-8') as fh:
+            fh.write(text)
+        shutil.copyfile(os.path.join(OUT, 'visor3d.js'), os.path.join(WEB, 'visor3d.js'))
 
 
 def scad_v(v):
