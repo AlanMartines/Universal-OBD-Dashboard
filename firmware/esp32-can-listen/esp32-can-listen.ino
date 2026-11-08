@@ -18,9 +18,15 @@
  * desligado faz a rede dormir), o programa desliga o Bluetooth e o TWAI e põe o ESP32 em sono leve.
  * O primeiro bit dominante no RX (a rede acordando: chave, porta, alarme) acorda o ESP32, que
  * reinicia do zero e volta a escutar em cerca de 2 s. Nada é enviado à rede para acordá-la.
+ *
+ * Sensor opcional BMP180 (GY-68 / HW-596) no I2C, SDA em D25 e SCL em D26 (D21 e D22 são do CAN):
+ * temperatura e pressão do lugar onde o módulo está, a cada AMB_MS, numa linha de estado
+ *   # bmp180 temp=24.3C pressao=1013.2hPa
+ * Sem o sensor ligado, aparece uma vez "# bmp180 ausente" e o resto segue igual.
  * Placa: "ESP32 Dev Module", no pacote esp32 da Espressif. Guia: docs/can-escuta.md.
  */
 #include <BluetoothSerial.h>
+#include <Wire.h>
 #include "driver/gpio.h"
 #include "driver/twai.h"
 #include "esp_sleep.h"
@@ -39,7 +45,14 @@ const unsigned long IDLE_MS = 120000;
 const uint32_t REST_MAGIC = 0x52455354;
 RTC_NOINIT_ATTR uint32_t restMark;
 
+// BMP180 (opcional): I2C fora dos pinos do CAN.
+const int I2C_SDA = 25;
+const int I2C_SCL = 26;
+const uint8_t BMP_ADDR = 0x77;
+const unsigned long AMB_MS = 10000;
+
 BluetoothSerial bt;
+unsigned long lastAmb = 0;
 unsigned long lastStats = 0;
 unsigned long lastFrame = 0;
 unsigned long frames = 0;
@@ -95,6 +108,91 @@ void rest() {
   ESP.restart();
 }
 
+// ---------- BMP180: leitura direta, pelas fórmulas do datasheet (sem biblioteca) ----------
+bool bmpOk = false;
+int16_t ac1, ac2, ac3, b1, b2, mc, md;
+uint16_t ac4, ac5, ac6;
+
+bool bmpRead(uint8_t reg, uint8_t *buf, uint8_t n) {
+  Wire.beginTransmission(BMP_ADDR);
+  Wire.write(reg);
+  if (Wire.endTransmission(false) != 0) return false;
+  if (Wire.requestFrom(BMP_ADDR, n) != n) return false;
+  for (uint8_t i = 0; i < n; i++) buf[i] = Wire.read();
+  return true;
+}
+
+bool bmpWrite(uint8_t reg, uint8_t value) {
+  Wire.beginTransmission(BMP_ADDR);
+  Wire.write(reg);
+  Wire.write(value);
+  return Wire.endTransmission() == 0;
+}
+
+void bmpBegin() {
+  Wire.begin(I2C_SDA, I2C_SCL, 100000);
+  uint8_t id = 0, c[22];
+  if (!bmpRead(0xD0, &id, 1) || id != 0x55 || !bmpRead(0xAA, c, 22)) {
+    sendLine("# bmp180 ausente");
+    return;
+  }
+  auto s16 = [&](int i) { return (int16_t)((c[i] << 8) | c[i + 1]); };
+  auto u16 = [&](int i) { return (uint16_t)((c[i] << 8) | c[i + 1]); };
+  ac1 = s16(0); ac2 = s16(2); ac3 = s16(4); ac4 = u16(6); ac5 = u16(8); ac6 = u16(10);
+  b1 = s16(12); b2 = s16(14); mc = s16(18); md = s16(20);
+  bmpOk = true;
+  sendLine("# bmp180 ok");
+}
+
+// Temperatura em décimos de °C e pressão em Pa (oversampling 3, cerca de 31 ms no total).
+bool bmpMeasure(int32_t &temp10, int32_t &pa) {
+  const uint8_t oss = 3;
+  uint8_t b[3];
+  if (!bmpWrite(0xF4, 0x2E)) return false;
+  delay(5);
+  if (!bmpRead(0xF6, b, 2)) return false;
+  int32_t ut = (b[0] << 8) | b[1];
+  if (!bmpWrite(0xF4, 0x34 + (oss << 6))) return false;
+  delay(26);
+  if (!bmpRead(0xF6, b, 3)) return false;
+  int32_t up = (((int32_t)b[0] << 16) | ((int32_t)b[1] << 8) | b[2]) >> (8 - oss);
+
+  int32_t x1 = ((ut - (int32_t)ac6) * (int32_t)ac5) >> 15;
+  int32_t x2 = ((int32_t)mc << 11) / (x1 + md);
+  int32_t b5 = x1 + x2;
+  temp10 = (b5 + 8) >> 4;
+
+  int32_t b6 = b5 - 4000;
+  x1 = (b2 * ((b6 * b6) >> 12)) >> 11;
+  x2 = (ac2 * b6) >> 11;
+  int32_t x3 = x1 + x2;
+  int32_t b3 = ((((int32_t)ac1 * 4 + x3) << oss) + 2) >> 2;
+  x1 = (ac3 * b6) >> 13;
+  x2 = (b1 * ((b6 * b6) >> 12)) >> 16;
+  x3 = ((x1 + x2) + 2) >> 2;
+  uint32_t b4 = ((uint32_t)ac4 * (uint32_t)(x3 + 32768)) >> 15;
+  uint32_t b7 = ((uint32_t)up - b3) * (uint32_t)(50000 >> oss);
+  int32_t p = b7 < 0x80000000 ? (int32_t)((b7 * 2) / b4) : (int32_t)((b7 / b4) * 2);
+  x1 = (p >> 8) * (p >> 8);
+  x1 = (x1 * 3038) >> 16;
+  x2 = (-7357 * p) >> 16;
+  pa = p + ((x1 + x2 + 3791) >> 4);
+  return true;
+}
+
+void sendAmbient() {
+  int32_t t10, pa;
+  if (!bmpMeasure(t10, pa)) {
+    sendLine("# bmp180 sem resposta");
+    return;
+  }
+  char line[64];
+  long t = labs((long)t10);
+  snprintf(line, sizeof(line), "# bmp180 temp=%s%ld.%ldC pressao=%ld.%ldhPa",
+           t10 < 0 ? "-" : "", t / 10, t % 10, (long)(pa / 100), (long)((pa % 100) / 10));
+  sendLine(line);
+}
+
 void sendFrame(const twai_message_t &m) {
   bool ext = m.flags & TWAI_MSG_FLAG_EXTD;
   bool rtr = m.flags & TWAI_MSG_FLAG_RTR;
@@ -111,8 +209,9 @@ void setup() {
   restMark = 0;
   Serial.begin(500000);
   if (!bt.begin(BT_NAME)) Serial.println("# ERRO Bluetooth nao iniciou; seguindo so pela USB");
-  sendLine("# esp32-can-listen 1.1");
+  sendLine("# esp32-can-listen 1.2");
   if (woke) sendLine("# acordou: atividade na rede CAN");
+  bmpBegin();
   startListening();
   lastFrame = millis();
 }
@@ -128,6 +227,11 @@ void loop() {
   unsigned long now = millis();
   // Só dorme com a linha em repouso; se o RX estiver preso em nível baixo, acordaria na hora.
   if (REST_ENABLED && now - lastFrame >= IDLE_MS && gpio_get_level(RX_PIN) == 1) rest();
+
+  if (bmpOk && now - lastAmb >= AMB_MS) {
+    lastAmb = now;
+    sendAmbient();
+  }
 
   if (now - lastStats >= STATS_MS) {
     lastStats = now;
