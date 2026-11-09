@@ -209,11 +209,12 @@ def obd_wire_pts(pin):
     x, y = xy(*g.OBD_PADS[pin])
     k = _ordem.index(pin)
     faixa = g.H + 2.5 + (3 - k) * 1.6           # o fio mais à esquerda passa por fora, sem cruzar os outros
-    by = OBD_BOCA[1] + (k - 1.5) * 1.2
-    return [(x, y, T), (x, y, T + 1.3), (x, faixa, T + 1.3), (g.W + 5, faixa, T + 1.3), (OBD_BOCA[0] - 2, by, OBD_Z - 0.3), (OBD_BOCA[0], by, OBD_Z)]
+    by = OBD_BOCA[1] + (1.5 - k) * 1.4          # lado a lado na boca, na mesma ordem das faixas (sem se cruzar)
+    return [(x, y, T), (x, y, T + 1.3), (x, faixa, T + 1.3), (g.W + 3, faixa, T + 1.3),
+            (OBD_BOCA[0] - 5, by, OBD_Z), (OBD_BOCA[0] + 1.5, by, OBD_Z)]   # entra reto e some dentro da capa
 
 
-OBD_PIN6_PTS = [(OBD_BOCA[0], OBD_BOCA[1] - 0.4, OBD_Z + 1.0), (OBD_BOCA[0] - 5.5, OBD_BOCA[1] - 1.5, OBD_Z + 2.2)]
+OBD_PIN6_PTS = [(OBD_BOCA[0] + 1.0, OBD_BOCA[1], OBD_Z + 1.45), (OBD_BOCA[0] - 5.0, OBD_BOCA[1] - 0.6, OBD_Z + 2.4)]
 for pin in _ordem:
     x, y = xy(*g.OBD_PADS[pin])
     cyl('fios', SILVER, (x, y, -0.8), (x, y, T), 0.35)
