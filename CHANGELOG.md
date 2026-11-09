@@ -6,8 +6,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
-### Corrigido
-- **Temas Clássico e Horizonte:** "Trip" mostrava a distância calculada nesta captura. Agora mostra o parcial do painel do carro, lido pela escuta CAN (`trip_km`). Sem a escuta, o rótulo vira "Viagem" e continua mostrando a distância da captura. Vale para o APK e para o painel web.
+## [0.9.35] - 2026-11-09
 
 ### Adicionado
 - **Vácuo do coletor e desvio do sensor MAP**, com o BMP180 do ESP32. O vácuo é a pressão atmosférica menos o MAP, com o motor ligado. O desvio do MAP é a diferença para o sensor ambiente, medida com a chave ligada e o motor parado. Os dois vão para o histórico e para o painel web (grupo Motor). O desvio é só diagnóstico: o consumo não é corrigido por ele, porque a calibração pelos abastecimentos já absorve o erro médio.
@@ -16,6 +15,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ### Alterado
 - **Carga estimada pelo coletor:** com o BMP180, usa a pressão atmosférica ao vivo. Funciona mesmo se a captura começar com o motor ligado e acompanha a altitude numa subida de serra. Sem o sensor, continua com a pressão lida com o motor parado.
 - **Mostrador do coletor:** as faixas "vácuo alto", "carga parcial" e "carga plena" passam a ser relativas à pressão atmosférica, e a nota mostra o vácuo.
+
+### Corrigido
+- **Temas Clássico e Horizonte:** "Trip" mostrava a distância calculada nesta captura. Agora mostra o parcial do painel do carro, lido pela escuta CAN (`trip_km`). Sem a escuta, o rótulo vira "Viagem" e continua mostrando a distância da captura. Vale para o APK e para o painel web.
 
 ## [0.9.34] - 2026-11-08
 
