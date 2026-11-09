@@ -508,6 +508,12 @@
 <path d="M36.43,36.27 L36.43,38.81 L36.43,41.35 L36.43,43.89 L36.43,46.43" fill="none" stroke="#263238" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M38.97,46.43 L41.51,46.43" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M38.97,46.43 L41.51,46.43" fill="none" stroke="#d32f2f" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M31.35,43.89 L31.35,46.43" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M31.35,43.89 L31.35,46.43" fill="none" stroke="#00838f" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M33.89,43.89 L33.89,46.43" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M33.89,43.89 L33.89,46.43" fill="none" stroke="#2e7d32" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M38.97,43.89 L38.97,46.43" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M38.97,43.89 L38.97,46.43" fill="none" stroke="#d32f2f" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <rect x="4.65" y="7.03" width="38.16" height="2.6" rx="0.3" fill="#212121"/>
 <rect x="5.40" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
 <text x="5.95" y="6.53" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D23</text>
@@ -660,21 +666,26 @@
 <text x="5.21" y="57.04" font-size="1.0" fill="#d32f2f" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OUT+</text>
 <rect x="6.55" y="50.53" width="11.50" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="12.30" y="51.51" font-size="1.15" fill="#0d47a1" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">pinos do RT8272</text>
+<rect x="30.08" y="42.62" width="10.16" height="2.54" rx="0.3" fill="#212121"/>
+<rect x="30.95" y="43.49" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="33.49" y="43.49" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="36.03" y="43.49" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="38.57" y="43.49" width="0.8" height="0.8" fill="#d4af37"/>
 <rect x="30.08" y="45.16" width="10.16" height="2.54" rx="0.3" fill="#212121"/>
 <rect x="30.95" y="46.03" width="0.8" height="0.8" fill="#d4af37"/>
-<rect x="30.16" y="43.81" width="2.38" height="0.98" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="31.35" y="44.53" font-size="0.85" fill="#00838f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">SDA</text>
 <rect x="33.49" y="46.03" width="0.8" height="0.8" fill="#d4af37"/>
-<rect x="32.70" y="43.81" width="2.38" height="0.98" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="33.89" y="44.53" font-size="0.85" fill="#2e7d32" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">SCL</text>
 <rect x="36.03" y="46.03" width="0.8" height="0.8" fill="#d4af37"/>
-<rect x="35.24" y="43.81" width="2.38" height="0.98" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="36.43" y="44.53" font-size="0.85" fill="#263238" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">GND</text>
 <rect x="38.57" y="46.03" width="0.8" height="0.8" fill="#d4af37"/>
-<rect x="37.78" y="43.81" width="2.38" height="0.98" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="38.97" y="44.53" font-size="0.85" fill="#d32f2f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">VCC</text>
-<rect x="30.93" y="48.22" width="8.46" height="1.09" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="35.16" y="49.03" font-size="0.95" fill="#00838f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">BMP180 (cabo)</text>
+<rect x="30.16" y="41.27" width="2.38" height="0.98" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="31.35" y="41.99" font-size="0.85" fill="#00838f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">SDA</text>
+<rect x="32.70" y="41.27" width="2.38" height="0.98" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="33.89" y="41.99" font-size="0.85" fill="#2e7d32" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">SCL</text>
+<rect x="35.24" y="41.27" width="2.38" height="0.98" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="36.43" y="41.99" font-size="0.85" fill="#263238" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">GND</text>
+<rect x="37.78" y="41.27" width="2.38" height="0.98" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="38.97" y="41.99" font-size="0.85" fill="#d32f2f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">VCC</text>
+<rect x="25.55" y="48.27" width="19.21" height="1.03" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="35.16" y="49.03" font-size="0.9" fill="#00838f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">cabos: LSM6DS3 (16) e BMP180 (17)</text>
 <rect x="0.57" y="59.41" width="26.0" height="9.6" rx="0.5" fill="none" stroke="#7b1fa2" stroke-width="0.3" stroke-dasharray="0.9 0.5"/>
 <circle cx="3.41" cy="64.21" r="0.90" fill="#fff" stroke="#7b1fa2" stroke-width="0.3"/><rect x="2.76" y="64.01" width="1.3" height="0.4" fill="#7b1fa2"/>
 <rect x="4.61" y="61.80" width="2.57" height="1.09" rx="0.35" fill="#fff" opacity=".9"/>

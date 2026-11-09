@@ -83,6 +83,10 @@ FUSE_DRILL = 1.5
 # Ordem: SDA, SCL, GND, VCC. VCC vem do 5 V: use o GY-68, que tem regulador próprio (pinos VCC e 3.3V).
 BMP_PINS = {'SDA': (12, 17), 'SCL': (13, 17), 'GND': (14, 17), 'VCC': (15, 17)}
 BMP_COL = {'SDA': CYA, 'SCL': GRN, 'GND': BLK, 'VCC': RED}
+# Conector de 4 pinos para o cabo do LSM6DS3 (acelerômetro e giroscópio), na linha 16, logo acima do do BMP180: mesmo
+# barramento I2C (D25/D26) e os mesmos 5 V, por trilhas curtas até os pinos da linha 17. O módulo (13 x 18 mm, serve
+# para LSM6DS3 ou BMI160) tem regulador: VIN no 5 V. Endereços sem conflito: BMP180 0x77, LSM6DS3 0x6A (SA0 no GND).
+LSM_PINS = {'SDA': (12, 16), 'SCL': (13, 16), 'GND': (14, 16), 'VCC': (15, 16)}
 
 # Trilhas de solda (lado de baixo): fio estanhado passando pelos furos, sempre em linha reta
 TRACKS = [
@@ -155,6 +159,11 @@ if VARIANTE == 'sn65':
         ('J3', RED, [(2, 13), (9, 13), (9, 17), (10, 17)], 'OUT+ do RT8272 → 5 V'),
     ]
 TRANS_PINS = SN_PINS or TJA_PINS
+TRACKS += [   # conector do LSM6DS3 ligado ao do BMP180 (o GND da coluna 14 já passa pelos dois)
+    ('SDA do LSM6DS3', CYA, [(12, 16), (12, 17)]),
+    ('SCL do LSM6DS3', GRN, [(13, 16), (13, 17)]),
+    ('5 V do LSM6DS3', RED, [(15, 16), (15, 17)]),
+]
 TRANS_COL = {'VCC': RED, 'TX': RED, 'RX': YEL, 'GND': BLK, '3V3': ORG, 'CTX': ORG, 'CRX': YEL, 'CANH': BLU, 'CANL': BLU}
 # RT8272 (HW-108): 21 x 21 mm, fileiras a cerca de 17,8 mm (7 furos), medido em 07/11/2026.
 # Soldado na placa por barra de pinos, com a bobina embaixo à direita: EN, IN-, IN+ na coluna 8 (linhas 14 a 16);
@@ -405,16 +414,23 @@ def fuse_art(s):
 
 
 def bmp_header(s, labels):
-    """Barra de 4 pinos macho do conector do BMP180 (vista de cima)."""
+    """Barras de 4 pinos macho dos cabos do LSM6DS3 (linha 16) e do BMP180 (linha 17), vista de cima."""
+    for pins in (LSM_PINS, BMP_PINS):
+        xs = [hp(c, r)[0] for c, r in pins.values()]
+        _, y = hp(*pins['SDA'])
+        s.add(f'<rect x="{min(xs) - 1.27:.2f}" y="{y - 1.27:.2f}" width="{max(xs) - min(xs) + P:.2f}" height="{P:.2f}" rx="0.3" fill="#212121"/>')
+        for n, (c, r) in pins.items():
+            x, _ = hp(c, r)
+            s.add(f'<rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
     xs = [hp(c, r)[0] for c, r in BMP_PINS.values()]
-    _, y = hp(*BMP_PINS['SDA'])
-    s.add(f'<rect x="{min(xs) - 1.27:.2f}" y="{y - 1.27:.2f}" width="{max(xs) - min(xs) + P:.2f}" height="{P:.2f}" rx="0.3" fill="#212121"/>')
-    for n, (c, r) in BMP_PINS.items():
-        x, _ = hp(c, r)
-        s.add(f'<rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
-        if labels:
-            s.text(x, y - 1.9, n, 0.85, BMP_COL[n], weight='bold', bg=True)
-    s.text((min(xs) + max(xs)) / 2, y + (2.6 if labels else -1.7), 'BMP180 (cabo)', 0.95, '#00838f', weight='bold', bg=True)
+    _, yl = hp(*LSM_PINS['SDA'])
+    _, yb = hp(*BMP_PINS['SDA'])
+    if labels:
+        for n, (c, r) in LSM_PINS.items():
+            s.text(hp(c, r)[0], yl - 1.9, n, 0.85, BMP_COL[n], weight='bold', bg=True)
+        s.text((min(xs) + max(xs)) / 2, yb + 2.6, 'cabos: LSM6DS3 (16) e BMP180 (17)', 0.9, '#00838f', weight='bold', bg=True)
+    else:
+        s.text((min(xs) + max(xs)) / 2, yl - 1.7, 'cabos LSM6DS3 · BMP180', 0.95, '#00838f', weight='bold', bg=True)
 
 
 def view_top(stage, scale):
@@ -499,7 +515,7 @@ def view_bottom(scale):
         legs |= {a, b}
     for row in (2, 12):
         legs |= {(c, row) for c in range(2, 17)}
-    legs |= set(BUCK_PINS.values()) | set(TRANS_PINS.values()) | set(CAN_HOLES.values()) | set(BMP_PINS.values())
+    legs |= set(BUCK_PINS.values()) | set(TRANS_PINS.values()) | set(CAN_HOLES.values()) | set(BMP_PINS.values()) | set(LSM_PINS.values())
     for c, r in legs:
         x, y = hp(c, r)
         s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')
@@ -550,6 +566,7 @@ def schematic():
     buck = box(38, 4, 26, 18, 'RT8272 (5,0 V)', GRN, [('IN+', 'L', 0), ('IN−', 'L', 2), ('OUT+', 'R', 0), ('OUT−', 'R', 2)])
     esp = box(88, 4, 28, 34, 'ESP32 DevKit', '#283593', [('VIN', 'L', 0), ('GND', 'L', 1.5), ('3V3', 'L', 3), ('D21', 'L', 5), ('D25', 'R', 2), ('D26', 'R', 3)])
     bmp = box(126, 8, 21, 30, 'BMP180', CYA, [('SDA', 'L', 0.6), ('SCL', 'L', 1.6), ('VCC', 'L', 3), ('GND', 'L', 4)])
+    lsm = box(126, 47, 21, 27, 'LSM6DS3', '#6a1b9a', [('SDA', 'L', 0), ('SCL', 'L', 1), ('VIN', 'L', 2.3), ('GND', 'L', 3.3)])
     if SN_PINS:
         tja = box(38, 40, 26, 28, 'SN65HVD230', BLU, [('3V3', 'R', 0), ('CTX', 'R', 1), ('GND', 'R', 2), ('CRX', 'R', 3), ('CANH', 'L', 3.5), ('CANL', 'L', 4.6)])
     else:
@@ -596,11 +613,17 @@ def schematic():
     # BMP180 no cabo: SDA no D25, SCL no D26, VCC no 5 V (regulador do GY-68)
     line([esp['D25'], (121, esp['D25'][1]), (121, bmp['SDA'][1]), bmp['SDA']], CYA)
     line([esp['D26'], (123, esp['D26'][1]), (123, bmp['SCL'][1]), bmp['SCL']], GRN)
-    for pin, txt, col in (('VCC', '5 V', RED), ('GND', 'GND', BLK)):
-        x, y = bmp[pin]
+    for mod, pin, txt, col in ((bmp, 'VCC', '5 V', RED), (bmp, 'GND', 'GND', BLK), (lsm, 'VIN', '5 V', RED), (lsm, 'GND', 'GND', BLK)):
+        x, y = mod[pin]
         line([(x - 6, y), (x, y)], col)
         s.text(x - 6.5, y + 0.6, txt, 1.6, col, anchor='end', weight='bold')
-    s.text(136.5, 44, 'no cabo, longe do calor', 1.5, '#5d4037')
+    # LSM6DS3 no mesmo I2C (outro cabo): SDA e SCL descem das linhas do BMP180
+    line([(121, bmp['SDA'][1]), (121, lsm['SDA'][1]), lsm['SDA']], CYA)
+    line([(123, bmp['SCL'][1]), (123, lsm['SCL'][1]), lsm['SCL']], GRN)
+    dot(121, bmp['SDA'][1], CYA)
+    dot(123, bmp['SCL'][1], GRN)
+    s.text(136.5, 42, 'nos cabos, longe do calor', 1.5, '#5d4037')
+    s.text(136.5, 76.5, 'CS no 3V3 e SA0 no GND, no módulo', 1.4, '#6a1b9a')
     s.text(75, 1, 'Esquema de ligação (fora de escala)', 2.0, '#5d4037', weight='bold')
     return s.svg()
 

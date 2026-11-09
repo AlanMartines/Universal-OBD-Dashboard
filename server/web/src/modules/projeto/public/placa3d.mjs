@@ -676,6 +676,89 @@ function iniciar() {
     }
   }
 
+  // ------------------------------------------------------------ LSM6DS3 (acelerômetro e giroscópio) na ponta de outro cabo
+  if (X.lsm && X.lsm_modulo) {
+    const L = X.lsm_modulo;
+    // conector na placa (linha 16), igual ao do BMP180
+    {
+      const g = new THREE.Group();
+      const xs = X.lsm.map((p) => p.p[0]);
+      const y = X.lsm[0].p[1];
+      g.add(caixa(Math.max(...xs) - Math.min(...xs) + P, A.MALE_H, P, M.preto, (Math.min(...xs) + Math.max(...xs)) / 2, y, A.T));
+      for (const p of X.lsm) {
+        const pino = new THREE.Mesh(new THREE.BoxGeometry(0.64, A.MALE_H + 6.9, 0.64), M.ouro);
+        pino.position.copy(W(p.p[0], p.p[1], -0.95 + (A.MALE_H + 6.9) / 2));
+        g.add(pino);
+      }
+      poe(g, 'placa', 'Conector do cabo do LSM6DS3: SDA, SCL, GND, VCC (5 V), ligado ao do BMP180');
+    }
+    const g = new THREE.Group();
+    const xs = X.lsm.map((p) => p.p[0]);
+    g.add(caixa(Math.max(...xs) - Math.min(...xs) + P, L.housing, P, M.nylon, (Math.min(...xs) + Math.max(...xs)) / 2, X.lsm[0].p[1], A.T + A.MALE_H));
+    // placa roxa do módulo, com a serigrafia desenhada (nomes dos pinos e os eixos X, Y e Z)
+    const tex = textura(L.l, L.w, (ctx) => {
+      ctx.fillStyle = '#6a1b9a';
+      ctx.fillRect(0, 0, L.l, L.w);
+      const pinos = (lista, lado) => lista.forEach((p, k) => {
+        const px = p.p[0] - L.x0, py = p.p[1] - L.y0;
+        ilha(ctx, px, py, 0.8, k === 0 && lado > 0);
+        texto(ctx, p.n, px + lado * 1.5, py, 0.7, '#ffffff', { alinha: lado > 0 ? 'left' : 'right' });
+      });
+      pinos(L.pinos7, 1);
+      pinos(L.pinos5, -1);
+      for (const hy of [2.3, L.w - 2.3]) {
+        ctx.fillStyle = '#e3c06a';
+        ctx.beginPath();
+        ctx.arc(L.l / 2, hy, 1.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0c1a2e';
+        ctx.beginPath();
+        ctx.arc(L.l / 2, hy, 1.25, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // eixos impressos: X para a direita, Y para cima (na placa), Z saindo dela
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 0.18;
+      ctx.beginPath();
+      ctx.moveTo(8.4, 17.1); ctx.lineTo(10.2, 17.1);
+      ctx.moveTo(8.4, 17.1); ctx.lineTo(8.4, 15.6);
+      ctx.stroke();
+      texto(ctx, 'X', 10.7, 17.1, 0.55, '#ffffff');
+      texto(ctx, 'Y', 8.4, 15.15, 0.55, '#ffffff');
+      texto(ctx, 'Z', 7.8, 17.55, 0.5, '#ffffff');
+    });
+    g.add(placaModulo(L.x0, L.y0, L.l, L.w, L.z0, 1.6, std(0x5b1787, 0.5), tex));
+    const topo = L.z0 + 1.6;
+    // LSM6DS3: encapsulamento LGA pequeno; regulador ao lado e os resistores e capacitores SMD
+    const chip = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.86, 3.0), std(0x1f1f21, 0.5));
+    chip.position.copy(W(L.x0 + 6.65, L.y0 + 9.2, topo + 0.43));
+    g.add(chip);
+    g.add(caixa(3.0, 1.1, 1.7, M.preto, L.x0 + 10.3, L.y0 + 13.85, topo));
+    g.add(smd(L.x0 + 9.4, L.y0 + 4.4, topo, 1.6, 0.8, M.resistor, true, '392'));
+    g.add(smd(L.x0 + 10.6, L.y0 + 4.4, topo, 1.6, 0.8, M.resistor, true, '392'));
+    g.add(smd(L.x0 + 9.0, L.y0 + 7.6, topo, 1.6, 0.8, M.ceramica));
+    g.add(smd(L.x0 + 9.0, L.y0 + 9.4, topo, 1.6, 0.8, M.ceramica));
+    // barra de 7 pinos para baixo (a de 5 fica sem barra) e o conector fêmea do cabo, por baixo
+    const ys = L.pinos7.map((p) => p.p[1]);
+    const px = L.pinos7[0].p[0];
+    const cy = (Math.min(...ys) + Math.max(...ys)) / 2, ly = Math.max(...ys) - Math.min(...ys) + P;
+    g.add(caixa(P, A.MALE_H, ly, M.preto, px, cy, L.z0 - A.MALE_H));
+    g.add(caixa(P, L.housing, ly, M.nylon, px, cy, L.z0 - A.MALE_H - L.housing));
+    for (const p of L.pinos7) {
+      g.add(cilindro(W(p.p[0], p.p[1], L.z0 - A.MALE_H - L.housing + 2), W(p.p[0], p.p[1], topo + 0.6), 0.32, M.ouro, 4));
+      g.add(solda(p.p[0], p.p[1], topo, 0.7, 0.5, false));
+    }
+    poe(g, 'lsm6ds3', 'LSM6DS3 (acelerômetro e giroscópio, 6 eixos) na ponta do cabo: prenda firme no carro, alinhado com ele');
+    for (const j of L.jumpers) {
+      const curva = new THREE.CatmullRomCurve3(j.pts.map(([x, y, z]) => W(x, y, z)), false, 'centripetal');
+      poe(new THREE.Mesh(new THREE.TubeGeometry(curva, 40, 0.24, 8), std(0x9e9e9e, 0.45)), 'lsm6ds3', j.n);
+    }
+    for (const f of L.cabo) {
+      const curva = new THREE.CatmullRomCurve3(f.pts.map(([x, y, z]) => W(x, y, z)), false, 'centripetal');
+      poe(new THREE.Mesh(new THREE.TubeGeometry(curva, 100, 0.55, 10), std(new THREE.Color(f.cor), 0.42)), 'lsm6ds3', `Cabo do LSM6DS3: ${f.n}`);
+    }
+  }
+
   // ------------------------------------------------------------ resistores de 1 kΩ (corpo em "osso", faixas marrom, preto, vermelho, ouro)
   {
     const texR = textura(4, 24, (ctx) => {
@@ -962,6 +1045,10 @@ function iniciar() {
       if (X.bmp_modulo) {
         tabela(document.getElementById('legenda3d-bmp'), 'Cabo do BMP180: pino, função e cor do fio', ['Cor', 'Pino', 'Função', 'Fio'],
           X.bmp_modulo.cabo.map((f) => ({ ...f, pino: f.n })));
+      }
+      if (X.lsm_modulo) {
+        tabela(document.getElementById('legenda3d-lsm'), 'Cabo do LSM6DS3: pino, função e cor do fio', ['Cor', 'Pino', 'Função', 'Fio'],
+          X.lsm_modulo.cabo.map((f) => ({ ...f, pino: f.n })));
       }
       // em tela estreita a legenda começa fechada, para não cobrir a placa
       if (window.matchMedia('(max-width: 575.98px)').matches) leg.open = false;

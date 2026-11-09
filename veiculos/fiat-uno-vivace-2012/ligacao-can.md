@@ -77,7 +77,7 @@ Rede deste carro: carroceria nos pinos 6/14, a 50 kbit/s ([notas do veículo](RE
 | Cabo micro-USB **de dados** | Cabos só de carga não servem | Gravar o firmware |
 | Protoboard, jumpers macho-fêmea e multímetro | — | Montagem de teste e conferência dos pinos do Y |
 | Sensor de pressão e temperatura (opcional) | **BMP390** (recomendado) ou **BMP180** (alternativa, o que está ligado hoje) | Pressão do ar e temperatura da cabine: carga do motor com a pressão ao vivo, vácuo do coletor, checagem do sensor MAP e altitude. Entra no I2C, SDA no D25 e SCL no D26 ([firmware](../../firmware/esp32-can-listen/README.md#sensor-bmp180-opcional)) |
-| Acelerômetro e giroscópio, eixos XYZ (opcional) | **LSM6DS3** (recomendado) ou **BMI160** (alternativa) | Força G (frenagem, arrancada e curvas), inclinação da rua, buracos e impactos, e acordar o ESP32 pela vibração. Fica preso firme na placa, no mesmo I2C. Funcionam em 3,3 V: confira se o módulo tem regulador. Ainda não tem suporte no firmware |
+| Acelerômetro e giroscópio, eixos XYZ (opcional) | **LSM6DS3** (recomendado) ou **BMI160** (alternativa) | Força G (frenagem, arrancada e curvas), inclinação da rua, buracos e impactos, e acordar o ESP32 pela vibração. Vai num cabo próprio, no mesmo I2C, preso firme no carro e alinhado com ele ([placa/](placa/README.md)). O módulo de 13 × 18 mm tem regulador (VIN em 5 V); CS no 3V3 e SA0 no GND. Ainda não tem suporte no firmware |
 
 Evite:
 - **ESP32-S3, C3 e C6:** não têm Bluetooth clássico.
