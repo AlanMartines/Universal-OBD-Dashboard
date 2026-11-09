@@ -59,7 +59,7 @@ OBD_PADS = {'16': (11, 24), '4': (12, 24), '5': (13, 24), '14': (18, 24)}
 # (continuidade do pino até o fio) antes de soldar: as cores mudam de um fabricante para outro.
 # (nome da cor, cor do fio, cor da listra ou None)
 OBD_WIRE = {'16': ('vermelho', '#d32f2f', None), '4': ('laranja', '#ef6c00', None),
-            '5': ('azul-claro', '#4fc3f7', None), '14': ('verde e branco', '#2e7d32', '#ffffff')}
+            '5': ('azul-claro', '#4fc3f7', None), '14': ('verde/branco', '#2e7d32', '#ffffff')}
 # Pino 6 (CAN-H, verde) fica sem ligação: cortado e isolado com termorretrátil. Os outros 11 fios, cortados rente.
 OBD_PIN6 = ('verde', '#43a047')
 # Suporte de fusível 5 x 20 mm para placa, com tampa (AS-06), e fusível de vidro de 1,5 A.

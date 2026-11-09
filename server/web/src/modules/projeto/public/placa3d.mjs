@@ -885,13 +885,60 @@ function iniciar() {
     poe(g, 'trilhas', 'Pontos de solda');
   }
 
+  // ------------------------------------------------------------ legenda dos fios (cabo OBD e cabo do BMP180)
+  {
+    const leg = document.getElementById('legenda3d');
+    const cor = (c, listra) => {
+      const sw = document.createElement('span');
+      sw.className = 'placa3d-cor';
+      sw.style.background = listra ? `linear-gradient(${c} 0 35%, ${listra} 35% 65%, ${c} 65%)` : c;
+      return sw;
+    };
+    const tabela = (alvo, titulo, cab, linhas) => {
+      const h = document.createElement('h2');
+      h.textContent = titulo;
+      const t = document.createElement('table');
+      const thead = t.createTHead().insertRow();
+      for (const c of cab) {
+        const th = document.createElement('th');
+        th.className = 'visually-hidden';
+        th.textContent = c;
+        thead.appendChild(th);
+      }
+      const tb = t.createTBody();
+      for (const l of linhas) {
+        const tr = tb.insertRow();
+        if (l.isolado) tr.className = 'isolado';
+        tr.insertCell().appendChild(cor(l.cor, l.listra));
+        const p = tr.insertCell();
+        p.className = 'pino';
+        p.textContent = l.pino;
+        tr.insertCell().textContent = l.funcao;
+        tr.insertCell().textContent = l.cor_nome;
+      }
+      alvo.replaceChildren(h, t);
+    };
+    if (leg && X.cabo_obd) {
+      const C = X.cabo_obd;
+      tabela(document.getElementById('legenda3d-obd'), 'Cabo OBD2: pino, função e cor do fio', ['Cor', 'Pino', 'Função', 'Fio'],
+        [...C.fios, { ...C.pino6, isolado: true }]);
+      if (X.bmp_modulo) {
+        tabela(document.getElementById('legenda3d-bmp'), 'Cabo do BMP180: pino, função e cor do fio', ['Cor', 'Pino', 'Função', 'Fio'],
+          X.bmp_modulo.cabo.map((f) => ({ ...f, pino: f.n })));
+      }
+      // em tela estreita a legenda começa fechada, para não cobrir a placa
+      if (window.matchMedia('(max-width: 575.98px)').matches) leg.open = false;
+      leg.hidden = false;
+    }
+  }
+
   // ------------------------------------------------------------ câmera e controles
-  // dx: quanto o alvo anda na direção do cabo OBD (para a direita), para a placa e o plugue caberem juntos na vista
+  // dx: onde o alvo fica no eixo do cabo OBD: a placa e o plugue cabem juntos e sobra o canto da legenda (embaixo à esquerda)
   const VISTAS = {
-    perspectiva: { yaw: -0.45, pitch: 0.66, dist: 215, dx: 44 },
-    cima: { yaw: 0, pitch: 1.5607, dist: 220, dx: 44 },
-    baixo: { yaw: Math.PI, pitch: -1.5607, dist: 220, dx: 44 },
-    lado: { yaw: 0, pitch: 0.1, dist: 205, dx: 44 },
+    perspectiva: { yaw: -0.45, pitch: 0.66, dist: 215, dx: 10 },
+    cima: { yaw: 0, pitch: 1.5607, dist: 220, dx: 4 },
+    baixo: { yaw: Math.PI, pitch: -1.5607, dist: 220, dx: 78 },
+    lado: { yaw: 0, pitch: 0.1, dist: 205, dx: 4 },
   };
   const alvoPadrao = (dx = 0) => (X.cabo_obd ? new THREE.Vector3(dx, 5, 10) : new THREE.Vector3(8, 5, 0));
   const cam = { yaw: 0, pitch: 0, dist: 150, alvo: alvoPadrao() };

@@ -240,6 +240,8 @@ for x, y in bx:
 BMP_MOD = {'x0': g.W + 5.0, 'y0': 37.0, 'l': 15.0, 'w': 13.0, 'z0': -0.9}
 BMP_MOD_PINS = ['3.3V', 'SDA', 'SCL', 'GND', 'VCC']   # de cima para baixo, na borda do lado da placa
 BMP_WIRE = {'SDA': g.CYA, 'SCL': g.GRN, 'GND': g.BLK, 'VCC': g.RED}
+BMP_WIRE_INFO = {'SDA': ('ciano', 'Dados I2C, do D25'), 'SCL': ('verde', 'Relógio I2C, do D26'),
+                 'GND': ('preto', 'GND'), 'VCC': ('vermelho', '5 V (no VCC do GY-68)')}
 HOUSING_H = 8.5                                       # conector fêmea Dupont nos pinos
 CON_TOP = T + MALE_H + HOUSING_H                      # conector do cabo na placa, por cima
 
@@ -328,12 +330,15 @@ def jumper_paths():
 
 def obd_cable():
     nomes = {'16': 'pino 16 (+12 V)', '4': 'pino 4 (chassi)', '5': 'pino 5 (GND de sinal)', '14': 'pino 14 (CAN-L)'}
+    funcoes = {'16': '+12 V (vai ao fusível)', '4': 'Terra do chassi', '5': 'Terra de sinal', '14': 'CAN-L'}
     fios = []
     for pin in _ordem:
         cor_nome, cor, listra = g.OBD_WIRE[pin]
-        fios.append({'n': f'Cabo OBD, {nomes[pin]}: fio {cor_nome}', 'pino': pin, 'cor': cor, 'listra': listra,
+        fios.append({'n': f'Cabo OBD, {nomes[pin]}: fio {cor_nome}', 'pino': pin, 'funcao': funcoes[pin], 'cor_nome': cor_nome,
+                     'cor': cor, 'listra': listra,
                      'pts': [rr(p) for p in obd_wire_pts(pin)], 'ponta': rr(xy(*g.OBD_PADS[pin]))})
     return {'fios': fios, 'pino6': {'n': f'Cabo OBD, pino 6 (CAN-H): fio {g.OBD_PIN6[0]}, cortado e isolado, sem ligação',
+                                     'pino': '6', 'funcao': 'CAN-H, isolado (sem ligação)', 'cor_nome': g.OBD_PIN6[0],
                                      'cor': g.OBD_PIN6[1], 'pts': [rr(p) for p in OBD_PIN6_PTS]},
             'boca': rr((*OBD_BOCA, OBD_Z)), 'capa_r': OBD_CAPA_R, 'capa_fim': OBD_CAPA_FIM, 'plugue': OBD_PLUG}
 
@@ -358,7 +363,8 @@ DET = {
     'bmp_modulo': {**{k: round(v, 3) for k, v in BMP_MOD.items()}, 'housing': HOUSING_H,
                    'z_min': round(Z_MIN, 3),
                    'pinos': [{'n': n, 'p': rr(bmp_mod_pin(n))} for n in BMP_MOD_PINS],
-                   'cabo': [{'n': n, 'cor': BMP_WIRE[n], 'pts': [rr(p) for p in bmp_cable(n)]} for n in BMP_WIRE]},
+                   'cabo': [{'n': n, 'cor': BMP_WIRE[n], 'cor_nome': BMP_WIRE_INFO[n][0], 'funcao': BMP_WIRE_INFO[n][1],
+                             'pts': [rr(p) for p in bmp_cable(n)]} for n in BMP_WIRE]},
     'fios_baixo': [{'n': f'{name}: {desc}', 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts, desc in g.BOTTOM_WIRES],
 }
 
