@@ -754,6 +754,108 @@ function iniciar() {
     poe(g, 'fios', f.n);
   }
 
+  // ------------------------------------------------------------ cabo OBD2 macho com fios soltos (pigtail) e o plugue
+  if (X.cabo_obd) {
+    const C = X.cabo_obd;
+    const [bx, by, bz] = C.boca;
+    const borracha = std(0x1c1c1c, 0.7);
+    for (const f of C.fios) {
+      let mat;
+      if (f.listra) {   // fio verde com listra branca (pino 14)
+        const cv = document.createElement('canvas');
+        cv.width = 4; cv.height = 32;
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = f.cor; ctx.fillRect(0, 0, 4, 32);
+        ctx.fillStyle = f.listra; ctx.fillRect(0, 2, 4, 7);
+        const t = new THREE.CanvasTexture(cv);
+        t.colorSpace = THREE.SRGBColorSpace;
+        mat = std(0xffffff, 0.42, 0, { map: t });
+      } else mat = std(new THREE.Color(f.cor), 0.42);
+      const g = new THREE.Group();
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(caminho(f.pts, 2.5), 160, 0.7, 12), mat));
+      const [x, y] = f.ponta;
+      g.add(cilindro(W(x, y, -0.9), W(x, y, A.T + 0.3), 0.38, M.estanho, 10));
+      poe(g, 'fios', f.n);
+    }
+    {
+      const g = new THREE.Group();
+      const [a, b] = C.pino6.pts.map(([x, y, z]) => W(x, y, z));
+      g.add(cilindro(a, b, 0.7, std(new THREE.Color(C.pino6.cor), 0.42), 12));
+      const d = b.clone().sub(a);
+      g.add(cilindro(a.clone().addScaledVector(d, 0.55), b.clone().addScaledVector(d, 0.15), 1.0, borracha, 14));
+      poe(g, 'fios', C.pino6.n);
+    }
+    // capa do cabo, termorretrátil na boca e os fios cortados rente
+    {
+      const g = new THREE.Group();
+      g.add(cilindro(W(bx - 1.0, by, bz), W(bx + 2.5, by, bz), C.capa_r + 0.35, borracha, 28));
+      g.add(cilindro(W(bx, by, bz), W(C.capa_fim, by, bz), C.capa_r, std(0x202020, 0.55), 28));
+      poe(g, 'fios', 'Capa do cabo OBD (os outros 11 fios cortados rente e isolados)');
+    }
+    // plugue OBD2 macho: alívio de tensão com nervuras, corpo e a boca trapezoidal com os 16 contatos
+    {
+      const P0 = C.plugue;
+      const g = new THREE.Group();
+      const plast = std(0x2a2a2a, 0.62);
+      g.add(cilindro(W(C.capa_fim, by, bz), W(P0.x0, by, bz), 4.6, plast, 28));
+      for (let k = 0; k < 4; k++) {
+        const anel = new THREE.Mesh(new THREE.TorusGeometry(4.75, 0.45, 8, 28), plast);
+        anel.rotation.y = Math.PI / 2;
+        anel.position.copy(W(C.capa_fim + 1.5 + k * 1.8, by, bz));
+        g.add(anel);
+      }
+      // "OBD II" em relevo no topo, lido de quem olha a placa de frente
+      const texO = textura(P0.w, P0.l, (ctx) => {
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(0, 0, P0.w, P0.l);
+        contorno(ctx, 6, P0.l / 2 - 3.2, P0.w - 12, 6.4, 'rgba(255,255,255,0.18)', 0.3);
+        texto(ctx, 'OBD II', P0.w / 2, P0.l / 2, 3.4, '#7a7a7a', { peso: 700 });
+      }, 30);
+      texO.center.set(0.5, 0.5);
+      texO.rotation = Math.PI / 2;
+      const corpo = new THREE.Mesh(new THREE.BoxGeometry(P0.l, P0.h, P0.w), [plast, plast, std(0xffffff, 0.62, 0, { map: texO }), plast, plast, plast]);
+      corpo.position.copy(W(P0.x0 + P0.l / 2, by, bz));
+      g.add(corpo);
+      // boca (moldura trapezoidal com cantos arredondados), aberta para longe da placa
+      const trap = (topo, base, alt, r) => {
+        const s0 = new THREE.Shape();
+        const pts = [[-topo / 2, alt / 2], [topo / 2, alt / 2], [base / 2, -alt / 2], [-base / 2, -alt / 2]];
+        pts.forEach(([x, y], i) => {
+          const [px, py] = pts[(i + 3) % 4], [nx, ny] = pts[(i + 1) % 4];
+          const din = Math.hypot(x - px, y - py), dout = Math.hypot(nx - x, ny - y);
+          const a = [x + (px - x) * r / din, y + (py - y) * r / din], b = [x + (nx - x) * r / dout, y + (ny - y) * r / dout];
+          if (i === 0) s0.moveTo(...a); else s0.lineTo(...a);
+          s0.quadraticCurveTo(x, y, ...b);
+        });
+        s0.closePath();
+        return s0;
+      };
+      const fora = trap(38, 31, 14, 2.2);
+      fora.holes.push(trap(35, 28.4, 11.4, 1.6));
+      // a moldura e o fundo são desenhados no plano e girados para a boca olhar para +x (para longe da placa)
+      const boca = new THREE.Group();
+      boca.rotation.y = Math.PI / 2;
+      boca.position.copy(W(P0.x0 + P0.l, by, bz));
+      boca.add(new THREE.Mesh(new THREE.ExtrudeGeometry(fora, { depth: 7, bevelEnabled: false }), plast));
+      // fundo da boca com os 16 contatos (2 fileiras de 8) e a chave no meio da fileira de baixo
+      const fundo = new THREE.Mesh(new THREE.ShapeGeometry(trap(35, 28.4, 11.4, 1.6)), std(0x151515, 0.8));
+      fundo.position.z = 0.05;
+      boca.add(fundo);
+      for (const fz of [2.6, -2.6]) {
+        for (let k = 0; k < 8; k++) {
+          const contato = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 5.5), M.ouro);
+          contato.position.set((k - 3.5) * 3.2 + (k >= 4 ? 1.4 : -1.4), fz, 2.75);
+          boca.add(contato);
+        }
+      }
+      const chave = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.0, 6.5), plast);
+      chave.position.set(0, -4.2, 3.25);
+      boca.add(chave);
+      g.add(boca);
+      poe(g, 'fios', 'Plugue OBD2 macho (16 pinos) do cabo com fios soltos: encaixa numa das fêmeas do cabo Y');
+    }
+  }
+
   // ------------------------------------------------------------ lado de baixo: fio estanhado e solda
   const trilhas = [];
   for (const t of X.trilhas) {
@@ -780,17 +882,19 @@ function iniciar() {
   }
 
   // ------------------------------------------------------------ câmera e controles
+  // dx: quanto o alvo anda na direção do cabo OBD (para a direita), para a placa e o plugue caberem juntos na vista
   const VISTAS = {
-    perspectiva: { yaw: -0.6, pitch: 0.62, dist: 128 },
-    cima: { yaw: 0, pitch: 1.5607, dist: 135 },
-    baixo: { yaw: Math.PI, pitch: -1.5607, dist: 135 },
-    lado: { yaw: 0, pitch: 0.08, dist: 105 },
+    perspectiva: { yaw: -0.45, pitch: 0.66, dist: 215, dx: 44 },
+    cima: { yaw: 0, pitch: 1.5607, dist: 220, dx: 44 },
+    baixo: { yaw: Math.PI, pitch: -1.5607, dist: 220, dx: 44 },
+    lado: { yaw: 0, pitch: 0.1, dist: 205, dx: 44 },
   };
-  const alvoPadrao = () => new THREE.Vector3(8, 5, 0);
+  const alvoPadrao = (dx = 0) => (X.cabo_obd ? new THREE.Vector3(dx, 5, 10) : new THREE.Vector3(8, 5, 0));
   const cam = { yaw: 0, pitch: 0, dist: 150, alvo: alvoPadrao() };
   const meta = { ...cam, alvo: alvoPadrao() };
   function vista(nome) {
-    Object.assign(meta, VISTAS[nome], { alvo: alvoPadrao() });
+    const { dx, ...v } = VISTAS[nome];
+    Object.assign(meta, v, { alvo: alvoPadrao(dx) });
     if (nome === 'cima' || nome === 'baixo') cam.yaw = meta.yaw;
     pedir();
   }
@@ -966,7 +1070,10 @@ function iniciar() {
 
   corFundo();
   const inicial = location.hash.slice(1);
-  Object.assign(cam, VISTAS[VISTAS[inicial] ? inicial : 'perspectiva']);
+  {
+    const { dx, ...v } = VISTAS[VISTAS[inicial] ? inicial : 'perspectiva'];
+    Object.assign(cam, v, { alvo: alvoPadrao(dx) });
+  }
   vista(VISTAS[inicial] ? inicial : 'perspectiva');
 }
 

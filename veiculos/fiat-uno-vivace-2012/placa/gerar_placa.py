@@ -55,6 +55,13 @@ TJA_PINS = {'VCC': (11, 19), 'TX': (11, 20), 'RX': (11, 21), 'GND': (11, 22)}
 TJA_CAN = {'CANH': (11 + 19.4 / P, 20), 'CANL': (11 + 19.4 / P, 21)}
 CAN_HOLES = {'CANH': (18, 20), 'CANL': (18, 21)}
 OBD_PADS = {'16': (11, 24), '4': (12, 24), '5': (13, 24), '14': (18, 24)}
+# Cabo OBD2 macho com fios soltos ("pigtail", 16 fios): cores da tabela do vendedor. Confira com o multímetro
+# (continuidade do pino até o fio) antes de soldar: as cores mudam de um fabricante para outro.
+# (nome da cor, cor do fio, cor da listra ou None)
+OBD_WIRE = {'16': ('vermelho', '#d32f2f', None), '4': ('laranja', '#ef6c00', None),
+            '5': ('azul-claro', '#4fc3f7', None), '14': ('verde e branco', '#2e7d32', '#ffffff')}
+# Pino 6 (CAN-H, verde) fica sem ligação: cortado e isolado com termorretrátil. Os outros 11 fios, cortados rente.
+OBD_PIN6 = ('verde', '#43a047')
 # Suporte de fusível 5 x 20 mm para placa, com tampa (AS-06), e fusível de vidro de 1,5 A.
 # Desenho do fabricante: tampa de 26 x 9,6 mm (1,6 mm de espessura), corpo de 24,5 mm, 14,1 mm de altura sobre a placa
 # (pés de 1 mm + 11,5 + tampa); 2 pinos chatos de 1,3 x 0,4 mm a 20,2 ± 0,3 mm, no meio da largura.
@@ -391,10 +398,12 @@ def view_top(stage, scale):
         esp32_art(s)
         for pin, (c, r) in OBD_PADS.items():
             x, y = hp(c, r)
-            col = {'16': RED, '4': BLK, '5': BLK, '14': BLU}[pin]
-            # fio do cabo OBD saindo da placa
+            _, col, listra = OBD_WIRE[pin]
+            # fio do cabo OBD saindo da placa, na cor do fio do cabo
             s.add(f'<path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="#37474f" stroke-width="1.1"/><path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="{col}" stroke-width="0.75"/>')
-            s.text(x, H + 5.4, pin, 1.3, col, weight='bold')
+            if listra:
+                s.add(f'<path d="M{x:.2f},{y:.2f} L{x:.2f},{H + 4:.2f}" stroke="{listra}" stroke-width="0.25" stroke-dasharray="1.2 0.8"/>')
+            s.text(x, H + 5.4, pin, 1.3, '#37474f', weight='bold')
         s.text(hp(11, 24)[0] - 2, H + 5.4, 'cabo OBD:', 1.3, '#5d4037', anchor='end')
         s.text(W / 2, -3.4, 'ETAPA 2 · placa montada, vista de cima', 1.7, '#5d4037', weight='bold')
     return s.svg()

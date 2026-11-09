@@ -194,11 +194,38 @@ for name, col, pts, _ in g.JUMPERS:
             x, y = xy(c, r)
             cyl('fios', SILVER, (x, y, -0.8), (x, y, T), 0.3)
 
-OBD_COL = {'16': g.RED, '4': g.BLK, '5': g.BLK, '14': g.BLU}
-for pin, (c, r) in g.OBD_PADS.items():
-    x, y = xy(c, r)
+# ---------------------------------------------------------------- Cabo OBD2 macho com fios soltos (pigtail)
+# Os 4 fios usados descem da linha 24, viram para a direita e entram na capa do cabo, que segue para a direita da placa;
+# o do pino 6 (CAN-H) fica cortado e isolado com termorretrátil, os outros 11 cortados rente na boca da capa.
+# Comprimento do cabo encurtado no desenho (o de verdade tem 30 cm).
+OBD_Z = 4.0                                     # altura do centro do cabo
+OBD_BOCA = (g.W + 12.0, g.H + 6.0)              # boca da capa (x, y)
+OBD_CAPA_R, OBD_CAPA_FIM = 3.0, g.W + 36.0      # cabo de 6 mm
+OBD_PLUG = {'x0': g.W + 44.0, 'l': 26.0, 'w': 42.0, 'h': 17.0}   # corpo do plugue macho (boca virada para longe da placa)
+_ordem = ['16', '4', '5', '14']
+
+
+def obd_wire_pts(pin):
+    x, y = xy(*g.OBD_PADS[pin])
+    k = _ordem.index(pin)
+    faixa = g.H + 2.5 + (3 - k) * 1.6           # o fio mais à esquerda passa por fora, sem cruzar os outros
+    by = OBD_BOCA[1] + (k - 1.5) * 1.2
+    return [(x, y, T), (x, y, T + 1.3), (x, faixa, T + 1.3), (g.W + 5, faixa, T + 1.3), (OBD_BOCA[0] - 2, by, OBD_Z - 0.3), (OBD_BOCA[0], by, OBD_Z)]
+
+
+OBD_PIN6_PTS = [(OBD_BOCA[0], OBD_BOCA[1] - 0.4, OBD_Z + 1.0), (OBD_BOCA[0] - 5.5, OBD_BOCA[1] - 1.5, OBD_Z + 2.2)]
+for pin in _ordem:
+    x, y = xy(*g.OBD_PADS[pin])
     cyl('fios', SILVER, (x, y, -0.8), (x, y, T), 0.35)
-    tube('fios', OBD_COL[pin], [(x, y, T), (x, y, T + 1.3), (x, g.H + 14, T + 1.3)], 0.7)
+    tube('fios', g.OBD_WIRE[pin][1], obd_wire_pts(pin), 0.7)
+tube('fios', g.OBD_PIN6[1], OBD_PIN6_PTS, 0.7)
+_a, _b = OBD_PIN6_PTS
+cyl('fios', '#111111', tuple(_a[i] + (_b[i] - _a[i]) * 0.55 for i in range(3)), tuple(_b[i] + (_b[i] - _a[i]) * 0.15 for i in range(3)), 1.0)   # termorretrátil
+cyl('fios', '#111111', (OBD_BOCA[0] - 1.0, OBD_BOCA[1], OBD_Z), (OBD_BOCA[0] + 2.5, OBD_BOCA[1], OBD_Z), OBD_CAPA_R + 0.35)   # termorretrátil na boca
+cyl('fios', '#1b1b1b', (OBD_BOCA[0], OBD_BOCA[1], OBD_Z), (OBD_CAPA_FIM, OBD_BOCA[1], OBD_Z), OBD_CAPA_R)
+_p = OBD_PLUG
+cyl('fios', '#262626', (OBD_CAPA_FIM, OBD_BOCA[1], OBD_Z), (_p['x0'], OBD_BOCA[1], OBD_Z), 4.6)   # alívio de tensão
+box('fios', '#2b2b2b', _p['x0'], OBD_BOCA[1] - _p['w'] / 2, OBD_Z - _p['h'] / 2, _p['l'], _p['w'], _p['h'])
 
 # ---------------------------------------------------------------- Conector do cabo do BMP180 (barra de 4 pinos macho)
 bx = [xy(*cr) for cr in g.BMP_PINS.values()]
@@ -295,11 +322,19 @@ def jumper_paths():
         full.append((*xy(c1, r1), T if is_hole(c1, r1) else T + 1.2))
         out.append({'n': f'{name}: {desc}', 'cor': col, 'r': 0.5, 'pts': [rr(p) for p in full],
                     'pontas': [rr(xy(c, r)) for c, r in (pts[0], pts[-1]) if is_hole(c, r)]})
-    nomes = {'16': 'Cabo OBD, pino 16 (+12 V)', '4': 'Cabo OBD, pino 4 (chassi)', '5': 'Cabo OBD, pino 5 (GND de sinal)', '14': 'Cabo OBD, pino 14 (CAN-L)'}
-    for pin, (c, r) in g.OBD_PADS.items():
-        x, y = xy(c, r)
-        out.append({'n': nomes[pin], 'cor': OBD_COL[pin], 'r': 0.7, 'pts': [rr(p) for p in [(x, y, T), (x, y, T + 1.3), (x, g.H + 14, T + 1.3)]], 'pontas': [rr((x, y))]})
     return out
+
+
+def obd_cable():
+    nomes = {'16': 'pino 16 (+12 V)', '4': 'pino 4 (chassi)', '5': 'pino 5 (GND de sinal)', '14': 'pino 14 (CAN-L)'}
+    fios = []
+    for pin in _ordem:
+        cor_nome, cor, listra = g.OBD_WIRE[pin]
+        fios.append({'n': f'Cabo OBD, {nomes[pin]}: fio {cor_nome}', 'pino': pin, 'cor': cor, 'listra': listra,
+                     'pts': [rr(p) for p in obd_wire_pts(pin)], 'ponta': rr(xy(*g.OBD_PADS[pin]))})
+    return {'fios': fios, 'pino6': {'n': f'Cabo OBD, pino 6 (CAN-H): fio {g.OBD_PIN6[0]}, cortado e isolado, sem ligação',
+                                     'cor': g.OBD_PIN6[1], 'pts': [rr(p) for p in OBD_PIN6_PTS]},
+            'boca': rr((*OBD_BOCA, OBD_Z)), 'capa_r': OBD_CAPA_R, 'capa_fim': OBD_CAPA_FIM, 'plugue': OBD_PLUG}
 
 
 DET = {
@@ -314,6 +349,7 @@ DET = {
                 'piso': FUSE_FLOOR, 'torre': FUSE_TOWER, 'vidro': FUSE_TUBE, 'abas': [{'x': tx, 'lado': ty} for tx, ty in FUSE_TABS],
                 'pinos': [rr(xy(*cr)) for cr in g.FUSE_PINS.values()]},
     'fios': jumper_paths(),
+    'cabo_obd': obd_cable(),
     'trilhas': [{'n': name, 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts in g.TRACKS]
                + [{'n': name, 'cor': col, 'pts': [rr(xy(*a)), rr(xy(*b))]} for name, col, a, b in g.LINKS],
     'solda': [rr(xy(c, r)) for c, r in sorted(legs)],

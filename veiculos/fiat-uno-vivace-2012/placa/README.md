@@ -46,7 +46,17 @@ Para ver como a placa fica montada, com as alturas, há duas opções. As posiç
 - **RT8272 (módulo HW-108, 21 × 21 mm):** soldado na placa por barra de pinos macho, à esquerda, com a bobina (4R7) embaixo à direita. As duas fileiras de pinos do módulo ficam a 7 furos uma da outra: EN, IN− e IN+ na coluna 8 (linhas 14 a 16); OUT− e OUT+ na coluna 1 (linhas 20 e 21). Fica uma linha acima do desenho de 07/11, para dar lugar ao suporte do fusível, e cobre o começo do fio J3. IN− e OUT− são o mesmo GND dentro do módulo, então só o IN− vai ao GND da placa. O EN fica sem ligação. **Antes de soldar, encaixe o módulo com os pinos na placa e veja se os cinco entram nos furos.** Se não entrarem, use fita dupla-face e fios curtos até os mesmos furos.
 - **Fusível de 1,5 A, na placa:** fusível de vidro 5 × 20 mm num porta-fusível **AS-06** com tampa (corpo de 24,5 × 9,6 mm, tampa de 26 mm, 14,1 mm de altura), deitado na horizontal na linha 24, embaixo do RT8272. Os 2 pinos chatos (1,3 × 0,4 mm, a 20,2 ± 0,3 mm) caem na grade, a 8 furos (20,32 mm): **(1,24) e (9,24)**. Esses dois furos precisam ser **alargados para 1,5 mm**, porque o pino chato não passa no furo comum de 1 mm. O fusível não tem lado: a entrada (12 V do OBD) fica em (9,24) e a saída (12 V com fusível) em (1,24). O corpo cobre as linhas 23 e 24 das colunas 1 a 9, que ficam só com trilhas por baixo. Os pinos saem só cerca de 1,5 mm por baixo da placa: solde rente.
 - **Conector do BMP180:** barra de 4 pinos macho na linha 17, colunas 12 a 15: SDA, SCL, GND e VCC, da esquerda para a direita. O sensor fica na ponta de um cabo de 4 fios, longe do calor da placa. Na placa o cabo encaixa por cima; no sensor, a barra de pinos fica virada para baixo e o cabo chega **por baixo** dele. O VCC é 5 V: use o **GY-68**, que tem regulador próprio, e ligue o fio no pino **VCC** dele, nunca no 3.3V. O SDA e o SCL vêm do D25 e do D26 por **fio isolado por baixo** (F1 e F2), soldado direto nos pinos do ESP32 e do conector, passando por cima da trilha de GND da linha 13.
-- **Cabo OBD:** os quatro fios entram pela borda de baixo, à direita do suporte do fusível: 16 (11,24), 4 (12,24), 5 (13,24) e 14 (18,24).
+- **Cabo OBD:** cabo OBD2 **macho** com fios soltos (pigtail de 16 fios), que encaixa numa das fêmeas do cabo Y. Os quatro fios usados entram pela borda de baixo, à direita do suporte do fusível: 16 (11,24), 4 (12,24), 5 (13,24) e 14 (18,24). O fio do pino 6 (CAN-H) **não é ligado**: corte e isole com termorretrátil, porque o CANH da placa fica em 3,3 V pelo R4. Os outros 11 fios são cortados rente e isolados na boca da capa.
+
+  | Pino | Função | Cor do fio (tabela do vendedor) | Furo |
+  |---|---|---|---|
+  | 16 | +12 V (vai ao fusível) | vermelho | (11,24) |
+  | 4 | terra do chassi | laranja | (12,24) |
+  | 5 | terra de sinal | azul-claro | (13,24) |
+  | 14 | CAN-L | verde com listra branca | (18,24) |
+  | 6 | CAN-H | verde | sem ligação, isolado |
+
+  **Confira cada fio com o multímetro (continuidade do pino do plugue até a ponta do fio) antes de soldar:** as cores mudam de um fabricante para outro.
 - **Placa perfurada:** 5 × 7 cm com 18 × 24 furos, o tamanho padrão mais comum. Uma de 4 × 6 cm não serve, porque as barras do ESP32 precisam de 15 colunas.
 
 Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio J3 ainda fora da placa.
