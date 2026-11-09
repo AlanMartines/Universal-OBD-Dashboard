@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Firmware do ESP32 (esp32-can-listen 1.3): sensor LSM6DS3 opcional.** Lê o acelerômetro e o giroscópio no mesmo I2C do BMP180 (D25/D26), a 50 Hz, e manda a cada 200 ms a média do intervalo e o maior desvio da gravidade: `# lsm6ds3 ax=… ay=… az=… gx=… gy=… gz=… pico=…`. Serve o LSM6DS3 e o LSM6DS3TR-C, em 0x6A ou 0x6B. Sem o sensor, segue igual; no descanso, ele também desliga. O app ainda não usa os valores.
+
 ### Alterado
 - **Rodapé dos mostradores:** a temperatura interna e a pressão do ar do BMP180 aparecem juntas e discretas ao lado do relógio (`09:54  27°C · 1.010 hPa`), em todos os temas, no APK e no painel web. Sem o sensor, o campo some.
 
