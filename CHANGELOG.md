@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Temas Clássico e Horizonte:** "Trip" mostrava a distância calculada nesta captura. Agora mostra o parcial do painel do carro, lido pela escuta CAN (`trip_km`). Sem a escuta, o rótulo vira "Viagem" e continua mostrando a distância da captura. Vale para o APK e para o painel web.
+
 ### Adicionado
 - **Vácuo do coletor e desvio do sensor MAP**, com o BMP180 do ESP32. O vácuo é a pressão atmosférica menos o MAP, com o motor ligado. O desvio do MAP é a diferença para o sensor ambiente, medida com a chave ligada e o motor parado. Os dois vão para o histórico e para o painel web (grupo Motor). O desvio é só diagnóstico: o consumo não é corrigido por ele, porque a calibração pelos abastecimentos já absorve o erro médio.
 - **Placa 3D:** o sensor BMP180 (GY-68) aparece na ponta do cabo, com os conectores e os fios de cada sinal, e ganhou caixa própria para esconder ou mostrar.

@@ -108,7 +108,7 @@ window.Dash = (function () {
   const roles = () => Object.assign({
     rpm: 'rpm', speed: 'speed', coolant: 'coolant_temp', voltage: 'battery_volts', throttle: 'throttle', map: 'map',
     intake: 'intake_temp', engineLoad: 'engine_load', timing: 'timing_advance', stft: 'stft_b1', ltft: 'ltft_b1',
-    lambda: 'lambda_b1s1_v', milOn: 'mil_on', dtcCount: 'dtc_count', cabinTemp: 'cabin_temp',
+    lambda: 'lambda_b1s1_v', milOn: 'mil_on', dtcCount: 'dtc_count', cabinTemp: 'cabin_temp', carTrip: 'trip_km',
   }, meta.roles || {});
   const reading = (key) => {
     const id = roles()[key];
@@ -794,7 +794,7 @@ window.Dash = (function () {
             <div class="cl2-list">${fields(6)}</div>
             <div class="cl2-side cl2-side-r"><div class="cl2-cinfo"><em>${icon('temp')}</em><b data-ui="tempVal">--</b></div><div class="cl2-cbar" data-ui="tempArc"></div></div>
           </div>
-          <div class="cl2-trip"><span>Trip <b data-ui="tripKm">--</b> km</span>${ecoLeaf()}<span>Total <b data-ui="totalKm">--</b> km</span></div>
+          <div class="cl2-trip"><span><span data-ui="carTripLabel">Trip</span> <b data-ui="carTrip">--</b> km</span>${ecoLeaf()}<span>Total <b data-ui="totalKm">--</b> km</span></div>
         </div>
         <div class="cl2-g" data-ui="speedHost"></div>
         ${foot({})}`;
@@ -835,7 +835,7 @@ window.Dash = (function () {
     markup() {
       return `
         <div class="hz-lights" data-ui="lights"></div>
-        <div class="hz-panel hz-left">${fields(3)}<div class="hz-foot"><small>Trip</small> <b data-ui="tripKm">--</b> km <span class="hz-eco">${ecoLeaf()}</span></div></div>
+        <div class="hz-panel hz-left">${fields(3)}<div class="hz-foot"><small data-ui="carTripLabel">Trip</small> <b data-ui="carTrip">--</b> km <span class="hz-eco">${ecoLeaf()}</span></div></div>
         <div class="hz-arc"><div class="hz-svg" data-ui="arcHost"></div></div>
         <div class="hz-panel hz-right">${fields(3)}<div class="hz-foot"><b data-ui="totalKm">--</b> km</div></div>
         ${foot({})}`;
@@ -1165,6 +1165,13 @@ window.Dash = (function () {
       : (s.statusMessage || 'Desconectado');
     ui.rec.hidden = !(s.diagRecording && s.running);
     if (ui.tripKm) ui.tripKm.textContent = num(s.tripDistanceKm, 1);
+    // Trip (Clássico e Horizonte) é o parcial do painel do carro, lido pela escuta CAN. Sem ele, o
+    // rótulo vira Viagem e mostra a distância desta captura, como nos outros temas.
+    if (ui.carTrip) {
+      const parcial = reading('carTrip');
+      ui.carTrip.textContent = num(parcial != null ? parcial : s.tripDistanceKm, 1);
+      if (ui.carTripLabel) ui.carTripLabel.textContent = parcial != null ? 'Trip' : 'Viagem';
+    }
     if (ui.tripTime) ui.tripTime.textContent = elapsed(s);
     if (ui.totalKm) ui.totalKm.textContent = num(s.totalKm, 0);
 
