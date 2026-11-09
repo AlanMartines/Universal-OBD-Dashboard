@@ -12,6 +12,10 @@ Desenhos (SVG), na mesma pasta deste script:
 Só biblioteca padrão do Python 3:
     python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py
 
+Gera as duas versões: a principal, com o TJA1050, e a alternativa com o SN65HVD230 (módulo WCMCU-230), com os
+mesmos nomes de arquivo terminados em -sn65 (esquema-sn65.svg, etapa1-sn65.svg, modelo3d-sn65-dados.js...).
+A versão sai da variável de ambiente PLACA_VARIANTE ('tja' ou 'sn65'); sem ela, o script gera as duas.
+
 Medidas de 07/11/2026 (README.md). Confira o RT8272 e o TJA1050 encaixando pelos pinos antes de soldar.
 O suporte do fusível (AS-06, 5 x 20 mm, com tampa) está com as medidas do desenho do fabricante: os 2 pinos chatos
 caem na grade, mas os furos precisam ser alargados para 1,5 mm.
@@ -19,6 +23,8 @@ caem na grade, mas os furos precisam ser alargados para 1,5 mm.
 import os
 
 OUT = os.path.dirname(os.path.abspath(__file__))
+VARIANTE = os.environ.get('PLACA_VARIANTE', 'tja')
+SUF = '' if VARIANTE == 'tja' else f'-{VARIANTE}'
 P = 2.54
 W, H = 50.0, 70.0
 COLS, ROWS = 18, 24
@@ -77,6 +83,10 @@ FUSE_DRILL = 1.5
 # Ordem: SDA, SCL, GND, VCC. VCC vem do 5 V: use o GY-68, que tem regulador próprio (pinos VCC e 3.3V).
 BMP_PINS = {'SDA': (12, 17), 'SCL': (13, 17), 'GND': (14, 17), 'VCC': (15, 17)}
 BMP_COL = {'SDA': CYA, 'SCL': GRN, 'GND': BLK, 'VCC': RED}
+# Conector de 4 pinos para o cabo do LSM6DS3 (acelerômetro e giroscópio), na linha 16, logo acima do do BMP180: mesmo
+# barramento I2C (D25/D26) e os mesmos 5 V, por trilhas curtas até os pinos da linha 17. O módulo (13 x 18 mm, serve
+# para LSM6DS3 ou BMI160) tem regulador: VIN no 5 V. Endereços sem conflito: BMP180 0x77, LSM6DS3 0x6A (SA0 no GND).
+LSM_PINS = {'SDA': (12, 16), 'SCL': (13, 16), 'GND': (14, 16), 'VCC': (15, 16)}
 
 # Trilhas de solda (lado de baixo): fio estanhado passando pelos furos, sempre em linha reta
 TRACKS = [
@@ -112,6 +122,49 @@ JUMPERS = [
     ('J3', RED, [(2, 13), (9, 13), (9, 17), (10, 17)], 'OUT+ do RT8272 → 5 V'),
 ]
 TJA_MM = (22.0, 11.0)
+
+# ---------------------------------------------------------------- Versão alternativa: SN65HVD230 (WCMCU-230)
+# Módulo de 15,7 x 13,9 mm, em 3,3 V: dispensa o divisor do RX (R1, R2, R3 e o J1 de antes). Barra de 6 pinos na linha 23,
+# colunas 13 a 18 (3V3, GND, CTX, CRX, CANH, CANL), com o módulo deitado para cima, entre o BMP180 e o cabo OBD.
+# CTX preso no 3V3 (trava física: nunca transmite), CRX direto no D21 pelo J1, CANH em 3,3 V pelo R4, CANL no pino 14.
+# O R2 do módulo ("121", 120 ohms) costuma ficar ligado entre CANH e CANL: se a medida der cerca de 120 ohms, ele sai.
+SN_MM = (15.7, 13.9)
+SN_PINS = {}
+TRANS_NOME = 'TJA1050'
+if VARIANTE == 'sn65':
+    TRANS_NOME = 'SN65HVD230'
+    SN_PINS = {'3V3': (13, 23), 'GND': (14, 23), 'CTX': (15, 23), 'CRX': (16, 23), 'CANH': (17, 23), 'CANL': (18, 23)}
+    TJA_PINS, TJA_CAN, CAN_HOLES = {}, {}, {}
+    RES = [('R4', (16, 3), (16, 7), '3V3 → CANH')]
+    TRACKS = [
+        ('D21 → J1', YEL, [(6, 2), (6, 3), (7, 3)]),
+        ('GND', BLK, [(15, 12), (15, 13), (9, 13), (9, 22), (12, 22), (12, 24), (14, 24), (14, 23)]),
+        ('GND → IN−', BLK, [(8, 15), (9, 15)]),
+        ('3V3', ORG, [(17, 2), (16, 2), (16, 3)]),
+        ('3V3 → SN65HVD230', ORG, [(17, 2), (17, 20), (13, 20), (13, 23)]),
+        ('CTX preso no 3V3', ORG, [(15, 20), (15, 23)]),
+        ('5 V', RED, [(16, 12), (16, 18), (10, 18), (10, 17)]),
+        ('12 V do OBD → fusível', RED, [(11, 24), (9, 24)]),
+        ('12 V com fusível', PUR, [(1, 24), (1, 23), (8, 23), (8, 16)]),
+        ('OUT+ → J3', RED, [(1, 21), (2, 21), (2, 13)]),
+        ('CRX (fim do J1)', YEL, [(16, 22), (16, 23)]),
+        ('CANH', BLU, [(18, 17), (18, 22), (17, 22), (17, 23)]),
+        ('CAN-L', BLU, [(18, 23), (18, 24)]),
+        ('GND do BMP180', BLK, [(14, 13), (14, 17)]),
+        ('5 V do BMP180', RED, [(15, 17), (16, 17)]),
+    ]
+    JUMPERS = [
+        ('J1', YEL, [(7, 3), (17, 3), (17, 21), (16, 21), (16, 22)], 'D21 → CRX do SN65HVD230 (fio direto, sem divisor)'),
+        ('J2', BLU, [(16, 7), (18, 7), (18, 17)], 'R4 → CANH (segue por baixo até o pino CANH)'),
+        ('J3', RED, [(2, 13), (9, 13), (9, 17), (10, 17)], 'OUT+ do RT8272 → 5 V'),
+    ]
+TRANS_PINS = SN_PINS or TJA_PINS
+TRACKS += [   # conector do LSM6DS3 ligado ao do BMP180 (o GND da coluna 14 já passa pelos dois)
+    ('SDA do LSM6DS3', CYA, [(12, 16), (12, 17)]),
+    ('SCL do LSM6DS3', GRN, [(13, 16), (13, 17)]),
+    ('5 V do LSM6DS3', RED, [(15, 16), (15, 17)]),
+]
+TRANS_COL = {'VCC': RED, 'TX': RED, 'RX': YEL, 'GND': BLK, '3V3': ORG, 'CTX': ORG, 'CRX': YEL, 'CANH': BLU, 'CANL': BLU}
 # RT8272 (HW-108): 21 x 21 mm, fileiras a cerca de 17,8 mm (7 furos), medido em 07/11/2026.
 # Soldado na placa por barra de pinos, com a bobina embaixo à direita: EN, IN-, IN+ na coluna 8 (linhas 14 a 16);
 # OUT-, OUT+ na coluna 1 (linhas 20 e 21). Uma linha acima do desenho de 07/11, para caber o suporte do fusível. IN- e OUT- são o mesmo GND dentro do módulo; o EN fica sem ligação.
@@ -296,6 +349,29 @@ def tja_art(s):
         s.add(f'<path d="M{x:.2f},{y:.2f} L{tx:.2f},{ty:.2f}" stroke="#9e9e9e" stroke-width="0.45" stroke-linecap="round"/>')
 
 
+def sn65_art(s):
+    """Módulo WCMCU-230 (SN65HVD230) de 15,7 x 13,9 mm: barra de 6 pinos embaixo, chip e furos de fixação em cima."""
+    xs = [hp(c, r)[0] for c, r in SN_PINS.values()]
+    _, py = hp(*SN_PINS['3V3'])
+    x0 = (min(xs) + max(xs)) / 2 - SN_MM[0] / 2
+    y1 = py + 1.3
+    y0 = y1 - SN_MM[1]
+    s.add(f'<rect x="{x0:.2f}" y="{y0:.2f}" width="{SN_MM[0]}" height="{SN_MM[1]}" rx="0.6" fill="#1565c0" stroke="#0d47a1" stroke-width="0.3"/>')
+    for dx in (2.6, SN_MM[0] - 2.6):
+        s.add(f'<circle cx="{x0 + dx:.2f}" cy="{y0 + 2.6:.2f}" r="1.6" fill="#e3f2fd"/>')
+    s.add(f'<rect x="{x0 + 5.6:.2f}" y="{y0 + 1.0:.2f}" width="4.6" height="5.6" rx="0.3" fill="#212121"/>')
+    s.text(x0 + 7.9, y0 + 4.2, 'VP230', 0.9, '#eceff1', weight='bold')
+    s.add(f'<rect x="{x0 + 1.3:.2f}" y="{y0 + 6.6:.2f}" width="2.4" height="1.3" fill="#212121"/>')
+    s.text(x0 + 2.5, y0 + 9.0, '103', 0.75, '#e3f2fd')
+    s.add(f'<rect x="{x0 + 11.8:.2f}" y="{y0 + 6.6:.2f}" width="2.4" height="1.3" fill="#212121"/>')
+    s.text(x0 + 13.0, y0 + 9.0, '121', 0.75, '#e3f2fd')
+    s.text(x0 + SN_MM[0] / 2, y0 + 7.6, 'SN65HVD230', 0.95, '#eceff1', weight='bold')
+    for n, (c, r) in SN_PINS.items():
+        x, y = hp(c, r)
+        s.add(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="0.65" fill="#d4af37"/>')
+        s.text(x, y - 1.3, n, 0.7, '#fff', weight='bold')
+
+
 def buck_art(s):
     """Módulo HW-108 de 21 x 21 mm sobre a barra de pinos (bobina 4R7 embaixo à direita)."""
     x0 = hp(*BUCK_PINS['OUT-'])[0] - 1.5
@@ -338,16 +414,23 @@ def fuse_art(s):
 
 
 def bmp_header(s, labels):
-    """Barra de 4 pinos macho do conector do BMP180 (vista de cima)."""
+    """Barras de 4 pinos macho dos cabos do LSM6DS3 (linha 16) e do BMP180 (linha 17), vista de cima."""
+    for pins in (LSM_PINS, BMP_PINS):
+        xs = [hp(c, r)[0] for c, r in pins.values()]
+        _, y = hp(*pins['SDA'])
+        s.add(f'<rect x="{min(xs) - 1.27:.2f}" y="{y - 1.27:.2f}" width="{max(xs) - min(xs) + P:.2f}" height="{P:.2f}" rx="0.3" fill="#212121"/>')
+        for n, (c, r) in pins.items():
+            x, _ = hp(c, r)
+            s.add(f'<rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
     xs = [hp(c, r)[0] for c, r in BMP_PINS.values()]
-    _, y = hp(*BMP_PINS['SDA'])
-    s.add(f'<rect x="{min(xs) - 1.27:.2f}" y="{y - 1.27:.2f}" width="{max(xs) - min(xs) + P:.2f}" height="{P:.2f}" rx="0.3" fill="#212121"/>')
-    for n, (c, r) in BMP_PINS.items():
-        x, _ = hp(c, r)
-        s.add(f'<rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
-        if labels:
-            s.text(x, y - 1.9, n, 0.85, BMP_COL[n], weight='bold', bg=True)
-    s.text((min(xs) + max(xs)) / 2, y + (2.6 if labels else -1.7), 'BMP180 (cabo)', 0.95, '#00838f', weight='bold', bg=True)
+    _, yl = hp(*LSM_PINS['SDA'])
+    _, yb = hp(*BMP_PINS['SDA'])
+    if labels:
+        for n, (c, r) in LSM_PINS.items():
+            s.text(hp(c, r)[0], yl - 1.9, n, 0.85, BMP_COL[n], weight='bold', bg=True)
+        s.text((min(xs) + max(xs)) / 2, yb + 2.6, 'cabos: LSM6DS3 (16) e BMP180 (17)', 0.9, '#00838f', weight='bold', bg=True)
+    else:
+        s.text((min(xs) + max(xs)) / 2, yl - 1.7, 'cabos LSM6DS3 · BMP180', 0.95, '#00838f', weight='bold', bg=True)
 
 
 def view_top(stage, scale):
@@ -366,13 +449,19 @@ def view_top(stage, scale):
             resistor(s, a, b, n)
         for name, col, pts, _ in JUMPERS:
             jumper(s, pts, col, name)
-        for name, (c, r) in TJA_PINS.items():
+        for name, (c, r) in TRANS_PINS.items():
             x, y = hp(c, r)
             s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
-            s.text(x + 1.8, y + 0.45, name, 1.0, {'VCC': RED, 'TX': RED, 'RX': YEL, 'GND': BLK}[name], anchor='start', weight='bold', bg=True)
-        s.text(MX + 13.5 * P, MY + 19.5 * P, 'pinos do TJA1050', 1.15, '#1565c0', bg=True)
-        pad_mark(s, *CAN_HOLES['CANH'], BLU, 'CANH', 'above', size=0.9)
-        pad_mark(s, *CAN_HOLES['CANL'], BLU, 'CANL', 'below', size=0.9)
+            if SN_PINS:   # barra deitada: nome acima do pino
+                s.text(x, y - 1.8, name, 0.68, TRANS_COL[name], weight='bold', bg=True)
+            else:
+                s.text(x + 1.8, y + 0.45, name, 1.0, TRANS_COL[name], anchor='start', weight='bold', bg=True)
+        if SN_PINS:
+            s.text(MX + 14.5 * P, MY + 19.6 * P, 'pinos do SN65HVD230', 1.15, '#1565c0', bg=True)
+        else:
+            s.text(MX + 13.5 * P, MY + 19.5 * P, 'pinos do TJA1050', 1.15, '#1565c0', bg=True)
+            pad_mark(s, *CAN_HOLES['CANH'], BLU, 'CANH', 'above', size=0.9)
+            pad_mark(s, *CAN_HOLES['CANL'], BLU, 'CANL', 'below', size=0.9)
         for name, (c, r) in BUCK_PINS.items():
             x, y = hp(c, r)
             s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
@@ -393,7 +482,7 @@ def view_top(stage, scale):
             jumper(s, pts, col, name)
         buck_art(s)
         fuse_art(s)
-        tja_art(s)
+        sn65_art(s) if SN_PINS else tja_art(s)
         bmp_header(s, labels=False)
         esp32_art(s)
         for pin, (c, r) in OBD_PADS.items():
@@ -426,7 +515,7 @@ def view_bottom(scale):
         legs |= {a, b}
     for row in (2, 12):
         legs |= {(c, row) for c in range(2, 17)}
-    legs |= set(BUCK_PINS.values()) | set(TJA_PINS.values()) | set(CAN_HOLES.values()) | set(BMP_PINS.values())
+    legs |= set(BUCK_PINS.values()) | set(TRANS_PINS.values()) | set(CAN_HOLES.values()) | set(BMP_PINS.values()) | set(LSM_PINS.values())
     for c, r in legs:
         x, y = hp(c, r)
         s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')
@@ -443,6 +532,9 @@ def view_bottom(scale):
     labels = {'GND': (9, 19.5, BLK), '5 V': (13, 18, RED), 'RX': (14, 21, YEL), 'CAN-L': (18, 23.5, BLU), 'CANH': (18, 18.5, BLU), '12 V com fusível': (7.2, 20.5, PUR),
               'OUT+': (2, 18, RED), 'fusível': (FUSE_C[0], FUSE_C[1] + 1.3, PUR), '12 V': (10, 25.2, RED),
               'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG), 'BMP180': (13.5, 17.9, CYA)}
+    if SN_PINS:
+        labels.pop('RX')
+        labels.update({'CANH': (18, 19.5, BLU), 'CAN-L': (18.6, 25.2, BLU), '3V3 ': (17, 15.5, ORG), 'CRX': (15.6, 21.6, YEL)})
     for t, (c, r, col) in labels.items():
         x, y = MX + (c - 1) * P, MY + (r - 1) * P
         s.text(X(x), y + 0.5, t, 1.25, col, weight='bold', bg=True)
@@ -474,7 +566,11 @@ def schematic():
     buck = box(38, 4, 26, 18, 'RT8272 (5,0 V)', GRN, [('IN+', 'L', 0), ('IN−', 'L', 2), ('OUT+', 'R', 0), ('OUT−', 'R', 2)])
     esp = box(88, 4, 28, 34, 'ESP32 DevKit', '#283593', [('VIN', 'L', 0), ('GND', 'L', 1.5), ('3V3', 'L', 3), ('D21', 'L', 5), ('D25', 'R', 2), ('D26', 'R', 3)])
     bmp = box(126, 8, 21, 30, 'BMP180', CYA, [('SDA', 'L', 0.6), ('SCL', 'L', 1.6), ('VCC', 'L', 3), ('GND', 'L', 4)])
-    tja = box(38, 40, 26, 28, 'TJA1050', BLU, [('VCC', 'R', 0), ('TX', 'R', 1), ('GND', 'R', 2), ('RX', 'R', 3), ('CANH', 'L', 3.5), ('CANL', 'L', 4.6)])
+    lsm = box(126, 47, 21, 27, 'LSM6DS3', '#6a1b9a', [('SDA', 'L', 0), ('SCL', 'L', 1), ('VIN', 'L', 2.3), ('GND', 'L', 3.3)])
+    if SN_PINS:
+        tja = box(38, 40, 26, 28, 'SN65HVD230', BLU, [('3V3', 'R', 0), ('CTX', 'R', 1), ('GND', 'R', 2), ('CRX', 'R', 3), ('CANH', 'L', 3.5), ('CANL', 'L', 4.6)])
+    else:
+        tja = box(38, 40, 26, 28, 'TJA1050', BLU, [('VCC', 'R', 0), ('TX', 'R', 1), ('GND', 'R', 2), ('RX', 'R', 3), ('CANH', 'L', 3.5), ('CANL', 'L', 4.6)])
 
     def line(pts, col, w=0.55):
         d = ' '.join(f'{"M" if i == 0 else "L"}{x:.2f},{y:.2f}' for i, (x, y) in enumerate(pts))
@@ -502,7 +598,51 @@ def schematic():
     for p in ((30, y5), (34, gy), (72, gy), (30, gy)):
         dot(*p, BLK)
     s.text(55, gy - 1.0, 'GND', 1.8, BLK, weight='bold')
-    # 5 V: OUT+ → VIN, VCC e TX do TJA
+    if SN_PINS:
+        sn65_schematic(s, line, dot, buck, esp, tja)
+    else:
+        tja_schematic(s, line, dot, buck, esp, tja)
+    # CANH → R4 → 3V3
+    ch = tja['CANH']
+    line([ch, (33, ch[1]), (33, 69), (90, 69), (90, esp['3V3'][1]), esp['3V3']], ORG)
+    s.add(f'<rect x="{70}" y="{67.8}" width="6" height="2.4" fill="#fff" stroke="#8d6e63" stroke-width="0.4"/>')
+    s.text(73, 67.2, 'R4 1 kΩ (CANH em 3,3 V)', 1.6, '#5d4037')
+    # CAN-L
+    x14, y14 = obd['14 CAN-L']
+    line([(x14, y14), (28, y14), (28, tja['CANL'][1]), tja['CANL']], BLU)
+    # BMP180 no cabo: SDA no D25, SCL no D26, VCC no 5 V (regulador do GY-68)
+    line([esp['D25'], (121, esp['D25'][1]), (121, bmp['SDA'][1]), bmp['SDA']], CYA)
+    line([esp['D26'], (123, esp['D26'][1]), (123, bmp['SCL'][1]), bmp['SCL']], GRN)
+    for mod, pin, txt, col in ((bmp, 'VCC', '5 V', RED), (bmp, 'GND', 'GND', BLK), (lsm, 'VIN', '5 V', RED), (lsm, 'GND', 'GND', BLK)):
+        x, y = mod[pin]
+        line([(x - 6, y), (x, y)], col)
+        s.text(x - 6.5, y + 0.6, txt, 1.6, col, anchor='end', weight='bold')
+    # LSM6DS3 no mesmo I2C (outro cabo): SDA e SCL descem das linhas do BMP180
+    line([(121, bmp['SDA'][1]), (121, lsm['SDA'][1]), lsm['SDA']], CYA)
+    line([(123, bmp['SCL'][1]), (123, lsm['SCL'][1]), lsm['SCL']], GRN)
+    dot(121, bmp['SDA'][1], CYA)
+    dot(123, bmp['SCL'][1], GRN)
+    s.text(136.5, 42, 'nos cabos, longe do calor', 1.5, '#5d4037')
+    s.text(136.5, 76.5, 'CS no 3V3 e SA0 no GND, no módulo', 1.4, '#6a1b9a')
+    s.text(75, 1, 'Esquema de ligação (fora de escala)', 2.0, '#5d4037', weight='bold')
+    return s.svg()
+
+
+def sn65_schematic(s, line, dot, buck, esp, sn):
+    """3,3 V do ESP32 no 3V3 e no CTX (trava: nunca transmite) e CRX direto no D21, sem divisor."""
+    line([buck['OUT+'], (76, buck['OUT+'][1]), esp['VIN']], RED)
+    line([sn['3V3'], (82, sn['3V3'][1]), (82, esp['3V3'][1]), esp['3V3']], ORG)
+    line([sn['CTX'], (70, sn['CTX'][1]), (70, sn['3V3'][1])], ORG)
+    dot(70, sn['3V3'][1], ORG)
+    dot(82, esp['3V3'][1], ORG)
+    s.text(51, 73, 'CTX preso no 3,3 V: o transceptor nunca transmite', 1.6, ORG)
+    rx = sn['CRX']
+    line([rx, (85, rx[1]), (85, esp['D21'][1]), esp['D21']], YEL)
+    s.text(86, 52, 'CRX direto no D21 (sem divisor)', 1.5, '#5d4037', anchor='start')
+
+
+def tja_schematic(s, line, dot, buck, esp, tja):
+    """5 V no VCC e no TX (trava: nunca transmite) e o divisor R1, R2, R3 do RX até o D21."""
     line([buck['OUT+'], (76, buck['OUT+'][1]), esp['VIN']], RED)
     line([(76, buck['OUT+'][1]), (76, tja['VCC'][1]), tja['VCC']], RED)
     line([tja['TX'], (70, tja['TX'][1]), (70, tja['VCC'][1])], RED)
@@ -524,31 +664,13 @@ def schematic():
     line([(100, 63), (100, 66), (106, 66)], BLK)
     s.text(107, 66.6, 'GND', 1.6, BLK, anchor='start')
     s.text(102, 45, 'divisor 5 V → 3,3 V', 1.5, '#5d4037', anchor='start')
-    # CANH → R4 → 3V3
-    ch = tja['CANH']
-    line([ch, (33, ch[1]), (33, 69), (90, 69), (90, esp['3V3'][1]), esp['3V3']], ORG)
-    s.add(f'<rect x="{70}" y="{67.8}" width="6" height="2.4" fill="#fff" stroke="#8d6e63" stroke-width="0.4"/>')
-    s.text(73, 67.2, 'R4 1 kΩ (CANH em 3,3 V)', 1.6, '#5d4037')
-    # CAN-L
-    x14, y14 = obd['14 CAN-L']
-    line([(x14, y14), (28, y14), (28, tja['CANL'][1]), tja['CANL']], BLU)
-    # BMP180 no cabo: SDA no D25, SCL no D26, VCC no 5 V (regulador do GY-68)
-    line([esp['D25'], (121, esp['D25'][1]), (121, bmp['SDA'][1]), bmp['SDA']], CYA)
-    line([esp['D26'], (123, esp['D26'][1]), (123, bmp['SCL'][1]), bmp['SCL']], GRN)
-    for pin, txt, col in (('VCC', '5 V', RED), ('GND', 'GND', BLK)):
-        x, y = bmp[pin]
-        line([(x - 6, y), (x, y)], col)
-        s.text(x - 6.5, y + 0.6, txt, 1.6, col, anchor='end', weight='bold')
-    s.text(136.5, 44, 'no cabo, longe do calor', 1.5, '#5d4037')
-    s.text(75, 1, 'Esquema de ligação (fora de escala)', 2.0, '#5d4037', weight='bold')
-    return s.svg()
 
 
 if __name__ == '__main__':
     files = {
-        'esquema.svg': schematic(),
-        'etapa1.svg': view_top(1, 2.4), 'etapa2.svg': view_top(2, 2.4), 'baixo.svg': view_bottom(2.4),
-        'etapa1-real.svg': view_top(1, 1), 'etapa2-real.svg': view_top(2, 1), 'baixo-real.svg': view_bottom(1),
+        f'esquema{SUF}.svg': schematic(),
+        f'etapa1{SUF}.svg': view_top(1, 2.4), f'etapa2{SUF}.svg': view_top(2, 2.4), f'baixo{SUF}.svg': view_bottom(2.4),
+        f'etapa1{SUF}-real.svg': view_top(1, 1), f'etapa2{SUF}-real.svg': view_top(2, 1), f'baixo{SUF}-real.svg': view_bottom(1),
     }
     for name, text in files.items():
         with open(os.path.join(OUT, name), 'w', encoding='utf-8') as fh:
@@ -560,3 +682,7 @@ if __name__ == '__main__':
     print('ok:', ', '.join(files))
     import gerar_3d   # modelo 3D com as mesmas posições
     gerar_3d.main()
+    if 'PLACA_VARIANTE' not in os.environ:   # a versão alternativa, num processo próprio (as posições são globais)
+        import subprocess
+        import sys
+        subprocess.run([sys.executable, os.path.abspath(__file__)], env={**os.environ, 'PLACA_VARIANTE': 'sn65'}, check=True)

@@ -1,13 +1,23 @@
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
   <div>
     <h1 class="h3 mb-1">Placa da escuta CAN em 3D</h1>
-    <p class="text-body-secondary mb-0">ESP32, transceptor TJA1050 e conversor RT8272 numa placa ilhada de 5 × 7 cm. Posições do desenho; alturas estimadas.</p>
+    <p class="text-body-secondary mb-0">ESP32, transceptor {{transceptor}} e conversor RT8272 numa placa ilhada de 5 × 7 cm. Posições do desenho; alturas estimadas.</p>
   </div>
   <a class="btn btn-outline-secondary btn-sm" href="{{placaUrl}}" target="_blank" rel="noopener"><i class="fa-brands fa-github me-1" aria-hidden="true"></i>Desenhos e montagem</a>
 </div>
 
 <div class="card">
   <div class="card-body p-2 p-sm-3">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+      <span class="small text-body-secondary">Versão:</span>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Versão da placa">
+        <a class="btn btn-outline-primary{{#unless sn65}} active{{/unless}}" href="/projeto/placa"{{#unless sn65}} aria-current="page"{{/unless}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>TJA1050 (principal)</a>
+        <a class="btn btn-outline-primary{{#if sn65}} active{{/if}}" href="/projeto/placa?versao=sn65"{{#if sn65}} aria-current="page"{{/if}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>SN65HVD230 (alternativa)</a>
+      </div>
+    </div>
+    {{#if sn65}}
+    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>Versão alternativa: o SN65HVD230 trabalha em 3,3 V e dispensa o divisor do RX (R1, R2 e R3). O CTX fica preso no 3V3, então ele nunca transmite. Se a medida entre CANH e CANL der cerca de 120 Ω, tire o R2 ("121") do módulo. Ainda não testada no carro.</p>
+    {{/if}}
     <div class="d-flex flex-wrap align-items-center gap-2 gap-md-3 mb-2">
       <div class="btn-group btn-group-sm flex-wrap" role="group" aria-label="Vista">
         <button type="button" class="btn btn-outline-secondary" data-vista="perspectiva"><i class="fa-solid fa-cube me-1" aria-hidden="true"></i>Perspectiva</button>
@@ -28,10 +38,11 @@
         <summary><i class="fa-solid fa-list me-1" aria-hidden="true"></i>Legenda dos fios</summary>
         <div id="legenda3d-obd"></div>
         <div id="legenda3d-bmp"></div>
+        <div id="legenda3d-lsm"></div>
       </details>
     </div>
     <p id="aviso" class="alert alert-warning mt-2 mb-0" hidden>Não foi possível abrir o modelo: o navegador precisa de WebGL.</p>
     <p class="small text-body-secondary mt-2 mb-1"><i class="fa-solid fa-computer-mouse me-1" aria-hidden="true"></i>Arraste para girar, botão direito ou Shift + arrastar para mover, roda ou pinça para aproximar. Passe o mouse (ou toque) numa peça para ver o nome.</p>
-    <p class="small text-body-secondary mb-0"><i class="fa-solid fa-palette me-1" aria-hidden="true"></i>Fios: vermelho 12 V e 5 V · roxo 12 V com fusível · preto GND · laranja 3V3 · amarelo RX e D21 · azul CAN. Texturas desenhadas; alturas estimadas.</p>
+    <p class="small text-body-secondary mb-0"><i class="fa-solid fa-palette me-1" aria-hidden="true"></i>Fios: vermelho 12 V e 5 V · roxo 12 V com fusível · preto GND · laranja 3V3 · amarelo {{#if sn65}}CRX{{else}}RX{{/if}} e D21 · azul CAN. Texturas desenhadas; alturas estimadas.</p>
   </div>
 </div>
