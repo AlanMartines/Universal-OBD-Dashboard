@@ -65,7 +65,8 @@ function iniciar() {
 
   const chao = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShadowMaterial({ opacity: 0.16 }));
   chao.rotation.x = -Math.PI / 2;
-  chao.position.y = -1.6;
+  // abaixo de tudo, inclusive do sensor BMP180, que recebe o cabo por baixo
+  chao.position.y = Math.min(-1.6, X.bmp_modulo?.z_min ?? -1.6);
   chao.receiveShadow = true;
   scene.add(chao);
 
@@ -622,9 +623,14 @@ function iniciar() {
     // barra de 5 pinos do módulo e o conector fêmea do cabo
     const ys = B.pinos.map((p) => p.p[1]);
     const px = B.pinos[0].p[0];
-    g.add(caixa(P, A.MALE_H, Math.max(...ys) - Math.min(...ys) + P, M.preto, px, (Math.min(...ys) + Math.max(...ys)) / 2, topo));
-    g.add(caixa(P, B.housing, Math.max(...ys) - Math.min(...ys) + P, M.nylon, px, (Math.min(...ys) + Math.max(...ys)) / 2, topo + A.MALE_H));
-    for (const p of B.pinos) g.add(solda(p.p[0], p.p[1], B.z0, 0.7, 0.5, true));
+    // pinos para baixo: o cabo chega por baixo do sensor
+    const cy = (Math.min(...ys) + Math.max(...ys)) / 2, ly = Math.max(...ys) - Math.min(...ys) + P;
+    g.add(caixa(P, A.MALE_H, ly, M.preto, px, cy, B.z0 - A.MALE_H));
+    g.add(caixa(P, B.housing, ly, M.nylon, px, cy, B.z0 - A.MALE_H - B.housing));
+    for (const p of B.pinos) {
+      g.add(cilindro(W(p.p[0], p.p[1], B.z0 - A.MALE_H - B.housing + 2), W(p.p[0], p.p[1], topo + 0.6), 0.32, M.ouro, 4));
+      g.add(solda(p.p[0], p.p[1], topo, 0.7, 0.5, false));
+    }
     poe(g, 'bmp180', 'Sensor BMP180 (GY-68): pressão e temperatura, na ponta do cabo, longe do calor da placa');
     // cabo de 4 fios
     for (const f of B.cabo) {
