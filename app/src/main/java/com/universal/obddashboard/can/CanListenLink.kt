@@ -32,6 +32,7 @@ class CanListenLink(
     private fun handle(line: String) {
         onRaw?.invoke(line)
         Slcan.parseAmbient(line)?.let { onValues(it, System.currentTimeMillis()); return }
+        Slcan.parseImu(line)?.let { onValues(it, System.currentTimeMillis()); return }
         val frame = Slcan.parse(line) ?: return
         frames++
         val values = decoder.decode(frame)

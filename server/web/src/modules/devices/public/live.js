@@ -34,13 +34,23 @@
     can_fuel_lph: ['Consumo da injeção (painel)', 'L/h', 1],
     // Sensor BMP180 no ESP32 (no módulo, não na rede do carro)
     cabin_temp: ['Temperatura interna', '°C', 1], cabin_pressure: ['Pressão do ar', 'hPa', 1],
+    // Sensor de movimento LSM6DS3 no ESP32: leitura bruta (eixos do módulo) e o que o app calcula dela
+    imu_ax: ['Aceleração X (módulo)', 'g', 3], imu_ay: ['Aceleração Y (módulo)', 'g', 3], imu_az: ['Aceleração Z (módulo)', 'g', 3],
+    imu_gx: ['Rotação X (módulo)', '°/s', 1], imu_gy: ['Rotação Y (módulo)', '°/s', 1], imu_gz: ['Rotação Z (módulo)', '°/s', 1],
+    imu_peak: ['Pico de impacto (módulo)', 'g', 2],
+    'derived.accelG': ['Aceleração (frente)', 'g', 2], 'derived.lateralG': ['Aceleração lateral', 'g', 2],
+    'derived.slopePct': ['Inclinação da rua', '%', 1], 'derived.impactG': ['Impacto', 'g', 2],
+    'derived.bumps': ['Buracos e impactos', '', 0], 'derived.maxBrakeG': ['Frenagem máxima', 'g', 2],
+    'derived.maxAccelG': ['Arrancada máxima', 'g', 2], 'derived.maxLateralG': ['Curva máxima', 'g', 2],
+    'derived.imuStage': ['Calibração do movimento (0 a 2)', '', 0],
   };
   var HIGHLIGHTS = ['speed', 'rpm', 'coolant_temp', 'battery_volts'];
   // Valores que só valem com o motor rodando: sem transmissão, a última leitura (em geral, motor já
   // desligado) mostraria zeros enganosos. Tanque, hodômetro, temperaturas e tensão continuam valendo parado.
   var MOMENTARY = ['speed', 'rpm', 'can_speed', 'can_rpm', 'map', 'maf', 'throttle', 'engine_load', 'timing_advance',
     'stft_b1', 'ltft_b1', 'lambda_v', 'can_fuel_lph', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.estimatedLoadPct',
-    'derived.estimatedGear', 'derived.recommendedGear', 'derived.vacuumKpa'];
+    'derived.estimatedGear', 'derived.recommendedGear', 'derived.vacuumKpa',
+    'imu_ax', 'imu_ay', 'imu_az', 'imu_gx', 'imu_gy', 'imu_gz', 'imu_peak', 'derived.accelG', 'derived.lateralG', 'derived.impactG'];
   function momentary(id) { return MOMENTARY.indexOf(id) >= 0 || /^lambda_/.test(id); }
   var shown = {};
   var isStale = false;
@@ -90,6 +100,8 @@
     ['Combustível', ['fuel_level_pct', 'can_fuel_lph', 'derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
     ['Viagem', ['can_speed', 'trip_distance_km', 'derived.tripDistanceKm', 'trip_km', 'odometer_km']],
     ['Elétrica', ['can_voltage']],
+    ['Movimento', ['derived.accelG', 'derived.lateralG', 'derived.slopePct', 'derived.impactG', 'derived.bumps', 'derived.maxBrakeG',
+      'derived.maxAccelG', 'derived.maxLateralG', 'derived.imuStage', 'imu_ax', 'imu_ay', 'imu_az', 'imu_gx', 'imu_gy', 'imu_gz', 'imu_peak']],
     ['Ambiente', ['cabin_temp', 'cabin_pressure', 'intake_temp']],
     ['Outros', []],
   ];

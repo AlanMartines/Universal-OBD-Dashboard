@@ -34,6 +34,19 @@ class CanListenTest {
         assertNull("não é quadro", Slcan.parse("# bmp180 temp=24.3C pressao=1013.2hPa"))
     }
 
+    @Test fun parsesLsm6ds3Line() {
+        val v = Slcan.parseImu("# lsm6ds3 ax=0.012 ay=-0.034 az=0.998 gx=0.1 gy=-0.2 gz=0.0 pico=0.15")!!
+        assertEquals(0.012, v[Slcan.IMU_AX]!!, 1e-9)
+        assertEquals(-0.034, v[Slcan.IMU_AY]!!, 1e-9)
+        assertEquals(0.998, v[Slcan.IMU_AZ]!!, 1e-9)
+        assertEquals(-0.2, v[Slcan.IMU_GY]!!, 1e-9)
+        assertEquals(0.15, v[Slcan.IMU_PEAK]!!, 1e-9)
+        assertNull("fora da faixa do sensor", Slcan.parseImu("# lsm6ds3 ax=9.000 ay=0.000 az=1.000 gx=0.0 gy=0.0 gz=0.0 pico=0.00"))
+        assertNull(Slcan.parseImu("# lsm6ds3 ausente"))
+        assertNull(Slcan.parseImu("# lsm6ds3 ok em 0x6A (id 0x69)"))
+        assertNull("não é quadro", Slcan.parse("# lsm6ds3 ax=0.012 ay=-0.034 az=0.998 gx=0.1 gy=-0.2 gz=0.0 pico=0.15"))
+    }
+
     @Test fun unoProfileDecodesConfirmedSignals() {
         assertEquals(56.0, decode("t2A04038000DE")["can_speed"]!!, 1e-9)
         assertEquals(39.0, decode("t3808000000000027FF00")["fuel_level_pct"]!!, 1e-9)

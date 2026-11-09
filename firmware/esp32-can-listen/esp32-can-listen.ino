@@ -23,6 +23,14 @@
  * temperatura e pressão do lugar onde o módulo está, a cada AMB_MS, numa linha de estado
  *   # bmp180 temp=24.3C pressao=1013.2hPa
  * Sem o sensor ligado, aparece uma vez "# bmp180 ausente" e o resto segue igual.
+ *
+ * Sensor opcional LSM6DS3 (acelerômetro e giroscópio, módulo de 13 x 18 mm) no mesmo I2C, endereço 0x6A
+ * (SA0 no GND) ou 0x6B, com CS no 3V3. Lido a 50 Hz; a cada IMU_MS sai a média do intervalo e o maior
+ * desvio da gravidade (buracos e impactos):
+ *   # lsm6ds3 ax=0.012 ay=-0.034 az=0.998 gx=0.1 gy=-0.2 gz=0.0 pico=0.15
+ * ax, ay e az em g (gravidade); gx, gy e gz em graus por segundo; pico em g. Os eixos são os impressos no
+ * módulo: o app converte para frente, lado e cima do carro depois de calibrar com o carro parado.
+ * Sem o sensor, aparece uma vez "# lsm6ds3 ausente". No descanso, o sensor também desliga.
  * Placa: "ESP32 Dev Module", no pacote esp32 da Espressif. Guia: docs/can-escuta.md.
  */
 #include <BluetoothSerial.h>
@@ -51,8 +59,15 @@ const int I2C_SCL = 26;
 const uint8_t BMP_ADDR = 0x77;
 const unsigned long AMB_MS = 5000;   // o app descarta leituras com mais de 10 s
 
+// LSM6DS3 (opcional), no mesmo I2C. Leitura a 50 Hz, uma linha a cada IMU_MS (média e pico do intervalo).
+const uint8_t LSM_ADDRS[] = {0x6A, 0x6B};  // SA0 no GND ou no 3V3
+const unsigned long IMU_SAMPLE_MS = 20;
+const unsigned long IMU_MS = 200;
+
 BluetoothSerial bt;
 unsigned long lastAmb = 0;
+unsigned long lastImuSample = 0;
+unsigned long lastImu = 0;
 unsigned long lastStats = 0;
 unsigned long lastFrame = 0;
 unsigned long frames = 0;
@@ -87,6 +102,8 @@ void startListening() {
   sendLine("# listen-only 50 kbps");
 }
 
+void lsmSleep();
+
 // Dorme até a rede CAN acordar. Na volta, reinicia: Bluetooth e TWAI começam do zero.
 void rest() {
   char line[64];
@@ -97,6 +114,7 @@ void rest() {
   twai_stop();
   twai_driver_uninstall();
   bt.end();
+  lsmSleep();
   // RX como entrada simples: repouso (recessivo) é nível alto; o primeiro bit dominante (baixo) acorda.
   gpio_reset_pin(RX_PIN);
   gpio_set_direction(RX_PIN, GPIO_MODE_INPUT);
@@ -130,7 +148,6 @@ bool bmpWrite(uint8_t reg, uint8_t value) {
 }
 
 void bmpBegin() {
-  Wire.begin(I2C_SDA, I2C_SCL, 100000);
   uint8_t id = 0, c[22];
   if (!bmpRead(0xD0, &id, 1) || id != 0x55 || !bmpRead(0xAA, c, 22)) {
     sendLine("# bmp180 ausente");
@@ -193,6 +210,97 @@ void sendAmbient() {
   sendLine(line);
 }
 
+// ---------- LSM6DS3: acelerômetro (±4 g) e giroscópio (±250 °/s) a 104 Hz, lidos direto pelos registradores ----------
+uint8_t lsmAddr = 0;
+const float LSM_G_PER_LSB = 0.000122f;    // ±4 g: 0,122 mg por unidade
+const float LSM_DPS_PER_LSB = 0.00875f;   // ±250 °/s: 8,75 m°/s por unidade
+float imuSum[6];
+float imuPeak = 0;
+int imuCount = 0;
+
+bool lsmRead(uint8_t reg, uint8_t *buf, uint8_t n) {
+  Wire.beginTransmission(lsmAddr);
+  Wire.write(reg);
+  if (Wire.endTransmission(false) != 0) return false;
+  if (Wire.requestFrom(lsmAddr, n) != n) return false;
+  for (uint8_t i = 0; i < n; i++) buf[i] = Wire.read();
+  return true;
+}
+
+bool lsmWrite(uint8_t reg, uint8_t value) {
+  Wire.beginTransmission(lsmAddr);
+  Wire.write(reg);
+  Wire.write(value);
+  return Wire.endTransmission() == 0;
+}
+
+void lsmBegin() {
+  for (uint8_t addr : LSM_ADDRS) {
+    lsmAddr = addr;
+    uint8_t id = 0;
+    // WHO_AM_I: 0x69 no LSM6DS3, 0x6A no LSM6DS3TR-C (o mesmo mapa de registradores para o que usamos)
+    if (!lsmRead(0x0F, &id, 1)) continue;
+    if (id != 0x69 && id != 0x6A) {
+      char line[48];
+      snprintf(line, sizeof(line), "# lsm6ds3 id desconhecido 0x%02X em 0x%02X", id, addr);
+      sendLine(line);
+      continue;
+    }
+    // CTRL3_C: BDU (dado só troca inteiro) e endereço automático; CTRL1_XL: 104 Hz, ±4 g; CTRL2_G: 104 Hz, ±250 °/s
+    if (lsmWrite(0x12, 0x44) && lsmWrite(0x10, 0x48) && lsmWrite(0x11, 0x40)) {
+      char line[48];
+      snprintf(line, sizeof(line), "# lsm6ds3 ok em 0x%02X (id 0x%02X)", addr, id);
+      sendLine(line);
+      return;
+    }
+  }
+  lsmAddr = 0;
+  sendLine("# lsm6ds3 ausente");
+}
+
+// Desliga acelerômetro e giroscópio (power-down) antes do descanso.
+void lsmSleep() {
+  if (!lsmAddr) return;
+  lsmWrite(0x10, 0x00);
+  lsmWrite(0x11, 0x00);
+}
+
+// Uma amostra: giroscópio (OUTX_L_G em diante) e acelerômetro, 12 bytes de uma vez.
+void lsmSample() {
+  uint8_t b[12];
+  if (!lsmRead(0x22, b, 12)) return;
+  float v[6];
+  for (int i = 0; i < 6; i++) {
+    int16_t raw = (int16_t)((b[2 * i + 1] << 8) | b[2 * i]);
+    v[i] = raw * (i < 3 ? LSM_DPS_PER_LSB : LSM_G_PER_LSB);
+  }
+  // v[0..2] = giroscópio (°/s), v[3..5] = acelerômetro (g)
+  for (int i = 0; i < 6; i++) imuSum[i] += v[i];
+  float mag = sqrtf(v[3] * v[3] + v[4] * v[4] + v[5] * v[5]);
+  float dev = fabsf(mag - 1.0f);
+  if (dev > imuPeak) imuPeak = dev;
+  imuCount++;
+}
+
+void sendImu() {
+  if (imuCount == 0) {   // nenhuma leitura no intervalo: avisa no máximo a cada 5 s
+    static unsigned long lastWarn = 0;
+    if (millis() - lastWarn >= 5000) {
+      lastWarn = millis();
+      sendLine("# lsm6ds3 sem resposta");
+    }
+    return;
+  }
+  float n = imuCount;
+  char line[112];
+  snprintf(line, sizeof(line), "# lsm6ds3 ax=%.3f ay=%.3f az=%.3f gx=%.1f gy=%.1f gz=%.1f pico=%.2f",
+           imuSum[3] / n, imuSum[4] / n, imuSum[5] / n, imuSum[0] / n, imuSum[1] / n, imuSum[2] / n, imuPeak);
+  sendLine(line);
+  for (float &x : imuSum) x = 0;
+  imuPeak = 0;
+  imuCount = 0;
+}
+
 void sendFrame(const twai_message_t &m) {
   bool ext = m.flags & TWAI_MSG_FLAG_EXTD;
   bool rtr = m.flags & TWAI_MSG_FLAG_RTR;
@@ -209,9 +317,11 @@ void setup() {
   restMark = 0;
   Serial.begin(500000);
   if (!bt.begin(BT_NAME)) Serial.println("# ERRO Bluetooth nao iniciou; seguindo so pela USB");
-  sendLine("# esp32-can-listen 1.2");
+  sendLine("# esp32-can-listen 1.3");
   if (woke) sendLine("# acordou: atividade na rede CAN");
+  Wire.begin(I2C_SDA, I2C_SCL, 100000);   // BMP180 e LSM6DS3 dividem o mesmo I2C
   bmpBegin();
+  lsmBegin();
   startListening();
   lastFrame = millis();
 }
@@ -227,6 +337,15 @@ void loop() {
   unsigned long now = millis();
   // Só dorme com a linha em repouso; se o RX estiver preso em nível baixo, acordaria na hora.
   if (REST_ENABLED && now - lastFrame >= IDLE_MS && gpio_get_level(RX_PIN) == 1) rest();
+
+  if (lsmAddr && now - lastImuSample >= IMU_SAMPLE_MS) {
+    lastImuSample = now;
+    lsmSample();
+  }
+  if (lsmAddr && now - lastImu >= IMU_MS) {
+    lastImu = now;
+    sendImu();
+  }
 
   if (bmpOk && now - lastAmb >= AMB_MS) {
     lastAmb = now;
