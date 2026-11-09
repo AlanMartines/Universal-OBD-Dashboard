@@ -419,8 +419,8 @@ function iniciar() {
     poe(g, 'esp32', 'ESP32 DevKit V1 (30 pinos), encaixado nas barras fêmea');
   }
 
-  // ------------------------------------------------------------ TJA1050
-  {
+  // ------------------------------------------------------------ TJA1050 (versão principal)
+  if (X.tja) {
     const T = X.tja;
     const g = new THREE.Group();
     const z = A.MOD_Z, topo = A.MOD_Z + A.MOD_T;
@@ -476,6 +476,43 @@ function iniciar() {
       poe(perna, 'modulos', `Perna do ${p.n}: do pino do TJA1050 até a ilha (${p.n === 'CANH' ? '18,20' : '18,21'})`);
     }
     barraMacho(T.pinos.map((p) => p.p), topo, 'modulos', 'Barra de 4 pinos do TJA1050: VCC, TX, RX, GND');
+  }
+
+  // ------------------------------------------------------------ SN65HVD230 (versão alternativa, módulo WCMCU-230)
+  if (X.sn65) {
+    const S = X.sn65;
+    const g = new THREE.Group();
+    const z = A.MOD_Z, topo = A.MOD_Z + A.MOD_T;
+    const tex = textura(S.l, S.w, (ctx) => {
+      ctx.fillStyle = '#0f4fae';
+      ctx.fillRect(0, 0, S.l, S.w);
+      // trilhas do módulo: dos pinos ao chip
+      S.pinos.forEach((p, k) => {
+        const px = p.p[0] - S.x0, py = p.p[1] - S.y0;
+        trilhaTex(ctx, [[px, py - 0.9], [px, 8.4], [5.6 + Math.min(k, 3) * 1.27, 6.6]], 'rgba(120,180,255,0.45)', 0.26);
+        ilha(ctx, px, py, 0.85, k === 0);
+        texto(ctx, p.n, px, py - 2.6, 0.72, '#ffffff', { rot: -Math.PI / 2 });
+      });
+      for (const hx of [2.6, S.l - 2.6]) {
+        ctx.fillStyle = '#e3c06a';
+        ctx.beginPath();
+        ctx.arc(hx, 2.6, 1.9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0c1a2e';
+        ctx.beginPath();
+        ctx.arc(hx, 2.6, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      texto(ctx, 'R1', 3.3, 5.6, 0.6, '#ffffff');
+      texto(ctx, 'R2', 13.0, 5.6, 0.6, '#ffffff');
+      contorno(ctx, 5.3, 0.8, 5.2, 6.0, 'rgba(255,255,255,0.8)', 0.12);
+    });
+    g.add(placaModulo(S.x0, S.y0, S.l, S.w, z, A.MOD_T, PCB.tja, tex));
+    g.add(sop8(S.x0 + 7.9, S.y0 + 3.8, topo, ['VP230', '83M'], true));
+    g.add(smd(S.x0 + 2.5, S.y0 + 7.25, topo, 2.0, 1.25, M.resistor, false, '103'));
+    g.add(smd(S.x0 + 13.0, S.y0 + 7.25, topo, 2.0, 1.25, M.resistor, false, '121'));
+    poe(g, 'modulos', 'SN65HVD230 (WCMCU-230): transceptor CAN em 3,3 V, só escuta (CTX preso no 3V3). O R2 "121" sai se medir 120 Ω entre CANH e CANL');
+    barraMacho(S.pinos.map((p) => p.p), topo, 'modulos', 'Barra de 6 pinos do SN65HVD230: 3V3, GND, CTX, CRX, CANH, CANL');
   }
 
   // ------------------------------------------------------------ RT8272

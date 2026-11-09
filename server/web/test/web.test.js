@@ -128,8 +128,9 @@ describe('arquivos', () => {
   test('página da placa usa o mesmo modelo 3D da pasta do veículo', () => {
     const placa = join(HERE, '../../../veiculos/fiat-uno-vivace-2012/placa');
     if (!existsSync(placa)) return;
-    const name = 'modelo3d-dados.js';
-    assert.ok(readFileSync(join(HERE, '../src/modules/projeto/public', name)).equals(readFileSync(join(placa, name))), `${name}: rode gerar_placa.py`);
+    for (const name of ['modelo3d-dados.js', 'modelo3d-sn65-dados.js']) {
+      assert.ok(readFileSync(join(HERE, '../src/modules/projeto/public', name)).equals(readFileSync(join(placa, name))), `${name}: rode gerar_placa.py`);
+    }
   });
 
   test('cada módulo publica o próprio JS e CSS', async () => {
@@ -197,6 +198,12 @@ describe('fluxo pelo navegador', () => {
       assert.ok(placa.includes(`src="${src}?v=`), src);
       assert.equal((await web.inject({ method: 'GET', url: src })).statusCode, 200, src);
     }
+    // versão alternativa com o SN65HVD230: outro arquivo de dados; valor desconhecido cai na principal
+    const sn65 = (await web.inject({ method: 'GET', url: '/projeto/placa?versao=sn65' })).body;
+    assert.ok(sn65.includes('src="/modules/projeto/modelo3d-sn65-dados.js?v=') && sn65.includes('SN65HVD230'));
+    assert.equal((await web.inject({ method: 'GET', url: '/modules/projeto/modelo3d-sn65-dados.js' })).statusCode, 200);
+    const outra = (await web.inject({ method: 'GET', url: '/projeto/placa?versao=xyz' })).body;
+    assert.ok(outra.includes('src="/modules/projeto/modelo3d-dados.js?v=') && !outra.includes('modelo3d-sn65'));
     // Three.js local: só os dois arquivos que o visor importa
     for (const [url, status] of [['/vendor/three/three.module.js', 200], ['/vendor/three/three.core.js', 200], ['/vendor/three/three.cjs', 404]]) {
       assert.equal((await web.inject({ method: 'GET', url })).statusCode, status, url);

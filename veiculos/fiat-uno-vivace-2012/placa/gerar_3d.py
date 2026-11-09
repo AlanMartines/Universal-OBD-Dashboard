@@ -117,26 +117,45 @@ for row in (2, 12):
         x, y = xy(c, row)
         cyl('esp32', GOLD, (x, y, T + FEM_H - 1.0), (x, y, top + 0.8), 0.32)
 
-# ---------------------------------------------------------------- TJA1050 (22 x 11 mm, barra de 4 pinos)
-vx, vy = xy(*g.TJA_PINS['VCC'])
-_, gy = xy(*g.TJA_PINS['GND'])
-box('modulos', '#111111', vx - P / 2, vy - P / 2, T, P, 4 * P, MALE_H)
-for c, r in g.TJA_PINS.values():
-    x, y = xy(c, r)
-    cyl('modulos', GOLD, (x, y, -1.0), (x, y, MOD_Z + MOD_T + 0.6), 0.32)
-tx0 = vx - 1.2
-yc = (vy + gy) / 2
-ty0 = yc - g.TJA_MM[1] / 2
-box('modulos', '#1565c0', tx0, ty0, MOD_Z, g.TJA_MM[0], g.TJA_MM[1], MOD_T)
-mt = MOD_Z + MOD_T
-box('modulos', '#212121', tx0 + 5.0, yc - 2.6, mt, 5.6, 5.2, 1.5)
-box('modulos', '#212121', tx0 + 12.4, ty0 + 1.0, mt, 2.4, 1.4, 0.5)
-for dy in (1.8, g.TJA_MM[1] - 1.8):
-    cyl('modulos', '#e3f2fd', (tx0 + g.TJA_MM[0] - 2.9, ty0 + dy, mt), (tx0 + g.TJA_MM[0] - 2.9, ty0 + dy, mt + 0.05), 1.1)
-for n, (c, r) in g.TJA_CAN.items():   # CANH e CANL: perna curta do pino até a ilha da coluna 18
-    x, y = xy(c, r)
-    hx, hy = xy(*g.CAN_HOLES[n])
-    tube('modulos', SILVER, [(x, y, mt + 0.6), (x, y, T + 1.4), (hx, hy, T), (hx, hy, -0.8)], 0.3)
+# ---------------------------------------------------------------- Transceptor: TJA1050 (22 x 11 mm, barra de 4 pinos) ou SN65HVD230
+tx0 = ty0 = sx0 = sy0 = 0.0
+if g.TJA_PINS:
+    vx, vy = xy(*g.TJA_PINS['VCC'])
+    _, gy = xy(*g.TJA_PINS['GND'])
+    box('modulos', '#111111', vx - P / 2, vy - P / 2, T, P, 4 * P, MALE_H)
+    for c, r in g.TJA_PINS.values():
+        x, y = xy(c, r)
+        cyl('modulos', GOLD, (x, y, -1.0), (x, y, MOD_Z + MOD_T + 0.6), 0.32)
+    tx0 = vx - 1.2
+    yc = (vy + gy) / 2
+    ty0 = yc - g.TJA_MM[1] / 2
+    box('modulos', '#1565c0', tx0, ty0, MOD_Z, g.TJA_MM[0], g.TJA_MM[1], MOD_T)
+    mt = MOD_Z + MOD_T
+    box('modulos', '#212121', tx0 + 5.0, yc - 2.6, mt, 5.6, 5.2, 1.5)
+    box('modulos', '#212121', tx0 + 12.4, ty0 + 1.0, mt, 2.4, 1.4, 0.5)
+    for dy in (1.8, g.TJA_MM[1] - 1.8):
+        cyl('modulos', '#e3f2fd', (tx0 + g.TJA_MM[0] - 2.9, ty0 + dy, mt), (tx0 + g.TJA_MM[0] - 2.9, ty0 + dy, mt + 0.05), 1.1)
+    for n, (c, r) in g.TJA_CAN.items():   # CANH e CANL: perna curta do pino até a ilha da coluna 18
+        x, y = xy(c, r)
+        hx, hy = xy(*g.CAN_HOLES[n])
+        tube('modulos', SILVER, [(x, y, mt + 0.6), (x, y, T + 1.4), (hx, hy, T), (hx, hy, -0.8)], 0.3)
+
+if g.SN_PINS:   # WCMCU-230 (SN65HVD230), 15,7 x 13,9 mm, barra de 6 pinos na borda de baixo, deitado para cima
+    sxs = [xy(*cr)[0] for cr in g.SN_PINS.values()]
+    _, spy = xy(*g.SN_PINS['3V3'])
+    box('modulos', '#111111', min(sxs) - P / 2, spy - P / 2, T, 6 * P, P, MALE_H)
+    for c, r in g.SN_PINS.values():
+        x, y = xy(c, r)
+        cyl('modulos', GOLD, (x, y, -1.0), (x, y, MOD_Z + MOD_T + 0.6), 0.32)
+    sx0 = (min(sxs) + max(sxs)) / 2 - g.SN_MM[0] / 2
+    sy0 = spy + 1.3 - g.SN_MM[1]
+    box('modulos', '#1565c0', sx0, sy0, MOD_Z, g.SN_MM[0], g.SN_MM[1], MOD_T)
+    mt = MOD_Z + MOD_T
+    box('modulos', '#212121', sx0 + 5.6, sy0 + 1.0, mt, 4.6, 5.6, 1.5)          # chip SOIC-8 (VP230)
+    box('modulos', '#212121', sx0 + 1.3, sy0 + 6.6, mt, 2.4, 1.3, 0.5)          # R1 (103)
+    box('modulos', '#212121', sx0 + 11.8, sy0 + 6.6, mt, 2.4, 1.3, 0.5)         # R2 (121)
+    for dx in (2.6, g.SN_MM[0] - 2.6):
+        cyl('modulos', '#e3f2fd', (sx0 + dx, sy0 + 2.6, mt), (sx0 + dx, sy0 + 2.6, mt + 0.05), 1.6)
 
 # ---------------------------------------------------------------- RT8272 (HW-108, 21 x 21 mm)
 ex, ey = xy(*g.BUCK_PINS['EN'])
@@ -291,7 +310,7 @@ for _, a, b, _ in g.RES:
     legs |= {a, b}
 for row in (2, 12):
     legs |= {(c, row) for c in range(2, 17)}
-legs |= set(g.BUCK_PINS.values()) | set(g.TJA_PINS.values()) | set(g.OBD_PADS.values()) | set(g.CAN_HOLES.values()) | set(g.BMP_PINS.values())
+legs |= set(g.BUCK_PINS.values()) | set(g.TRANS_PINS.values()) | set(g.OBD_PADS.values()) | set(g.CAN_HOLES.values()) | set(g.BMP_PINS.values())
 for _, _, pts, _ in g.JUMPERS:
     legs |= {p for p in (pts[0], pts[-1]) if is_hole(*p)}
 for track_pts in [t[2] for t in g.TRACKS]:
@@ -346,9 +365,12 @@ def obd_cable():
 DET = {
     'alturas': {'T': T, 'FEM_H': FEM_H, 'MALE_H': MALE_H, 'ESP_Z': ESP_Z, 'MOD_Z': MOD_Z, 'MOD_T': MOD_T, 'WIRE_Z': WIRE_Z, 'BOT_Z': BOT_Z, 'FUSE_H': FUSE_H},
     'esp32': {'x0': round(x0, 3), 'y0': round(y0, 3), 'l': g.ESP_L, 'w': g.ESP_W, 'pinos': esp_pins()},
+    'versao': g.VARIANTE,
     'tja': {'x0': round(tx0, 3), 'y0': round(ty0, 3), 'l': g.TJA_MM[0], 'w': g.TJA_MM[1],
             'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.TJA_PINS.items()],
-            'can': [{'n': n, 'p': rr(xy(*cr)), 'furo': rr(xy(*g.CAN_HOLES[n]))} for n, cr in g.TJA_CAN.items()]},
+            'can': [{'n': n, 'p': rr(xy(*cr)), 'furo': rr(xy(*g.CAN_HOLES[n]))} for n, cr in g.TJA_CAN.items()]} if g.TJA_PINS else None,
+    'sn65': {'x0': round(sx0, 3), 'y0': round(sy0, 3), 'l': g.SN_MM[0], 'w': g.SN_MM[1],
+             'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.SN_PINS.items()]} if g.SN_PINS else None,
     'rt': {'x0': round(bx0, 3), 'y0': round(by0, 3), 'lado': g.BUCK_MM, 'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.BUCK_PINS.items()]},
     'resistores': [{'n': f'{name} 1 kΩ: {desc}', 'a': rr(xy(*a)), 'b': rr(xy(*b))} for name, a, b, desc in g.RES],
     'fusivel': {'c': rr((fcx, fcy)), 'w': fw, 'd': fd, 'h': FUSE_H, 'corpo': fb, 'pes': FUSE_FEET, 'tampa': FUSE_CAP,
@@ -369,7 +391,7 @@ DET = {
 }
 
 GRID = {'cols': g.COLS, 'rows': g.ROWS, 'mx': round(g.MX, 3), 'my': round(g.MY, 3), 'p': P, 't': T}
-LAYERS = [('esp32', 'ESP32'), ('modulos', 'TJA1050 e RT8272'), ('fusivel', 'Fusível'), ('bmp180', 'BMP180'), ('fios', 'Fios por cima'), ('trilhas', 'Trilhas por baixo')]
+LAYERS = [('esp32', 'ESP32'), ('modulos', f'{g.TRANS_NOME} e RT8272'), ('fusivel', 'Fusível'), ('bmp180', 'BMP180'), ('fios', 'Fios por cima'), ('trilhas', 'Trilhas por baixo')]
 
 
 # ---------------------------------------------------------------- Saídas
@@ -377,10 +399,10 @@ def write_js():
     data = {'W': g.W, 'H': g.H, 'grid': GRID, 'layers': LAYERS, 'parts': parts, 'detalhe': DET}
     text = ('// Gerado por gerar_3d.py: não edite à mão.\n'
             'window.PLACA3D = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
-    with open(os.path.join(OUT, 'modelo3d-dados.js'), 'w', encoding='utf-8') as fh:
+    with open(os.path.join(OUT, f'modelo3d{g.SUF}-dados.js'), 'w', encoding='utf-8') as fh:
         fh.write(text)
     if os.path.isdir(WEB):
-        with open(os.path.join(WEB, 'modelo3d-dados.js'), 'w', encoding='utf-8') as fh:
+        with open(os.path.join(WEB, f'modelo3d{g.SUF}-dados.js'), 'w', encoding='utf-8') as fh:
             fh.write(text)
 
 
@@ -428,14 +450,14 @@ def write_scad():
     out.append('ilhas();')
     for key, _ in LAYERS:
         out.append(f'if (mostrar_{key}) camada_{key}();')
-    with open(os.path.join(OUT, 'modelo3d.scad'), 'w', encoding='utf-8') as fh:
+    with open(os.path.join(OUT, f'modelo3d{g.SUF}.scad'), 'w', encoding='utf-8') as fh:
         fh.write('\n'.join(out) + '\n')
 
 
 def main():
     write_js()
     write_scad()
-    print(f'ok: modelo3d-dados.js, modelo3d.scad ({len(parts)} peças)')
+    print(f'ok: modelo3d{g.SUF}-dados.js, modelo3d{g.SUF}.scad ({len(parts)} peças)')
 
 
 if __name__ == '__main__':

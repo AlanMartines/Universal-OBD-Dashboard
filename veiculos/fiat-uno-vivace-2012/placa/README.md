@@ -122,6 +122,31 @@ As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 
 
 **Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (9,24), (11,24), (2,13), (16,12), (11,21), (18,20), (18,21), (12,17), (13,17) ou (15,17). Entre (18,20) e (18,21) também não pode haver continuidade. Sem o fusível no suporte, (9,24) e (1,24) não têm continuidade entre si; com ele, têm. Com o ESP32 fora das barras e o J3 ainda fora da placa, regule a saída em 5,0 V. Depois de soldar o J3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
 
+## Versão alternativa com o SN65HVD230
+
+Os mesmos desenhos e o mesmo modelo 3D, com o SN65HVD230 (módulo WCMCU-230) no lugar do TJA1050, ficam nos arquivos terminados em `-sn65`: [`esquema-sn65.svg`](esquema-sn65.svg), [`etapa1-sn65.svg`](etapa1-sn65.svg), [`etapa2-sn65.svg`](etapa2-sn65.svg), [`baixo-sn65.svg`](baixo-sn65.svg) (e os `-real` para imprimir em 100%), [`modelo3d-sn65.scad`](modelo3d-sn65.scad) e `modelo3d-sn65-dados.js`. No painel, a página `/projeto/placa?versao=sn65`. O `gerar_placa.py` gera as duas versões. A ligação é a de [ligacao-can.md](../ligacao-can.md#alternativa-com-sn65hvd230) e ainda não foi testada no carro.
+
+![Esquema da versão com o SN65HVD230](esquema-sn65.svg)
+
+![Etapa 1 da versão com o SN65HVD230](etapa1-sn65.svg)
+
+![Etapa 2 da versão com o SN65HVD230](etapa2-sn65.svg)
+
+![Vista de baixo da versão com o SN65HVD230](baixo-sn65.svg)
+
+O que muda em relação à versão principal (fusível, RT8272, BMP180 e cabo OBD ficam iguais):
+
+- **Sem divisor do RX:** o módulo trabalha em 3,3 V, então R1, R2 e R3 saem. Fica só o R4 (3V3 → CANH).
+- **SN65HVD230:** barra de 6 pinos na linha 23, colunas 13 a 18: 3V3 (13,23), GND (14,23), CTX (15,23), CRX (16,23), CANH (17,23) e CANL (18,23). O módulo fica deitado para cima, entre o conector do BMP180 e o cabo OBD.
+- **Alimentação em 3,3 V:** trilha de 3V3 do pino 3V3 do ESP32 (16,2) por (17,2), descendo a coluna 17 até a linha 20 e indo até o 3V3 do módulo (13,23). O CTX (15,23) fica ligado nessa mesma trilha: é a trava física, o transceptor nunca transmite.
+- **CRX direto no D21:** fio J1 de (7,3) pela linha 3 e pela coluna 17 (por cima da placa, embaixo do ESP32 e do módulo) até (16,22), que liga no CRX (16,23) por baixo.
+- **CANH:** J2 igual ao da versão principal, até (18,17), e por baixo (18,17) → (18,22) → (17,22) → CANH (17,23).
+- **CANL:** (18,23) → (18,24), o pino 14 do cabo OBD.
+- **GND:** (15,12) → (15,13) → (9,13) → (9,22) → (12,22) → (12,24) → (14,24) → GND do módulo (14,23).
+- **R2 "121" do módulo:** neste módulo ele costuma ficar ligado direto entre CANH e CANL. Meça em Ω entre os dois com o módulo solto: se der cerca de 120 Ω, tire o R2. Com ele, o CANH preso em 3,3 V pelo R4 ficaria colado no CANL e o receptor não veria sinal nenhum. O R1 "103" (10 kΩ) é do controle de inclinação do chip e fica.
+
+**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (9,24), (11,24), (2,13), (16,12), (17,2), (16,22), (17,23) ou (18,23). Entre (17,23) e (18,23) também não pode haver continuidade (se houver cerca de 120 Ω, é o R2). O D21 (6,2) tem continuidade com o CRX (16,23), e o CTX (15,23) com o 3V3 (16,2).
+
 ## Medidas dos componentes
 
 Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pinos.
@@ -138,7 +163,8 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 | RT8272 (HW-108) | Comprimento × largura (mm) | 21 × 21 | 07/11/2026 |
 | | Posição das ilhas IN+, IN−, OUT+, OUT− | Com a bobina embaixo à direita: EN, IN−, IN+ na borda direita, de cima para baixo; OUT−, OUT+ embaixo, à esquerda. Quase 18 mm por fora entre os pinos das pontas, cerca de 17,8 mm de centro a centro (7 furos). Confirmar encaixando na placa | 07/11/2026 |
 | Porta-fusível AS-06 (5 × 20 mm, com tampa) | Corpo e posição dos 2 pinos | Desenho do fabricante: tampa de 26 × 9,6 × 1,6 mm, corpo de 24,5 mm, 11,5 mm de corpo sobre pés de 1 mm (14,1 mm de altura com a tampa); 2 pinos chatos de 1,3 × 0,4 mm a 20,2 ± 0,3 mm, no meio da largura, saindo 3,1 mm abaixo dos pés. Corpo aberto em cima e nas laterais do meio, com piso de 3,8 mm e uma torre com presilha em cada ponta | 09/11/2026 |
-| SN65HVD230 (reserva, a caminho) | Comprimento × largura e ordem dos pinos | | |
+| SN65HVD230 (módulo WCMCU-230, reserva) | Comprimento × largura e ordem dos pinos | 15,7 × 13,9 mm; barra de 6 pinos numa borda (passo de 2,54 mm): 3V3, GND, CTX, CRX, CANH, CANL. Chip VP230, R1 "103" (10 kΩ) e R2 "121" (120 Ω) | 09/11/2026 |
+| | Resistência entre CANH e CANL (Ω). Se der cerca de 120 Ω, o R2 sai | | |
 | Conector OBD2 macho (a caminho) | Pinos montados (precisa de 4, 5, 14 e 16) | | |
 | Cabo Y OBD2 (a caminho) | Pinos ligados em cada ramo | | |
 

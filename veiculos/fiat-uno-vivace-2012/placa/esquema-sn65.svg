@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="249.6mm" height="134.4mm" viewBox="-3 -3 156 84">
+<rect x="-3" y="-3" width="156" height="84" fill="#fff"/>
+<rect x="2" y="18" width="18" height="30" rx="1.5" fill="#fafafa" stroke="#263238" stroke-width="0.5"/>
+<text x="11.00" y="21.20" font-size="2.4" fill="#263238" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OBD</text>
+<circle cx="20" cy="25.0" r="0.7" fill="#263238"/>
+<text x="18.50" y="25.60" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">16 +12 V</text>
+<circle cx="20" cy="31.75" r="0.7" fill="#263238"/>
+<text x="18.50" y="32.35" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">4 chassi</text>
+<circle cx="20" cy="38.5" r="0.7" fill="#263238"/>
+<text x="18.50" y="39.10" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">5 sinal</text>
+<circle cx="20" cy="45.25" r="0.7" fill="#263238"/>
+<text x="18.50" y="45.85" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">14 CAN-L</text>
+<rect x="38" y="4" width="26" height="18" rx="1.5" fill="#fafafa" stroke="#2e7d32" stroke-width="0.5"/>
+<text x="51.00" y="7.20" font-size="2.4" fill="#2e7d32" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">RT8272 (5,0 V)</text>
+<circle cx="38" cy="11.0" r="0.7" fill="#2e7d32"/>
+<text x="39.50" y="11.60" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">IN+</text>
+<circle cx="38" cy="20.0" r="0.7" fill="#2e7d32"/>
+<text x="39.50" y="20.60" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">IN−</text>
+<circle cx="64" cy="11.0" r="0.7" fill="#2e7d32"/>
+<text x="62.50" y="11.60" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">OUT+</text>
+<circle cx="64" cy="20.0" r="0.7" fill="#2e7d32"/>
+<text x="62.50" y="20.60" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">OUT−</text>
+<rect x="88" y="4" width="28" height="34" rx="1.5" fill="#fafafa" stroke="#283593" stroke-width="0.5"/>
+<text x="102.00" y="7.20" font-size="2.4" fill="#283593" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">ESP32 DevKit</text>
+<circle cx="88" cy="11.0" r="0.7" fill="#283593"/>
+<text x="89.50" y="11.60" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">VIN</text>
+<circle cx="88" cy="17.75" r="0.7" fill="#283593"/>
+<text x="89.50" y="18.35" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">GND</text>
+<circle cx="88" cy="24.5" r="0.7" fill="#283593"/>
+<text x="89.50" y="25.10" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">3V3</text>
+<circle cx="88" cy="33.5" r="0.7" fill="#283593"/>
+<text x="89.50" y="34.10" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D21</text>
+<circle cx="116" cy="20.0" r="0.7" fill="#283593"/>
+<text x="114.50" y="20.60" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D25</text>
+<circle cx="116" cy="24.5" r="0.7" fill="#283593"/>
+<text x="114.50" y="25.10" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D26</text>
+<rect x="126" y="8" width="21" height="30" rx="1.5" fill="#fafafa" stroke="#00838f" stroke-width="0.5"/>
+<text x="136.50" y="11.20" font-size="2.4" fill="#00838f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">BMP180</text>
+<circle cx="126" cy="17.7" r="0.7" fill="#00838f"/>
+<text x="127.50" y="18.30" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">SDA</text>
+<circle cx="126" cy="22.2" r="0.7" fill="#00838f"/>
+<text x="127.50" y="22.80" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">SCL</text>
+<circle cx="126" cy="28.5" r="0.7" fill="#00838f"/>
+<text x="127.50" y="29.10" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">VCC</text>
+<circle cx="126" cy="33.0" r="0.7" fill="#00838f"/>
+<text x="127.50" y="33.60" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">GND</text>
+<rect x="38" y="40" width="26" height="28" rx="1.5" fill="#fafafa" stroke="#1976d2" stroke-width="0.5"/>
+<text x="51.00" y="43.20" font-size="2.4" fill="#1976d2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">SN65HVD230</text>
+<circle cx="64" cy="47.0" r="0.7" fill="#1976d2"/>
+<text x="62.50" y="47.60" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">3V3</text>
+<circle cx="64" cy="51.5" r="0.7" fill="#1976d2"/>
+<text x="62.50" y="52.10" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">CTX</text>
+<circle cx="64" cy="56.0" r="0.7" fill="#1976d2"/>
+<text x="62.50" y="56.60" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">GND</text>
+<circle cx="64" cy="60.5" r="0.7" fill="#1976d2"/>
+<text x="62.50" y="61.10" font-size="1.8" fill="#37474f" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">CRX</text>
+<circle cx="38" cy="62.75" r="0.7" fill="#1976d2"/>
+<text x="39.50" y="63.35" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">CANH</text>
+<circle cx="38" cy="67.7" r="0.7" fill="#1976d2"/>
+<text x="39.50" y="68.30" font-size="1.8" fill="#37474f" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">CANL</text>
+<path d="M20.00,25.00 L26.00,25.00 L26.00,11.00 L38.00,11.00" fill="none" stroke="#d32f2f" stroke-width="0.55" stroke-linejoin="round"/>
+<rect x="24.5" y="15.0" width="3" height="6" rx="1" fill="#fff" stroke="#7b1fa2" stroke-width="0.5"/>
+<text x="28.50" y="18.60" font-size="1.7" fill="#7b1fa2" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">fusível 1,5 A (na placa)</text>
+<path d="M20.00,31.75 L30.00,31.75 L30.00,36.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M20.00,38.50 L30.00,38.50" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M38.00,20.00 L34.00,20.00 L34.00,36.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M30.00,36.00 L80.00,36.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M64.00,20.00 L72.00,20.00 L72.00,36.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M88.00,17.75 L80.00,17.75 L80.00,36.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M64.00,56.00 L72.00,56.00 L72.00,36.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
+<circle cx="30" cy="38.5" r="0.9" fill="#263238"/>
+<circle cx="34" cy="36" r="0.9" fill="#263238"/>
+<circle cx="72" cy="36" r="0.9" fill="#263238"/>
+<circle cx="30" cy="36" r="0.9" fill="#263238"/>
+<text x="55.00" y="35.00" font-size="1.8" fill="#263238" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">GND</text>
+<path d="M64.00,11.00 L76.00,11.00 L88.00,11.00" fill="none" stroke="#d32f2f" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M64.00,47.00 L82.00,47.00 L82.00,24.50 L88.00,24.50" fill="none" stroke="#ef6c00" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M64.00,51.50 L70.00,51.50 L70.00,47.00" fill="none" stroke="#ef6c00" stroke-width="0.55" stroke-linejoin="round"/>
+<circle cx="70" cy="47.0" r="0.9" fill="#ef6c00"/>
+<circle cx="82" cy="24.5" r="0.9" fill="#ef6c00"/>
+<text x="51.00" y="73.00" font-size="1.6" fill="#ef6c00" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">CTX preso no 3,3 V: o transceptor nunca transmite</text>
+<path d="M64.00,60.50 L85.00,60.50 L85.00,33.50 L88.00,33.50" fill="none" stroke="#f9a825" stroke-width="0.55" stroke-linejoin="round"/>
+<text x="86.00" y="52.00" font-size="1.5" fill="#5d4037" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">CRX direto no D21 (sem divisor)</text>
+<path d="M38.00,62.75 L33.00,62.75 L33.00,69.00 L90.00,69.00 L90.00,24.50 L88.00,24.50" fill="none" stroke="#ef6c00" stroke-width="0.55" stroke-linejoin="round"/>
+<rect x="70" y="67.8" width="6" height="2.4" fill="#fff" stroke="#8d6e63" stroke-width="0.4"/>
+<text x="73.00" y="67.20" font-size="1.6" fill="#5d4037" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">R4 1 kΩ (CANH em 3,3 V)</text>
+<path d="M20.00,45.25 L28.00,45.25 L28.00,67.70 L38.00,67.70" fill="none" stroke="#1976d2" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M116.00,20.00 L121.00,20.00 L121.00,17.70 L126.00,17.70" fill="none" stroke="#00838f" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M116.00,24.50 L123.00,24.50 L123.00,22.20 L126.00,22.20" fill="none" stroke="#2e7d32" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M120.00,28.50 L126.00,28.50" fill="none" stroke="#d32f2f" stroke-width="0.55" stroke-linejoin="round"/>
+<text x="119.50" y="29.10" font-size="1.6" fill="#d32f2f" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">5 V</text>
+<path d="M120.00,33.00 L126.00,33.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
+<text x="119.50" y="33.60" font-size="1.6" fill="#263238" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">GND</text>
+<text x="136.50" y="44.00" font-size="1.5" fill="#5d4037" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">no cabo, longe do calor</text>
+<text x="75.00" y="1.00" font-size="2.0" fill="#5d4037" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">Esquema de ligação (fora de escala)</text>
+</svg>

@@ -14,13 +14,19 @@ export default function projetoRoutes(app) {
     ...PAGE, title: 'Sobre', activeTab: 'sobre',
   }));
 
-  app.get('/projeto/placa', async (_request, reply) => reply.view('modules/projeto/views/placa.hbs', {
-    ...PAGE,
-    title: 'Placa em 3D',
-    activeTab: 'placa',
-    // Posições geradas por veiculos/fiat-uno-vivace-2012/placa/gerar_3d.py (o teste confere se a cópia está igual);
-    // placa3d.mjs monta as peças com detalhe usando o Three.js local.
-    pageScripts: ['/modules/projeto/modelo3d-dados.js'],
-    pageModules: ['/modules/projeto/placa3d.mjs'],
-  }));
+  // ?versao=sn65 mostra a versão alternativa, com o SN65HVD230 no lugar do TJA1050; qualquer outro valor, a principal.
+  app.get('/projeto/placa', async (request, reply) => {
+    const sn65 = request.query?.versao === 'sn65';
+    return reply.view('modules/projeto/views/placa.hbs', {
+      ...PAGE,
+      title: 'Placa em 3D',
+      activeTab: 'placa',
+      sn65,
+      transceptor: sn65 ? 'SN65HVD230' : 'TJA1050',
+      // Posições geradas por veiculos/fiat-uno-vivace-2012/placa/gerar_3d.py (o teste confere se a cópia está igual);
+      // placa3d.mjs monta as peças com detalhe usando o Three.js local.
+      pageScripts: [sn65 ? '/modules/projeto/modelo3d-sn65-dados.js' : '/modules/projeto/modelo3d-dados.js'],
+      pageModules: ['/modules/projeto/placa3d.mjs'],
+    });
+  });
 }

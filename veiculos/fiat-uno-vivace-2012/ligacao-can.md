@@ -157,4 +157,4 @@ Este módulo funciona em 3,3 V, então dispensa o divisor do RX. Em troca, aceit
 | CANL | Pino 14 do OBD |
 | CANH | Resistor de 1 kΩ até o 3V3 do ESP32 |
 
-A alimentação e os pinos do OBD são os mesmos da ligação com o TJA1050. Antes de ligar, meça em Ω entre CANH e CANL. O módulo costuma ter um resistor marcado "121" (120 Ω), mas ele só precisa sair se a medida der cerca de 120 Ω. Se der bem mais, ele não está ligado entre os bornes e fica onde está.
+Os desenhos da placa e o modelo 3D desta versão estão em [placa/](placa/README.md#versão-alternativa-com-o-sn65hvd230). A alimentação e os pinos do OBD são os mesmos da ligação com o TJA1050. Antes de ligar, meça em Ω entre CANH e CANL. O módulo costuma ter um resistor marcado "121" (120 Ω), mas ele só precisa sair se a medida der cerca de 120 Ω. Se der bem mais, ele não está ligado entre os bornes e fica onde está.
