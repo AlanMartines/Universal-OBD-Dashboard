@@ -817,9 +817,11 @@ function iniciar() {
       corpo.position.copy(W(P0.x0 + P0.l / 2, by, bz));
       g.add(corpo);
       // boca (moldura trapezoidal com cantos arredondados), aberta para longe da placa
-      const trap = (topo, base, alt, r) => {
-        const s0 = new THREE.Shape();
+      // furo = true: contorno no sentido contrário, como o Three.js espera nos furos (senão as paredes de dentro somem)
+      const trap = (topo, base, alt, r, furo = false) => {
+        const s0 = furo ? new THREE.Path() : new THREE.Shape();
         const pts = [[-topo / 2, alt / 2], [topo / 2, alt / 2], [base / 2, -alt / 2], [-base / 2, -alt / 2]];
+        if (furo) pts.reverse();
         pts.forEach(([x, y], i) => {
           const [px, py] = pts[(i + 3) % 4], [nx, ny] = pts[(i + 1) % 4];
           const din = Math.hypot(x - px, y - py), dout = Math.hypot(nx - x, ny - y);
@@ -831,12 +833,14 @@ function iniciar() {
         return s0;
       };
       const fora = trap(38, 31, 14, 2.2);
-      fora.holes.push(trap(35, 28.4, 11.4, 1.6));
+      fora.holes.push(trap(35, 28.4, 11.4, 1.6, true));
       // a moldura e o fundo são desenhados no plano e girados para a boca olhar para +x (para longe da placa)
       const boca = new THREE.Group();
       boca.rotation.y = Math.PI / 2;
       boca.position.copy(W(P0.x0 + P0.l, by, bz));
-      boca.add(new THREE.Mesh(new THREE.ExtrudeGeometry(fora, { depth: 7, bevelEnabled: false }), plast));
+      const plastDuplo = plast.clone();
+      plastDuplo.side = THREE.DoubleSide;
+      boca.add(new THREE.Mesh(new THREE.ExtrudeGeometry(fora, { depth: 7, bevelEnabled: false }), plastDuplo));
       // fundo da boca com os 16 contatos (2 fileiras de 8) e a chave no meio da fileira de baixo
       const fundo = new THREE.Mesh(new THREE.ShapeGeometry(trap(35, 28.4, 11.4, 1.6)), std(0x151515, 0.8));
       fundo.position.z = 0.05;
