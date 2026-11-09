@@ -70,7 +70,7 @@ Rede deste carro: carroceria nos pinos 6/14, a 50 kbit/s ([notas do veículo](RE
 | ESP32 DevKit (30 pinos) | "ESP32 DOIT DevKit **ESP32-WROOM-32**", o simples | Lê a CAN e manda ao celular por Bluetooth clássico |
 | Módulo TJA1050 | "Módulo transceptor CAN TJA1050" | Liga o ESP32 ao CAN-L (pino 14), em 5 V. Aguenta ±27 V nos pinos da rede |
 | Resistores | Quatro de 1 kΩ | Polarização do CANH e divisor do RX |
-| Fusível e suporte | Fusível mini lâmina (ATM) de 1 A e suporte para placa "Keystone 3568" ou equivalente (porta-fusível mini lâmina PCI) | Protege a placa no fio do pino 16; o suporte vai soldado na placa ([placa/](placa/README.md)) |
+| Fusível e suporte | Fusível de vidro 5 × 20 mm de 1,5 A e porta-fusível para placa "AS-06" com tampa (5 × 20, 2 pinos a 20,2 mm) | Protege a placa no fio do pino 16; o suporte vai soldado na placa ([placa/](placa/README.md)) |
 | Step-down 12 V → 5 V | "RT8272", "Mini-560 5V" (saída fixa) ou "LM2596" (ajustável) | Alimenta o ESP32 com os 12 V do pino 16 |
 | Cabo Y OBD2 | "Cabo extensor OBD2 Y 1 macho 2 fêmeas" | ELM327 e ESP32 ligados ao mesmo tempo |
 | Cabo OBD2 macho com fios soltos | "Pigtail OBD2 macho 16 pinos" | Liga a fêmea do Y ao ESP32 sem cortar nada |
@@ -130,7 +130,7 @@ Testado em 04/11/2026, com o ESP32 alimentado pelo USB:
 
 | Conector OBD | Liga em |
 |---|---|
-| Pino 16 (+12 V) | Fusível de 1 A e IN+ do conversor |
+| Pino 16 (+12 V) | Fusível de 1,5 A e IN+ do conversor |
 | Pino 4 (chassi) | IN− do conversor |
 | Pino 5 (terra de sinal) | GND do ESP32 |
 | Pino 14 (CAN-L) | CANL do módulo |

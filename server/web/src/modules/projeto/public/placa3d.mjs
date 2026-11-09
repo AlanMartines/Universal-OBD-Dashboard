@@ -674,28 +674,51 @@ function iniciar() {
     }
   }
 
-  // ------------------------------------------------------------ suporte do fusível e fusível mini de 1 A
+  // ------------------------------------------------------------ suporte AS-06 com tampa e o fusível de vidro de 1,5 A
+  // corpo aberto em cima (piso e duas torres com as presilhas), vazado nas laterais do meio; tampa com duas abas
   {
     const F = X.fusivel;
     const g = new THREE.Group();
     const [cx, cy] = F.c;
-    g.add(caixa(F.w, F.h, F.d, M.nylon, cx, cy, A.T));
-    g.add(caixa(F.w - 2.2, 0.06, F.d - 2.2, M.furo, cx, cy, A.T + F.h));
-    const texF = textura(10.9, 9, (ctx) => {
-      ctx.fillStyle = '#141414';
-      ctx.fillRect(0, 0, 10.9, 9);
-      texto(ctx, '1', 5.45, 4.3, 4.2, '#f5f5f5', { peso: 700 });
-      texto(ctx, 'ATM', 5.45, 7.7, 1.0, '#9e9e9e', { peso: 600 });
+    const base = A.T + F.pes;
+    const topo = A.T + F.h - F.tampa;
+    for (const s of [-1, 1]) g.add(caixa(3, F.pes, F.d, M.preto, cx + s * (F.corpo / 2 - 1.5), cy, A.T));
+    g.add(caixa(F.corpo, F.piso, F.d, M.preto, cx, cy, base));
+    for (const s of [-1, 1]) {
+      const tx = cx + s * (F.corpo / 2 - F.torre / 2);
+      g.add(caixa(F.torre, topo - base - F.piso, F.d, M.preto, tx, cy, base + F.piso));
+      // presilha de latão aparecendo na boca da torre
+      g.add(caixa(0.3, 4.2, 4.0, M.ouro, cx + s * (F.corpo / 2 - F.torre - 0.1), cy, F.vidro.z - 2.1));
+    }
+    const texT = textura(F.w, F.d, (ctx) => {
+      ctx.fillStyle = '#161616';
+      ctx.fillRect(0, 0, F.w, F.d);
+      contorno(ctx, 1.2, 1.2, F.w - 2.4, F.d - 2.4, 'rgba(255,255,255,0.10)', 0.15);
+      texto(ctx, 'AS-06', F.w / 2, F.d / 2 - 1.2, 1.5, '#8a8a8a', { peso: 600 });
+      texto(ctx, '1,5 A · 5 × 20', F.w / 2, F.d / 2 + 1.4, 1.2, '#9e9e9e', { peso: 500 });
     }, 40);
-    const matF = std(0xffffff, 0.35, 0, { map: texF });
-    const fus = new THREE.Mesh(new THREE.BoxGeometry(10.9, 9, 3.8), [M.preto, M.preto, M.preto, M.preto, matF, matF]);
-    fus.position.copy(W(cx, cy, A.T + F.h - 2.5 + 4.5));
-    g.add(fus);
-    const pega = new THREE.Mesh(new THREE.BoxGeometry(10.9, 1.4, 2.4), M.preto);
-    pega.position.copy(W(cx, cy, A.T + F.h - 2.5 + 9.7));
-    g.add(pega);
-    for (const [x, y] of F.pinos) g.add(cilindro(W(x, y, -1.0), W(x, y, A.T), 0.78, M.estanho, 12));
-    poe(g, 'fusivel', 'Fusível mini lâmina de 1 A no suporte Keystone 3568 (medidas de catálogo)');
+    const matT = std(0xffffff, 0.45, 0, { map: texT });
+    const tampa = new THREE.Mesh(new THREE.BoxGeometry(F.w, F.tampa, F.d), [M.preto, M.preto, matT, M.preto, M.preto, M.preto]);
+    tampa.position.copy(W(cx, cy, topo + F.tampa / 2));
+    g.add(tampa);
+    const fundoAba = F.vidro.z + F.vidro.d / 2 + 0.3;
+    // abas de encaixe da tampa, uma de cada lado do fusível
+    for (const a of F.abas) g.add(caixa(4.0, topo - fundoAba, 1.3, M.preto, cx + a.x, cy + a.lado * 2.6, fundoAba));
+    // fusível de vidro 5 x 20 mm: tubo transparente, filamento e terminais metálicos
+    const r = F.vidro.d / 2, meio = F.vidro.l - 2 * F.vidro.tampa;
+    const vidro = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.96, r * 0.96, meio, 28),
+      new THREE.MeshPhysicalMaterial({ color: 0xe8f4f8, roughness: 0.05, transmission: 0.9, transparent: true, opacity: 0.45, ior: 1.5, thickness: 0.6 }));
+    vidro.rotation.z = Math.PI / 2;
+    vidro.position.copy(W(cx, cy, F.vidro.z));
+    g.add(vidro);
+    // filamento fino, atravessando o vidro na diagonal
+    g.add(cilindro(W(cx - meio / 2, cy - r * 0.3, F.vidro.z - r * 0.65), W(cx + meio / 2, cy + r * 0.3, F.vidro.z + r * 0.65), 0.07, std(0xb0a090, 0.4, 0.8), 6));
+    for (const s of [-1, 1]) {
+      const a = W(cx + s * (meio / 2), cy, F.vidro.z), b = W(cx + s * (F.vidro.l / 2), cy, F.vidro.z);
+      g.add(cilindro(a, b, r * 1.02, M.niquel, 28));
+    }
+    for (const [x, y] of F.pinos) g.add(caixa(1.3, A.T + F.pes + 1.5, 0.4, M.estanho, x, y, -1.5));
+    poe(g, 'fusivel', 'Porta-fusível AS-06 (5 × 20 mm, com tampa) e fusível de vidro de 1,5 A');
   }
 
   // ------------------------------------------------------------ fios isolados (cantos arredondados)

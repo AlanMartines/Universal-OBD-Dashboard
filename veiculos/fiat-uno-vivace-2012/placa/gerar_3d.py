@@ -34,7 +34,9 @@ MOD_Z = T + MALE_H          # fundo do TJA1050 e do RT8272
 MOD_T = 1.6                 # placa dos módulos
 WIRE_Z = T + 0.6            # fios isolados por cima
 BOT_Z = -0.4                # fio estanhado por baixo
-FUSE_H = 7.37               # suporte Keystone 3568 (catálogo)
+FUSE_FEET = 1.0             # suporte AS-06 (desenho do fabricante): pés de 1 mm,
+FUSE_CAP = 1.6              # corpo de 11,5 mm e tampa de 1,6 mm
+FUSE_H = FUSE_FEET + 11.5 + FUSE_CAP
 
 GOLD, SILVER, TIN = '#d4af37', '#c0c0c0', '#b0b7bd'
 
@@ -153,16 +155,33 @@ box('modulos', '#212121', bx0 + 5.5, by0 + 2.0, bt, 6, 5, 1.2)
 box('modulos', '#cfd8dc', bx0 + 0.8, by0 + 0.8, bt, 3.4, 3.4, 2.2)
 cyl('modulos', '#78909c', (bx0 + 2.5, by0 + 2.5, bt + 2.2), (bx0 + 2.5, by0 + 2.5, bt + 2.6), 0.9)
 
-# ---------------------------------------------------------------- Suporte do fusível com o fusível mini de 1 A
+# ---------------------------------------------------------------- Suporte AS-06 com tampa e o fusível de vidro de 1,5 A
+# Corpo aberto em cima: piso de 3,8 mm e duas torres nas pontas, com as presilhas; o meio fica vazado nas laterais.
+# A tampa (26 x 9,6 x 1,6 mm) encaixa por cima com duas abas que descem até perto do fusível.
 fcx, fcy = xy(*g.FUSE_C)
 fw, fd = g.FUSE_MM
-box('fusivel', '#37474f', fcx - fw / 2, fcy - fd / 2, T, fw, fd, FUSE_H)
-box('fusivel', '#111111', fcx - 5.45, fcy - 1.9, T + 4.0, 10.9, 3.8, 10.0)
-box('fusivel', '#eeeeee', fcx - 1.0, fcy - 1.95, T + 11.0, 2.0, 0.1, 2.6)   # "1" impresso no fusível
-for pins in g.FUSE_PINS.values():
-    for c, r in pins:
-        x, y = xy(c, r)
-        cyl('fusivel', SILVER, (x, y, -1.0), (x, y, T + 0.5), 0.78)
+fb = g.FUSE_BODY
+FUSE_FLOOR, FUSE_TOWER = 3.8, 5.6
+FUSE_TUBE = {'d': 5.0, 'l': 20.0, 'tampa': 5.2, 'z': T + FUSE_FEET + 8.0}   # vidro 5 x 20 mm, terminais de 5,2 mm
+FUSE_TABS = [(-5.3, 1), (5.3, -1)]                                         # abas da tampa: x do centro e lado (y)
+top = T + FUSE_H - FUSE_CAP
+for sx in (-1, 1):   # pés nas pontas
+    box('fusivel', '#1b1b1b', fcx + sx * (fb / 2 - 1.5) - 1.5, fcy - fd / 2, T, 3.0, fd, FUSE_FEET)
+box('fusivel', '#1b1b1b', fcx - fb / 2, fcy - fd / 2, T + FUSE_FEET, fb, fd, FUSE_FLOOR)
+for sx in (-1, 1):   # torres
+    torre_x = fcx - fb / 2 if sx < 0 else fcx + fb / 2 - FUSE_TOWER
+    box('fusivel', '#1b1b1b', torre_x, fcy - fd / 2, T + FUSE_FEET + FUSE_FLOOR, FUSE_TOWER, fd, top - (T + FUSE_FEET + FUSE_FLOOR))
+box('fusivel', '#111111', fcx - fw / 2, fcy - fd / 2, top, fw, fd, FUSE_CAP)
+for tx, ty in FUSE_TABS:
+    box('fusivel', '#111111', fcx + tx - 2.0, fcy + ty * 2.6 - 0.65, FUSE_TUBE['z'] + FUSE_TUBE['d'] / 2 + 0.3, 4.0, 1.3, top - (FUSE_TUBE['z'] + FUSE_TUBE['d'] / 2 + 0.3))
+fz, fl, ft = FUSE_TUBE['z'], FUSE_TUBE['l'], FUSE_TUBE['tampa']
+cyl('fusivel', '#cfe3ea', (fcx - fl / 2 + ft, fcy, fz), (fcx + fl / 2 - ft, fcy, fz), 2.4)
+for sx in (-1, 1):
+    cyl('fusivel', SILVER, (fcx + sx * (fl / 2 - ft), fcy, fz), (fcx + sx * fl / 2, fcy, fz), 2.55)
+cyl('fusivel', '#8d6e63', (fcx - fl / 2 + ft, fcy, fz - 1.6), (fcx + fl / 2 - ft, fcy, fz + 1.6), 0.08)   # filamento, na diagonal
+for c, r in g.FUSE_PINS.values():
+    x, y = xy(c, r)
+    cyl('fusivel', SILVER, (x, y, -1.5), (x, y, T + FUSE_FEET), 0.45)
 
 # ---------------------------------------------------------------- Fios isolados por cima (J1 a J3, CANL, cabo OBD)
 for name, col, pts, _ in g.JUMPERS:
@@ -250,10 +269,9 @@ for track_pts in [t[2] for t in g.TRACKS]:
 for c, r in sorted(legs):
     x, y = xy(c, r)
     cyl('trilhas', TIN, (x, y, -0.75), (x, y, 0), 0.72)
-for pins in g.FUSE_PINS.values():
-    for c, r in pins:
-        x, y = xy(c, r)
-        cyl('trilhas', TIN, (x, y, -0.8), (x, y, 0), 1.0)
+for c, r in g.FUSE_PINS.values():
+    x, y = xy(c, r)
+    cyl('trilhas', TIN, (x, y, -0.8), (x, y, 0), 1.0)
 
 # ---------------------------------------------------------------- Posições para o visor detalhado do painel
 # O visor do painel (server/web/.../projeto/public/placa3d.mjs) monta as peças com detalhe a partir daqui.
@@ -292,7 +310,9 @@ DET = {
             'can': [{'n': n, 'p': rr(xy(*cr)), 'furo': rr(xy(*g.CAN_HOLES[n]))} for n, cr in g.TJA_CAN.items()]},
     'rt': {'x0': round(bx0, 3), 'y0': round(by0, 3), 'lado': g.BUCK_MM, 'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.BUCK_PINS.items()]},
     'resistores': [{'n': f'{name} 1 kΩ: {desc}', 'a': rr(xy(*a)), 'b': rr(xy(*b))} for name, a, b, desc in g.RES],
-    'fusivel': {'c': rr((fcx, fcy)), 'w': fw, 'd': fd, 'h': FUSE_H, 'pinos': [rr(xy(*cr)) for pins in g.FUSE_PINS.values() for cr in pins]},
+    'fusivel': {'c': rr((fcx, fcy)), 'w': fw, 'd': fd, 'h': FUSE_H, 'corpo': fb, 'pes': FUSE_FEET, 'tampa': FUSE_CAP,
+                'piso': FUSE_FLOOR, 'torre': FUSE_TOWER, 'vidro': FUSE_TUBE, 'abas': [{'x': tx, 'lado': ty} for tx, ty in FUSE_TABS],
+                'pinos': [rr(xy(*cr)) for cr in g.FUSE_PINS.values()]},
     'fios': jumper_paths(),
     'trilhas': [{'n': name, 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts in g.TRACKS]
                + [{'n': name, 'cor': col, 'pts': [rr(xy(*a)), rr(xy(*b))]} for name, col, a, b in g.LINKS],
