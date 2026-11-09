@@ -90,6 +90,7 @@
 .cl-status[data-state="warn"] .cl-dot { background: var(--c-warn); }
 .cl-status[data-state="bad"] .cl-dot { background: var(--c-bad); }
 .cl-rec { color: var(--c-bad); font-weight: 600; letter-spacing: .1em; }
+.cl-amb { color: var(--c-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .cl-spacer { flex: 1; }
 .cl-pages { display: inline-flex; gap: .2em; }
 .cl-tab, .cl-chip {

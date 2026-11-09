@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Rodapé dos mostradores:** a temperatura interna e a pressão do ar do BMP180 aparecem juntas e discretas ao lado do relógio (`09:54  27°C · 1.010 hPa`), em todos os temas, no APK e no painel web. Sem o sensor, o campo some.
+
 ## [0.9.35] - 2026-11-09
 
 ### Adicionado

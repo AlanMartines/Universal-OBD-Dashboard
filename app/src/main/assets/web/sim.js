@@ -118,6 +118,8 @@ window.ObdSim = (function () {
       intake_temp: Math.round(v.iat), battery_volts: volts, timing_advance: fuelCut ? 6 : accelerating ? 16 + noise(2) : 28 + noise(3),
       engine_load: clamp(map * 0.95, 0, 100), lambda_b1s1_v: clamp(lambda, 0, 1.2), lambda_b1s1_trim: 0,
       stft_b1: stft, ltft_b1: v.ltft, mil_on: mil ? 1 : 0, dtc_count: mil ? 1 : 0,
+      // escuta CAN e sensor do ESP32: parcial do painel, temperatura interna e pressão
+      trip_km: 1234.5 + v.tripKm, cabin_temp: 27.4, cabin_pressure: 1009.6,
     };
 
     const alerts = [];

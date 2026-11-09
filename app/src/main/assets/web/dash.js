@@ -108,7 +108,7 @@ window.Dash = (function () {
   const roles = () => Object.assign({
     rpm: 'rpm', speed: 'speed', coolant: 'coolant_temp', voltage: 'battery_volts', throttle: 'throttle', map: 'map',
     intake: 'intake_temp', engineLoad: 'engine_load', timing: 'timing_advance', stft: 'stft_b1', ltft: 'ltft_b1',
-    lambda: 'lambda_b1s1_v', milOn: 'mil_on', dtcCount: 'dtc_count', cabinTemp: 'cabin_temp', carTrip: 'trip_km',
+    lambda: 'lambda_b1s1_v', milOn: 'mil_on', dtcCount: 'dtc_count', cabinTemp: 'cabin_temp', cabinPressure: 'cabin_pressure', carTrip: 'trip_km',
   }, meta.roles || {});
   const reading = (key) => {
     const id = roles()[key];
@@ -249,6 +249,7 @@ window.Dash = (function () {
   function foot(opts) {
     return `<div class="cl-foot">
       <span class="cl-status" data-ui="status"><span class="cl-dot"></span><span data-ui="statusText">--</span></span>
+      <span class="cl-amb" data-ui="amb" hidden title="Sensor do ESP32 (BMP180): temperatura interna e pressão do ar"></span>
       <span class="cl-rec" data-ui="rec" hidden>● REC</span>
       ${opts.lights ? '<span class="cl-lights" data-ui="lights"></span>' : ''}
       <span class="cl-spacer"></span>
@@ -1157,12 +1158,14 @@ window.Dash = (function () {
     // Rodapé e viagem
     const streaming = s.connection === 'STREAMING';
     ui.status.dataset.state = streaming ? 'ok' : s.connection === 'ERROR' ? 'bad' : s.running ? 'warn' : '';
-    // Relógio e, com o sensor do ESP32 (BMP180), a temperatura interna ao lado, como no painel de um carro
-    const cabin = reading('cabinTemp');
-    const clock = new Date(nowOf(s)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (cabin == null ? '' : ' · ' + num(cabin) + '°C');
     ui.statusText.textContent = streaming
-      ? (s.power === 'IDLE_CONFIRMATION' ? 'Parado: encerrar captura?' : clock)
+      ? (s.power === 'IDLE_CONFIRMATION' ? 'Parado: encerrar captura?' : new Date(nowOf(s)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
       : (s.statusMessage || 'Desconectado');
+    // Ao lado do relógio, discreto: temperatura interna e pressão do ar do sensor do ESP32 (BMP180)
+    const cabin = reading('cabinTemp');
+    const hpa = reading('cabinPressure');
+    ui.amb.hidden = cabin == null && hpa == null;
+    if (!ui.amb.hidden) ui.amb.textContent = [cabin == null ? null : num(cabin) + '°C', hpa == null ? null : num(hpa) + ' hPa'].filter(Boolean).join(' · ');
     ui.rec.hidden = !(s.diagRecording && s.running);
     if (ui.tripKm) ui.tripKm.textContent = num(s.tripDistanceKm, 1);
     // Trip (Clássico e Horizonte) é o parcial do painel do carro, lido pela escuta CAN. Sem ele, o
