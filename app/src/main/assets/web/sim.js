@@ -137,6 +137,10 @@ window.ObdSim = (function () {
         fuelLph: lph, instantKmPerL: lph > 0.05 && v.speed > 5 ? v.speed / lph : null,
         tripKmPerL: v.tripFuelL > 0.02 ? v.tripKm / v.tripFuelL : null, tripFuelUsedL: v.tripFuelL,
         fuelRemainingL: v.fuelL, recommendedGear: rec, estimatedGear: est, shiftUp,
+        // sensor de movimento do ESP32 (LSM6DS3), já calibrado
+        imuStage: 2, accelG: accelerating ? 0.17 + noise(0.02) : fuelCut ? -0.11 + noise(0.02) : noise(0.02),
+        lateralG: 0.12 * Math.sin(Date.now() / 4000), slopePct: 3 + noise(0.5), impactG: 0.1 + Math.abs(noise(0.05)),
+        bumps: 4, maxBrakeG: 0.52, maxAccelG: 0.31, maxLateralG: 0.38,
       },
       gps: { lat: -20.4697, lon: -54.6201, speedKmh: v.speed * 0.97, accuracyM: 4, ageMs: 300 },
       alerts, confirmedDtcs: mil ? ['P0133'] : [], pendingDtcs: [],

@@ -249,6 +249,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 f.pricePerLiter ?: f.totalPrice?.takeIf { f.liters > 0 }?.div(f.liters)
             },
             speedCorrectionPct = AppSettings.dashboard(this, loaded).speedCorrectionPct,
+            imuCalibration = AppSettings.imuCalibration(this),
         )
         // Viagem retomada: o computador de bordo continua de onde parou, refeito pelas amostras gravadas.
         if (resumeId != null) runCatching { engine?.restoreStats(dao.telemetryForTrip(tripId)) }
@@ -484,6 +485,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             val result = eng.compute(state, trip, now, dtS)
             result.timedRuns.forEach { AppSettings.recordTimedRun(this, it, now) }
             result.atmosphericKpa?.let { AppSettings.setAtmosphericKpa(this, it) }
+            result.imuCalibration?.let { AppSettings.setImuCalibration(this, it) }
             val gpsAlert = gpsLostAlert(loaded, state, now, mono)
             TelemetryHub.update {
                 it.copy(derived = result.derived, alerts = result.alerts + listOfNotNull(gpsAlert), tripDistanceKm = trip?.distanceKm ?: 0.0)
@@ -633,6 +635,15 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                             "derived.estimatedLoadPct" to d.estimatedLoadPct,
                             "derived.vacuumKpa" to d.vacuumKpa,
                             "derived.mapOffsetKpa" to d.mapOffsetKpa,
+                            "derived.imuStage" to d.imuStage?.toDouble(),
+                            "derived.accelG" to d.accelG,
+                            "derived.lateralG" to d.lateralG,
+                            "derived.slopePct" to d.slopePct,
+                            "derived.impactG" to d.impactG,
+                            "derived.bumps" to d.bumps.toDouble().takeIf { d.imuStage != null || d.bumps > 0 },
+                            "derived.maxBrakeG" to d.maxBrakeG,
+                            "derived.maxAccelG" to d.maxAccelG,
+                            "derived.maxLateralG" to d.maxLateralG,
                             "derived.tripCost" to d.tripCost,
                             "derived.estimatedGear" to d.estimatedGear?.toDouble(),
                             "derived.shiftUp" to if (d.shiftUp) 1.0 else 0.0,
@@ -719,6 +730,14 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         "derived.estimatedLoadPct" to d.estimatedLoadPct,
         "derived.vacuumKpa" to d.vacuumKpa,
         "derived.mapOffsetKpa" to d.mapOffsetKpa,
+        "derived.accelG" to d.accelG,
+        "derived.lateralG" to d.lateralG,
+        "derived.slopePct" to d.slopePct,
+        "derived.impactG" to d.impactG,
+        "derived.bumps" to d.bumps.toDouble().takeIf { d.imuStage != null || d.bumps > 0 },
+        "derived.maxBrakeG" to d.maxBrakeG,
+        "derived.maxAccelG" to d.maxAccelG,
+        "derived.maxLateralG" to d.maxLateralG,
         "derived.tripCost" to d.tripCost,
         "pc.ecoBand" to d.ecoBand?.toDouble(),
     )

@@ -45,6 +45,21 @@ data class DerivedMetrics(
     val vacuumKpa: Double? = null,
     /** Desvio do sensor MAP em relação ao sensor ambiente do ESP32 (kPa), medido com o motor parado. */
     val mapOffsetKpa: Double? = null,
+    /** Sensor de movimento do ESP32 (LSM6DS3): null sem sensor; 0 aprendendo o "cima", 1 aprendendo a frente, 2 pronto. */
+    val imuStage: Int? = null,
+    /** Aceleração para a frente (g): negativa é frenagem. */
+    val accelG: Double? = null,
+    /** Aceleração lateral (g): positiva numa curva à esquerda. */
+    val lateralG: Double? = null,
+    /** Inclinação da rua (%): positiva é subida. */
+    val slopePct: Double? = null,
+    /** Maior desvio da gravidade na última leitura (g): buracos, lombadas e impactos. */
+    val impactG: Double? = null,
+    /** Impactos acima de 0,4 g na captura, andando. */
+    val bumps: Int = 0,
+    val maxBrakeG: Double? = null,
+    val maxAccelG: Double? = null,
+    val maxLateralG: Double? = null,
     val tripCost: Double? = null,
     /** Consumo instantâneo suavizado (L/h): o que interessa com o carro parado e o motor ligado. */
     val instantLph: Double? = null,

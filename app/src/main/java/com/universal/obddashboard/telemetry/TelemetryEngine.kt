@@ -29,6 +29,8 @@ class TelemetryEngine(
     private val fuelPricePerL: Double? = null,
     /** Correção escolhida em Mostradores: os cronômetros usam a mesma velocidade que a tela mostra. */
     speedCorrectionPct: Double = 0.0,
+    /** Orientação aprendida do sensor de movimento do ESP32 (LSM6DS3), salva entre as capturas. */
+    imuCalibration: ImuMotion.Calibration? = null,
 ) {
     private val roles = profile.profile.roles
     private val fuelCalc = profile.profile.fuel?.let { FuelCalculator(it) }
@@ -38,6 +40,9 @@ class TelemetryEngine(
     private val timers = PerformanceTimers()
     private val speedFactor = 1 + speedCorrectionPct / 100
     private var lastSpeedAt = 0L
+    private val imu = ImuMotion(imuCalibration)
+    private var lastImuAt = 0L
+    private var lastImuSaveAt = 0L
     private val ecoMid = profile.profile.fuel?.ecoMidLPer100km ?: TripStats.DEFAULT_ECO_MID
     /** Computador de bordo da viagem; numa viagem retomada, refeito pelas amostras gravadas ([restoreStats]). */
     var stats = TripStats(ecoMid); private set
@@ -54,6 +59,8 @@ class TelemetryEngine(
         val newlyRaised: List<ActiveAlert>,
         val timedRuns: List<TimedRun> = emptyList(),
         val atmosphericKpa: Double? = null,
+        /** Orientação do sensor de movimento para salvar (no máximo a cada 30 s), ou null. */
+        val imuCalibration: ImuMotion.Calibration? = null,
     )
 
     fun compute(state: DashboardState, trip: TripAccumulator?, now: Long, dtS: Double): Result {
@@ -105,10 +112,28 @@ class TelemetryEngine(
         val speedReading = state.readings[roles.speed]
         val timedRuns = if (speedReading != null && speedReading.timestamp != lastSpeedAt) {
             lastSpeedAt = speedReading.timestamp
+            imu.onSpeed(speedReading.timestamp, speedReading.value)
             timers.onSpeed(speedReading.timestamp, speedReading.value * speedFactor)
         } else {
             emptyList()
         }
+
+        // Sensor de movimento do ESP32: cada linha nova (5 por segundo) passa pelo ImuMotion
+        val ax = state.readings[Slcan.IMU_AX]
+        val imuFresh = ax != null && now - ax.timestamp < IMU_STALE_MS
+        if (ax != null && imuFresh && ax.timestamp != lastImuAt) {
+            val dt = if (lastImuAt == 0L) 0.2 else (ax.timestamp - lastImuAt) / 1000.0
+            lastImuAt = ax.timestamp
+            val r = { id: String -> state.readings[id]?.value ?: 0.0 }
+            imu.update(
+                ax.timestamp, dt,
+                doubleArrayOf(ax.value, r(Slcan.IMU_AY), r(Slcan.IMU_AZ)),
+                doubleArrayOf(r(Slcan.IMU_GX), r(Slcan.IMU_GY), r(Slcan.IMU_GZ)),
+                r(Slcan.IMU_PEAK),
+            )
+        }
+        val imuSave = imu.calibration?.takeIf { now - lastImuSaveAt >= IMU_SAVE_MS }?.also { lastImuSaveAt = now }
+        val seenImu = lastImuAt != 0L
 
         val derived = DerivedMetrics(
             fuelLph = lph,
@@ -122,6 +147,15 @@ class TelemetryEngine(
             estimatedLoadPct = loadPct,
             vacuumKpa = estimatedLoad.vacuumKpa,
             mapOffsetKpa = estimatedLoad.mapOffsetKpa,
+            imuStage = if (imuFresh) imu.stage else null,
+            accelG = imu.accelG.takeIf { imuFresh },
+            lateralG = imu.lateralG.takeIf { imuFresh },
+            slopePct = imu.slopePct.takeIf { imuFresh },
+            impactG = imu.impactG.takeIf { imuFresh },
+            bumps = imu.bumps,
+            maxBrakeG = imu.maxBrakeG.takeIf { seenImu },
+            maxAccelG = imu.maxAccelG.takeIf { seenImu },
+            maxLateralG = imu.maxLateralG.takeIf { seenImu },
             tripCost = fuelPricePerL?.let { it * fuelUsed },
             instantLph = sLph,
             ecoBand = ecoBand,
@@ -149,10 +183,14 @@ class TelemetryEngine(
             val value = vars.resolve(id)
             if (value.isNaN()) "--" else formatValue(value, profile.outputs[id]?.decimals ?: 1)
         }
-        return Result(derived, alerts, raised, timedRuns, estimatedLoad.atmosphericKpa)
+        return Result(derived, alerts, raised, timedRuns, estimatedLoad.atmosphericKpa, imuSave)
     }
 
     companion object {
+        /** Sem linha do sensor de movimento há tanto tempo, os valores somem da tela. */
+        const val IMU_STALE_MS = 2000L
+        const val IMU_SAVE_MS = 30_000L
+
         fun formatValue(value: Double, decimals: Int): String =
             String.format(Locale.forLanguageTag("pt-BR"), "%.${decimals.coerceIn(0, 4)}f", value)
     }

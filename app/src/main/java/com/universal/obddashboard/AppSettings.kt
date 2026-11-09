@@ -8,6 +8,7 @@ import com.universal.obddashboard.obd.DashboardSettings
 import com.universal.obddashboard.obd.LoadedProfile
 import com.universal.obddashboard.obd.ProfileParser
 import com.universal.obddashboard.obd.UserAlarm
+import com.universal.obddashboard.telemetry.ImuMotion
 import com.universal.obddashboard.telemetry.TimedRun
 import com.universal.obddashboard.telemetry.TripMark
 import kotlinx.serialization.Serializable
@@ -44,6 +45,7 @@ object AppSettings {
     private const val KEY_USER_ALARMS_PREFIX = "user_alarms_"
     private const val KEY_TIMED_RUNS_PREFIX = "timed_runs_"
     private const val KEY_ATMOSPHERIC_KPA = "atmospheric_kpa"
+    private const val KEY_IMU_CALIBRATION = "imu_calibration"
     private const val KEY_CAN_ADAPTER = "can_adapter_names"
 
     /** Chave do ajuste no veículo selecionado (ver [Vehicles]). */
@@ -75,6 +77,14 @@ object AppSettings {
         prefs(context).edit { putString(KEY_USER_ALARMS_PREFIX + vid(context), UserAlarm.encode(alarms)) }
 
     /** Última pressão atmosférica medida: vale ao ligar o app com o motor já em funcionamento. */
+    /** Orientação aprendida do sensor de movimento do ESP32 (LSM6DS3); vai no backup com os outros ajustes. */
+    fun imuCalibration(context: Context): ImuMotion.Calibration? =
+        ImuMotion.Calibration.decode(prefs(context).getString(KEY_IMU_CALIBRATION, null))
+
+    fun setImuCalibration(context: Context, cal: ImuMotion.Calibration) {
+        prefs(context).edit { putString(KEY_IMU_CALIBRATION, cal.encode()) }
+    }
+
     fun atmosphericKpa(context: Context): Double? =
         prefs(context).getFloat(KEY_ATMOSPHERIC_KPA, Float.NaN).toDouble().takeUnless { it.isNaN() }
 

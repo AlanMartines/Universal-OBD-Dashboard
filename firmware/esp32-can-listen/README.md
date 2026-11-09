@@ -59,7 +59,7 @@ O firmware procura o sensor em 0x6A e em 0x6B, lê a 50 Hz e, a cada 200 ms, man
 
 Fica em ±4 g e ±250 °/s, a 104 Hz. Ao iniciar aparece `# lsm6ds3 ok em 0x6A (id 0x69)`; sem o sensor, uma vez `# lsm6ds3 ausente`. Um id diferente aparece em `# lsm6ds3 id desconhecido` (por exemplo, um BMI160 está em outro endereço e não é lido). No descanso, o sensor também desliga.
 
-Prenda o módulo firme no carro: solto, ele mede a vibração dele mesmo. A conversão dos eixos do módulo para frente, lado e cima do carro fica para o app, numa calibração com o carro parado no plano. Por enquanto o app recebe a linha e não usa os valores.
+Prenda o módulo firme no carro: solto, ele mede a vibração dele mesmo. Ele pode ficar em qualquer posição: o app aprende sozinho onde é "cima" (com o carro parado) e onde é a frente (nas arrancadas e frenagens, comparando com a velocidade do OBD). Se o módulo mudar de posição, o app percebe com o carro parado e aprende de novo. Com isso, mostra a aceleração e a frenagem, a força nas curvas, a inclinação da rua e os buracos na tela Movimento, no histórico e no painel web.
 
 ## Modo descanso
 

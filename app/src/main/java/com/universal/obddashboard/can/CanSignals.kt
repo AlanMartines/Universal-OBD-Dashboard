@@ -4,6 +4,7 @@ import com.universal.obddashboard.obd.Expr
 import com.universal.obddashboard.obd.FormulaEvaluator
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.math.abs
 
 /**
  * Sinais lidos da rede CAN do carro por um adaptador de escuta (ESP32 em listen-only), definidos no
@@ -61,6 +62,25 @@ object Slcan {
         val p = m.groupValues[2].toDouble()
         if (t !in -40.0..85.0 || p !in 300.0..1100.0) return null
         return mapOf(CABIN_TEMP to t, CABIN_PRESSURE to p)
+    }
+
+    /** Acelerômetro e giroscópio LSM6DS3 do ESP32: aceleração (g), rotação (°/s) e pico do intervalo (g). */
+    const val IMU_AX = "imu_ax"
+    const val IMU_AY = "imu_ay"
+    const val IMU_AZ = "imu_az"
+    const val IMU_GX = "imu_gx"
+    const val IMU_GY = "imu_gy"
+    const val IMU_GZ = "imu_gz"
+    const val IMU_PEAK = "imu_peak"
+    private const val NUM = "(-?\\d+(?:\\.\\d+)?)"
+    private val IMU = Regex("^# lsm6ds3 ax=$NUM ay=$NUM az=$NUM gx=$NUM gy=$NUM gz=$NUM pico=$NUM$")
+
+    /** `# lsm6ds3 ax=0.012 ay=-0.034 az=0.998 gx=0.1 gy=-0.2 gz=0.0 pico=0.15`; fora da faixa do sensor, null. */
+    fun parseImu(line: String): Map<String, Double>? {
+        val m = IMU.matchEntire(line.trim()) ?: return null
+        val v = m.groupValues.drop(1).map { it.toDouble() }
+        if (v.take(3).any { abs(it) > 4.5 } || v.subList(3, 6).any { abs(it) > 300 } || v[6] !in 0.0..8.0) return null
+        return listOf(IMU_AX, IMU_AY, IMU_AZ, IMU_GX, IMU_GY, IMU_GZ, IMU_PEAK).zip(v).toMap()
     }
 }
 

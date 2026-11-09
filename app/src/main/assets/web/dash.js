@@ -9,13 +9,14 @@
  *   classic  dois mostradores redondos com ponteiro e coluna central de dados
  *   horizon  arco largo de RPM em ciano com a velocidade ao centro, réguas curvas e painéis laterais
  *
- * Todos mostram as mesmas três telas de seis campos (Estrada, Motor, Viagem), a troca automática
+ * Todos mostram as mesmas telas de seis campos (Estrada, Motor, Viagem e, com o sensor de movimento do
+ * ESP32, Movimento), a troca automática
  * de tela, as luzes-espia, o alerta em camada própria e o modo dia/noite. Recebe o mesmo estado
  * que window.onTelemetry (MainActivity.stateJson) e os metadados do perfil (profileMetaJson).
  *
  *   Dash.mount(hostElement)  ·  Dash.setMeta(meta)  ·  Dash.update(state)
  *   Dash.setLook('minimal'|'capsule'|'hud'|'sport'|'classic'|'horizon'), Dash.setMode('auto'|'day'|'night'),
- *   Dash.setPage('road'|'engine'|'trip'), Dash.setAutoPage(bool)
+ *   Dash.setPage('road'|'engine'|'trip'|'motion'), Dash.setAutoPage(bool)
  */
 window.Dash = (function () {
   const SVGNS = 'http://www.w3.org/2000/svg';
@@ -23,7 +24,7 @@ window.Dash = (function () {
   const MODES = ['auto', 'day', 'night'];
   // Rótulos distintos: o rodapé também tem o botão "Telas auto" (troca automática de tela).
   const MODE_LABEL = { auto: 'Luz auto', day: 'Luz dia', night: 'Luz noite' };
-  const PAGES = [['road', 'Estrada'], ['engine', 'Motor'], ['trip', 'Viagem']];
+  const PAGES = [['road', 'Estrada'], ['engine', 'Motor'], ['trip', 'Viagem'], ['motion', 'Movimento']];
   const TAU_MS = 120;            // suavização de RPM e velocidade entre leituras
   const STOP_TO_TRIP_MS = 6000;  // parado há tanto tempo → tela Viagem (com troca automática)
 
@@ -132,6 +133,10 @@ window.Dash = (function () {
   const pct = (key) => { const v = reading(key); return v == null ? null : { frac: v / 100 }; };
   const trimTotal = () => { const a = reading('stft'); const b = reading('ltft'); return a == null && b == null ? null : (a || 0) + (b || 0); };
   const coolantFrac = (c) => { const t = thermal(); return c == null ? null : (c - 40) / ((t ? t.criticalC + 10 : 120) - 40); };
+  // Sensor de movimento do ESP32 (LSM6DS3): o app aprende sozinho como o módulo está montado
+  const imuNote = (d) => (d.imuStage == null ? 'sem sensor de movimento'
+    : d.imuStage === 0 ? 'calibrando: pare o carro' : d.imuStage === 1 ? 'calibrando: arranque e freie' : null);
+  const signed = (v, dec) => (v == null ? '--' : (v > 0.5 * Math.pow(10, -dec) ? '+' : '') + num(v, dec));
 
   const FIELDS = {
     kml: {
@@ -196,6 +201,35 @@ window.Dash = (function () {
       note: (s, d) => reserve(d) ? 'reserva' : meta.fuel ? 'de ' + num(meta.fuel.tankCapacityL) + ' L' : '',
       bar: (s, d) => { const f = tankFrac(d); return f == null ? null : { frac: f }; },
     },
+    accel: {
+      label: 'Aceleração', value: (s, d) => [signed(d.accelG, 2), 'g'],
+      note: (s, d) => imuNote(d) || (d.accelG == null ? '' : d.accelG < -0.3 ? 'frenagem forte' : d.accelG < -0.05 ? 'freando'
+        : d.accelG > 0.05 ? 'acelerando' : 'constante'),
+      state: (s, d) => (d.accelG != null && d.accelG < -0.4 ? 'warn' : null),
+      bar: (s, d) => (d.accelG == null ? null : { zero: clamp(d.accelG / 0.5, -1, 1), ends: ['freio', 'acel.'] }),
+    },
+    lateral: {
+      label: 'Curva', value: (s, d) => [d.lateralG == null ? '--' : num(Math.abs(d.lateralG), 2), 'g'],
+      note: (s, d) => imuNote(d) || (d.lateralG == null ? '' : Math.abs(d.lateralG) < 0.05 ? 'em linha reta' : d.lateralG > 0 ? 'para a esquerda' : 'para a direita'),
+      state: (s, d) => (d.lateralG != null && Math.abs(d.lateralG) > 0.4 ? 'warn' : null),
+      bar: (s, d) => (d.lateralG == null ? null : { zero: clamp(-d.lateralG / 0.5, -1, 1), ends: ['esq.', 'dir.'] }),
+    },
+    slope: {
+      label: 'Inclinação', value: (s, d) => [signed(d.slopePct, 0), '%'],
+      note: (s, d) => imuNote(d) || (d.slopePct == null ? '' : Math.abs(d.slopePct) < 2 ? 'plano' : d.slopePct > 0 ? 'subida' : 'descida'),
+      bar: (s, d) => (d.slopePct == null ? null : { zero: clamp(d.slopePct / 20, -1, 1), ends: ['desce', 'sobe'] }),
+    },
+    impact: {
+      label: 'Impacto', value: (s, d) => [num(d.impactG, 2), 'g'],
+      note: (s, d) => (d.imuStage == null ? 'sem sensor de movimento' : d.impactG == null ? '' : d.impactG >= 0.4 ? 'buraco ou lombada' : 'piso liso'),
+      state: (s, d) => (d.impactG == null ? null : d.impactG >= 0.7 ? 'bad' : d.impactG >= 0.4 ? 'warn' : null),
+      bar: (s, d) => (d.impactG == null ? null : { frac: clamp(d.impactG, 0, 1) }),
+    },
+    bumps: { label: 'Buracos', value: (s, d) => [d.bumps == null ? '--' : num(d.bumps), ''], note: () => 'nesta viagem' },
+    gmax: {
+      label: 'Frenagem máx.', value: (s, d) => [num(d.maxBrakeG, 2), 'g'],
+      note: (s, d) => (d.maxBrakeG == null ? '' : 'arranc. ' + num(d.maxAccelG, 2) + ' · curva ' + num(d.maxLateralG, 2)),
+    },
     gps: {
       label: 'Vel. GPS', value: (s) => [s.gps && s.gps.ageMs < 5000 ? num(s.gps.speedKmh) : '--', 'km/h'],
       note: (s) => s.gps && s.gps.ageMs < 5000 ? '±' + num(s.gps.accuracyM) + ' m' : 'sem sinal',
@@ -206,7 +240,11 @@ window.Dash = (function () {
     road: ['kml', 'avg', 'range', 'coolant', 'iat', 'volts'],
     engine: ['tps', 'map', 'load', 'timing', 'lambda', 'trim'],
     trip: ['dist', 'time', 'used', 'avg', 'tank', 'gps'],
+    motion: ['accel', 'lateral', 'slope', 'impact', 'bumps', 'gmax'],
   };
+  // A tela Movimento só aparece depois da primeira leitura do sensor (ou se for a escolhida)
+  let motionSeen = false;
+  const pageShown = (id) => id !== 'motion' || motionSeen || page === 'motion';
 
   function tempBand(c) {
     const t = thermal();
@@ -959,8 +997,9 @@ window.Dash = (function () {
       const dx = e.clientX - x0;
       x0 = null;
       if (Math.abs(dx) < 60) return;
-      const i = PAGES.findIndex((p) => p[0] === page);
-      setPage(PAGES[(i + (dx < 0 ? 1 : PAGES.length - 1)) % PAGES.length][0]);
+      const vis = PAGES.filter((p) => pageShown(p[0]));
+      const i = vis.findIndex((p) => p[0] === page);
+      setPage(vis[(i + (dx < 0 ? 1 : vis.length - 1)) % vis.length][0]);
     });
     if (window.matchMedia) {
       const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -1058,6 +1097,7 @@ window.Dash = (function () {
     if (!root || !ui.fields) return;
     PAGES.forEach(([id]) => {
       if (id === page) ui['tab_' + id].setAttribute('aria-current', 'page'); else ui['tab_' + id].removeAttribute('aria-current');
+      ui['tab_' + id].hidden = !pageShown(id);
     });
     ui.autoBtn.setAttribute('aria-pressed', String(autoPage));
     LAYOUT[page].forEach((key, i) => {
@@ -1113,6 +1153,10 @@ window.Dash = (function () {
     const s = state;
     const d = s.derived || {};
     const c = ctxNow();
+    if (!motionSeen && d.imuStage != null) {
+      motionSeen = true;
+      if (ui.tab_motion) ui.tab_motion.hidden = false;
+    }
 
     // Marcha (Minimal e HUD) e velocidade (Minimal)
     if (ui.gearNum) {
