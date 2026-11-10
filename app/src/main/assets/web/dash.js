@@ -1142,7 +1142,7 @@ window.Dash = (function () {
     const speed = reading('speed');
     const top = ((state && state.alerts) || []).find((a) => a.level !== 'INFO');
     return {
-      rpm, speed, gear: d.estimatedGear || null, recommended: d.recommendedGear,
+      rpm, speed, gear: Math.round(d.estimatedGear) || null, recommended: d.recommendedGear == null ? null : Math.round(d.recommendedGear),
       shift: !!(d.shiftUp && d.recommendedGear), redline: rpm != null && rpm >= dashCfg().rpmRedline,
       alert: top || null, critical: !!(top && top.level === 'CRITICAL'),
     };

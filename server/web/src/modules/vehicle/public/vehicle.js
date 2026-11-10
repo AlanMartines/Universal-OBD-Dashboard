@@ -164,6 +164,8 @@
   // números andam em linha reta; num buraco maior que GAP_MS fica a última leitura.
   function startReplay(tripId) {
     var GAP_MS = 30000;
+    // Valores em degraus (marcha, alertas, contadores) não se interpolam: 2,79ª não existe.
+    var STEPS = ['derived.estimatedGear', 'derived.recommendedGear', 'derived.shiftUp', 'derived.imuStage', 'derived.bumps', 'pc.ecoBand'];
     var TICK_MS = 100;
     var playBtn = document.getElementById('replay-play');
     var seek = document.getElementById('replay-seek');
@@ -204,7 +206,7 @@
       Object.keys(a.metrics).forEach(function (id) {
         var v = a.metrics[id];
         if (typeof v !== 'number') return;
-        var w = k > 0 && typeof b.metrics[id] === 'number' ? v + (b.metrics[id] - v) * k : v;
+        var w = k > 0 && STEPS.indexOf(id) < 0 && typeof b.metrics[id] === 'number' ? v + (b.metrics[id] - v) * k : v;
         if (id.indexOf('dash.') === 0) saved[id] = v;
         if (id.indexOf('derived.') === 0) {
           if (DERIVED.indexOf(id.slice(8)) >= 0) derived[id.slice(8)] = w;
