@@ -77,7 +77,7 @@ const unsigned long IMU_MS = 200;
 // LEDs de estado (veja o cabeçalho). O LED da placa acende com nível alto.
 const int LED_PLACA = 2;
 const bool LED_RGB = true;           // false se não houver LED tricolor (os pinos ficam livres)
-const bool LED_ANODO_COMUM = false;  // true: anodo comum (D18 em 3,3 V); false: catodo comum (D18 em 0 V)
+const bool LED_ANODO_COMUM = true;   // true: anodo comum (D18 em 3,3 V), o do projeto; false: catodo comum (D18 em 0 V)
 const int LED_COMUM = 18;
 const int LED_R = 17, LED_G = 16, LED_B = 4;
 const unsigned long CAPTURA_MS = 1000;  // quadro mais recente que isso conta como "capturando"

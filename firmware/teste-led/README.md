@@ -19,4 +19,4 @@ Teste dos LEDs de estado do [`esp32-can-listen`](../esp32-can-listen/README.md#l
 4. Misturas: amarelo, ciano, magenta e branco.
 5. Os sinais do firmware 1.4: sem app (azul), sem quadros da rede (amarelo), capturando (verde, 2 piscadas por segundo) e erro (vermelho, rápido).
 
-Depois ele recomeça. Digite **a** (anodo comum) ou **c** (catodo comum) e Enter no Monitor serial para fixar o tipo usado nos passos 3 a 5; o padrão é catodo comum. No `esp32-can-listen`, o tipo vai em `LED_ANODO_COMUM`.
+Depois ele recomeça. Digite **a** (anodo comum) ou **c** (catodo comum) e Enter no Monitor serial para fixar o tipo usado nos passos 3 a 5; o padrão é anodo comum, o tipo do LED do projeto. No `esp32-can-listen`, o tipo vai em `LED_ANODO_COMUM`.

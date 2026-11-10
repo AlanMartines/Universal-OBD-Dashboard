@@ -86,8 +86,8 @@ As piscadas são curtas (80 ms acesas), para o LED passar a maior parte do tempo
 
 O D18 faz as vezes de 3,3 V ou de GND. Por isso a ligação é a mesma para os dois tipos de LED, e só muda uma linha no começo do programa:
 
-- **Catodo comum** (o comum é o negativo): `LED_ANODO_COMUM = false`, o padrão.
-- **Anodo comum** (o comum é o positivo): `LED_ANODO_COMUM = true`.
+- **Anodo comum** (o comum é o positivo): `LED_ANODO_COMUM = true`, o padrão (o LED do projeto, conferido com o [`teste-led`](../teste-led/README.md) em 10/11/2026).
+- **Catodo comum** (o comum é o negativo): `LED_ANODO_COMUM = false`.
 
 Para descobrir o tipo, use o multímetro na escala de diodo. Com a ponta **preta** no comum e a **vermelha** numa das outras pernas, se a cor acender (fraquinho), é catodo comum. Se só acender com as pontas trocadas, é anodo comum.
 

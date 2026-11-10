@@ -9,7 +9,7 @@
  *   4. Misturas: amarelo, ciano, magenta e branco.
  *   5. Os sinais do firmware 1.4: sem app, sem quadros da rede, capturando e erro.
  * Depois recomeça. Digite "a" (anodo comum) ou "c" (catodo comum) e Enter para fixar o tipo
- * usado nos passos 3 a 5; o padrão é catodo comum, como no esp32-can-listen.
+ * usado nos passos 3 a 5; o padrão é anodo comum, como no esp32-can-listen.
  *
  * Ligação (a mesma do esp32-can-listen 1.4), com um resistor de 220 a 330 Ω em cada cor:
  *   comum (a perna mais comprida) no D18, vermelho no TX2 (GPIO17), verde no RX2 (GPIO16), azul no D4.
@@ -24,7 +24,7 @@ const int LED_R = 17, LED_G = 16, LED_B = 4;
 const int CORES[] = {LED_R, LED_G, LED_B};
 const char *const NOMES[] = {"vermelho", "verde", "azul"};
 
-bool anodo = false;  // tipo usado nos passos 3 a 5 (muda pelo Monitor serial)
+bool anodo = true;   // tipo usado nos passos 3 a 5 (muda pelo Monitor serial)
 
 // Brilho de 0 a 255 numa cor, já invertido no anodo comum (a cor acende com o pino em nível baixo).
 void cor(int pin, int brilho, bool comoAnodo) {
