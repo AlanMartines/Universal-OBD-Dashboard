@@ -33,7 +33,7 @@ FEM_W, FEM_PINO = 2.34, 3.2
 ESP_PINO = 7.9              # pino do ESP32 abaixo do plástico: 12 mm da ponta à face de cima da placa dele (foto do Alan)
 MALE_H = 2.5                # plástico da barra de pinos macho
 ESP_Z = T + FEM_H + MALE_H  # fundo da placa do ESP32
-MOD_Z = T + MALE_H          # fundo do TJA1050 e do RT8272
+MOD_Z = T + FEM_H + MALE_H  # fundo do transceptor e do RT8272: encaixados em barras fêmea, como o ESP32
 MOD_T = 1.6                 # placa dos módulos
 WIRE_Z = T + 0.6            # fios isolados por cima
 BOT_Z = -0.4                # fio estanhado por baixo
@@ -122,15 +122,41 @@ for row in (2, 12):
         x, y = xy(c, row)
         cyl('esp32', GOLD, (x, y, ESP_Z - ESP_PINO), (x, y, top + 0.8), 0.32)   # a ponta fica 0,4 mm acima da placa, dentro da barra fêmea
 
+HOUSING_H = 8.5             # conector fêmea Dupont (cabos dos sensores e fios do CAN do TJA1050)
+
+
+def encaixe(pts):
+    """Módulo encaixado numa barra fêmea (como o ESP32): corpo da barra na placa, plástico dos pinos macho por cima e os
+    pinos, que descem até 0,4 mm da placa; os pinos da barra fêmea saem 3,2 mm por baixo."""
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    deitada = max(xs) - min(xs) > max(ys) - min(ys)
+    lx = max(xs) - min(xs) + (P if deitada else FEM_W)
+    ly = max(ys) - min(ys) + (FEM_W if deitada else P)
+    cx_, cy_ = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+    box('modulos', '#212121', cx_ - lx / 2, cy_ - ly / 2, T, lx, ly, FEM_H)
+    lx2 = max(xs) - min(xs) + P
+    ly2 = max(ys) - min(ys) + P
+    box('modulos', '#111111', cx_ - lx2 / 2, cy_ - ly2 / 2, T + FEM_H, lx2 if deitada else P, P if deitada else ly2, MALE_H)
+    for x, y in pts:
+        cyl('modulos', GOLD, (x, y, T + 0.4), (x, y, MOD_Z + MOD_T + 0.6), 0.32)
+        cyl('modulos', GOLD, (x, y, -FEM_PINO), (x, y, 0), 0.2)
+
+
+def can_fio(n):
+    """Fio do CANH ou do CANL do TJA1050: do conector na barra macho da linha 24 até o pino, por cima do módulo."""
+    hx, hy = xy(*g.CAN_HOLES[n])
+    x, y = xy(*g.TJA_CAN[n])
+    z = MOD_Z + MOD_T + 1.2 + (0.0 if n == 'CANH' else 1.0)
+    topo_con = T + MALE_H + HOUSING_H
+    return [(hx, hy, topo_con), (hx, hy, z), (x, y + 1.6, z), (x, y, MOD_Z + MOD_T + 0.3)]
+
+
 # ---------------------------------------------------------------- Transceptor: TJA1050 (22 x 11 mm, barra de 4 pinos) ou SN65HVD230
 tx0 = ty0 = sx0 = sy0 = 0.0
 if g.TJA_PINS:
     vx, vy = xy(*g.TJA_PINS['VCC'])
     _, gy = xy(*g.TJA_PINS['GND'])
-    box('modulos', '#111111', vx - P / 2, vy - P / 2, T, P, 4 * P, MALE_H)
-    for c, r in g.TJA_PINS.values():
-        x, y = xy(c, r)
-        cyl('modulos', GOLD, (x, y, -1.0), (x, y, MOD_Z + MOD_T + 0.6), 0.32)
+    encaixe([xy(*cr) for cr in g.TJA_PINS.values()])
     tx0 = vx - 1.2
     yc = (vy + gy) / 2
     ty0 = yc - g.TJA_MM[1] / 2
@@ -140,18 +166,20 @@ if g.TJA_PINS:
     box('modulos', '#212121', tx0 + 12.4, ty0 + 1.0, mt, 2.4, 1.4, 0.5)
     for dy in (1.8, g.TJA_MM[1] - 1.8):
         cyl('modulos', '#e3f2fd', (tx0 + g.TJA_MM[0] - 2.9, ty0 + dy, mt), (tx0 + g.TJA_MM[0] - 2.9, ty0 + dy, mt + 0.05), 1.1)
-    for n, (c, r) in g.TJA_CAN.items():   # CANH e CANL: perna curta do pino até a ilha da coluna 18
-        x, y = xy(c, r)
+    # CANH e CANL: fios curtos soldados por cima do módulo até o conector de 2 vias na barra macho da linha 24
+    hxs = [xy(*cr)[0] for cr in g.CAN_HOLES.values()]
+    _, hy0 = xy(*g.CAN_HOLES['CANH'])
+    box('modulos', '#111111', min(hxs) - P / 2, hy0 - P / 2, T, 2 * P, P, MALE_H)
+    box('modulos', '#1b1b1b', min(hxs) - P / 2, hy0 - P / 2, T + MALE_H, 2 * P, P, HOUSING_H)
+    for n in g.TJA_CAN:
         hx, hy = xy(*g.CAN_HOLES[n])
-        tube('modulos', SILVER, [(x, y, mt + 0.6), (x, y, T + 1.4), (hx, hy, T), (hx, hy, -0.8)], 0.3)
+        cyl('modulos', GOLD, (hx, hy, -1.0), (hx, hy, T + MALE_H + 6.0), 0.32)
+        tube('modulos', g.BLU, can_fio(n), 0.5)
 
 if g.SN_PINS:   # WCMCU-230 (SN65HVD230), 15,7 x 13,9 mm, barra de 6 pinos na borda de baixo, deitado para cima
     sxs = [xy(*cr)[0] for cr in g.SN_PINS.values()]
     _, spy = xy(*g.SN_PINS['3V3'])
-    box('modulos', '#111111', min(sxs) - P / 2, spy - P / 2, T, 6 * P, P, MALE_H)
-    for c, r in g.SN_PINS.values():
-        x, y = xy(c, r)
-        cyl('modulos', GOLD, (x, y, -1.0), (x, y, MOD_Z + MOD_T + 0.6), 0.32)
+    encaixe([xy(*cr) for cr in g.SN_PINS.values()])
     sx0 = (min(sxs) + max(sxs)) / 2 - g.SN_MM[0] / 2
     sy0 = spy + 1.3 - g.SN_MM[1]
     box('modulos', '#1565c0', sx0, sy0, MOD_Z, g.SN_MM[0], g.SN_MM[1], MOD_T)
@@ -165,11 +193,8 @@ if g.SN_PINS:   # WCMCU-230 (SN65HVD230), 15,7 x 13,9 mm, barra de 6 pinos na bo
 # ---------------------------------------------------------------- RT8272 (HW-108, 21 x 21 mm)
 ex, ey = xy(*g.BUCK_PINS['EN'])
 ox, oy = xy(*g.BUCK_PINS['OUT-'])
-box('modulos', '#111111', ex - P / 2, ey - P / 2, T, P, 3 * P, MALE_H)
-box('modulos', '#111111', ox - P / 2, oy - P / 2, T, P, 2 * P, MALE_H)
-for c, r in g.BUCK_PINS.values():
-    x, y = xy(c, r)
-    cyl('modulos', GOLD, (x, y, -1.0), (x, y, MOD_Z + MOD_T + 0.6), 0.32)
+encaixe([xy(*g.BUCK_PINS[n]) for n in ('EN', 'IN-', 'IN+')])
+encaixe([xy(*g.BUCK_PINS[n]) for n in ('OUT-', 'OUT+')])
 bx0, by0 = ox - 1.5, ey - 1.2
 box('modulos', '#0d47a1', bx0, by0, MOD_Z, g.BUCK_MM, g.BUCK_MM, MOD_T)
 bt = MOD_Z + MOD_T
@@ -268,7 +293,6 @@ BMP_MOD_PINS = ['3.3V', 'SDA', 'SCL', 'GND', 'VCC']   # de cima para baixo, na b
 BMP_WIRE = {'SDA': g.CYA, 'SCL': g.GRN, 'GND': g.BLK, 'VCC': g.RED}
 BMP_WIRE_INFO = {'SDA': ('ciano', 'Dados I2C, do D25'), 'SCL': ('verde', 'Relógio I2C, do D26'),
                  'GND': ('preto', 'GND'), 'VCC': ('vermelho', '5 V (no VCC do GY-68)')}
-HOUSING_H = 8.5                                       # conector fêmea Dupont nos pinos
 CON_TOP = T + MALE_H + HOUSING_H                      # conector do cabo na placa, por cima
 
 
@@ -444,12 +468,13 @@ def obd_cable():
 
 
 DET = {
-    'alturas': {'T': T, 'FEM_H': FEM_H, 'FEM_W': FEM_W, 'FEM_PINO': FEM_PINO, 'ESP_PINO': ESP_PINO, 'MALE_H': MALE_H, 'ESP_Z': ESP_Z, 'MOD_Z': MOD_Z, 'MOD_T': MOD_T, 'WIRE_Z': WIRE_Z, 'BOT_Z': BOT_Z, 'FUSE_H': FUSE_H},
+    'alturas': {'ENCAIXE': True, 'HOUSING_H': HOUSING_H, 'T': T, 'FEM_H': FEM_H, 'FEM_W': FEM_W, 'FEM_PINO': FEM_PINO, 'ESP_PINO': ESP_PINO, 'MALE_H': MALE_H, 'ESP_Z': ESP_Z, 'MOD_Z': MOD_Z, 'MOD_T': MOD_T, 'WIRE_Z': WIRE_Z, 'BOT_Z': BOT_Z, 'FUSE_H': FUSE_H},
     'esp32': {'x0': round(x0, 3), 'y0': round(y0, 3), 'l': g.ESP_L, 'w': g.ESP_W, 'pinos': esp_pins()},
     'versao': g.VARIANTE,
     'tja': {'x0': round(tx0, 3), 'y0': round(ty0, 3), 'l': g.TJA_MM[0], 'w': g.TJA_MM[1],
             'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.TJA_PINS.items()],
-            'can': [{'n': n, 'p': rr(xy(*cr)), 'furo': rr(xy(*g.CAN_HOLES[n]))} for n, cr in g.TJA_CAN.items()]} if g.TJA_PINS else None,
+            'can': [{'n': n, 'p': rr(xy(*cr)), 'furo': rr(xy(*g.CAN_HOLES[n])), 'furo_cr': list(g.CAN_HOLES[n]),
+                     'fio': [rr(p) for p in can_fio(n)]} for n, cr in g.TJA_CAN.items()]} if g.TJA_PINS else None,
     'sn65': {'x0': round(sx0, 3), 'y0': round(sy0, 3), 'l': g.SN_MM[0], 'w': g.SN_MM[1],
              'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.SN_PINS.items()]} if g.SN_PINS else None,
     'rt': {'x0': round(bx0, 3), 'y0': round(by0, 3), 'lado': g.BUCK_MM, 'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.BUCK_PINS.items()]},
@@ -498,9 +523,12 @@ def _aabb(p):
     if p[1] == 'box':
         c, sz = p[3], p[4]
         return [c[i] - sz[i] / 2 for i in range(3)], [c[i] + sz[i] / 2 for i in range(3)]
-    if p[1] == 'cyl':
+    if p[1] == 'cyl':   # o disco das pontas só se estende para os lados do eixo
         a, b, r = p[3], p[4], p[5]
-        return [min(a[i], b[i]) - r for i in range(3)], [max(a[i], b[i]) + r for i in range(3)]
+        d = [b[i] - a[i] for i in range(3)]
+        ln = math.sqrt(sum(v * v for v in d)) or 1.0
+        e = [r * math.sqrt(max(0.0, 1 - (d[i] / ln) ** 2)) for i in range(3)]
+        return [min(a[i], b[i]) - e[i] for i in range(3)], [max(a[i], b[i]) + e[i] for i in range(3)]
     c, r = p[3], p[4]
     return [c[i] - r for i in range(3)], [c[i] + r for i in range(3)]
 

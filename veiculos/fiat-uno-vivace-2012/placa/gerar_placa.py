@@ -54,12 +54,13 @@ RES = [
     ('R4', (16, 3), (16, 7), '3V3 → CANH'),
 ]
 # Ilhas de ligação dos módulos e do cabo
-# TJA1050: módulo de 22 x 11 mm. Barra de 4 pinos (VCC, TX, RX, GND) soldada na coluna 11, linhas 19 a 22; o módulo
-# fica deitado para a direita. CANH e CANL ficam na outra ponta, cerca de 19,4 mm adiante, fora da grade: cada um desce por
-# uma perna curta (sobra de perna de resistor) até a ilha da coluna 18 logo abaixo, e a ligação segue por baixo.
+# TJA1050: módulo de 22 x 11 mm. Barra de 4 pinos (VCC, TX, RX, GND) encaixada numa barra fêmea na coluna 11, linhas
+# 19 a 22 (pedido do Alan em 10/11/2026: módulos removíveis); o módulo fica deitado para a direita. CANH e CANL ficam na
+# outra ponta, cerca de 19,4 mm adiante, fora da grade: dois fios curtos soldados por cima do módulo terminam num
+# conector Dupont fêmea de 2 vias, encaixado numa barra macho de 2 pinos em (16,24) e (17,24), abaixo do módulo.
 TJA_PINS = {'VCC': (11, 19), 'TX': (11, 20), 'RX': (11, 21), 'GND': (11, 22)}
 TJA_CAN = {'CANH': (11 + 19.4 / P, 20), 'CANL': (11 + 19.4 / P, 21)}
-CAN_HOLES = {'CANH': (18, 20), 'CANL': (18, 21)}
+CAN_HOLES = {'CANH': (16, 24), 'CANL': (17, 24)}
 OBD_PADS = {'16': (11, 24), '4': (12, 24), '5': (13, 24), '14': (18, 24)}
 # Cabo OBD2 macho com fios soltos ("pigtail", 16 fios): cores da tabela do vendedor. Confira com o multímetro
 # (continuidade do pino até o fio) antes de soldar: as cores mudam de um fabricante para outro.
@@ -102,8 +103,8 @@ TRACKS = [
     ('12 V do OBD → fusível', RED, [(11, 24), (9, 24)]),
     ('12 V com fusível', PUR, [(1, 24), (1, 23), (8, 23), (8, 16)]),
     ('OUT+ → J3', RED, [(1, 21), (2, 21), (2, 13)]),
-    ('CANH', BLU, [(18, 17), (18, 20)]),
-    ('CAN-L', BLU, [(18, 21), (18, 24)]),
+    ('CANH', BLU, [(18, 17), (18, 23), (16, 23), (16, 24)]),
+    ('CAN-L', BLU, [(17, 24), (18, 24)]),
     ('GND do BMP180', BLK, [(14, 13), (14, 17)]),
     ('5 V do BMP180', RED, [(15, 17), (16, 17)]),
 ]
@@ -342,11 +343,15 @@ def tja_art(s):
         s.add(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="0.65" fill="#d4af37"/>')
         can = n.startswith('CAN')
         s.text(x + (-1.1 if can else 1.1), y + 0.4, n, 0.95, '#fff', anchor='end' if can else 'start', weight='bold')
-    # pernas curtas do CANH e do CANL até as ilhas da coluna 18, logo abaixo do módulo
+    # fios curtos do CANH e do CANL até o conector de 2 vias da linha 24, abaixo do módulo
     for n, (c, r) in TJA_CAN.items():
         x, y = MX + (c - 1) * P, MY + (r - 1) * P
         tx, ty = hp(*CAN_HOLES[n])
-        s.add(f'<path d="M{x:.2f},{y:.2f} L{tx:.2f},{ty:.2f}" stroke="#9e9e9e" stroke-width="0.45" stroke-linecap="round"/>')
+        s.add(f'<path d="M{x:.2f},{y:.2f} L{x:.2f},{ty - 2.6:.2f} L{tx:.2f},{ty - 1.3:.2f}" fill="none" stroke="#0d47a1" stroke-width="0.9" stroke-linecap="round"/>'
+              f'<path d="M{x:.2f},{y:.2f} L{x:.2f},{ty - 2.6:.2f} L{tx:.2f},{ty - 1.3:.2f}" fill="none" stroke="{BLU}" stroke-width="0.6" stroke-linecap="round"/>')
+    xs = [hp(*CAN_HOLES[n])[0] for n in CAN_HOLES]
+    _, ty = hp(*CAN_HOLES['CANH'])
+    s.add(f'<rect x="{min(xs) - 1.27:.2f}" y="{ty - 1.27:.2f}" width="{max(xs) - min(xs) + P:.2f}" height="{P:.2f}" rx="0.3" fill="#212121"/>')
 
 
 def sn65_art(s):
@@ -457,16 +462,18 @@ def view_top(stage, scale):
             else:
                 s.text(x + 1.8, y + 0.45, name, 1.0, TRANS_COL[name], anchor='start', weight='bold', bg=True)
         if SN_PINS:
-            s.text(MX + 14.5 * P, MY + 19.6 * P, 'pinos do SN65HVD230', 1.15, '#1565c0', bg=True)
+            s.text(MX + 14.5 * P, MY + 19.6 * P, 'barra fêmea do SN65HVD230', 1.15, '#1565c0', bg=True)
         else:
-            s.text(MX + 13.5 * P, MY + 19.5 * P, 'pinos do TJA1050', 1.15, '#1565c0', bg=True)
-            pad_mark(s, *CAN_HOLES['CANH'], BLU, 'CANH', 'above', size=0.9)
-            pad_mark(s, *CAN_HOLES['CANL'], BLU, 'CANL', 'below', size=0.9)
+            s.text(MX + 13.5 * P, MY + 19.5 * P, 'barra fêmea do TJA1050', 1.15, '#1565c0', bg=True)
+            for n, (c, r) in CAN_HOLES.items():   # barra macho de 2 pinos: o conector dos fios do CANH e do CANL
+                x, y = hp(c, r)
+                s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#455a64"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
+            s.text(hp(16.5, 24)[0], hp(16.5, 24)[1] - 1.9, 'CANH · CANL', 0.85, BLU, weight='bold', bg=True)
         for name, (c, r) in BUCK_PINS.items():
             x, y = hp(c, r)
             s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
             s.text(x + (1.8 if c == 1 else -1.8), y + 0.45, name, 1.0, BUCK_COL[name], anchor='start' if c == 1 else 'end', weight='bold', bg=True)
-        s.text(MX + 3.5 * P, hp(1, 19)[1], 'pinos do RT8272', 1.15, '#0d47a1', bg=True)
+        s.text(MX + 3.5 * P, hp(1, 19)[1], 'barras fêmea do RT8272', 1.15, '#0d47a1', bg=True)
         bmp_header(s, labels=True)
         fuse_footprint(s)
         s.text(hp(*FUSE_C)[0], hp(*FUSE_C)[1] + 3.3, f'suporte do fusível: alargar 2 furos para {FUSE_DRILL:.1f} mm'.replace('.', ','), 1.0, PUR, weight='bold', bg=True)
@@ -529,7 +536,7 @@ def view_bottom(scale):
     for name, col, pts, _ in BOTTOM_WIRES:
         jumper(s, pts, col, name, X=X)
     # nomes das trilhas
-    labels = {'GND': (9, 19.5, BLK), '5 V': (13, 18, RED), 'RX': (14, 21, YEL), 'CAN-L': (18, 23.5, BLU), 'CANH': (18, 18.5, BLU), '12 V com fusível': (7.2, 20.5, PUR),
+    labels = {'GND': (9, 19.5, BLK), '5 V': (13, 18, RED), 'RX': (14, 21, YEL), 'CAN-L': (17.5, 25.2, BLU), 'CANH': (18, 18.5, BLU), '12 V com fusível': (7.2, 20.5, PUR),
               'OUT+': (2, 18, RED), 'fusível': (FUSE_C[0], FUSE_C[1] + 1.3, PUR), '12 V': (10, 25.2, RED),
               'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG), 'BMP180': (13.5, 17.9, CYA)}
     if SN_PINS:

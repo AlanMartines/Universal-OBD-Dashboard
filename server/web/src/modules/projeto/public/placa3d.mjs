@@ -266,20 +266,30 @@ function iniciar() {
     g.position.copy(W(x, y, z));
     return g;
   }
-  /** Pinos macho saindo de um módulo para baixo, com o plástico separador e a solda por cima. */
+  /** Pinos macho saindo de um módulo para baixo, com o plástico separador e a solda por cima. Com A.ENCAIXE, o módulo
+   *  fica encaixado numa barra fêmea (como o ESP32): o corpo dela na placa, o plástico dos pinos por cima. */
   function barraMacho(pinos, zTopo, camada, nome, comPlastico = true) {
     const g = new THREE.Group();
     const xs = pinos.map((p) => p[0]), ys = pinos.map((p) => p[1]);
-    if (comPlastico) {
-      const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-      const lx = Math.max(...xs) - Math.min(...xs) + P, ly = Math.max(...ys) - Math.min(...ys) + P;
-      g.add(caixa(lx, A.MALE_H, ly, M.preto, cx, cy, A.T));
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const lx = Math.max(...xs) - Math.min(...xs) + P, ly = Math.max(...ys) - Math.min(...ys) + P;
+    const deitada = lx > ly;
+    if (A.ENCAIXE) {
+      const fw = A.FEM_W ?? P;
+      g.add(caixa(deitada ? lx : fw, A.FEM_H, deitada ? fw : ly, M.nylon, cx, cy, A.T));
+      for (const [x, y] of pinos) {
+        const furo = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 1.0), M.furo);
+        furo.position.copy(W(x, y, A.T + A.FEM_H + 0.01));
+        g.add(furo);
+        g.add(cilindro(W(x, y, -(A.FEM_PINO ?? 0.95)), W(x, y, A.T), 0.25, M.estanho, 4));
+      }
     }
+    if (comPlastico) g.add(caixa(lx, A.MALE_H, ly, M.preto, cx, cy, A.ENCAIXE ? A.T + A.FEM_H : A.T));
     for (const [x, y] of pinos) {
-      g.add(cilindro(W(x, y, -0.95), W(x, y, zTopo + 0.7), 0.32, M.ouro, 4));
+      g.add(cilindro(W(x, y, A.ENCAIXE ? A.T + A.FEM_H - 1 : -0.95), W(x, y, zTopo + 0.7), 0.32, M.ouro, 4));
       g.add(solda(x, y, zTopo, 0.75, 0.55, false));
     }
-    return poe(g, camada, nome);
+    return poe(g, camada, A.ENCAIXE ? `${nome}, encaixada numa barra fêmea` : nome);
   }
 
   // ------------------------------------------------------------ solda e ilhas
@@ -467,14 +477,22 @@ function iniciar() {
     g.add(smd(T.x0 + 14.2, T.y0 + 6.4, topo, 2.0, 1.25, M.resistor, false, '000'));
     g.add(smd(T.x0 + 14.2, T.y0 + 9.0, topo, 2.0, 1.25, M.ceramica));
     poe(g, 'modulos', 'TJA1050: transceptor CAN, só escuta (TX preso nos 5 V)');
-    // CANH e CANL: perna curta (sobra de perna de resistor) do pino até a ilha logo abaixo; a ligação segue por baixo
-    for (const p of T.can) {
-      const perna = new THREE.Group();
-      const [x, y] = p.p, [hx, hy] = p.furo;
-      const curva = new THREE.CatmullRomCurve3([W(x, y, topo + 0.6), W(x, y, topo - 0.2), W(x, y, A.T + 1.6), W(hx, hy, A.T + 0.3), W(hx, hy, -0.9)], false, 'centripetal');
-      perna.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 40, 0.3, 8), M.estanho));
-      perna.add(solda(x, y, topo, 0.75, 0.5, false));
-      poe(perna, 'modulos', `Perna do ${p.n}: do pino do TJA1050 até a ilha (${p.n === 'CANH' ? '18,20' : '18,21'})`);
+    // CANH e CANL: fios curtos soldados por cima do módulo até um conector Dupont de 2 vias na barra macho da linha 24
+    if (T.can.length && T.can[0].fio) {
+      const con = new THREE.Group();
+      const hx = T.can.map((p) => p.furo[0]), hy = T.can[0].furo[1];
+      const cx = (Math.min(...hx) + Math.max(...hx)) / 2, lx = Math.max(...hx) - Math.min(...hx) + P;
+      con.add(caixa(lx, A.MALE_H, P, M.preto, cx, hy, A.T));
+      con.add(caixa(lx, A.HOUSING_H, P, M.nylon, cx, hy, A.T + A.MALE_H));
+      for (const p of T.can) con.add(cilindro(W(p.furo[0], hy, -0.95), W(p.furo[0], hy, A.T + 1), 0.32, M.ouro, 4));
+      poe(con, 'modulos', `Conector dos fios do CANH e do CANL: barra macho de 2 pinos em (${T.can.map((p) => p.furo_cr.join(',')).join(') e (')})`);
+      for (const p of T.can) {
+        const fio = new THREE.Group();
+        const curva = new THREE.CatmullRomCurve3(p.fio.map((q) => W(q[0], q[1], q[2])), false, 'centripetal');
+        fio.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 48, 0.5, 10), std(0x1565c0, 0.5)));
+        fio.add(solda(p.p[0], p.p[1], topo, 0.75, 0.5, false));
+        poe(fio, 'modulos', `Fio do ${p.n}: do pino do TJA1050 ao conector de 2 vias (${p.furo_cr.join(',')})`);
+      }
     }
     barraMacho(T.pinos.map((p) => p.p), topo, 'modulos', 'Barra de 4 pinos do TJA1050: VCC, TX, RX, GND');
   }

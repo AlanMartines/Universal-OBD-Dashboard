@@ -70,8 +70,8 @@ Como montar:
   - R1 vai do D21 ao RX do TJA1050, pelo fio J1;
   - R2 e R3, em série, vão do D21 ao GND. É o divisor que leva os 5 V do RX a 3,3 V;
   - R4 vai do 3V3 ao CANH, pelo fio J2.
-- **TJA1050 (22 × 11 mm):** soldado pela barra de 4 pinos na coluna 11, linhas 19 a 22 (VCC, TX, RX e GND, de cima para baixo), deitado para a direita, quase rente à borda direita (a ponta fica a cerca de 0,4 mm dela). Na coluna 10 ele encostaria no suporte do fusível. CANH e CANL ficam na outra ponta, fora da grade (cerca de 1,6 mm depois da coluna 18). Solde uma perna curta, que pode ser a sobra cortada de uma perna de resistor, em cada um: ela desce, um pouco inclinada para dentro, até a ilha logo abaixo, CANH em (18,20) e CANL em (18,21). As duas pernas também apoiam essa ponta do módulo. A ligação segue por baixo, em fio estanhado.
-- **RT8272 (módulo HW-108, 21 × 21 mm):** soldado na placa por barra de pinos macho, à esquerda, com a bobina (4R7) embaixo à direita. As duas fileiras de pinos do módulo ficam a 7 furos uma da outra: EN, IN− e IN+ na coluna 8 (linhas 14 a 16); OUT− e OUT+ na coluna 1 (linhas 20 e 21). Fica uma linha acima do desenho de 07/11, para dar lugar ao suporte do fusível, e cobre o começo do fio J3. IN− e OUT− são o mesmo GND dentro do módulo, então só o IN− vai ao GND da placa. O EN fica sem ligação. **Antes de soldar, encaixe o módulo com os pinos na placa e veja se os cinco entram nos furos.** Se não entrarem, use fita dupla-face e fios curtos até os mesmos furos.
+- **TJA1050 (22 × 11 mm):** encaixado numa **barra fêmea de 4 pinos** soldada na coluna 11, linhas 19 a 22 (VCC, TX, RX e GND, de cima para baixo), como o ESP32: sai sem solda para trocar. Solde a barra de pinos macho no módulo com os pinos para baixo. Ele fica deitado para a direita, quase rente à borda direita (a ponta fica a cerca de 0,4 mm dela), 8,3 mm mais alto que soldado direto. Na coluna 10 ele encostaria no suporte do fusível. CANH e CANL ficam na outra ponta, fora da grade (cerca de 1,6 mm depois da coluna 18): solde por cima do módulo **dois fios curtos** (uns 5 cm) com um **conector Dupont fêmea de 2 vias** na ponta, que encaixa numa **barra macho de 2 pinos** soldada abaixo do módulo: CANH em (16,24) e CANL em (17,24). Por baixo, o CANH segue em fio estanhado pela coluna 18 e pela linha 23, e o CANL vai direto ao pino 14 do cabo OBD, ao lado.
+- **RT8272 (módulo HW-108, 21 × 21 mm):** encaixado em **barras fêmea** como o ESP32 (uma de 3 pinos e outra de 2), à esquerda, com a bobina (4R7) embaixo à direita. Solde barras de pinos macho no módulo, com os pinos para baixo. As duas fileiras ficam a 7 furos uma da outra: EN, IN− e IN+ na coluna 8 (linhas 14 a 16); OUT− e OUT+ na coluna 1 (linhas 20 e 21). Encaixado, o topo da bobina fica a uns 16,5 mm da placa, abaixo da tampa da caixa. Fica uma linha acima do desenho de 07/11, para dar lugar ao suporte do fusível, e cobre o começo do fio J3. IN− e OUT− são o mesmo GND dentro do módulo, então só o IN− vai ao GND da placa. O EN fica sem ligação. Com o módulo fora da placa dá para regular os 5,0 V na bancada. Com a vibração do carro, confira se ele está bem encaixado: a caixa tem batentes que seguram a placa, e um ponto de cola quente na lateral das barras ajuda. **Antes de soldar as barras fêmea, encaixe o módulo nelas e veja se os cinco pinos entram.**
 - **Fusível de 1,5 A, na placa:** fusível de vidro 5 × 20 mm num porta-fusível **AS-06** com tampa (corpo de 24,5 × 9,6 mm, tampa de 26 mm, 14,1 mm de altura), deitado na horizontal na linha 24, embaixo do RT8272. Os 2 pinos chatos (1,3 × 0,4 mm, a 20,2 ± 0,3 mm) caem na grade, a 8 furos (20,32 mm): **(1,24) e (9,24)**. Esses dois furos precisam ser **alargados para 1,5 mm**, porque o pino chato não passa no furo comum de 1 mm. O fusível não tem lado: a entrada (12 V do OBD) fica em (9,24) e a saída (12 V com fusível) em (1,24). O corpo cobre as linhas 23 e 24 das colunas 1 a 9, que ficam só com trilhas por baixo. Os pinos saem só cerca de 1,5 mm por baixo da placa: solde rente.
 - **Conector do BMP180:** barra de 4 pinos macho na linha 17, colunas 12 a 15: SDA, SCL, GND e VCC, da esquerda para a direita. O sensor fica na ponta de um cabo de 4 fios, dentro da [caixa](#caixa-de-proteção), à direita da placa. Na placa o cabo encaixa por cima; no sensor, a barra de pinos fica virada para baixo e o cabo chega **por baixo** dele. O VCC é 5 V: use o **GY-68**, que tem regulador próprio, e ligue o fio no pino **VCC** dele, nunca no 3.3V. O SDA e o SCL vêm do D25 e do D26 por **fio isolado por baixo** (F1 e F2), soldado direto nos pinos do ESP32 e do conector, passando por cima da trilha de GND da linha 13.
 - **Conector do LSM6DS3 (acelerômetro e giroscópio):** outra barra de 4 pinos macho, na linha 16, colunas 12 a 15, logo acima da do BMP180, na mesma ordem: SDA, SCL, GND e VCC. É o mesmo barramento I2C: trilhas curtas por baixo ligam cada pino ao da linha 17 (o GND da coluna 14 já passa pelos dois). O módulo (13 × 18 mm, a mesma placa serve para LSM6DS3 ou BMI160) fica na ponta de um cabo de 4 fios, com a barra de 7 pinos virada para baixo, dentro da [caixa](#caixa-de-proteção), no canto de cima à direita. Ele tem regulador: o fio de 5 V vai no **VIN**. No próprio módulo, solde dois fios curtos: **CS no 3V3** (modo I2C) e **SA0 no GND** (endereço 0x6A, sem conflito com o 0x77 do BMP180). A fileira de 5 pinos (OCS, INT2, INT1, SCX, SDX) fica sem ligação por enquanto. Prenda o módulo firme (na caixa, no apoio do fundo, e a caixa firme no carro) para a força G e a inclinação saírem certas. O firmware 1.3 lê o sensor ([firmware](../../../firmware/esp32-can-listen/README.md#sensor-lsm6ds3-opcional)) e o app aprende sozinho como ele está montado.
@@ -97,7 +97,7 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio J3 ainda fora da 
 | Onde | Furos |
 |---|---|
 | TJA1050 (pinos) | VCC (11,19) · TX (11,20) · RX (11,21) · GND (11,22). CANH e CANL na outra ponta do módulo, por fio |
-| Pernas do CANH e do CANL | CANH (18,20) · CANL (18,21), embaixo da ponta do TJA1050 |
+| Conector do CANH e do CANL (barra macho de 2 pinos) | CANH (16,24) · CANL (17,24), abaixo do TJA1050 |
 | RT8272 (pinos) | EN (8,14), sem ligação · IN− (8,15) · IN+ (8,16) · OUT− (1,20), sem ligação · OUT+ (1,21) |
 | Suporte do fusível (AS-06) | Saída (1,24) · entrada (9,24), os dois alargados para 1,5 mm |
 | Conector do BMP180 | SDA (12,17) · SCL (13,17) · GND (14,17) · VCC (15,17) |
@@ -119,13 +119,13 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio J3 ainda fora da 
 | 12 V do OBD → fusível | (11,24) → (9,24) |
 | 12 V com fusível → IN+ | (1,24) → (1,23) → (8,23) → (8,16) |
 | OUT+ → começo do J3 | (1,21) → (2,21) → (2,13) |
-| CANH (fim do J2) | (18,17) → (18,20) |
-| CAN-L | (18,21) → (18,24) |
+| CANH (fim do J2) | (18,17) → (18,23) → (16,23) → (16,24) |
+| CAN-L | (17,24) → (18,24) |
 | GND do BMP180 | (14,13) → (14,17) |
 | 5 V do BMP180 | (15,17) – (16,17) |
 | LSM6DS3 ligado ao BMP180 | SDA (12,16) – (12,17) · SCL (13,16) – (13,17) · 5 V (15,16) – (15,17) |
 
-As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 15 a 22, a de 12 V do OBD (11,24) fica ao lado da ilha do GND (12,24), a de GND da linha 22 corre ao lado da de RX da linha 21, as de GND (coluna 15) e 5 V (coluna 16) nas linhas 12 e 13, a de 5 V (coluna 2) passa ao lado do pino OUT− (1,20), que é GND, e as de RX (coluna 17) e CANH/CAN-L (coluna 18) correm lado a lado nas linhas 17 a 21. Na coluna 18, o CANH termina em (18,20) e o CAN-L começa em (18,21): não pode haver solda unindo as duas. O SDA (12,17) e o SCL (13,17) ficam logo acima da trilha de 5 V da linha 18, e a solda do D25 (9,12) fica ao lado da trilha de GND (9,13). Confira com lupa e com o multímetro que não encostam.
+As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 15 a 22, a de 12 V do OBD (11,24) fica ao lado da ilha do GND (12,24), a de GND da linha 22 corre ao lado da de RX da linha 21, as de GND (coluna 15) e 5 V (coluna 16) nas linhas 12 e 13, a de 5 V (coluna 2) passa ao lado do pino OUT− (1,20), que é GND, as de RX (coluna 17) e CANH (coluna 18) correm lado a lado nas linhas 17 a 21, e o CANH da linha 23 passa logo acima do CAN-L da linha 24, em (16,24) a (18,24): não pode haver solda unindo o CANH e o CAN-L. O SDA (12,17) e o SCL (13,17) ficam logo acima da trilha de 5 V da linha 18, e a solda do D25 (9,12) fica ao lado da trilha de GND (9,13). Confira com lupa e com o multímetro que não encostam.
 
 **Resistores (1 kΩ, 1/4 W: marrom, preto, vermelho)**
 
@@ -151,7 +151,7 @@ As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 
 | F1 | pino D25 (9,12) → entre as ilhas, por cima do GND da linha 13 → (12,17) | SDA do BMP180 |
 | F2 | pino D26 (10,12) → entre as ilhas, por cima do GND da linha 13 → (13,17) | SCL do BMP180 |
 
-**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (9,24), (11,24), (2,13), (16,12), (11,21), (18,20), (18,21), (12,17), (13,17), (15,17), (12,16), (13,16) ou (15,16). Entre (18,20) e (18,21) também não pode haver continuidade. Sem o fusível no suporte, (9,24) e (1,24) não têm continuidade entre si; com ele, têm. Com o ESP32 fora das barras e o J3 ainda fora da placa, regule a saída em 5,0 V. Depois de soldar o J3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
+**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (9,24), (11,24), (2,13), (16,12), (11,21), (16,24), (17,24), (12,17), (13,17), (15,17), (12,16), (13,16) ou (15,16). Entre (16,24) e (17,24) também não pode haver continuidade. Sem o fusível no suporte, (9,24) e (1,24) não têm continuidade entre si; com ele, têm. Regule o RT8272 em 5,0 V antes de encaixar, ou com o ESP32 fora das barras e o J3 ainda fora da placa. Depois de soldar o J3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
 
 ## Versão alternativa com o SN65HVD230
 
@@ -168,7 +168,7 @@ Os mesmos desenhos e o mesmo modelo 3D, com o SN65HVD230 (módulo WCMCU-230) no 
 O que muda em relação à versão principal (fusível, RT8272, BMP180 e cabo OBD ficam iguais):
 
 - **Sem divisor do RX:** o módulo trabalha em 3,3 V, então R1, R2 e R3 saem. Fica só o R4 (3V3 → CANH).
-- **SN65HVD230:** barra de 6 pinos na linha 23, colunas 13 a 18: 3V3 (13,23), GND (14,23), CTX (15,23), CRX (16,23), CANH (17,23) e CANL (18,23). O módulo fica deitado para cima, entre o conector do BMP180 e o cabo OBD.
+- **SN65HVD230:** encaixado numa **barra fêmea de 6 pinos** na linha 23, colunas 13 a 18: 3V3 (13,23), GND (14,23), CTX (15,23), CRX (16,23), CANH (17,23) e CANL (18,23). O módulo fica deitado para cima, entre o conector do BMP180 e o cabo OBD, 8,3 mm mais alto que soldado direto.
 - **Alimentação em 3,3 V:** trilha de 3V3 do pino 3V3 do ESP32 (16,2) por (17,2), descendo a coluna 17 até a linha 20 e indo até o 3V3 do módulo (13,23). O CTX (15,23) fica ligado nessa mesma trilha: é a trava física, o transceptor nunca transmite.
 - **CRX direto no D21:** fio J1 de (7,3) pela linha 3 e pela coluna 17 (por cima da placa, embaixo do ESP32 e do módulo) até (16,22), que liga no CRX (16,23) por baixo.
 - **CANH:** J2 igual ao da versão principal, até (18,17), e por baixo (18,17) → (18,22) → (17,22) → CANH (17,23).
@@ -202,4 +202,4 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 | Conector OBD2 macho (a caminho) | Pinos montados (precisa de 4, 5, 14 e 16) | | |
 | Cabo Y OBD2 (a caminho) | Pinos ligados em cada ramo | | |
 
-A distância entre a barra de 4 pinos e os pinos CANH/CANL do TJA1050 foi estimada pela foto (cerca de 19,4 mm). Com a barra na coluna 11, as pernas curtas voltam cerca de 1,6 mm até a coluna 18 (17,8 mm); meça antes de soldar.
+A distância entre a barra de 4 pinos e os pinos CANH/CANL do TJA1050 foi estimada pela foto (cerca de 19,4 mm). Como ela não cai na grade, o CANH e o CANL vão por fios até o conector de 2 vias da linha 24.

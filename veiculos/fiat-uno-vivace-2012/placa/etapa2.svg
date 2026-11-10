@@ -626,8 +626,9 @@
 <text x="47.11" y="54.45" font-size="0.95" fill="#fff" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANH</text>
 <circle cx="48.21" cy="56.59" r="0.65" fill="#d4af37"/>
 <text x="47.11" y="56.99" font-size="0.95" fill="#fff" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANL</text>
-<path d="M48.21,54.05 L46.59,54.05" stroke="#9e9e9e" stroke-width="0.45" stroke-linecap="round"/>
-<path d="M48.21,56.59 L46.59,56.59" stroke="#9e9e9e" stroke-width="0.45" stroke-linecap="round"/>
+<path d="M48.21,54.05 L48.21,61.61 L41.51,62.91" fill="none" stroke="#0d47a1" stroke-width="0.9" stroke-linecap="round"/><path d="M48.21,54.05 L48.21,61.61 L41.51,62.91" fill="none" stroke="#1976d2" stroke-width="0.6" stroke-linecap="round"/>
+<path d="M48.21,56.59 L48.21,61.61 L44.05,62.91" fill="none" stroke="#0d47a1" stroke-width="0.9" stroke-linecap="round"/><path d="M48.21,56.59 L48.21,61.61 L44.05,62.91" fill="none" stroke="#1976d2" stroke-width="0.6" stroke-linecap="round"/>
+<rect x="40.24" y="62.94" width="5.08" height="2.54" rx="0.3" fill="#212121"/>
 <rect x="30.08" y="42.62" width="10.16" height="2.54" rx="0.3" fill="#212121"/>
 <rect x="30.95" y="43.49" width="0.8" height="0.8" fill="#d4af37"/>
 <rect x="33.49" y="43.49" width="0.8" height="0.8" fill="#d4af37"/>

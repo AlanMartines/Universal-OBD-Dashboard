@@ -11,6 +11,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - **Placa 3D no painel:** botões Sem caixa, Dentro da caixa (tampa transparente) e Fora da caixa (vista explodida).
 
 ### Alterado
+- **Placa da escuta CAN: módulos encaixados.** O transceptor (TJA1050 ou SN65HVD230) e o RT8272 vão em barras fêmea, como o ESP32, e saem sem solda para trocar. No TJA1050, o CANH e o CANL vão por dois fios curtos até um conector de 2 vias na linha 24, com as ligações de baixo refeitas.
 - **Placa 3D:** o LSM6DS3 e o BMP180 passaram para a direita da placa, nas posições que ocupam dentro da caixa, com os cabos correndo perto do fundo.
 
 ## [0.9.36] - 2026-11-10

@@ -500,10 +500,10 @@
 <path d="M3.41,64.21 L3.41,61.67 L3.41,61.67 L5.95,61.67 L8.49,61.67 L11.03,61.67 L13.57,61.67 L16.11,61.67 L18.65,61.67 L21.19,61.67 L21.19,61.67 L21.19,59.13 L21.19,56.59 L21.19,54.05 L21.19,51.51 L21.19,48.97 L21.19,46.43 L21.19,43.89" fill="none" stroke="#7b1fa2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M3.41,56.59 L5.95,56.59 L5.95,56.59 L5.95,54.05 L5.95,51.51 L5.95,48.97 L5.95,46.43 L5.95,43.89 L5.95,41.35 L5.95,38.81 L5.95,36.27" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M3.41,56.59 L5.95,56.59 L5.95,56.59 L5.95,54.05 L5.95,51.51 L5.95,48.97 L5.95,46.43 L5.95,43.89 L5.95,41.35 L5.95,38.81 L5.95,36.27" fill="none" stroke="#d32f2f" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M46.59,46.43 L46.59,48.97 L46.59,51.51 L46.59,54.05" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M46.59,46.43 L46.59,48.97 L46.59,51.51 L46.59,54.05" fill="none" stroke="#1976d2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M46.59,56.59 L46.59,59.13 L46.59,61.67 L46.59,64.21" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-<path d="M46.59,56.59 L46.59,59.13 L46.59,61.67 L46.59,64.21" fill="none" stroke="#1976d2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M46.59,46.43 L46.59,48.97 L46.59,51.51 L46.59,54.05 L46.59,56.59 L46.59,59.13 L46.59,61.67 L46.59,61.67 L44.05,61.67 L41.51,61.67 L41.51,61.67 L41.51,64.21" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M46.59,46.43 L46.59,48.97 L46.59,51.51 L46.59,54.05 L46.59,56.59 L46.59,59.13 L46.59,61.67 L46.59,61.67 L44.05,61.67 L41.51,61.67 L41.51,61.67 L41.51,64.21" fill="none" stroke="#1976d2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M44.05,64.21 L46.59,64.21" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M44.05,64.21 L46.59,64.21" fill="none" stroke="#1976d2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M36.43,36.27 L36.43,38.81 L36.43,41.35 L36.43,43.89 L36.43,46.43" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M36.43,36.27 L36.43,38.81 L36.43,41.35 L36.43,43.89 L36.43,46.43" fill="none" stroke="#263238" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M38.97,46.43 L41.51,46.43" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
@@ -641,14 +641,12 @@
 <rect x="27.61" y="57.93" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="28.41" y="58.73" width="0.8" height="0.8" fill="#d4af37"/>
 <rect x="30.21" y="58.73" width="2.66" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="30.61" y="59.58" font-size="1.0" fill="#263238" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">GND</text>
-<rect x="31.60" y="54.34" width="12.21" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="37.70" y="55.32" font-size="1.15" fill="#1565c0" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">pinos do TJA1050</text>
-<circle cx="46.59" cy="54.05" r="1.15" fill="none" stroke="#1976d2" stroke-width="0.4"/>
-<rect x="45.07" y="51.68" width="3.03" height="1.03" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="46.59" y="52.45" font-size="0.9" fill="#1976d2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANH</text>
-<circle cx="46.59" cy="56.59" r="1.15" fill="none" stroke="#1976d2" stroke-width="0.4"/>
-<rect x="45.07" y="58.22" width="3.03" height="1.03" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="46.59" y="58.99" font-size="0.9" fill="#1976d2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANL</text>
+<rect x="29.46" y="54.34" width="16.49" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="37.70" y="55.32" font-size="1.15" fill="#1565c0" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">barra fêmea do TJA1050</text>
+<rect x="40.31" y="63.01" width="2.4" height="2.4" rx="0.3" fill="#455a64"/><rect x="41.11" y="63.81" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="42.85" y="63.01" width="2.4" height="2.4" rx="0.3" fill="#455a64"/><rect x="43.65" y="63.81" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="39.48" y="61.59" width="6.60" height="0.98" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="42.78" y="62.31" font-size="0.85" fill="#1976d2" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CANH · CANL</text>
 <rect x="19.99" y="37.61" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="20.79" y="38.41" width="0.8" height="0.8" fill="#d4af37"/>
 <rect x="17.75" y="38.41" width="2.04" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="19.39" y="39.26" font-size="1.0" fill="#9e9e9e" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">EN</text>
@@ -664,8 +662,8 @@
 <rect x="2.21" y="55.39" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="3.01" y="56.19" width="0.8" height="0.8" fill="#d4af37"/>
 <rect x="4.81" y="56.19" width="3.28" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="5.21" y="57.04" font-size="1.0" fill="#d32f2f" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OUT+</text>
-<rect x="6.55" y="50.53" width="11.50" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="12.30" y="51.51" font-size="1.15" fill="#0d47a1" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">pinos do RT8272</text>
+<rect x="4.06" y="50.53" width="16.49" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="12.30" y="51.51" font-size="1.15" fill="#0d47a1" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">barras fêmea do RT8272</text>
 <rect x="30.08" y="42.62" width="10.16" height="2.54" rx="0.3" fill="#212121"/>
 <rect x="30.95" y="43.49" width="0.8" height="0.8" fill="#d4af37"/>
 <rect x="33.49" y="43.49" width="0.8" height="0.8" fill="#d4af37"/>

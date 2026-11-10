@@ -74,6 +74,7 @@ Rede deste carro: carroceria nos pinos 6/14, a 50 kbit/s ([notas do veículo](RE
 | Step-down 12 V → 5 V | "RT8272", "Mini-560 5V" (saída fixa) ou "LM2596" (ajustável) | Alimenta o ESP32 com os 12 V do pino 16 |
 | Cabo Y OBD2 | "Cabo extensor OBD2 Y 1 macho 2 fêmeas" | ELM327 e ESP32 ligados ao mesmo tempo |
 | Cabo OBD2 macho com fios soltos | "Pigtail OBD2 macho 16 pinos" | Liga a fêmea do Y ao ESP32 sem cortar nada |
+| Barras de pinos e conector | Barra de pinos **fêmea** 1 × 20 (2,54 mm, umas 3): 2 pedaços de 15 para o ESP32, 4 para o TJA1050 (ou 6 para o SN65HVD230), 3 e 2 para o RT8272. Barra **macho** 1 × 40: 4 + 4 dos conectores dos sensores e 2 do CAN do TJA1050. Um conector **Dupont fêmea de 2 vias** com fios (ou um jumper fêmea-fêmea cortado) | Os módulos encaixam e saem sem solda ([placa/](placa/README.md)) |
 | Cabo micro-USB **de dados** | Cabos só de carga não servem | Gravar o firmware |
 | Protoboard, jumpers macho-fêmea e multímetro | — | Montagem de teste e conferência dos pinos do Y |
 | Sensor de pressão e temperatura (opcional) | **BMP390** (recomendado) ou **BMP180** (alternativa, o que está ligado hoje) | Pressão do ar e temperatura da cabine: carga do motor com a pressão ao vivo, vácuo do coletor, checagem do sensor MAP e altitude. Entra no I2C, SDA no D25 e SCL no D26 ([firmware](../../firmware/esp32-can-listen/README.md#sensor-bmp180-opcional)) |
