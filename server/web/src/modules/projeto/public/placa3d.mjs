@@ -530,8 +530,9 @@ function iniciar() {
     g.add(placaModulo(S.x0, S.y0, S.l, S.w, z, A.MOD_T, PCB.tja, tex));
     g.add(sop8(S.x0 + 7.9, S.y0 + 3.8, topo, ['VP230', '83M'], true));
     g.add(smd(S.x0 + 2.5, S.y0 + 7.25, topo, 2.0, 1.25, M.resistor, false, '103'));
-    g.add(smd(S.x0 + 13.0, S.y0 + 7.25, topo, 2.0, 1.25, M.resistor, false, '121'));
-    poe(g, 'modulos', 'SN65HVD230 (WCMCU-230): transceptor CAN em 3,3 V, só escuta (CTX preso no 3V3). O R2 "121" sai se medir 120 Ω entre CANH e CANL');
+    // R2 ("121", terminação de 120 Ω entre CANH e CANL) retirado: ficam as duas ilhas com estanho
+    for (const dx of [-0.75, 0.75]) g.add(caixa(0.55, 0.06, 1.0, M.estanho, S.x0 + 13.0 + dx, S.y0 + 7.25, topo));
+    poe(g, 'modulos', 'SN65HVD230 (WCMCU-230): transceptor CAN em 3,3 V, só escuta (CTX preso no 3V3). Sem o R2 "121": medido 120 Ω entre CANH e CANL, ele sai');
     barraMacho(S.pinos.map((p) => p.p), topo, 'modulos', 'Barra de 6 pinos do SN65HVD230: 3V3, GND, CTX, CRX, CANH, CANL');
   }
 

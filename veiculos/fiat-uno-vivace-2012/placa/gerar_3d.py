@@ -188,7 +188,8 @@ if g.SN_PINS:   # WCMCU-230 (SN65HVD230), 15,7 x 13,9 mm, barra de 6 pinos na bo
     mt = MOD_Z + MOD_T
     box('modulos', '#212121', sx0 + 5.6, sy0 + 1.0, mt, 4.6, 5.6, 1.5)          # chip SOIC-8 (VP230)
     box('modulos', '#212121', sx0 + 1.3, sy0 + 6.6, mt, 2.4, 1.3, 0.5)          # R1 (103)
-    box('modulos', '#212121', sx0 + 11.8, sy0 + 6.6, mt, 2.4, 1.3, 0.5)         # R2 (121)
+    for dx in (12.0, 13.5):   # R2 (121) retirado: medido 120 ohms entre CANH e CANL (10/11/2026); ficam as ilhas
+        box('modulos', TIN, sx0 + dx, sy0 + 6.75, mt, 0.55, 1.0, 0.06)
     for dx in (2.6, g.SN_MM[0] - 2.6):
         cyl('modulos', '#e3f2fd', (sx0 + dx, sy0 + 2.6, mt), (sx0 + dx, sy0 + 2.6, mt + 0.05), 1.6)
 

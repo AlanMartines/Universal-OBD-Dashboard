@@ -16,7 +16,7 @@
       </div>
     </div>
     {{#if sn65}}
-    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>Versão alternativa: o SN65HVD230 trabalha em 3,3 V e dispensa o divisor do RX (R1, R2 e R3). O CTX fica preso no 3V3, então ele nunca transmite. Se a medida entre CANH e CANL der cerca de 120 Ω, tire o R2 ("121") do módulo. Ainda não testada no carro.</p>
+    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>Versão alternativa: o SN65HVD230 trabalha em 3,3 V e dispensa o divisor do RX (R1, R2 e R3). O CTX fica preso no 3V3, então ele nunca transmite. No módulo do projeto, a medida entre CANH e CANL deu 120 Ω (10/11/2026): o R2 ("121") está ligado e precisa sair antes de ligar no carro. Ainda não testada no carro.</p>
     {{/if}}
     <div class="d-flex flex-wrap align-items-center gap-2 gap-md-3 mb-2">
       <div class="btn-group btn-group-sm flex-wrap" role="group" aria-label="Vista">

@@ -128,7 +128,7 @@ TJA_MM = (22.0, 11.0)
 # Módulo de 15,7 x 13,9 mm, em 3,3 V: dispensa o divisor do RX (R1, R2, R3 e o J1 de antes). Barra de 6 pinos na linha 23,
 # colunas 13 a 18 (3V3, GND, CTX, CRX, CANH, CANL), com o módulo deitado para cima, entre o BMP180 e o cabo OBD.
 # CTX preso no 3V3 (trava física: nunca transmite), CRX direto no D21 pelo J1, CANH em 3,3 V pelo R4, CANL no pino 14.
-# O R2 do módulo ("121", 120 ohms) costuma ficar ligado entre CANH e CANL: se a medida der cerca de 120 ohms, ele sai.
+# O R2 do módulo ("121", 120 ohms) fica ligado entre CANH e CANL: medido 120 ohms em 10/11/2026, ele sai (desenhado sem ele).
 SN_MM = (15.7, 13.9)
 SN_PINS = {}
 TRANS_NOME = 'TJA1050'
@@ -378,8 +378,11 @@ def sn65_art(s):
     s.text(x0 + 7.9, y0 + 4.2, 'VP230', 0.9, '#eceff1', weight='bold')
     s.add(f'<rect x="{x0 + 1.3:.2f}" y="{y0 + 6.6:.2f}" width="2.4" height="1.3" fill="#212121"/>')
     s.text(x0 + 2.5, y0 + 9.0, '103', 0.75, '#e3f2fd')
-    s.add(f'<rect x="{x0 + 11.8:.2f}" y="{y0 + 6.6:.2f}" width="2.4" height="1.3" fill="#212121"/>')
-    s.text(x0 + 13.0, y0 + 9.0, '121', 0.75, '#e3f2fd')
+    # R2 ("121", terminação de 120 Ω) retirado: só as duas ilhas vazias
+    for dx in (11.9, 13.5):
+        s.add(f'<rect x="{x0 + dx:.2f}" y="{y0 + 6.75:.2f}" width="0.6" height="1.0" fill="#cfd8dc"/>')
+    s.add(f'<rect x="{x0 + 11.6:.2f}" y="{y0 + 6.4:.2f}" width="2.8" height="1.7" fill="none" stroke="#e53935" stroke-width="0.2" stroke-dasharray="0.5 0.35"/>')
+    s.text(x0 + 13.0, y0 + 9.0, 'sem R2', 0.75, '#ffcdd2', weight='bold')
     s.text(x0 + SN_MM[0] / 2, y0 + 7.6, 'SN65HVD230', 0.95, '#eceff1', weight='bold')
     for n, (c, r) in SN_PINS.items():
         x, y = hp(c, r)

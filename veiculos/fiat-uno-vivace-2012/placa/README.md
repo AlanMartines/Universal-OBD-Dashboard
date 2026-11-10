@@ -179,7 +179,7 @@ O que muda em relação à versão principal (fusível, RT8272, BMP180 e cabo OB
 - **CANH:** J2 igual ao da versão principal, até (18,17), e por baixo (18,17) → (18,22) → (17,22) → CANH (17,23).
 - **CANL:** (18,23) → (18,24), o pino 14 do cabo OBD.
 - **GND:** (15,12) → (15,13) → (9,13) → (9,22) → (12,22) → (12,24) → (14,24) → GND do módulo (14,23).
-- **R2 "121" do módulo:** neste módulo ele costuma ficar ligado direto entre CANH e CANL. Meça em Ω entre os dois com o módulo solto: se der cerca de 120 Ω, tire o R2. Com ele, o CANH preso em 3,3 V pelo R4 ficaria colado no CANL e o receptor não veria sinal nenhum. O R1 "103" (10 kΩ) é do controle de inclinação do chip e fica.
+- **R2 "121" do módulo: tirar.** Ele fica ligado direto entre CANH e CANL: no módulo do projeto, a medida deu **120 Ω** (10/11/2026). Tire o R2 com o ferro de solda, aquecendo os dois lados ao mesmo tempo, ou quebrando-o com cuidado; depois, entre CANH e CANL a medida deve ficar bem alta (kΩ ou aberto). Com ele, o CANH preso em 3,3 V pelo R4 ficaria colado no CANL e o receptor não veria sinal nenhum. O R1 "103" (10 kΩ) é do controle de inclinação do chip e fica.
 
 **Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (9,24), (11,24), (2,13), (16,12), (17,2), (16,22), (17,23) ou (18,23). Entre (17,23) e (18,23) também não pode haver continuidade (se houver cerca de 120 Ω, é o R2). O D21 (6,2) tem continuidade com o CRX (16,23), e o CTX (15,23) com o 3V3 (16,2).
 
@@ -203,7 +203,7 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 | Porta-fusível AS-06 (5 × 20 mm, com tampa) | Corpo e posição dos 2 pinos | Desenho do fabricante: tampa de 26 × 9,6 × 1,6 mm, corpo de 24,5 mm, 11,5 mm de corpo sobre pés de 1 mm (14,1 mm de altura com a tampa); 2 pinos chatos de 1,3 × 0,4 mm a 20,2 ± 0,3 mm, no meio da largura, saindo 3,1 mm abaixo dos pés. Corpo aberto em cima e nas laterais do meio, com piso de 3,8 mm e uma torre com presilha em cada ponta | 09/11/2026 |
 | LSM6DS3 (módulo de 6 eixos, serve também para BMI160) | Comprimento × largura e ordem dos pinos | 13 × 18 mm; fileira de 7 pinos (VIN, 3V3, GND, SCL, SDA, CS, SA0) e de 5 (OCS, INT2, INT1, SCX, SDX), passo de 2,54 mm. Tem regulador (VIN aceita 5 V) | 09/11/2026 |
 | SN65HVD230 (módulo WCMCU-230, reserva) | Comprimento × largura e ordem dos pinos | 15,7 × 13,9 mm; barra de 6 pinos numa borda (passo de 2,54 mm): 3V3, GND, CTX, CRX, CANH, CANL. Chip VP230, R1 "103" (10 kΩ) e R2 "121" (120 Ω) | 09/11/2026 |
-| | Resistência entre CANH e CANL (Ω). Se der cerca de 120 Ω, o R2 sai | | |
+| | Resistência entre CANH e CANL (Ω). Se der cerca de 120 Ω, o R2 sai | 120 Ω: o R2 está ligado e sai | 10/11/2026 |
 | Conector OBD2 macho (a caminho) | Pinos montados (precisa de 4, 5, 14 e 16) | | |
 | Cabo Y OBD2 (a caminho) | Pinos ligados em cada ramo | | |
 
