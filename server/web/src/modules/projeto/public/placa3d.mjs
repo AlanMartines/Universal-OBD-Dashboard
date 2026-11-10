@@ -66,7 +66,7 @@ function iniciar() {
   const chao = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShadowMaterial({ opacity: 0.16 }));
   chao.rotation.x = -Math.PI / 2;
   // abaixo de tudo, inclusive do sensor BMP180, que recebe o cabo por baixo
-  chao.position.y = Math.min(-1.6, X.bmp_modulo?.z_min ?? -1.6);
+  chao.position.y = Math.min(-1.6, X.bmp_modulo?.z_min ?? -1.6, X.acessorios?.z0 ?? -1.6);
   chao.receiveShadow = true;
   scene.add(chao);
 
@@ -894,6 +894,23 @@ function iniciar() {
   }
 
   // ------------------------------------------------------------ cabo OBD2 macho com fios soltos (pigtail) e o plugue
+  // Boca do conector OBD2: trapézio de cantos arredondados. furo = true: contorno no sentido contrário, como o
+  // Three.js espera nos furos (senão as paredes de dentro somem).
+  function trap(topo, base, alt, r, furo = false) {
+    const s0 = furo ? new THREE.Path() : new THREE.Shape();
+    const pts = [[-topo / 2, alt / 2], [topo / 2, alt / 2], [base / 2, -alt / 2], [-base / 2, -alt / 2]];
+    if (furo) pts.reverse();
+    pts.forEach(([x, y], i) => {
+      const [px, py] = pts[(i + 3) % 4], [nx, ny] = pts[(i + 1) % 4];
+      const din = Math.hypot(x - px, y - py), dout = Math.hypot(nx - x, ny - y);
+      const a = [x + (px - x) * r / din, y + (py - y) * r / din], b = [x + (nx - x) * r / dout, y + (ny - y) * r / dout];
+      if (i === 0) s0.moveTo(...a); else s0.lineTo(...a);
+      s0.quadraticCurveTo(x, y, ...b);
+    });
+    s0.closePath();
+    return s0;
+  }
+
   if (X.cabo_obd) {
     const C = X.cabo_obd;
     const [bx, by, bz] = C.boca;
@@ -956,21 +973,6 @@ function iniciar() {
       corpo.position.copy(W(P0.x0 + P0.l / 2, by, bz));
       g.add(corpo);
       // boca (moldura trapezoidal com cantos arredondados), aberta para longe da placa
-      // furo = true: contorno no sentido contrário, como o Three.js espera nos furos (senão as paredes de dentro somem)
-      const trap = (topo, base, alt, r, furo = false) => {
-        const s0 = furo ? new THREE.Path() : new THREE.Shape();
-        const pts = [[-topo / 2, alt / 2], [topo / 2, alt / 2], [base / 2, -alt / 2], [-base / 2, -alt / 2]];
-        if (furo) pts.reverse();
-        pts.forEach(([x, y], i) => {
-          const [px, py] = pts[(i + 3) % 4], [nx, ny] = pts[(i + 1) % 4];
-          const din = Math.hypot(x - px, y - py), dout = Math.hypot(nx - x, ny - y);
-          const a = [x + (px - x) * r / din, y + (py - y) * r / din], b = [x + (nx - x) * r / dout, y + (ny - y) * r / dout];
-          if (i === 0) s0.moveTo(...a); else s0.lineTo(...a);
-          s0.quadraticCurveTo(x, y, ...b);
-        });
-        s0.closePath();
-        return s0;
-      };
       const fora = trap(38, 31, 14, 2.2);
       fora.holes.push(trap(35, 28.4, 11.4, 1.6, true));
       // a moldura e o fundo são desenhados no plano e girados para a boca olhar para +x (para longe da placa)
@@ -996,6 +998,128 @@ function iniciar() {
       boca.add(chave);
       g.add(boca);
       poe(g, 'fios', 'Plugue OBD2 macho (16 pinos) do cabo com fios soltos: encaixa numa das fêmeas do cabo Y');
+    }
+  }
+
+  // ------------------------------------------------------------ ELM327 e cabo Y: soltos atrás da placa, só para mostrar o kit
+  if (X.acessorios) {
+    const K = X.acessorios;
+    const z0 = K.z0;
+    const preto = std(0x2a2a2a, 0.62);
+    const pretoDuplo = preto.clone();
+    pretoDuplo.side = THREE.DoubleSide;
+    // boca de pé (olhando para cima): o trapézio vem no plano xy e gira para o plano da placa
+    const bocaDePe = (x, y, z, fora, dentro, alt, mat, fundoMat) => {
+      const g = new THREE.Group();
+      const sh = fora;
+      if (dentro) sh.holes.push(dentro);
+      const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: alt, bevelEnabled: false }), mat);
+      g.add(m);
+      if (fundoMat) {
+        const f = new THREE.Mesh(new THREE.ShapeGeometry(trap(35, 28.4, 11.4, 1.6)), fundoMat);
+        f.position.z = 0.05;
+        g.add(f);
+      }
+      g.rotation.x = -Math.PI / 2;
+      g.position.copy(W(x, y, z));
+      return g;
+    };
+    const contatos = (g, x, y, z, alt) => {
+      for (const fy of [-2.6, 2.6]) {
+        for (let k = 0; k < 8; k++) {
+          const c = new THREE.Mesh(new THREE.BoxGeometry(0.9, alt, 0.5), M.ouro);
+          c.position.copy(W(x + (k - 3.5) * 3.2 + (k >= 4 ? 1.4 : -1.4), y + fy, z + alt / 2));
+          g.add(c);
+        }
+      }
+    };
+
+    // ELM327 mini: caixa azul translúcida, com a placa preta e o módulo Bluetooth azul por dentro
+    {
+      const E = K.elm;
+      const [x, y] = E.c;
+      const g = new THREE.Group();
+      const vidroAzul = std(0x1f4fd8, 0.25, 0, { transparent: true, opacity: 0.55, depthWrite: false });
+      const tex = textura(E.w, E.h, (ctx) => {
+        ctx.fillStyle = '#1f4fd8';
+        ctx.fillRect(0, 0, E.w, E.h);
+        ctx.fillStyle = '#1a237e';
+        ctx.fillRect(3, 4, E.w - 6, E.h - 8);
+        texto(ctx, 'ELM327', E.w / 2, E.h / 2 - 2.2, 4.6, '#ff7043', { peso: 800 });
+        texto(ctx, 'mini · Bluetooth · OBD-II', E.w / 2, E.h / 2 + 3.4, 1.9, '#e3f2fd');
+      });
+      const rotulo = std(0xffffff, 0.5, 0, { map: tex, transparent: true, opacity: 0.92 });
+      const corpo = new THREE.Mesh(new THREE.BoxGeometry(E.w, E.h, E.d), [vidroAzul, vidroAzul, vidroAzul, vidroAzul, rotulo, vidroAzul]);
+      corpo.position.copy(W(x, y, z0 + E.h / 2));
+      g.add(corpo);
+      // placas por dentro
+      g.add(caixa(36, 1.2, 20, PCB.modulo, x, y, z0 + 7));
+      g.add(caixa(22, 1.0, 14, PCB.tja, x - 4, y - 1, z0 + 11));
+      g.add(caixa(9, 1.4, 5, M.preto, x - 4, y - 1, z0 + 12));
+      for (let k = 0; k < 3; k++) g.add(caixa(1.6, 0.6, 0.8, M.led, x + 13, y - 5 + k * 3, z0 + 8.2));
+      // plugue macho por cima, com os 16 contatos
+      const boca = bocaDePe(x, y, z0 + E.h, trap(38, 31, 14, 2.2), trap(35, 28.4, 11.4, 1.6, true), E.plugue, vidroAzul, std(0x15308a, 0.6, 0, { side: THREE.DoubleSide }));
+      g.add(boca);
+      contatos(g, x, y, z0 + E.h, E.plugue - 3);
+      poe(g, 'acessorios', 'Adaptador ELM327 mini (Bluetooth): consultas OBD no conector do carro, numa das fêmeas do cabo Y');
+    }
+
+    // Cabo Y: corpo com nervuras e boca para cima
+    const conector = (x, y, macho) => {
+      const C = K.con;
+      const g = new THREE.Group();
+      for (let k = 0; k < 3; k++) g.add(caixa(C.w - k * 0.6, C.h / 3 - 0.3, C.d - k * 0.6, preto, x, y, z0 + k * (C.h / 3)));
+      if (macho) {
+        g.add(bocaDePe(x, y, z0 + C.h, trap(38, 31, 14, 2.2), trap(35, 28.4, 11.4, 1.6, true), 9, pretoDuplo, std(0x151515, 0.8, 0, { side: THREE.DoubleSide })));
+        contatos(g, x, y, z0 + C.h, 6);
+      } else {
+        // fêmea: bloco cheio com os 16 furos em cruz desenhados no topo
+        const tex = textura(36, 13, (ctx) => {
+          ctx.fillStyle = '#2a2a2a';
+          ctx.fillRect(0, 0, 36, 13);
+          ctx.fillStyle = '#0c0c0c';
+          ctx.fillRect(4, 5.8, 28, 1.4);
+          for (const fy of [3.2, 9.8]) {
+            for (let k = 0; k < 8; k++) {
+              const cx = 18 + (k - 3.5) * 3.2 + (k >= 4 ? 1.4 : -1.4);
+              ctx.fillRect(cx - 0.9, fy - 0.3, 1.8, 0.6);
+              ctx.fillRect(cx - 0.3, fy - 0.9, 0.6, 1.8);
+            }
+          }
+        });
+        const topo = std(0xffffff, 0.62, 0, { map: tex });
+        const forma = trap(36, 30, 13, 2.0);
+        const bloco = new THREE.Mesh(new THREE.ExtrudeGeometry(forma, { depth: 9, bevelEnabled: false }), [topo, preto]);
+        // a tampa (grupo 0) recebe a textura; o mapeamento do ExtrudeGeometry usa as coordenadas do plano
+        tex.repeat.set(1 / 36, 1 / 13);
+        tex.offset.set(0.5, 0.5);
+        bloco.rotation.x = -Math.PI / 2;
+        bloco.position.copy(W(x, y, z0 + C.h));
+        g.add(bloco);
+      }
+      return g;
+    };
+    poe(conector(K.macho[0], K.macho[1], true), 'acessorios', 'Cabo Y OBD2: o macho encaixa no conector do carro');
+    K.femeas.forEach((f, i) => poe(conector(f[0], f[1], false), 'acessorios',
+      `Cabo Y OBD2: fêmea ${i + 1} (${i === 0 ? 'no ELM327' : 'no cabo da placa com o ESP32'})`));
+    // cabos chatos de 16 vias, deitados: retas com cantos arredondados
+    for (const pts of K.fitas) {
+      const g = new THREE.Group();
+      const F = K.fita;
+      const fita = std(0x303030, 0.55);
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [ax, ay] = pts[i], [bx, by] = pts[i + 1];
+        const len = Math.hypot(bx - ax, by - ay);
+        const horiz = Math.abs(bx - ax) > Math.abs(by - ay);
+        g.add(caixa(horiz ? len : F.w, F.t, horiz ? F.w : len, fita, (ax + bx) / 2, (ay + by) / 2, z0));
+        // nervuras das 16 vias
+        for (let k = 0; k < 16; k += 3) {
+          const o = -F.w / 2 + 0.75 + k * 0.75;
+          g.add(caixa(horiz ? len : 0.25, 0.15, horiz ? 0.25 : len, M.pretoFosco, (ax + bx) / 2 + (horiz ? 0 : o), (ay + by) / 2 + (horiz ? o : 0), z0 + F.t));
+        }
+      }
+      for (const [x, y] of pts.slice(1, -1)) g.add(cilindro(W(x, y, z0), W(x, y, z0 + F.t), F.w / 2, fita, 24));
+      poe(g, 'acessorios', 'Cabo Y OBD2: cabo chato de 16 vias (encurtado no desenho)');
     }
   }
 
@@ -1069,8 +1193,7 @@ function iniciar() {
         tabela(document.getElementById('legenda3d-lsm'), 'Cabo do LSM6DS3: pino, função e cor do fio', ['Cor', 'Pino', 'Função', 'Fio'],
           X.lsm_modulo.cabo.map((f) => ({ ...f, pino: f.n })));
       }
-      // em tela estreita a legenda começa fechada, para não cobrir a placa
-      if (window.matchMedia('(max-width: 575.98px)').matches) leg.open = false;
+      // a legenda começa fechada, para não cobrir a placa; abre com um clique
       leg.hidden = false;
     }
   }
@@ -1159,7 +1282,7 @@ function iniciar() {
     modo = novo;
     camadas.caixa.visible = camadas.tampa.visible = modo !== 'sem';
     for (const [key, g] of Object.entries(camadas)) {
-      if (key !== 'caixa' && key !== 'tampa') g.position.y = modo === 'fora' ? EXPLODE.pecas : 0;
+      if (key !== 'caixa' && key !== 'tampa' && key !== 'acessorios') g.position.y = modo === 'fora' ? EXPLODE.pecas : 0;
     }
     camadas.tampa.position.y = modo === 'fora' ? EXPLODE.tampa : 0;
     const vidro = modo === 'dentro';
@@ -1189,7 +1312,9 @@ function iniciar() {
     // com a caixa a cena cresce para a esquerda (torres e abas): o alvo vai junto, longe da legenda
     const sobe = modo === 'fora' ? EXPLODE.pecas : 0;
     const lado = modo === 'sem' ? 0 : -14;
-    return X.cabo_obd ? new THREE.Vector3(dx + lado, 5 + sobe, 10) : new THREE.Vector3(8 + lado, 5 + sobe, 0);
+    // o ELM327 e o cabo Y ficam atrás da placa: o alvo recua e vai um pouco para a direita
+    const ac = X.acessorios && camadas.acessorios?.visible ? { x: 22, z: -14 } : { x: 0, z: 0 };
+    return X.cabo_obd ? new THREE.Vector3(dx + lado + ac.x, 5 + sobe, 10 + ac.z) : new THREE.Vector3(8 + lado + ac.x, 5 + sobe, ac.z);
   };
   let vistaAtual = 'perspectiva';
   const cam = { yaw: 0, pitch: 0, dist: 150, alvo: alvoPadrao() };
@@ -1197,7 +1322,8 @@ function iniciar() {
   function vista(nome) {
     vistaAtual = nome;
     const { dx, ...v } = VISTAS[nome];
-    Object.assign(meta, v, { alvo: alvoPadrao(dx), dist: v.dist * ({ sem: 1, dentro: 1.12, fora: 1.4 })[modo] });
+    const acDist = X.acessorios && camadas.acessorios?.visible ? (nome === 'cima' || nome === 'baixo' ? 1.65 : 1.45) : 1;
+    Object.assign(meta, v, { alvo: alvoPadrao(dx), dist: v.dist * ({ sem: 1, dentro: 1.12, fora: 1.4 })[modo] * acDist });
     if (nome === 'cima' || nome === 'baixo') cam.yaw = meta.yaw;
     pedir();
   }
@@ -1351,6 +1477,7 @@ function iniciar() {
     input.checked = true;
     input.addEventListener('change', () => {
       camadas[key].visible = input.checked;
+      if (key === 'acessorios') vista(vistaAtual);
       pedir();
     });
     const lab = document.createElement('label');

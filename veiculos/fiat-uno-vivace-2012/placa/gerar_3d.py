@@ -435,6 +435,41 @@ cyl('led', '#eef3f6', (LED_C[0], LED_C[1], LED_Z), (LED_C[0], LED_C[1], LED_Z + 
 cyl('led', '#eef3f6', (LED_C[0], LED_C[1], LED_Z + 1.0), (LED_C[0], LED_C[1], caixa.TOPO_Z + 5.1), 2.5)       # corpo
 ball('led', '#eef3f6', (LED_C[0], LED_C[1], caixa.TOPO_Z + 5.1), 2.5)
 
+# ---------------------------------------------------------------- ELM327 e cabo Y (acessórios, soltos atrás da placa)
+# Só para mostrar o kit: não estão ligados. Medidas aproximadas pelas fotos do vendedor (as fotos não vão ao repositório).
+# ELM327 mini em pé, com o plugue para cima; cabo Y com o macho e as duas fêmeas deitados, as bocas para cima, e os
+# cabos chatos de 16 vias (encurtados no desenho; o de verdade tem uns 30 cm) correndo atrás.
+AC_Z = caixa.outer()['z0']
+ELM = {'c': (18.0, -34.0), 'w': 42.0, 'd': 26.0, 'h': 20.0, 'plugue': 16.0}
+CON_Y = {'w': 42.0, 'd': 24.0, 'h': 10.0}
+Y_MACHO = (72.0, -32.0)
+Y_FEMEAS = [(118.0, -32.0), (162.0, -32.0)]
+FITA = {'w': 12.0, 't': 1.2}
+
+
+def fitas():
+    """Caminhos dos dois cabos chatos, do macho a cada fêmea, em linhas retas (sem se cruzar)."""
+    mx, my = Y_MACHO
+    tras = my - CON_Y['d'] / 2
+    out = []
+    for k, (fx, fy) in enumerate(Y_FEMEAS):
+        x0 = mx + (7.0 if k == 0 else -7.0)
+        yy = tras - (10.0 if k == 0 else 23.0)
+        out.append([(x0, tras), (x0, yy), (fx, yy), (fx, fy - CON_Y['d'] / 2)])
+    return out
+
+
+ex, ey = ELM['c']
+box('acessorios', '#1f4fd8', ex - ELM['w'] / 2, ey - ELM['d'] / 2, AC_Z, ELM['w'], ELM['d'], ELM['h'])
+box('acessorios', '#1f4fd8', ex - 19, ey - 7, AC_Z + ELM['h'], 38, 14, ELM['plugue'])
+for cx_, cy_ in [Y_MACHO] + Y_FEMEAS:
+    box('acessorios', '#2a2a2a', cx_ - CON_Y['w'] / 2, cy_ - CON_Y['d'] / 2, AC_Z, CON_Y['w'], CON_Y['d'], CON_Y['h'])
+    box('acessorios', '#2a2a2a', cx_ - 18, cy_ - 6.5, AC_Z + CON_Y['h'], 36, 13, 9)
+for pts in fitas():
+    for (ax, ay), (bx_, by_) in zip(pts, pts[1:]):
+        w = FITA['w'] / 2
+        box('acessorios', '#333333', min(ax, bx_) - w, min(ay, by_) - w, AC_Z, abs(bx_ - ax) + 2 * w, abs(by_ - ay) + 2 * w, FITA['t'])
+
 # ---------------------------------------------------------------- Lado de baixo: fio estanhado e solda
 for name, col, pts in g.TRACKS:
     tube('trilhas', col, [(*xy(c, r), BOT_Z) for c, r in pts], 0.38)
@@ -537,6 +572,8 @@ DET = {
             'conector': [{'n': n, 'p': rr(xy(*cr)), 'esp': g.LED_ESP[n]} for n, cr in g.LED_PINS.items()],
             'pinos': [rr(xy(*cr)) for cr in g.LED_HEADER],
             'fios': [{'n': n, 'cor': g.LED_COL[n], 'pts': [rr(p) for p in led_fio(n)], 'resistor': n != 'COM'} for n in g.LED_PINS]},
+    'acessorios': {'z0': AC_Z, 'elm': {**ELM, 'c': rr(ELM['c'])}, 'con': CON_Y, 'macho': rr(Y_MACHO),
+                   'femeas': [rr(f) for f in Y_FEMEAS], 'fita': FITA, 'fitas': [[rr(p) for p in f] for f in fitas()]},
     'fios_baixo': [{'n': f'{name}: {desc}', 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts, desc in g.BOTTOM_WIRES],
 }
 
@@ -594,7 +631,7 @@ def conferir_caixa():
 
 
 GRID = {'cols': g.COLS, 'rows': g.ROWS, 'mx': round(g.MX, 3), 'my': round(g.MY, 3), 'p': P, 't': T}
-LAYERS = [('esp32', 'ESP32'), ('modulos', f'{g.TRANS_NOME} e RT8272'), ('fusivel', 'Fusível'), ('bmp180', 'BMP180'), ('lsm6ds3', 'LSM6DS3'), ('led', 'LED tricolor'), ('fios', 'Fios por cima'), ('trilhas', 'Trilhas por baixo')]
+LAYERS = [('esp32', 'ESP32'), ('modulos', f'{g.TRANS_NOME} e RT8272'), ('fusivel', 'Fusível'), ('bmp180', 'BMP180'), ('lsm6ds3', 'LSM6DS3'), ('led', 'LED tricolor'), ('fios', 'Fios por cima'), ('acessorios', 'ELM327 e cabo Y'), ('trilhas', 'Trilhas por baixo')]
 
 
 # ---------------------------------------------------------------- Saídas

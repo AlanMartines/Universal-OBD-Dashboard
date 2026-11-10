@@ -9,6 +9,7 @@ mostrar_bmp180 = true;   // BMP180
 mostrar_lsm6ds3 = true;   // LSM6DS3
 mostrar_led = true;   // LED tricolor
 mostrar_fios = true;   // Fios por cima
+mostrar_acessorios = true;   // ELM327 e cabo Y
 mostrar_trilhas = true;   // Trilhas por baixo
 $fn = 16;
 
@@ -470,6 +471,23 @@ module camada_led() {
     bl([26.27, 2.8, 25.1], 2.5, "#eef3f6");
 }
 
+module camada_acessorios() {
+    bx([18, -34, 2.5], [42, 26, 20], "#1f4fd8");
+    bx([18, -34, 20.5], [38, 14, 16], "#1f4fd8");
+    bx([72, -32, -2.5], [42, 24, 10], "#2a2a2a");
+    bx([72, -32, 7], [36, 13, 9], "#2a2a2a");
+    bx([118, -32, -2.5], [42, 24, 10], "#2a2a2a");
+    bx([118, -32, 7], [36, 13, 9], "#2a2a2a");
+    bx([162, -32, -2.5], [42, 24, 10], "#2a2a2a");
+    bx([162, -32, 7], [36, 13, 9], "#2a2a2a");
+    bx([79, -49, -6.9], [12, 22, 1.2], "#333333");
+    bx([98.5, -54, -6.9], [51, 12, 1.2], "#333333");
+    bx([118, -49, -6.9], [12, 22, 1.2], "#333333");
+    bx([65, -55.5, -6.9], [12, 35, 1.2], "#333333");
+    bx([113.5, -67, -6.9], [109, 12, 1.2], "#333333");
+    bx([162, -55.5, -6.9], [12, 35, 1.2], "#333333");
+}
+
 module camada_trilhas() {
     cl([16.11, 8.33, -0.4], [16.11, 10.87, -0.4], 0.38, "#f9a825");
     cl([16.11, 10.87, -0.4], [18.65, 10.87, -0.4], 0.38, "#f9a825");
@@ -714,4 +732,5 @@ if (mostrar_bmp180) camada_bmp180();
 if (mostrar_lsm6ds3) camada_lsm6ds3();
 if (mostrar_led) camada_led();
 if (mostrar_fios) camada_fios();
+if (mostrar_acessorios) camada_acessorios();
 if (mostrar_trilhas) camada_trilhas();

@@ -11,6 +11,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - **Placa e caixa:** conector do LED tricolor na linha 1 e dois furos na tampa, um para ver o LED azul do ESP32 e outro para o LED tricolor.
 - **Caixa de proteção da placa da escuta CAN, para impressora 3D.** Base e tampa em STL (prontas para fatiar), o mesmo modelo no OpenSCAD e um desenho com as cotas ao lado do esquema. Mede 75 × 86,5 × 29,5 mm por fora e serve para as duas versões da placa. Tem tampa com 4 parafusos M3, abas para prender no carro (furo para parafuso M4 e fenda para abraçadeira de nylon de até 5 mm), abertura para o USB do ESP32 e passagem para o cabo OBD. O LSM6DS3 e o BMP180 ficam dentro, cada um preso num apoio do fundo; dentro da caixa, a temperatura do BMP180 tende a ficar alguns graus acima da do carro.
 - **Placa 3D no painel:** botões Sem caixa, Dentro da caixa (tampa transparente) e Fora da caixa (vista explodida).
+- **Placa 3D no painel: o kit completo.** O adaptador ELM327 mini e o cabo Y OBD2 (um macho e duas fêmeas, de cabo chato) aparecem soltos atrás da placa, numa camada própria. A legenda dos fios começa recolhida.
 
 ### Alterado
 - **Placa da escuta CAN: módulos encaixados.** O transceptor (TJA1050 ou SN65HVD230) e o RT8272 vão em barras fêmea, como o ESP32, e saem sem solda para trocar. No TJA1050, o CANH e o CANL vão por dois fios curtos até um conector de 2 vias na linha 24, com as ligações de baixo refeitas.
