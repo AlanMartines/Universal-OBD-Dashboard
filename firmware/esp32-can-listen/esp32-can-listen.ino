@@ -31,6 +31,16 @@
  * ax, ay e az em g (gravidade); gx, gy e gz em graus por segundo; pico em g. Os eixos são os impressos no
  * módulo: o app converte para frente, lado e cima do carro depois de calibrar com o carro parado.
  * Sem o sensor, aparece uma vez "# lsm6ds3 ausente". No descanso, o sensor também desliga.
+ *
+ * LEDs de estado: o azul da própria placa (D2) e, opcional, um LED tricolor (RGB) externo com um resistor em
+ * cada cor, no conector da placa: comum no D18, vermelho no TX2 (GPIO17), verde no RX2 (GPIO16) e azul no D4.
+ * O D18 faz as vezes de 3V3 (anodo comum) ou de GND (catodo comum), conforme LED_ANODO_COMUM: a ligação é a
+ * mesma para os dois tipos de LED. Piscadas curtas:
+ *   app não conectado ............. 1 por segundo (tricolor azul)
+ *   app conectado, rede sem quadros  1 por segundo (tricolor amarelo)
+ *   capturando (quadro no último 1 s) 2 por segundo (tricolor verde)
+ *   erro (transceptor não iniciou) . rápido (tricolor vermelho), antes de dormir
+ *   descanso ....................... apagados
  * Placa: "ESP32 Dev Module", no pacote esp32 da Espressif. Guia: docs/can-escuta.md.
  */
 #include <BluetoothSerial.h>
@@ -64,6 +74,18 @@ const uint8_t LSM_ADDRS[] = {0x6A, 0x6B};  // SA0 no GND ou no 3V3
 const unsigned long IMU_SAMPLE_MS = 20;
 const unsigned long IMU_MS = 200;
 
+// LEDs de estado (veja o cabeçalho). O LED da placa acende com nível alto.
+const int LED_PLACA = 2;
+const bool LED_RGB = true;           // false se não houver LED tricolor (os pinos ficam livres)
+const bool LED_ANODO_COMUM = false;  // true: anodo comum (D18 em 3,3 V); false: catodo comum (D18 em 0 V)
+const int LED_COMUM = 18;
+const int LED_R = 17, LED_G = 16, LED_B = 4;
+const unsigned long CAPTURA_MS = 1000;  // quadro mais recente que isso conta como "capturando"
+const unsigned long PISCA_MS = 80;      // tempo aceso de cada piscada
+
+enum Estado { SEM_APP, SEM_REDE, CAPTURANDO, ERRO };
+const bool COR[][3] = {{false, false, true}, {true, true, false}, {false, true, false}, {true, false, false}};  // R, G, B
+
 BluetoothSerial bt;
 unsigned long lastAmb = 0;
 unsigned long lastImuSample = 0;
@@ -78,12 +100,58 @@ void sendLine(const char *line) {
   if (bt.hasClient()) bt.println(line);
 }
 
+// Aceso ou apagado agora, no padrão de piscadas do estado.
+bool ledAceso(Estado e, unsigned long now) {
+  if (e == ERRO) return now % 200 < 100;
+  unsigned long f = now % 1000;
+  return f < PISCA_MS || (e == CAPTURANDO && f >= 500 && f < 500 + PISCA_MS);
+}
+
+void ledRgb(bool r, bool g, bool b) {
+  if (!LED_RGB) return;
+  // No anodo comum a cor acende com o pino em nível baixo
+  digitalWrite(LED_R, r != LED_ANODO_COMUM ? HIGH : LOW);
+  digitalWrite(LED_G, g != LED_ANODO_COMUM ? HIGH : LOW);
+  digitalWrite(LED_B, b != LED_ANODO_COMUM ? HIGH : LOW);
+}
+
+void ledsInit() {
+  pinMode(LED_PLACA, OUTPUT);
+  digitalWrite(LED_PLACA, LOW);
+  if (LED_RGB) {
+    // O comum leva a corrente das cores acesas juntas: força máxima. Fica em 3,3 V ou 0 V o tempo todo.
+    pinMode(LED_COMUM, OUTPUT);
+    gpio_set_drive_capability((gpio_num_t)LED_COMUM, GPIO_DRIVE_CAP_3);
+    digitalWrite(LED_COMUM, LED_ANODO_COMUM ? HIGH : LOW);
+    for (int pin : {LED_R, LED_G, LED_B}) {
+      pinMode(pin, OUTPUT);
+      // Corrente mínima (cerca de 5 mA): protege o LED e o pino se faltar o resistor
+      gpio_set_drive_capability((gpio_num_t)pin, GPIO_DRIVE_CAP_0);
+    }
+  }
+  ledRgb(false, false, false);
+}
+
+void leds(Estado e, unsigned long now) {
+  bool on = ledAceso(e, now);
+  digitalWrite(LED_PLACA, on ? HIGH : LOW);
+  ledRgb(on && COR[e][0], on && COR[e][1], on && COR[e][2]);
+}
+
+void ledsOff() {
+  digitalWrite(LED_PLACA, LOW);
+  ledRgb(false, false, false);
+}
+
 void halt(const char *why) {
   char line[80];
   snprintf(line, sizeof(line), "# ERRO %s", why);
   sendLine(line);
   sendLine("# parado: nada foi enviado a rede");
-  if (!REST_ENABLED) for (;;) delay(1000);
+  if (!REST_ENABLED) for (;;) { leds(ERRO, millis()); delay(10); }
+  // Pisca o erro por 10 s, para dar tempo de ver
+  for (unsigned long t0 = millis(); millis() - t0 < 10000;) { leds(ERRO, millis()); delay(10); }
+  ledsOff();
   // Ligado no carro: em vez de ficar acordado gastando bateria, dorme 10 min e tenta de novo.
   sendLine("# nova tentativa em 10 min");
   Serial.flush();
@@ -115,6 +183,7 @@ void rest() {
   twai_driver_uninstall();
   bt.end();
   lsmSleep();
+  ledsOff();  // no sono leve os pinos mantêm o nível: apagados
   // RX como entrada simples: repouso (recessivo) é nível alto; o primeiro bit dominante (baixo) acorda.
   gpio_reset_pin(RX_PIN);
   gpio_set_direction(RX_PIN, GPIO_MODE_INPUT);
@@ -316,8 +385,9 @@ void setup() {
   bool woke = restMark == REST_MAGIC;
   restMark = 0;
   Serial.begin(500000);
+  ledsInit();
   if (!bt.begin(BT_NAME)) Serial.println("# ERRO Bluetooth nao iniciou; seguindo so pela USB");
-  sendLine("# esp32-can-listen 1.3");
+  sendLine("# esp32-can-listen 1.4");
   if (woke) sendLine("# acordou: atividade na rede CAN");
   Wire.begin(I2C_SDA, I2C_SCL, 100000);   // BMP180 e LSM6DS3 dividem o mesmo I2C
   bmpBegin();
@@ -335,6 +405,7 @@ void loop() {
   }
 
   unsigned long now = millis();
+  leds(!bt.hasClient() ? SEM_APP : now - lastFrame < CAPTURA_MS ? CAPTURANDO : SEM_REDE, now);
   // Só dorme com a linha em repouso; se o RX estiver preso em nível baixo, acordaria na hora.
   if (REST_ENABLED && now - lastFrame >= IDLE_MS && gpio_get_level(RX_PIN) == 1) rest();
 

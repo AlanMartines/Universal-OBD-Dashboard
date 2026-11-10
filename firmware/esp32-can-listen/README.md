@@ -11,7 +11,7 @@ Faça isto com a placa desligada do carro.
 1. Na Arduino IDE, instale o pacote **esp32**, da Espressif (*Ferramentas → Placa → Gerenciador de placas*).
 2. Abra `esp32-can-listen.ino` e escolha a placa **ESP32 Dev Module**.
 3. Grave na placa. Se a IDE ficar parada em `Connecting...`, segure o botão BOOT até a gravação começar.
-4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.3` e `# listen-only 50 kbps`.
+4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.4` e `# listen-only 50 kbps`.
 
 Se faltar memória ao compilar, escolha *Ferramentas → Partition Scheme → Huge APP*.
 
@@ -60,6 +60,40 @@ O firmware procura o sensor em 0x6A e em 0x6B, lê a 50 Hz e, a cada 200 ms, man
 Fica em ±4 g e ±250 °/s, a 104 Hz. Ao iniciar aparece `# lsm6ds3 ok em 0x6A (id 0x69)`; sem o sensor, uma vez `# lsm6ds3 ausente`. Um id diferente aparece em `# lsm6ds3 id desconhecido` (por exemplo, um BMI160 está em outro endereço e não é lido). No descanso, o sensor também desliga.
 
 Prenda o módulo firme no carro: solto, ele mede a vibração dele mesmo. Ele pode ficar em qualquer posição: o app aprende sozinho onde é "cima" (com o carro parado) e onde é a frente (nas arrancadas e frenagens, comparando com a velocidade do OBD). Se o módulo mudar de posição, o app percebe com o carro parado e aprende de novo. Com isso, mostra a aceleração e a frenagem, a força nas curvas, a inclinação da rua e os buracos na tela Movimento, no histórico e no painel web.
+
+## LEDs de estado
+
+O LED azul da própria placa do ESP32 (D2) pisca conforme o estado. Um LED tricolor (RGB) externo, opcional, mostra o mesmo com cores:
+
+| Situação | LED azul do ESP32 | LED tricolor |
+|---|---|---|
+| App não conectado | 1 piscada por segundo | azul, 1 por segundo |
+| App conectado, mas a rede CAN sem quadros (carro desligado, fio solto) | 1 piscada por segundo | amarelo (vermelho + verde), 1 por segundo |
+| Capturando: app conectado e quadro chegando no último segundo | 2 piscadas por segundo | verde, 2 por segundo |
+| Erro: o transceptor não iniciou (por 10 s, antes de dormir) | rápido | vermelho, rápido |
+| Descanso | apagado | apagado |
+
+As piscadas são curtas (80 ms acesas), para o LED passar a maior parte do tempo apagado.
+
+**Ligação do LED tricolor.** Um resistor de 220 a 330 Ω em cada cor (vermelho, verde e azul), soldado na perna do LED e coberto com termorretrátil. O comum vai direto, sem resistor.
+
+| Perna do LED | Pino do ESP32 |
+|---|---|
+| Comum (a perna mais comprida) | D18 |
+| Vermelho | TX2 (GPIO17) |
+| Verde | RX2 (GPIO16) |
+| Azul | D4 |
+
+O D18 faz as vezes de 3,3 V ou de GND. Por isso a ligação é a mesma para os dois tipos de LED, e só muda uma linha no começo do programa:
+
+- **Catodo comum** (o comum é o negativo): `LED_ANODO_COMUM = false`, o padrão.
+- **Anodo comum** (o comum é o positivo): `LED_ANODO_COMUM = true`.
+
+Para descobrir o tipo, use o multímetro na escala de diodo. Com a ponta **preta** no comum e a **vermelha** numa das outras pernas, se a cor acender (fraquinho), é catodo comum. Se só acender com as pontas trocadas, é anodo comum.
+
+Na [placa ilhada](../../veiculos/fiat-uno-vivace-2012/placa/README.md), o LED liga num conector da linha 1, logo acima desses pinos. Para testar antes, dá para ligar com jumpers fêmea direto nos pinos do ESP32, sem esquecer os resistores. Sem LED tricolor, deixe `LED_RGB = true`: os pinos ficam sem efeito. Use `false` para deixá-los livres para outro uso.
+
+Os pinos das cores ficam com a menor corrente de saída do ESP32 (cerca de 5 mA), uma proteção a mais se faltar algum resistor. O D2, o D5, o D12 e o D15 foram evitados, porque mexem na partida do ESP32.
 
 ## Modo descanso
 

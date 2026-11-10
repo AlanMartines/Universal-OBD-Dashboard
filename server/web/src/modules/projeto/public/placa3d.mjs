@@ -1075,6 +1075,38 @@ function iniciar() {
     }
   }
 
+  // ------------------------------------------------------------ LED tricolor (opcional): conector na linha 1 e LED na tampa
+  if (X.led) {
+    const L = X.led;
+    const ys = L.pinos[0][1];
+    const xs = L.pinos.map((q) => q[0]);
+    const base = new THREE.Group();
+    base.add(caixa(Math.max(...xs) - Math.min(...xs) + P, A.MALE_H, P, M.preto, (Math.min(...xs) + Math.max(...xs)) / 2, ys, A.T));
+    for (const [x, y] of L.pinos) base.add(cilindro(W(x, y, -0.95), W(x, y, A.T + A.MALE_H + 6), 0.32, M.ouro, 4));
+    poe(base, 'placa', `Conector do LED tricolor (linha 1): ${L.conector.map((c) => `${c.n === 'COM' ? 'comum' : c.n} no ${c.esp}`).join(', ')}; o pino do meio fica sem ligação`);
+    for (const f of L.fios) {
+      const g = new THREE.Group();
+      const c = L.conector.find((q) => q.n === f.n);
+      g.add(caixa(P, A.HOUSING_H, P, M.nylon, c.p[0], c.p[1], A.T + A.MALE_H));
+      const curva = new THREE.CatmullRomCurve3(f.pts.map((q) => W(q[0], q[1], q[2])), false, 'centripetal');
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 40, 0.45, 8), std(new THREE.Color(f.cor).getHex(), 0.5)));
+      if (f.resistor) {
+        const [a, b] = f.pts.slice(-2);
+        g.add(cilindro(W(a[0], a[1], a[2]), W(b[0], b[1], b[2]), 0.9, M.pretoFosco, 12));
+      }
+      const nome = { COM: 'comum (no D18)', R: 'vermelho (no TX2)', G: 'verde (no RX2)', B: 'azul (no D4)' }[f.n];
+      poe(g, 'led', `LED tricolor: fio do ${nome}${f.resistor ? ', com o resistor no termorretrátil' : ''}`);
+    }
+    const led = new THREE.Group();
+    const vidro = std(0xeef3f6, 0.15, 0, { transparent: true, opacity: 0.82 });
+    led.add(cilindro(W(L.c[0], L.c[1], L.z), W(L.c[0], L.c[1], L.z + 1), 2.9, vidro, 32));
+    led.add(cilindro(W(L.c[0], L.c[1], L.z + 1), W(L.c[0], L.c[1], L.topo), 2.5, vidro, 32));
+    const domo = new THREE.Mesh(new THREE.SphereGeometry(2.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), vidro);
+    domo.position.copy(W(L.c[0], L.c[1], L.topo));
+    led.add(domo);
+    poe(led, 'led', 'LED tricolor de 5 mm (opcional), no furo da tampa: azul sem o app, amarelo sem quadros, verde capturando');
+  }
+
   // ------------------------------------------------------------ caixa de proteção (caixa.py): base e tampa
   const CX = X.caixa;
   const matBase = std(0x4b5661, 0.62);

@@ -165,6 +165,16 @@ TRACKS += [   # conector do LSM6DS3 ligado ao do BMP180 (o GND da coluna 14 já 
     ('SCL do LSM6DS3', GRN, [(13, 16), (13, 17)]),
     ('5 V do LSM6DS3', RED, [(15, 16), (15, 17)]),
 ]
+# LED tricolor (opcional, firmware 1.4): conector de 5 pinos macho na linha 1, colunas 8 a 12, logo acima dos pinos do
+# ESP32: comum no D18 (o firmware põe 3,3 V ou 0 V, conforme o LED seja anodo ou catodo comum), vermelho no TX2
+# (GPIO17), verde no RX2 (GPIO16) e azul no D4. O pino da coluna 9 (acima do D5) fica sem ligação. Os resistores
+# (220 a 330 Ω) vão soldados nas pernas do LED.
+LED_PINS = {'COM': (8, 1), 'R': (10, 1), 'G': (11, 1), 'B': (12, 1)}
+LED_HEADER = [(c, 1) for c in range(8, 13)]
+LED_COL = {'COM': '#616161', 'R': '#e53935', 'G': '#43a047', 'B': '#1e88e5'}
+LED_ESP = {'COM': 'D18', 'R': 'TX2', 'G': 'RX2', 'B': 'D4'}
+TRACKS += [(f'LED {n} ({LED_ESP[n]})', LED_COL[n], [(c, r), (c, r + 1)]) for n, (c, r) in LED_PINS.items()]
+ESP_USED.update({LED_ESP[n]: LED_COL[n] for n in LED_PINS})
 TRANS_COL = {'VCC': RED, 'TX': RED, 'RX': YEL, 'GND': BLK, '3V3': ORG, 'CTX': ORG, 'CRX': YEL, 'CANH': BLU, 'CANL': BLU}
 # RT8272 (HW-108): 21 x 21 mm, fileiras a cerca de 17,8 mm (7 furos), medido em 07/11/2026.
 # Soldado na placa por barra de pinos, com a bobina embaixo à direita: EN, IN-, IN+ na coluna 8 (linhas 14 a 16);
@@ -438,6 +448,21 @@ def bmp_header(s, labels):
         s.text((min(xs) + max(xs)) / 2, yl - 1.7, 'cabos LSM6DS3 · BMP180', 0.95, '#00838f', weight='bold', bg=True)
 
 
+def led_header(s, labels):
+    """Conector de 5 pinos do LED tricolor, na linha 1 (só o contorno, para não esconder os nomes dos pinos do ESP32)."""
+    xs = [hp(c, r)[0] for c, r in LED_HEADER]
+    _, y = hp(*LED_HEADER[0])
+    fill = 'none' if labels else '#212121'
+    s.add(f'<rect x="{min(xs) - 1.27:.2f}" y="{y - 1.27:.2f}" width="{max(xs) - min(xs) + P:.2f}" height="{P:.2f}" rx="0.3" fill="{fill}" stroke="#212121" stroke-width="0.35"/>')
+    nomes = {cr: n for n, cr in LED_PINS.items()}
+    for cr in LED_HEADER:
+        x, _ = hp(*cr)
+        s.add(f'<rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
+        n = nomes.get(cr, '–')
+        s.text(x, y - 1.75, n, 0.8, LED_COL.get(n, '#757575'), weight='bold', bg=labels)
+    s.text(max(xs) + 2.0, y - 1.75, 'LED tricolor (opcional)', 0.85, '#5d4037', anchor='start', weight='bold', bg=True)
+
+
 def view_top(stage, scale):
     s = Svg(W, H, scale)
     board(s)
@@ -475,6 +500,7 @@ def view_top(stage, scale):
             s.text(x + (1.8 if c == 1 else -1.8), y + 0.45, name, 1.0, BUCK_COL[name], anchor='start' if c == 1 else 'end', weight='bold', bg=True)
         s.text(MX + 3.5 * P, hp(1, 19)[1], 'barras fêmea do RT8272', 1.15, '#0d47a1', bg=True)
         bmp_header(s, labels=True)
+        led_header(s, labels=True)
         fuse_footprint(s)
         s.text(hp(*FUSE_C)[0], hp(*FUSE_C)[1] + 3.3, f'suporte do fusível: alargar 2 furos para {FUSE_DRILL:.1f} mm'.replace('.', ','), 1.0, PUR, weight='bold', bg=True)
         for pin, (c, r) in OBD_PADS.items():
@@ -492,6 +518,7 @@ def view_top(stage, scale):
         sn65_art(s) if SN_PINS else tja_art(s)
         bmp_header(s, labels=False)
         esp32_art(s)
+        led_header(s, labels=False)
         for pin, (c, r) in OBD_PADS.items():
             x, y = hp(c, r)
             _, col, listra = OBD_WIRE[pin]
@@ -522,7 +549,7 @@ def view_bottom(scale):
         legs |= {a, b}
     for row in (2, 12):
         legs |= {(c, row) for c in range(2, 17)}
-    legs |= set(BUCK_PINS.values()) | set(TRANS_PINS.values()) | set(CAN_HOLES.values()) | set(BMP_PINS.values()) | set(LSM_PINS.values())
+    legs |= set(BUCK_PINS.values()) | set(TRANS_PINS.values()) | set(CAN_HOLES.values()) | set(BMP_PINS.values()) | set(LSM_PINS.values()) | set(LED_HEADER)
     for c, r in legs:
         x, y = hp(c, r)
         s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')

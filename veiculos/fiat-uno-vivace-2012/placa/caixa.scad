@@ -45,7 +45,31 @@ module base() union() {
 }
 
 module tampa_montada() union() {
-    translate([-4.5, -82.5, 20]) cube([75.000, 86.500, 2.000]);
+    translate([45.33, -14.83, 20]) difference() { translate([-3.5, -3.5, 0]) cube([7, 7, 2.000]); translate([0, 0, -0.01]) cylinder(r = 1.5, h = 2.020); }
+    translate([26.27, -2.8, 20]) difference() { translate([-4.55, -4.55, 0]) cube([9.1, 9.1, 2.000]); translate([0, 0, -0.01]) cylinder(r = 2.55, h = 2.020); }
+    translate([-4.5, 1.75, 20]) cube([26.220, 2.250, 2.000]);
+    translate([-4.5, -7.35, 20]) cube([26.220, 9.100, 2.000]);
+    translate([-4.5, -11.33, 20]) cube([26.220, 3.980, 2.000]);
+    translate([-4.5, -18.33, 20]) cube([26.220, 7.000, 2.000]);
+    translate([-4.5, -82.5, 20]) cube([26.220, 64.170, 2.000]);
+    translate([21.72, 1.75, 20]) cube([9.100, 2.250, 2.000]);
+    translate([21.72, -11.33, 20]) cube([9.100, 3.980, 2.000]);
+    translate([21.72, -18.33, 20]) cube([9.100, 7.000, 2.000]);
+    translate([21.72, -82.5, 20]) cube([9.100, 64.170, 2.000]);
+    translate([30.82, 1.75, 20]) cube([11.010, 2.250, 2.000]);
+    translate([30.82, -7.35, 20]) cube([11.010, 9.100, 2.000]);
+    translate([30.82, -11.33, 20]) cube([11.010, 3.980, 2.000]);
+    translate([30.82, -18.33, 20]) cube([11.010, 7.000, 2.000]);
+    translate([30.82, -82.5, 20]) cube([11.010, 64.170, 2.000]);
+    translate([41.83, 1.75, 20]) cube([7.000, 2.250, 2.000]);
+    translate([41.83, -7.35, 20]) cube([7.000, 9.100, 2.000]);
+    translate([41.83, -11.33, 20]) cube([7.000, 3.980, 2.000]);
+    translate([41.83, -82.5, 20]) cube([7.000, 64.170, 2.000]);
+    translate([48.83, 1.75, 20]) cube([21.670, 2.250, 2.000]);
+    translate([48.83, -7.35, 20]) cube([21.670, 9.100, 2.000]);
+    translate([48.83, -11.33, 20]) cube([21.670, 3.980, 2.000]);
+    translate([48.83, -18.33, 20]) cube([21.670, 7.000, 2.000]);
+    translate([48.83, -82.5, 20]) cube([21.670, 64.170, 2.000]);
     translate([-7, 6.5, 20]) difference() { cylinder(r = 4, h = 2.000); translate([0, 0, -0.01]) cylinder(r = 1.7, h = 2.020); }
     translate([73, 6.5, 20]) difference() { cylinder(r = 4, h = 2.000); translate([0, 0, -0.01]) cylinder(r = 1.7, h = 2.020); }
     translate([-7, -85, 20]) difference() { cylinder(r = 4, h = 2.000); translate([0, 0, -0.01]) cylinder(r = 1.7, h = 2.020); }

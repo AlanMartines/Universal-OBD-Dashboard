@@ -102,6 +102,24 @@ def parede(eixo, fixo0, fixo1, ini, fim, z0, z1, aberturas, nome):
     return pecas
 
 
+def chapa_furada(x0, y0, x1, y1, z0, z1, furos, nome):
+    """Chapa com furos redondos: cada furo numa placa quadrada com furo; o resto em blocos ao redor."""
+    quad = []
+    pecas = []
+    for cx, cy, r, n in furos:
+        lado = 2 * r + 4.0
+        quad.append((cx - lado / 2, cy - lado / 2, cx + lado / 2, cy + lado / 2))
+        pecas.append(furada(cx, cy, z0, z1, lado, lado, r, n))
+    xs = sorted({x0, x1, *[q[0] for q in quad], *[q[2] for q in quad]})
+    ys = sorted({y0, y1, *[q[1] for q in quad], *[q[3] for q in quad]})
+    for a, b in zip(xs, xs[1:]):
+        for c, d in zip(ys, ys[1:]):
+            mx, my = (a + b) / 2, (c + d) / 2
+            if not any(q[0] < mx < q[2] and q[1] < my < q[3] for q in quad):
+                pecas.append(bx(a, c, z0, b, d, z1, nome))
+    return pecas
+
+
 def montar(ref):
     """ref: posições vindas do modelo da placa (gerar_3d.py).
 
@@ -157,7 +175,7 @@ def montar(ref):
         base.append(bx(L['x0'] + ini, L['y0'], PISO_Z, L['x0'] + L['l'], L['y0'] + L['w'], L['z0'], f'Apoio do {nome} (fita dupla-face)'))
 
     # Tampa: chapa, orelhas dos parafusos, aba interna que centraliza e linguetas que fecham as aberturas dos cabos
-    tampa.append(bx(o['x0'], o['y0'], TOPO_Z, o['x1'], o['y1'], o['z1'], 'Tampa'))
+    tampa += chapa_furada(o['x0'], o['y0'], o['x1'], o['y1'], TOPO_Z, o['z1'], ref.get('furos_tampa', []), 'Tampa')
     for cx_, cy_ in torres():
         tampa.append(anel(cx_, cy_, TOPO_Z, o['z1'], PASSA_R, TORRE_R, 'Tampa: furo do parafuso M3 (3,4 mm)'))
     aba_esp, aba_h = 1.2, 2.0
@@ -449,6 +467,7 @@ def write_svg(path, cx, ref):
         f'Por fora: {_f(med["externa"][0])} × {_f(med["externa"][1])} × {_f(med["externa"][2])} mm (sem abas e torres)',
         f'Placa a {_f(-PISO_Z)} mm do fundo, nos 4 apoios dos cantos; batentes na tampa a 0,3 mm dela',
         'Tampa: 4 parafusos M3 × 12 (furo-guia de 2,6 mm nas torres; 3,4 mm na tampa)',
+        'Furos na tampa: 3 mm em cima do LED azul do ESP32 e 5 mm para o LED tricolor',
         'Abas: furo de 4,5 mm (parafuso M4 ou abraçadeira de até 4 mm)',
         'LSM6DS3 e BMP180 dentro, cada um no seu apoio, com fita dupla-face',
         'Imprimir em PETG ou ASA (PLA amolece no carro ao sol), sem suporte',

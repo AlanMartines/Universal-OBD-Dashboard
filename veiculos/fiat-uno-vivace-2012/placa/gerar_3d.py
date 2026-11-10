@@ -403,6 +403,38 @@ for n in g.LSM_PINS:
 for _, a, b, dx, dz in LSM_JUMPERS:
     tube('lsm6ds3', '#9e9e9e', lsm_jumper(a, b, dx, dz), 0.3)
 
+# ---------------------------------------------------------------- LED tricolor (opcional) na tampa da caixa
+# Conector de 5 pinos macho na linha 1 (colunas 8 a 12): comum, sem ligação, vermelho, verde e azul. O LED de 5 mm fica
+# num furo da tampa, perto do conector, preso por dentro (a aba encosta na tampa); fios com conector fêmea em cada pino
+# e um resistor de 220 a 330 Ω em cada cor, soldado na perna do LED e coberto com termorretrátil.
+LED_C = (xy(10, 1)[0], 2.8)
+LED_Z = caixa.TOPO_Z - 1.0                  # aba do LED, por dentro da tampa
+LED_ORDEM = ['R', 'COM', 'G', 'B']          # pernas do LED de 4 pernas; a do comum é a mais comprida
+lhx = [xy(*cr)[0] for cr in g.LED_HEADER]
+_, lhy = xy(*g.LED_HEADER[0])
+box('placa', '#111111', min(lhx) - P / 2, lhy - P / 2, T, len(lhx) * P, P, MALE_H)
+for x in lhx:
+    cyl('placa', GOLD, (x, lhy, -1.0), (x, lhy, T + MALE_H + 6.0), 0.32)
+
+
+def led_fio(n):
+    x, y = xy(*g.LED_PINS[n])
+    lx = LED_C[0] + (LED_ORDEM.index(n) - 1.5) * 1.27
+    z0 = T + MALE_H + HOUSING_H
+    return [(x, y, z0), (x, y, z0 + 1.2 + LED_ORDEM.index(n) * 0.5), (lx, LED_C[1], LED_Z - 3.2), (lx, LED_C[1], LED_Z)]
+
+
+for n in g.LED_PINS:
+    x, y = xy(*g.LED_PINS[n])
+    box('led', '#1b1b1b', x - P / 2, y - P / 2, T + MALE_H, P, P, HOUSING_H)
+    tube('led', g.LED_COL[n], led_fio(n), 0.45)
+    if n != 'COM':   # resistor no termorretrátil, logo abaixo do LED
+        a, b = led_fio(n)[2], led_fio(n)[3]
+        cyl('led', '#212121', a, b, 0.9)
+cyl('led', '#eef3f6', (LED_C[0], LED_C[1], LED_Z), (LED_C[0], LED_C[1], LED_Z + 1.0), 2.9)                      # aba
+cyl('led', '#eef3f6', (LED_C[0], LED_C[1], LED_Z + 1.0), (LED_C[0], LED_C[1], caixa.TOPO_Z + 5.1), 2.5)       # corpo
+ball('led', '#eef3f6', (LED_C[0], LED_C[1], caixa.TOPO_Z + 5.1), 2.5)
+
 # ---------------------------------------------------------------- Lado de baixo: fio estanhado e solda
 for name, col, pts in g.TRACKS:
     tube('trilhas', col, [(*xy(c, r), BOT_Z) for c, r in pts], 0.38)
@@ -501,6 +533,10 @@ DET = {
                    'pinos': [{'n': n, 'p': rr(bmp_mod_pin(n))} for n in BMP_MOD_PINS],
                    'cabo': [{'n': n, 'cor': BMP_WIRE[n], 'cor_nome': BMP_WIRE_INFO[n][0], 'funcao': BMP_WIRE_INFO[n][1],
                              'pts': [rr(p) for p in bmp_cable(n)]} for n in BMP_WIRE]},
+    'led': {'c': rr(LED_C), 'z': LED_Z, 'topo': caixa.TOPO_Z + 5.1, 'ordem': LED_ORDEM,
+            'conector': [{'n': n, 'p': rr(xy(*cr)), 'esp': g.LED_ESP[n]} for n, cr in g.LED_PINS.items()],
+            'pinos': [rr(xy(*cr)) for cr in g.LED_HEADER],
+            'fios': [{'n': n, 'cor': g.LED_COL[n], 'pts': [rr(p) for p in led_fio(n)], 'resistor': n != 'COM'} for n in g.LED_PINS]},
     'fios_baixo': [{'n': f'{name}: {desc}', 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts, desc in g.BOTTOM_WIRES],
 }
 
@@ -512,6 +548,9 @@ CAIXA_REF = {
     'obd_y': OBD_BOCA[1], 'obd_z': OBD_Z, 'obd_r': OBD_CAPA_R,
     'apoios': [(LSM_MOD, 5.0, 'LSM6DS3'), (BMP_MOD, 5.0, 'BMP180')],   # módulo, onde o apoio começa (x), nome
     'fusivel': (fcx, fcy, T + FUSE_H),
+    # furos da tampa: o LED azul do ESP32 (na placa dele, perto do USB) e o LED tricolor opcional
+    'furos_tampa': [(x0 + 46.6, (xy(2, 2)[1] + xy(2, 12)[1]) / 2 - 6.2, 1.5, 'Tampa: furo de 3 mm para ver o LED azul do ESP32'),
+                    (LED_C[0], LED_C[1], 2.55, 'Tampa: furo de 5 mm do LED tricolor')],
 }
 CAIXA = caixa.montar(CAIXA_REF)
 DET['caixa'] = {'base': CAIXA['base'], 'tampa': CAIXA['tampa'], 'medidas': CAIXA['medidas'],
@@ -546,6 +585,8 @@ def conferir_caixa():
     for q in CAIXA['base'] + CAIXA['tampa']:
         qa, qb = _aabb_caixa(q)
         for p in parts:
+            if p[0] == 'led' and 'LED' in (q['n'] or ''):   # o LED atravessa o furo dele
+                continue
             pa, pb = _aabb(p)
             if all(pa[i] < qb[i] - 0.01 and qa[i] < pb[i] - 0.01 for i in range(3)):
                 achados.append((q['n'], p[0], p[1], [round(v, 1) for v in pa], [round(v, 1) for v in pb]))
@@ -553,7 +594,7 @@ def conferir_caixa():
 
 
 GRID = {'cols': g.COLS, 'rows': g.ROWS, 'mx': round(g.MX, 3), 'my': round(g.MY, 3), 'p': P, 't': T}
-LAYERS = [('esp32', 'ESP32'), ('modulos', f'{g.TRANS_NOME} e RT8272'), ('fusivel', 'Fusível'), ('bmp180', 'BMP180'), ('lsm6ds3', 'LSM6DS3'), ('fios', 'Fios por cima'), ('trilhas', 'Trilhas por baixo')]
+LAYERS = [('esp32', 'ESP32'), ('modulos', f'{g.TRANS_NOME} e RT8272'), ('fusivel', 'Fusível'), ('bmp180', 'BMP180'), ('lsm6ds3', 'LSM6DS3'), ('led', 'LED tricolor'), ('fios', 'Fios por cima'), ('trilhas', 'Trilhas por baixo')]
 
 
 # ---------------------------------------------------------------- Saídas

@@ -514,6 +514,14 @@
 <path d="M33.89,43.89 L33.89,46.43" fill="none" stroke="#2e7d32" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M38.97,43.89 L38.97,46.43" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M38.97,43.89 L38.97,46.43" fill="none" stroke="#d32f2f" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M21.19,5.79 L21.19,8.33" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M21.19,5.79 L21.19,8.33" fill="none" stroke="#616161" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M26.27,5.79 L26.27,8.33" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M26.27,5.79 L26.27,8.33" fill="none" stroke="#e53935" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M28.81,5.79 L28.81,8.33" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M28.81,5.79 L28.81,8.33" fill="none" stroke="#43a047" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M31.35,5.79 L31.35,8.33" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M31.35,5.79 L31.35,8.33" fill="none" stroke="#1e88e5" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <rect x="4.65" y="7.03" width="38.16" height="2.6" rx="0.3" fill="#212121"/>
 <rect x="5.40" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
 <text x="5.95" y="6.53" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D23</text>
@@ -528,15 +536,15 @@
 <rect x="18.10" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
 <text x="18.65" y="6.53" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D19</text>
 <rect x="20.64" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
-<text x="21.19" y="6.53" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D18</text>
+<text x="21.19" y="6.53" font-size="1.0" fill="#616161" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">D18</text>
 <rect x="23.18" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
 <text x="23.73" y="6.53" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D5</text>
 <rect x="25.72" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
-<text x="26.27" y="6.53" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">TX2</text>
+<text x="26.27" y="6.53" font-size="1.0" fill="#e53935" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">TX2</text>
 <rect x="28.26" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
-<text x="28.81" y="6.53" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">RX2</text>
+<text x="28.81" y="6.53" font-size="1.0" fill="#43a047" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">RX2</text>
 <rect x="30.80" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
-<text x="31.35" y="6.53" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D4</text>
+<text x="31.35" y="6.53" font-size="1.0" fill="#1e88e5" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">D4</text>
 <rect x="33.34" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
 <text x="33.89" y="6.53" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D2</text>
 <rect x="35.88" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
@@ -684,6 +692,24 @@
 <text x="38.97" y="41.99" font-size="0.85" fill="#d32f2f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">VCC</text>
 <rect x="25.55" y="48.27" width="19.21" height="1.03" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="35.16" y="49.03" font-size="0.9" fill="#00838f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">cabos: LSM6DS3 (16) e BMP180 (17)</text>
+<rect x="19.92" y="4.52" width="12.70" height="2.54" rx="0.3" fill="none" stroke="#212121" stroke-width="0.35"/>
+<rect x="20.79" y="5.39" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="20.05" y="3.36" width="2.29" height="0.92" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="21.19" y="4.04" font-size="0.8" fill="#616161" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">COM</text>
+<rect x="23.33" y="5.39" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="23.08" y="3.36" width="1.30" height="0.92" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="23.73" y="4.04" font-size="0.8" fill="#757575" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">–</text>
+<rect x="25.87" y="5.39" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="25.62" y="3.36" width="1.30" height="0.92" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="26.27" y="4.04" font-size="0.8" fill="#e53935" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">R</text>
+<rect x="28.41" y="5.39" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="28.16" y="3.36" width="1.30" height="0.92" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="28.81" y="4.04" font-size="0.8" fill="#43a047" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">G</text>
+<rect x="30.95" y="5.39" width="0.8" height="0.8" fill="#d4af37"/>
+<rect x="30.70" y="3.36" width="1.30" height="0.92" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="31.35" y="4.04" font-size="0.8" fill="#1e88e5" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">B</text>
+<rect x="32.95" y="3.32" width="12.92" height="0.98" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="33.35" y="4.04" font-size="0.85" fill="#5d4037" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">LED tricolor (opcional)</text>
 <rect x="0.57" y="59.41" width="26.0" height="9.6" rx="0.5" fill="none" stroke="#7b1fa2" stroke-width="0.3" stroke-dasharray="0.9 0.5"/>
 <circle cx="3.41" cy="64.21" r="0.90" fill="#fff" stroke="#7b1fa2" stroke-width="0.3"/><rect x="2.76" y="64.01" width="1.3" height="0.4" fill="#7b1fa2"/>
 <rect x="4.61" y="61.80" width="2.57" height="1.09" rx="0.35" fill="#fff" opacity=".9"/>
