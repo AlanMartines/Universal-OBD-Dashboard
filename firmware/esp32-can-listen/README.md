@@ -68,12 +68,12 @@ O LED azul da própria placa do ESP32 (D2) pisca conforme o estado. Um LED trico
 | Situação | LED azul do ESP32 | LED tricolor |
 |---|---|---|
 | App não conectado | 1 piscada por segundo | azul, 1 por segundo |
-| App conectado, mas a rede CAN sem quadros (carro desligado, fio solto) | 1 piscada por segundo | amarelo (vermelho + verde), 1 por segundo |
+| App conectado, mas a rede CAN sem quadros (carro desligado, fio solto) | 1 piscada por segundo | verde, 1 por segundo |
 | Capturando: app conectado e quadro chegando no último segundo | 2 piscadas por segundo | verde, 2 por segundo |
 | Erro: o transceptor não iniciou (por 10 s, antes de dormir) | rápido | vermelho, rápido |
 | Descanso | apagado | apagado |
 
-As piscadas são curtas (80 ms acesas), para o LED passar a maior parte do tempo apagado.
+As piscadas são curtas (80 ms acesas), para o LED passar a maior parte do tempo apagado. O tricolor usa só as cores puras: azul é "sem app", verde é "com app" (devagar sem dados, dobrado capturando) e vermelho é erro. Num LED transparente, misturas como o amarelo aparecem como dois pontos de cor separados.
 
 **Ligação do LED tricolor.** Um resistor de 220 a 330 Ω em cada cor (vermelho, verde e azul), soldado na perna do LED e coberto com termorretrátil. O comum vai direto, sem resistor.
 

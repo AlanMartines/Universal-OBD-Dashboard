@@ -37,7 +37,7 @@
  * O D18 faz as vezes de 3V3 (anodo comum) ou de GND (catodo comum), conforme LED_ANODO_COMUM: a ligação é a
  * mesma para os dois tipos de LED. Piscadas curtas:
  *   app não conectado ............. 1 por segundo (tricolor azul)
- *   app conectado, rede sem quadros  1 por segundo (tricolor amarelo)
+ *   app conectado, rede sem quadros  1 por segundo (tricolor verde)
  *   capturando (quadro no último 1 s) 2 por segundo (tricolor verde)
  *   erro (transceptor não iniciou) . rápido (tricolor vermelho), antes de dormir
  *   descanso ....................... apagados
@@ -84,7 +84,9 @@ const unsigned long CAPTURA_MS = 1000;  // quadro mais recente que isso conta co
 const unsigned long PISCA_MS = 80;      // tempo aceso de cada piscada
 
 enum Estado { SEM_APP, SEM_REDE, CAPTURANDO, ERRO };
-const bool COR[][3] = {{false, false, true}, {true, true, false}, {false, true, false}, {true, false, false}};  // R, G, B
+// Só as cores puras: num LED transparente, as misturas aparecem como pontos separados. Azul: sem app; verde: com app
+// (1 piscada sem quadros, 2 capturando); vermelho: erro.
+const bool COR[][3] = {{false, false, true}, {false, true, false}, {false, true, false}, {true, false, false}};  // R, G, B
 
 BluetoothSerial bt;
 unsigned long lastAmb = 0;

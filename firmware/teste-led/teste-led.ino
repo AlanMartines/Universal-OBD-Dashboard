@@ -7,10 +7,10 @@
  *   2. Tipo do LED tricolor: cada cor como anodo comum e depois como catodo comum.
  *      As cores acendem só na fase do tipo do seu LED; na outra, nada acende.
  *   3. Cada cor sozinha, acesa e firme, e depois com o brilho subindo e descendo.
- *   4. Misturas: amarelo, ciano, magenta e branco.
- *   5. Os sinais do firmware 1.4: sem app, sem quadros da rede, capturando e erro.
+ *   4. Os sinais do firmware 1.4: sem app (azul), sem quadros da rede (verde devagar), capturando (verde dobrado)
+ *      e erro (vermelho rápido). Só cores puras: num LED transparente, misturas aparecem como pontos separados.
  * Depois recomeça. Digite "a" (anodo comum) ou "c" (catodo comum) e Enter para fixar o tipo
- * usado nos passos 3 a 5; o padrão é anodo comum, como no esp32-can-listen.
+ * usado nos passos 3 e 4; o padrão é anodo comum, como no esp32-can-listen.
  *
  * Ligação (a mesma do esp32-can-listen 1.4), com um resistor em cada cor (220 Ω no vermelho e 100 Ω
  * no verde e no azul dão bom brilho; com 1 kΩ acende fraco, mas dá para validar):
@@ -188,25 +188,6 @@ void cadaCor() {
   }
 }
 
-void misturas() {
-  titulo("4. MISTURAS DE COR");
-  const struct { const char *nome; const char *como; int r, g, b; } MIX[] = {
-    {"AMARELO", "vermelho + verde juntos", 255, 255, 0},
-    {"CIANO", "verde + azul juntos", 0, 255, 255},
-    {"MAGENTA", "vermelho + azul juntos", 255, 0, 255},
-    {"BRANCO", "as tres cores juntas", 255, 255, 255},
-  };
-  for (const auto &m : MIX) {
-    char oque[32], esperado[80];
-    snprintf(oque, sizeof(oque), "a cor %s", m.nome);
-    snprintf(esperado, sizeof(esperado), "%s, firme (%s)", m.nome, m.como);
-    anuncia(oque, esperado);
-    rgb(m.r, m.g, m.b, anodo);
-    contagem(FIRME_MS);
-    pausa(anodo);
-  }
-}
-
 // Piscadas do esp32-can-listen 1.4: curtas (80 ms), no LED da placa e no tricolor ao mesmo tempo.
 void sinal(const char *nome, const char *esperado, int r, int g, int b, int porSegundo, bool rapido) {
   anuncia(nome, esperado);
@@ -223,9 +204,9 @@ void sinal(const char *nome, const char *esperado, int r, int g, int b, int porS
 }
 
 void sinais() {
-  titulo("5. SINAIS DO FIRMWARE 1.4 (8 s cada, LED da placa e tricolor juntos)");
+  titulo("4. SINAIS DO FIRMWARE 1.4 (8 s cada, LED da placa e tricolor juntos)");
   sinal("o sinal 'app nao conectado'", "AZUL, 1 piscada curta por segundo", 0, 0, 255, 1, false);
-  sinal("o sinal 'app conectado, rede sem quadros'", "AMARELO, 1 piscada curta por segundo", 255, 255, 0, 1, false);
+  sinal("o sinal 'app conectado, rede sem quadros'", "VERDE, 1 piscada curta por segundo", 0, 255, 0, 1, false);
   sinal("o sinal 'capturando'", "VERDE, 2 piscadas curtas por segundo", 0, 255, 0, 2, false);
   sinal("o sinal 'erro'", "VERMELHO, piscando rapido (5 vezes por segundo)", 255, 0, 0, 0, true);
 }
@@ -238,7 +219,7 @@ void setup() {
   apagaTudo(anodo);
   delay(1500);
   Serial.println();
-  Serial.println("# teste-led 1.1");
+  Serial.println("# teste-led 1.2");
   Serial.println("# ligacao: comum no D18, vermelho no TX2 (GPIO17), verde no RX2 (GPIO16), azul no D4");
   Serial.print("# tipo do LED em uso: ");
   Serial.println(tipo(anodo));
@@ -251,7 +232,6 @@ void loop() {
   ledPlaca();
   tipoDoLed();
   cadaCor();
-  misturas();
   sinais();
   Serial.println();
   Serial.println("################ FIM DO TESTE: recomeca em 5 s ################");

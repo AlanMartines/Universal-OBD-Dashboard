@@ -1229,7 +1229,7 @@ function iniciar() {
     const domo = new THREE.Mesh(new THREE.SphereGeometry(2.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), vidro);
     domo.position.copy(W(L.c[0], L.c[1], L.topo));
     led.add(domo);
-    poe(led, 'led', 'LED tricolor de 5 mm (opcional), no furo da tampa: azul sem o app, amarelo sem quadros, verde capturando');
+    poe(led, 'led', 'LED tricolor de 5 mm (opcional), no furo da tampa: azul sem o app, verde com o app (2 piscadas capturando), vermelho no erro');
   }
 
   // ------------------------------------------------------------ caixa de proteção (caixa.py): base e tampa
