@@ -63,7 +63,7 @@ Como montar:
 5. **Tampa:** encaixe (a aba interna centraliza) e aperte os 4 parafusos. Para trocar o fusível, é só tirar a tampa: ele fica logo embaixo.
 6. **LED tricolor (opcional):** empurre o LED de 5 mm por dentro no furo de 5 mm da tampa, até a aba encostar; ele fica com o domo para fora. Os fios vão ao conector da linha 1. Sem o LED, o furo de 3 mm já mostra o LED azul do ESP32.
 
-> As alturas dos componentes são estimadas (veja [Modelo 3D](#modelo-3d)). Antes de imprimir, monte a placa e confira com o paquímetro que nada passe de **18 mm acima da face de cima da placa** (o ESP32 nas barras fêmea chega a uns 15,6 mm: barra de 8,3 + plástico dos pinos dele de 2,5 + placa de 1,6 + módulo WROOM de 3,2). Abaixo da placa, nada pode passar de 5 mm (os pinos das barras fêmea saem 3,2 mm).
+> As alturas dos componentes são estimadas (veja [Modelo 3D](#modelo-3d)). Antes de imprimir, monte a placa e confira com o paquímetro que nada passe de **18 mm acima da face de cima da placa** (o ESP32 nas barras fêmea chega a uns 15,3 mm: barra de 8,3 + plástico dos pinos dele de 2,5 + placa de 1,5 + módulo WROOM de 3,0, medidos em 10/11/2026). Abaixo da placa, nada pode passar de 5 mm (os pinos das barras fêmea saem 3,2 mm).
 
 ## Montagem prevista
 
@@ -191,7 +191,7 @@ Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pi
 |---|---|---|---|
 | Placa perfurada | Tamanho (mm) e número de furos (colunas × linhas) | Padrão de 5 × 7 cm, 18 × 24 furos (a comprar) | 07/11/2026 |
 | ESP32 DevKit V1 (30 pinos) | Comprimento × largura da placa (mm) | 50 × 28; 15 pinos por lado, fileira de 15 com 38 mm (passo de 2,54 mm) | 07/11/2026 |
-| | Altura com os pinos (da ponta do pino à face de cima da placa dele) | 12 mm (foto do vendedor): plástico de 2,5 e 7,9 de pino por baixo, que entram inteiros na barra fêmea | 10/11/2026 |
+| | Alturas (paquímetro) | Da ponta do pino ao topo do módulo Wi-Fi: 13 mm; da base do pino (no plástico preto) ao topo: 7 mm; placa sozinha: 1,5 mm. Fica: 6 mm de pino abaixo do plástico (entra uns 6 mm na barra fêmea), plástico de 2,5, placa de 1,5 e módulo WROOM-32 de 3,0 | 10/11/2026 |
 | Barra de pinos fêmea (1 × 20, cortada em 15) | Corpo e pinos (mm) | 8,3 de altura × 2,34 de largura, 51,45 com 20 pinos; pinos de 0,64 (em cima) e 0,4 × 3,2 por baixo (desenho do fabricante) | 10/11/2026 |
 | | Distância entre as duas fileiras de pinos (mm) | 24,5 por dentro e 25,5 a 26 por fora; cerca de 25,4 de centro a centro (10 furos, linhas 2 e 12) | 07/11/2026 |
 | | Ordem dos pinos, com o USB para baixo (confirmar 3V3, GND, VIN e D21) | Confirmada pela foto: com o USB para cima, à esquerda 3V3, GND, D15, D2, D4, RX2, TX2, D5, D18, D19, D21, RX0, TX0, D22, D23; à direita VIN, GND, D13, D12, D14, D27, D26, D25, D33, D32, D35, D34, VN, VP, EN. Igual ao desenho | 07/11/2026 |

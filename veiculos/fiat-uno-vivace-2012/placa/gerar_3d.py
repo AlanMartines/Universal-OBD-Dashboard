@@ -30,7 +30,9 @@ hp = g.hp
 T = 1.6                     # placa perfurada
 FEM_H = 8.3                 # barra fêmea do ESP32: corpo de 8,3 x 2,34 mm, pinos de 3,2 mm por baixo (desenho do fabricante)
 FEM_W, FEM_PINO = 2.34, 3.2
-ESP_PINO = 7.9              # pino do ESP32 abaixo do plástico: 12 mm da ponta à face de cima da placa dele (foto do Alan)
+ESP_PINO = 6.0              # pino do ESP32 abaixo do plástico (paquímetro, 10/11/2026: 13 mm da ponta ao topo do Wi-Fi, 7 da base)
+ESP_T = 1.5                 # placa do ESP32 (paquímetro)
+ESP_WIFI = 3.0              # módulo WROOM-32 acima da placa dele: 7 - 2,5 do plástico - 1,5 da placa
 MALE_H = 2.5                # plástico da barra de pinos macho
 ESP_Z = T + FEM_H + MALE_H  # fundo da placa do ESP32
 MOD_Z = T + FEM_H + MALE_H  # fundo do transceptor e do RT8272: encaixados em barras fêmea, como o ESP32
@@ -107,10 +109,10 @@ x0, y0 = cx - g.ESP_L / 2, cy - g.ESP_W / 2
 for row in (2, 12):
     x1, y = xy(2, row)
     box('esp32', '#111111', x1 - P / 2, y - P / 2, T + FEM_H, 15 * P, P, MALE_H)
-box('esp32', '#1a237e', x0, y0, ESP_Z, g.ESP_L, g.ESP_W, 1.6)
-top = ESP_Z + 1.6
+box('esp32', '#1a237e', x0, y0, ESP_Z, g.ESP_L, g.ESP_W, ESP_T)
+top = ESP_Z + ESP_T
 box('esp32', '#263238', x0 + 1.0, cy - 9, top, 25.5, 18, 0.8)
-box('esp32', '#b0bec5', x0 + 7.5, cy - 8, top + 0.8, 18, 16, 2.4)
+box('esp32', '#b0bec5', x0 + 7.5, cy - 8, top + 0.8, 18, 16, ESP_WIFI - 0.8)
 zig = [(x0 + 2.0 + (i % 2) * 3.5, cy - 7 + i * 1.4, top + 0.85) for i in range(11)]   # antena impressa
 tube('esp32', '#c9a227', zig, 0.2)
 box('esp32', '#cfd8dc', x0 + 44.5, cy - 3.8, top, 6.5, 7.6, 3.0)
@@ -120,7 +122,7 @@ for by in (cy - 9.5, cy + 8.2):
 for row in (2, 12):
     for c in range(2, 17):
         x, y = xy(c, row)
-        cyl('esp32', GOLD, (x, y, ESP_Z - ESP_PINO), (x, y, top + 0.8), 0.32)   # a ponta fica 0,4 mm acima da placa, dentro da barra fêmea
+        cyl('esp32', GOLD, (x, y, ESP_Z - ESP_PINO), (x, y, top + 0.8), 0.32)   # a ponta entra uns 6 mm na barra fêmea
 
 HOUSING_H = 8.5             # conector fêmea Dupont (cabos dos sensores e fios do CAN do TJA1050)
 
@@ -535,7 +537,7 @@ def obd_cable():
 
 
 DET = {
-    'alturas': {'ENCAIXE': True, 'HOUSING_H': HOUSING_H, 'T': T, 'FEM_H': FEM_H, 'FEM_W': FEM_W, 'FEM_PINO': FEM_PINO, 'ESP_PINO': ESP_PINO, 'MALE_H': MALE_H, 'ESP_Z': ESP_Z, 'MOD_Z': MOD_Z, 'MOD_T': MOD_T, 'WIRE_Z': WIRE_Z, 'BOT_Z': BOT_Z, 'FUSE_H': FUSE_H},
+    'alturas': {'ENCAIXE': True, 'HOUSING_H': HOUSING_H, 'T': T, 'FEM_H': FEM_H, 'FEM_W': FEM_W, 'FEM_PINO': FEM_PINO, 'ESP_PINO': ESP_PINO, 'ESP_T': ESP_T, 'ESP_WIFI': ESP_WIFI, 'MALE_H': MALE_H, 'ESP_Z': ESP_Z, 'MOD_Z': MOD_Z, 'MOD_T': MOD_T, 'WIRE_Z': WIRE_Z, 'BOT_Z': BOT_Z, 'FUSE_H': FUSE_H},
     'esp32': {'x0': round(x0, 3), 'y0': round(y0, 3), 'l': g.ESP_L, 'w': g.ESP_W, 'pinos': esp_pins()},
     'versao': g.VARIANTE,
     'tja': {'x0': round(tx0, 3), 'y0': round(ty0, 3), 'l': g.TJA_MM[0], 'w': g.TJA_MM[1],
@@ -581,7 +583,7 @@ DET = {
 # A mesma caixa serve às duas versões da placa; as posições de referência vêm deste modelo.
 CAIXA_REF = {
     'placa': (g.W, g.H, T),
-    'usb_y': (xy(2, 2)[1] + xy(2, 12)[1]) / 2, 'usb_z': ESP_Z + 1.6 + 1.3,
+    'usb_y': (xy(2, 2)[1] + xy(2, 12)[1]) / 2, 'usb_z': ESP_Z + ESP_T + 1.3,
     'obd_y': OBD_BOCA[1], 'obd_z': OBD_Z, 'obd_r': OBD_CAPA_R,
     'apoios': [(LSM_MOD, 5.0, 'LSM6DS3'), (BMP_MOD, 5.0, 'BMP180')],   # módulo, onde o apoio começa (x), nome
     'fusivel': (fcx, fcy, T + FUSE_H),

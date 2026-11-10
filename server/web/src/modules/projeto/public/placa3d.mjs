@@ -353,7 +353,7 @@ function iniciar() {
   }
   {
     const g = new THREE.Group();
-    const topo = A.ESP_Z + 1.6;
+    const topo = A.ESP_Z + (A.ESP_T ?? 1.6);
     const usados = new Set(E.pinos.filter((p) => p.usado).map((p) => p.n + p.p[1]));
     const tex = textura(E.l, E.w, (ctx) => {
       ctx.fillStyle = '#121c52';
@@ -376,7 +376,7 @@ function iniciar() {
       texto(ctx, 'BOOT', 41.7, 5.3, 0.8, '#ffffff');
       contorno(ctx, 33, 15.5, 6.6, 6.6, 'rgba(255,255,255,0.7)');
     });
-    g.add(placaModulo(E.x0, E.y0, E.l, E.w, A.ESP_Z, 1.6, PCB.esp, tex));
+    g.add(placaModulo(E.x0, E.y0, E.l, E.w, A.ESP_Z, A.ESP_T ?? 1.6, PCB.esp, tex));
     // plástico das barras macho e pinos
     for (const fila of filas) {
       const x1 = fila[0].p[0], x2 = fila[14].p[0], y = fila[0].p[1];
@@ -407,8 +407,9 @@ function iniciar() {
       linhas.forEach(([s, t, p], k) => texto(ctx, s, 9, 3.0 + k * 2.0, t, '#5d6368', { peso: p }));
       contorno(ctx, 0.3, 0.3, 17.4, 15.4, '#9aa0a5', 0.2);
     }, 40);
-    const blind = new THREE.Mesh(new THREE.BoxGeometry(18, 2.4, 16), [M.niquel, M.niquel, std(0xffffff, 0.38, 0.85, { map: texBlind }), M.niquel, M.niquel, M.niquel]);
-    blind.position.copy(W(mx0 + 6.5 + 9, cy, topo + 0.8 + 1.2));
+    const hBlind = (A.ESP_WIFI ?? 3.2) - 0.8;   // blindagem do WROOM-32 sobre a plaquinha dele
+    const blind = new THREE.Mesh(new THREE.BoxGeometry(18, hBlind, 16), [M.niquel, M.niquel, std(0xffffff, 0.38, 0.85, { map: texBlind }), M.niquel, M.niquel, M.niquel]);
+    blind.position.copy(W(mx0 + 6.5 + 9, cy, topo + 0.8 + hBlind / 2));
     g.add(blind);
     // micro-USB, botões, regulador, CP2102, LED
     const usb = caixa(5.6, 2.6, 7.6, M.niquel, E.x0 + E.l - 1.6, cy, topo);
