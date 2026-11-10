@@ -331,12 +331,13 @@ function iniciar() {
   for (const fila of filas) {
     const g = new THREE.Group();
     const x1 = fila[0].p[0], x2 = fila[14].p[0], y = fila[0].p[1];
-    g.add(caixa(x2 - x1 + P, A.FEM_H, P, M.nylon, (x1 + x2) / 2, y, A.T));
+    g.add(caixa(x2 - x1 + P, A.FEM_H, A.FEM_W ?? P, M.nylon, (x1 + x2) / 2, y, A.T));
     for (const pin of fila) {
       const furo = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 1.0), M.furo);
       furo.position.copy(W(pin.p[0], pin.p[1], A.T + A.FEM_H + 0.01));
       g.add(furo);
-      g.add(cilindro(W(pin.p[0], pin.p[1], -0.95), W(pin.p[0], pin.p[1], A.T), 0.3, M.estanho, 4));
+      // pino da barra: 3,2 mm por baixo da placa (desenho do fabricante)
+      g.add(cilindro(W(pin.p[0], pin.p[1], -(A.FEM_PINO ?? 0.95)), W(pin.p[0], pin.p[1], A.T), 0.25, M.estanho, 4));
     }
     poe(g, 'placa', 'Barra de pinos fêmea do ESP32 (15 pinos)');
   }

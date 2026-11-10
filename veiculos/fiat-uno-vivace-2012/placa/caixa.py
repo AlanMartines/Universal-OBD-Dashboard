@@ -25,7 +25,7 @@ TAMPA = 2.0                  # tampa
 # Espaço interno: a placa (50 x 70) com a antena do ESP32 à esquerda, o LSM6DS3 à direita e os fios do cabo OBD embaixo
 INT = {'x0': -2.5, 'y0': -2.0, 'x1': 68.5, 'y1': 80.5}
 PISO_Z = -5.5                # face de cima do fundo: a placa fica 5,5 mm acima, nos apoios dos cantos
-TOPO_Z = 20.0                # topo das paredes = face de baixo da tampa (o ESP32 vai até 17,4)
+TOPO_Z = 20.0                # topo das paredes = face de baixo da tampa (o ESP32 vai até 17,2)
 FOLGA = 0.3                  # folga entre peças que encaixam
 
 # Torres dos parafusos da tampa, por fora dos cantos: furo-guia de 2,6 mm para parafuso M3 (rosqueia no plástico)

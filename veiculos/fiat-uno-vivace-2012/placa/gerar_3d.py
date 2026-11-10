@@ -28,7 +28,9 @@ hp = g.hp
 
 # ---------------------------------------------------------------- Alturas (mm, estimadas)
 T = 1.6                     # placa perfurada
-FEM_H = 8.5                 # barra fêmea do ESP32
+FEM_H = 8.3                 # barra fêmea do ESP32: corpo de 8,3 x 2,34 mm, pinos de 3,2 mm por baixo (desenho do fabricante)
+FEM_W, FEM_PINO = 2.34, 3.2
+ESP_PINO = 7.9              # pino do ESP32 abaixo do plástico: 12 mm da ponta à face de cima da placa dele (foto do Alan)
 MALE_H = 2.5                # plástico da barra de pinos macho
 ESP_Z = T + FEM_H + MALE_H  # fundo da placa do ESP32
 MOD_Z = T + MALE_H          # fundo do TJA1050 e do RT8272
@@ -79,7 +81,9 @@ def is_hole(c, r):
 box('placa', '#efe3c2', 0, 0, 0, g.W, g.H, T)
 for row in (2, 12):
     x1, y = xy(2, row)
-    box('placa', '#212121', x1 - P / 2, y - P / 2, T, 15 * P, P, FEM_H)
+    box('placa', '#212121', x1 - P / 2, y - FEM_W / 2, T, 15 * P, FEM_W, FEM_H)
+    for c in range(2, 17):   # pinos da barra fêmea, por baixo da placa
+        cyl('placa', GOLD, (xy(c, row)[0], y, -FEM_PINO), (xy(c, row)[0], y, 0), 0.2)
 
 BANDS = ['#6d4c41', '#212121', '#d32f2f', '#c9a227']   # 1 kΩ: marrom, preto, vermelho, ouro
 for name, a, b, _ in g.RES:
@@ -116,7 +120,7 @@ for by in (cy - 9.5, cy + 8.2):
 for row in (2, 12):
     for c in range(2, 17):
         x, y = xy(c, row)
-        cyl('esp32', GOLD, (x, y, T + FEM_H - 1.0), (x, y, top + 0.8), 0.32)
+        cyl('esp32', GOLD, (x, y, ESP_Z - ESP_PINO), (x, y, top + 0.8), 0.32)   # a ponta fica 0,4 mm acima da placa, dentro da barra fêmea
 
 # ---------------------------------------------------------------- Transceptor: TJA1050 (22 x 11 mm, barra de 4 pinos) ou SN65HVD230
 tx0 = ty0 = sx0 = sy0 = 0.0
@@ -440,7 +444,7 @@ def obd_cable():
 
 
 DET = {
-    'alturas': {'T': T, 'FEM_H': FEM_H, 'MALE_H': MALE_H, 'ESP_Z': ESP_Z, 'MOD_Z': MOD_Z, 'MOD_T': MOD_T, 'WIRE_Z': WIRE_Z, 'BOT_Z': BOT_Z, 'FUSE_H': FUSE_H},
+    'alturas': {'T': T, 'FEM_H': FEM_H, 'FEM_W': FEM_W, 'FEM_PINO': FEM_PINO, 'ESP_PINO': ESP_PINO, 'MALE_H': MALE_H, 'ESP_Z': ESP_Z, 'MOD_Z': MOD_Z, 'MOD_T': MOD_T, 'WIRE_Z': WIRE_Z, 'BOT_Z': BOT_Z, 'FUSE_H': FUSE_H},
     'esp32': {'x0': round(x0, 3), 'y0': round(y0, 3), 'l': g.ESP_L, 'w': g.ESP_W, 'pinos': esp_pins()},
     'versao': g.VARIANTE,
     'tja': {'x0': round(tx0, 3), 'y0': round(ty0, 3), 'l': g.TJA_MM[0], 'w': g.TJA_MM[1],
