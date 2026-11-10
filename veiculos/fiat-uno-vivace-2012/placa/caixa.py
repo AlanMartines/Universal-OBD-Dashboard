@@ -36,7 +36,10 @@ GUIA_FUNDO = 12.0            # profundidade do furo-guia
 PASSA_R = 1.7                # furo de passagem na tampa (3,4 mm)
 
 # Abas para prender no carro (parafuso M4 ou abraçadeira de até 4 mm)
-ABA = {'sai': 12.0, 'largura': 16.0, 'esp': 3.0, 'furo_r': 2.25, 'furo_dist': 7.0}
+# Abas para prender no carro: furo para parafuso M4 e, mais para fora, fenda para abraçadeira de nylon (tipo Hellermann)
+# de até 5 mm de largura. Dá para usar um, outro ou os dois.
+ABA = {'sai': 18.5, 'largura': 16.0, 'esp': 3.0, 'furo_r': 2.25, 'furo_dist': 7.0, 'furo_lado': 10.0,
+       'fenda_dist': 14.6, 'fenda_x': 2.2, 'fenda_y': 5.4}
 
 # Apoios da placa nos cantos (por baixo) e guias em L por fora dos cantos
 APOIO = 3.5
@@ -151,12 +154,21 @@ def montar(ref):
     for lado in (-1, 1):
         parede_x = o['x0'] if lado < 0 else o['x1']
         fx = parede_x + lado * ABA['furo_dist']
-        base.append(furada(fx, cy, o['z0'], o['z0'] + ABA['esp'], 2 * (ABA['sai'] - ABA['furo_dist']), ABA['largura'], ABA['furo_r'],
-                           'Aba de fixação (furo de 4,5 mm)'))
+        z0, z1 = o['z0'], o['z0'] + ABA['esp']
+        hw = ABA['largura'] / 2
+        nome = 'Aba de fixação (furo de 4,5 mm para parafuso M4 e fenda para abraçadeira de até 5 mm)'
+        base.append(furada(fx, cy, z0, z1, ABA['furo_lado'], ABA['largura'], ABA['furo_r'], nome))
         # liga a placa com furo à parede
-        a = parede_x - lado * 0.5
-        b = fx - lado * (ABA['sai'] - ABA['furo_dist'])
-        base.append(bx(a, cy - ABA['largura'] / 2, o['z0'], b, cy + ABA['largura'] / 2, o['z0'] + ABA['esp'], 'Aba de fixação (furo de 4,5 mm)'))
+        base.append(bx(parede_x - lado * 0.5, cy - hw, z0, fx - lado * ABA['furo_lado'] / 2, cy + hw, z1, nome))
+        # ponta com a fenda da abraçadeira (atravessada, paralela à parede)
+        ini, fim = fx + lado * ABA['furo_lado'] / 2, parede_x + lado * ABA['sai']
+        fc = parede_x + lado * ABA['fenda_dist']
+        fa, fb = fc - lado * ABA['fenda_x'] / 2, fc + lado * ABA['fenda_x'] / 2
+        fy = ABA['fenda_y'] / 2
+        base.append(bx(ini, cy - hw, z0, fa, cy + hw, z1, nome))
+        base.append(bx(fb, cy - hw, z0, fim, cy + hw, z1, nome))
+        base.append(bx(fa, cy - hw, z0, fb, cy - fy, z1, nome))
+        base.append(bx(fa, cy + fy, z0, fb, cy + hw, z1, nome))
 
     # Apoios da placa nos 4 cantos, com guias em L por fora
     for sx, sy in ((0, 0), (1, 0), (0, 1), (1, 1)):
@@ -389,7 +401,7 @@ def write_svg(path, cx, ref):
     s = Svg()
     PAR = '#90a4ae'
     # ---- Vista de cima da base (x, y como na placa)
-    ox, oy = 34.0, 30.0                         # deslocamento da vista no desenho
+    ox, oy = 44.0, 30.0                         # deslocamento da vista no desenho
     X = lambda x: ox + (x - o['x0'])           # noqa: E731
     Y = lambda y: oy + (y - o['y0'])           # noqa: E731
     s.text(X((o['x0'] + o['x1']) / 2), oy - 22, 'Base, vista de cima', 3.4, weight='bold')
@@ -397,7 +409,15 @@ def write_svg(path, cx, ref):
         s.circ(X(t[0]), Y(t[1]), TORRE_R, PAR)
     for p in cx['base']:
         if p['t'] == 'furada':
-            s.rect(X(p['c'][0] - p['w'] / 2), Y(p['c'][1] - p['h'] / 2), p['w'], p['h'], PAR)
+            s.rect(X(p['c'][0] - p['w'] / 2), Y(p['c'][1] - p['h'] / 2), p['w'], p['h'], PAR, 'none')
+        elif p['n'] and p['n'].startswith('Aba'):
+            (x0, y0, _), (x1, y1, _) = p['a'], p['b']
+            s.rect(X(x0), Y(y0), x1 - x0, y1 - y0, PAR, 'none')
+    for lado in (-1, 1):   # contorno das abas
+        px = o['x0'] if lado < 0 else o['x1']
+        ax = min(px, px + lado * ABA['sai'])
+        cy_ = (o['y0'] + o['y1']) / 2
+        s.rect(X(ax), Y(cy_ - ABA['largura'] / 2), ABA['sai'], ABA['largura'], 'none', '#37474f', 0.25)
     s.rect(X(o['x0']), Y(o['y0']), o['x1'] - o['x0'], o['y1'] - o['y0'], PAR)
     s.rect(X(I['x0']), Y(I['y0']), I['x1'] - I['x0'], I['y1'] - I['y0'], '#eceff1')
     for p in cx['base']:
@@ -428,8 +448,11 @@ def write_svg(path, cx, ref):
     s.cota_h(X(t0[0]), X(t1[0]), Y(o['y1']) + 17, f'{_f(t1[0] - t0[0])} entre parafusos', Y(t0[1]) + 0)
     ab = [p for p in cx['base'] if p['t'] == 'furada']
     s.cota_h(X(ab[0]['c'][0]), X(ab[1]['c'][0]), Y(o['y1']) + 23, f'{_f(ab[1]["c"][0] - ab[0]["c"][0])} entre furos das abas', Y(ab[0]['c'][1]))
-    s.cota_v(Y(o['y0']), Y(o['y1']), X(o['x0']) - 22, f'{_f(med["externa"][1])}', X(o['x0']))
-    s.cota_v(Y(I['y0']), Y(I['y1']), X(o['x0']) - 16, f'{_f(med["interna"][1])} por dentro', X(I['x0']))
+    fd = 2 * ABA['fenda_dist'] + (o['x1'] - o['x0'])
+    s.cota_h(X(o['x0'] - ABA['fenda_dist']), X(o['x1'] + ABA['fenda_dist']), Y(o['y1']) + 29, f'{_f(fd)} entre fendas das abas', Y(ab[0]['c'][1]))
+    s.cota_h(X(o['x0'] - ABA['sai']), X(o['x1'] + ABA['sai']), Y(o['y1']) + 35, f'{_f(o["x1"] - o["x0"] + 2 * ABA["sai"])} com as abas', Y(ab[0]['c'][1]) + ABA['largura'] / 2)
+    s.cota_v(Y(o['y0']), Y(o['y1']), X(o['x0']) - 27, f'{_f(med["externa"][1])}', X(o['x0']))
+    s.cota_v(Y(I['y0']), Y(I['y1']), X(o['x0']) - 21, f'{_f(med["interna"][1])} por dentro', X(I['x0']))
     t2 = torres()[2]
     s.cota_v(Y(t0[1]), Y(t2[1]), X(o['x1']) + 24, f'{_f(t2[1] - t0[1])} entre parafusos', X(t0[0]))
 
@@ -468,7 +491,7 @@ def write_svg(path, cx, ref):
         f'Placa a {_f(-PISO_Z)} mm do fundo, nos 4 apoios dos cantos; batentes na tampa a 0,3 mm dela',
         'Tampa: 4 parafusos M3 × 12 (furo-guia de 2,6 mm nas torres; 3,4 mm na tampa)',
         'Furos na tampa: 3 mm em cima do LED azul do ESP32 e 5 mm para o LED tricolor',
-        'Abas: furo de 4,5 mm (parafuso M4 ou abraçadeira de até 4 mm)',
+        'Abas: furo de 4,5 mm (parafuso M4) e fenda de 5,4 × 2,2 mm (abraçadeira de até 5 mm)',
         'LSM6DS3 e BMP180 dentro, cada um no seu apoio, com fita dupla-face',
         'Imprimir em PETG ou ASA (PLA amolece no carro ao sol), sem suporte',
     ]

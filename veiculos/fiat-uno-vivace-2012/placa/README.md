@@ -49,7 +49,7 @@ Caixa para impressora 3D, em duas peças (base e tampa), gerada pelo [`caixa.py`
 | Paredes, fundo e tampa | 2 mm |
 | Placa | a 5,5 mm do fundo, em 4 apoios nos cantos, com guias em L por fora de cada canto (0,3 mm de folga) |
 | Parafusos da tampa | 4 × M3 × 12 mm nas torres dos cantos, por fora da caixa: furo-guia de 2,6 mm nas torres (o parafuso abre a rosca no plástico) e de 3,4 mm na tampa; 80 × 91,5 mm entre os centros |
-| Abas para prender no carro | uma de cada lado, rente ao fundo: furo de 4,5 mm (parafuso M4 ou abraçadeira de até 4 mm), 89 mm entre os furos |
+| Abas para prender no carro | uma de cada lado, rente ao fundo, com 18,5 mm para fora: **furo de 4,5 mm** para parafuso M4 (89 mm entre os furos) e, mais na ponta, **fenda de 5,4 × 2,2 mm** para abraçadeira de nylon (tipo Hellermann) de até 5 mm de largura (104,2 mm entre as fendas). Dá para usar parafuso, abraçadeira ou os dois. Com as abas, a base mede 112 × 99,5 mm na mesa da impressora |
 | Abertura do USB (parede direita) | 13 × 9 mm, para o cabo de gravar ou recuperar o firmware sem abrir a caixa. Do lado de fora até o conector do ESP32 são uns 21 mm: o plugue precisa entrar isso |
 | Abertura do cabo OBD | 6,6 mm de largura, para o cabo de 6 mm; uma lingueta da tampa desce até a capa e a prende |
 | Furos na tampa | 3 mm em cima do LED azul do ESP32 (para ver o estado sem abrir) e 5 mm para o LED tricolor, perto do conector dele |
