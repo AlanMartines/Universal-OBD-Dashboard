@@ -11,8 +11,8 @@ Peças sobrepostas nos STL são normais: os fatiadores (PrusaSlicer, Cura, Bambu
 Coordenadas como as da placa: x para a direita, y para baixo (linha 1 em cima), z para cima, em mm; a face de cima
 da placa perfurada fica em z = 1,6 e a de baixo em z = 0. Gerado por gerar_3d.py (que importa este arquivo).
 
-Escolhas do Alan (10/11/2026): o BMP180 fica fora (precisa do ar do ambiente), o LSM6DS3 dentro, preso num apoio
-no fundo; tampa com 4 parafusos M3; abas com furo para prender no carro; abertura para o USB do ESP32.
+Escolhas do Alan (10/11/2026): o LSM6DS3 e o BMP180 ficam dentro, cada um preso num apoio do fundo (o BMP180 começou
+fora e entrou a pedido dele); tampa com 4 parafusos M3; abas com furo para prender no carro; abertura para o USB do ESP32.
 """
 import math
 import os
@@ -105,9 +105,8 @@ def parede(eixo, fixo0, fixo1, ini, fim, z0, z1, aberturas, nome):
 def montar(ref):
     """ref: posições vindas do modelo da placa (gerar_3d.py).
 
-    usb_y, usb_z: centro do micro-USB do ESP32; bmp_y, bmp_z, bmp_z_topo: onde o cabo do BMP180 passa pela parede
-    direita (centro em y e altura do fio de baixo e do de cima);
-    obd_y, obd_z, obd_r: centro e raio da capa do cabo OBD na parede direita; lsm: módulo (x0, y0, l, w, z0);
+    usb_y, usb_z: centro do micro-USB do ESP32; obd_y, obd_z, obd_r: centro e raio da capa do cabo OBD na parede
+    direita; apoios: [(módulo (x0, y0, l, w, z0), início do apoio a partir de x0, nome)] dos sensores dentro da caixa;
     fusivel: centro (x, y) e topo da tampa do suporte AS-06; placa: (W, H, T).
     """
     o = outer()
@@ -117,10 +116,9 @@ def montar(ref):
     # Fundo e paredes (as aberturas ficam na parede direita, por onde saem o USB e os dois cabos)
     base.append(bx(o['x0'], o['y0'], o['z0'], o['x1'], o['y1'], PISO_Z, 'Fundo da caixa'))
     usb = (ref['usb_y'], 13.0, ref['usb_z'] - 4.5, TOPO_Z + 1)
-    bmp = (ref['bmp_y'], 7.0, ref['bmp_z'] - 1.4, TOPO_Z + 1)
     obd = (ref['obd_y'], 2 * ref['obd_r'] + 0.6, ref['obd_z'] - ref['obd_r'] - 0.3, TOPO_Z + 1)
-    ABERT = {'usb': usb, 'bmp': bmp, 'obd': obd}
-    base += parede('y', INT['x1'], o['x1'], o['y0'], o['y1'], PISO_Z, TOPO_Z, [usb, bmp, obd], 'Parede direita (USB e cabos)')
+    ABERT = {'usb': usb, 'obd': obd}
+    base += parede('y', INT['x1'], o['x1'], o['y0'], o['y1'], PISO_Z, TOPO_Z, [usb, obd], 'Parede direita (USB e cabo OBD)')
     base += parede('y', o['x0'], INT['x0'], o['y0'], o['y1'], PISO_Z, TOPO_Z, [], 'Parede esquerda')
     base += parede('x', o['y0'], INT['y0'], INT['x0'], INT['x1'], PISO_Z, TOPO_Z, [], 'Parede de cima')
     base += parede('x', INT['y1'], o['y1'], INT['x0'], INT['x1'], PISO_Z, TOPO_Z, [], 'Parede de baixo')
@@ -154,9 +152,9 @@ def montar(ref):
         base.append(bx(gx0, min(gy0, by_[0]), PISO_Z, gx0 + GUIA_ESP, max(gy0 + GUIA_ESP, by_[1]), GUIA_TOPO, 'Guia do canto da placa'))
         base.append(bx(min(gx0, bx_[0]), gy0, PISO_Z, max(gx0 + GUIA_ESP, bx_[1]), gy0 + GUIA_ESP, GUIA_TOPO, 'Guia do canto da placa'))
 
-    # Apoio do LSM6DS3: bloco embaixo do lado sem barra; o módulo fica preso com fita dupla-face e o cabo passa por baixo
-    L = ref['lsm']
-    base.append(bx(L['x0'] + 5.0, L['y0'], PISO_Z, L['x0'] + L['l'], L['y0'] + L['w'], L['z0'], 'Apoio do LSM6DS3 (fita dupla-face)'))
+    # Apoios dos sensores: bloco embaixo do lado sem barra; o módulo fica preso com fita dupla-face e o cabo passa por baixo
+    for L, ini, nome in ref['apoios']:
+        base.append(bx(L['x0'] + ini, L['y0'], PISO_Z, L['x0'] + L['l'], L['y0'] + L['w'], L['z0'], f'Apoio do {nome} (fita dupla-face)'))
 
     # Tampa: chapa, orelhas dos parafusos, aba interna que centraliza e linguetas que fecham as aberturas dos cabos
     tampa.append(bx(o['x0'], o['y0'], TOPO_Z, o['x1'], o['y1'], o['z1'], 'Tampa'))
@@ -170,8 +168,7 @@ def montar(ref):
     tampa += parede('x', iy0, iy0 + aba_esp, ix0 + aba_esp, ix1 - aba_esp, TOPO_Z - aba_h, TOPO_Z, [], 'Tampa: aba de encaixe')
     tampa += parede('x', iy1 - aba_esp, iy1, ix0 + aba_esp, ix1 - aba_esp, TOPO_Z - aba_h, TOPO_Z, [], 'Tampa: aba de encaixe')
     # linguetas: descem pela abertura até encostar no cabo (o USB fica livre)
-    for chave, nome, fundo in (('bmp', 'Tampa: lingueta do cabo do BMP180', ref['bmp_z_topo'] + 0.95),
-                               ('obd', 'Tampa: lingueta do cabo OBD', ref['obd_z'] + ref['obd_r'] + 0.3)):
+    for chave, nome, fundo in (('obd', 'Tampa: lingueta do cabo OBD', ref['obd_z'] + ref['obd_r'] + 0.3),):
         c, w, _, _ = ABERT[chave]
         tampa.append(bx(INT['x1'], c - w / 2 + 0.2, fundo, o['x1'], c + w / 2 - 0.2, TOPO_Z, nome))
     # batentes: dois cantos de cima da placa, o canto de baixo à direita e a tampa do fusível
@@ -397,11 +394,12 @@ def write_svg(path, cx, ref):
     W, H, _ = ref['placa']
     s.rect(X(0), Y(0), W, H, 'none', '#8d6e63', 0.3, ' stroke-dasharray="1.2 0.8"')
     s.text(X(W / 2), Y(H / 2) + 1, 'placa 50 × 70', 2.4, color='#8d6e63')
-    L = ref['lsm']
-    s.rect(X(L['x0']), Y(L['y0']), L['l'], L['w'], 'none', '#6a1b9a', 0.3, ' stroke-dasharray="1.2 0.8"')
-    s.text(X(L['x0'] + L['l'] / 2), Y(L['y0'] + L['w'] / 2), 'LSM6DS3', 2.0, color='#6a1b9a')
+    for L, _, nome in ref['apoios']:
+        cor = '#6a1b9a' if nome == 'LSM6DS3' else '#1565c0'
+        s.rect(X(L['x0']), Y(L['y0']), L['l'], L['w'], 'none', cor, 0.3, ' stroke-dasharray="1.2 0.8"')
+        s.text(X(L['x0'] + L['l'] / 2), Y(L['y0'] + L['w'] / 2) + 0.7, nome, 2.0, color=cor)
     # aberturas na parede direita (marcadas por cima)
-    for k, rot in (('usb', 'USB'), ('bmp', 'BMP180'), ('obd', 'OBD')):
+    for k, rot in (('usb', 'USB'), ('obd', 'OBD')):
         a = med['aberturas'][k]
         s.rect(X(I['x1']), Y(a['centro_y'] - a['largura'] / 2), PAREDE, a['largura'], '#ffffff', '#c62828', 0.25)
         s.text(X(o['x1']) + 2, Y(a['centro_y']) + 0.9, rot, 2.2, anchor='start', color='#c62828')
@@ -425,22 +423,21 @@ def write_svg(path, cx, ref):
     s.rect(Yh(o['y1']), Zv(TOPO_Z), o['y1'] - o['y0'], TOPO_Z - o['z0'], PAR)
     for t in (torres()[1], torres()[3]):
         s.rect(Yh(t[1] + TORRE_R), Zv(TOPO_Z), 2 * TORRE_R, TOPO_Z - o['z0'], '#b0bec5')
-    for k, rot in (('usb', 'USB'), ('bmp', 'BMP180'), ('obd', 'cabo OBD')):
+    for k, rot in (('usb', 'USB'), ('obd', 'cabo OBD')):
         a = med['aberturas'][k]
         y0_ = a['centro_y'] - a['largura'] / 2
         y1_ = y0_ + a['largura']
         s.rect(Yh(y1_), Zv(TOPO_Z), a['largura'], TOPO_Z - a['z_baixo'], '#ffffff', '#c62828', 0.25)
         s.text(Yh(a['centro_y']), Zv(a['z_baixo']) + 3.2, rot, 2.2, color='#ffffff', weight='bold')
         s.cota_h(Yh(y1_), Yh(y0_), Zv(TOPO_Z) - 3, _f(a['largura']), Zv(TOPO_Z))
-        lado_x = Yh(y0_) + 2.5 if k == 'bmp' else Yh(y1_) - 1.5   # a do BMP180 vai do outro lado, longe da do cabo OBD
-        s.cota_v(Zv(TOPO_Z), Zv(a['z_baixo']), lado_x, _f(TOPO_Z - a['z_baixo']))
+        s.cota_v(Zv(TOPO_Z), Zv(a['z_baixo']), Yh(y1_) - 1.5, _f(TOPO_Z - a['z_baixo']))
     s.cota_v(Zv(TOPO_Z), Zv(o['z0']), Yh(o['y0']) + 10, f'{_f(TOPO_Z - o["z0"])} (base)', Yh(o['y0']))
     s.cota_v(Zv(TOPO_Z + TAMPA), Zv(o['z0']), Yh(o['y0']) + 17, f'{_f(o["z1"] - o["z0"])} com a tampa', Yh(o['y0']))
     s.text(Yh(o['y0']), Zv(TOPO_Z + TAMPA) - 2, 'lado do ESP32 →', 2.2, anchor='end', color='#546e7a')
     s.rect(Yh(o['y1']), Zv(TOPO_Z + TAMPA), o['y1'] - o['y0'], TAMPA, 'none', '#607d8b', 0.25, ' stroke-dasharray="1 0.7"')
-    for k in ('usb', 'bmp', 'obd'):
+    for k in ('usb', 'obd'):
         a = med['aberturas'][k]
-        s.cota_h(Yh(a['centro_y']), Yh(o['y0']), Zv(o['z0']) + {'usb': 6, 'bmp': 12, 'obd': 18}[k],
+        s.cota_h(Yh(a['centro_y']), Yh(o['y0']), Zv(o['z0']) + {'usb': 6, 'obd': 12}[k],
                  f'centro a {_f(a["centro_y"] - o["y0"])}', Zv(o['z0']))
 
     # ---- Corte de lado: alturas internas
@@ -453,7 +450,7 @@ def write_svg(path, cx, ref):
         f'Placa a {_f(-PISO_Z)} mm do fundo, nos 4 apoios dos cantos; batentes na tampa a 0,3 mm dela',
         'Tampa: 4 parafusos M3 × 12 (furo-guia de 2,6 mm nas torres; 3,4 mm na tampa)',
         'Abas: furo de 4,5 mm (parafuso M4 ou abraçadeira de até 4 mm)',
-        'LSM6DS3 preso no apoio com fita dupla-face; BMP180 fora, no cabo',
+        'LSM6DS3 e BMP180 dentro, cada um no seu apoio, com fita dupla-face',
         'Imprimir em PETG ou ASA (PLA amolece no carro ao sol), sem suporte',
     ]
     for i, t in enumerate(linhas):

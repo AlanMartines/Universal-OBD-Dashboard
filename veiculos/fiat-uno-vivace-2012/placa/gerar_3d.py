@@ -255,11 +255,11 @@ for x, y in bx:
     cyl('placa', GOLD, (x, y, -1.0), (x, y, T + MALE_H + 6.0), 0.32)
 
 # ---------------------------------------------------------------- Sensor BMP180 (GY-68) na ponta do cabo
-# Fica fora da caixa (precisa do ar do ambiente), com a barra de 5 pinos virada para ela e os pinos para baixo; cabo de
-# 4 fios com conector fêmea nas duas pontas: sai por cima da placa, desce pela direita dela, passa pela abertura da
-# parede direita da caixa (fios empilhados) e chega por baixo do sensor.
-BMP_SAIDA = {'y': 66.5, 'z': 13.5, 'passo': 1.2, 'x': g.W + 1.0}     # fio mais baixo na parede; corredor ao lado da placa
-BMP_MOD = {'x0': caixa.outer()['x1'] + 8.0, 'y0': BMP_SAIDA['y'] - 15.0, 'l': 15.0, 'w': 13.0, 'z0': caixa.PISO_Z + 15.1}
+# Dentro da caixa, à direita da placa (pedido do Alan em 10/11/2026), deitado num apoio do fundo, com a barra de 5 pinos
+# virada para a placa e os pinos para baixo. Cabo de 4 fios com conector fêmea nas duas pontas: sai por cima da placa,
+# desce rente à borda direita, corre perto do fundo e chega por baixo do sensor (como o do LSM6DS3).
+MOD_Z0 = caixa.PISO_Z + 13.9      # módulos dos sensores: o cabo faz a curva embaixo deles, logo acima do fundo
+BMP_MOD = {'x0': g.W + 3.3, 'y0': 48.0, 'l': 15.0, 'w': 13.0, 'z0': MOD_Z0}
 BMP_MOD_PINS = ['3.3V', 'SDA', 'SCL', 'GND', 'VCC']   # de cima para baixo, na borda do lado da placa
 BMP_WIRE = {'SDA': g.CYA, 'SCL': g.GRN, 'GND': g.BLK, 'VCC': g.RED}
 BMP_WIRE_INFO = {'SDA': ('ciano', 'Dados I2C, do D25'), 'SCL': ('verde', 'Relógio I2C, do D26'),
@@ -276,15 +276,28 @@ def bmp_mod_pin(n):
 MOD_BOT = BMP_MOD['z0'] - MALE_H - HOUSING_H
 
 
+def cabo_por_baixo(conn, k, z_sobe, desce_y, faixa, mx, my, bot):
+    """Do conector da placa ao módulo: sobe, vai para a direita, desce rente à borda da placa na sua faixa (x), corre
+    perto do fundo até a altura do pino e entra por baixo do conector do módulo."""
+    x, y = conn
+    fx = g.W + 0.9 + faixa * 1.25
+    return [(x, y, CON_TOP), (x, y, z_sobe), (g.W - 1, y, z_sobe), (fx, desce_y, z_sobe - 2), (fx, desce_y, bot - 1.5),
+            (fx, my, bot - 1.5), (mx, my, bot - 2), (mx, my, bot)]
+
+
+def faixas(pinos_y, para_cima):
+    """Faixa de cada fio para nenhum cruzar o outro: o que vai mais longe corre mais perto da placa."""
+    ordem = sorted(pinos_y, key=lambda n: pinos_y[n], reverse=not para_cima)
+    return {n: i for i, n in enumerate(ordem)}
+
+
 def bmp_cable(n):
-    x, y = xy(*g.BMP_PINS[n])
     mx, my = bmp_mod_pin(n)
     k = list(g.BMP_PINS).index(n)
-    z = BMP_SAIDA['z'] + (len(g.BMP_PINS) - 1 - k) * BMP_SAIDA['passo']   # o de mais à direita vai embaixo: ninguém cruza
-    cx_, sy = BMP_SAIDA['x'], BMP_SAIDA['y']
-    fora = caixa.outer()['x1'] + 3.0                  # depois da parede, desce e chega por baixo do sensor
-    return [(x, y, CON_TOP), (x, y, z), (cx_, y, z), (cx_, sy, z), (fora, sy, z), (fora + 1.0, my, z - 2),
-            (fora + 1.0, my, MOD_BOT - 2), (mx, my, MOD_BOT - 3), (mx, my, MOD_BOT)]
+    f = faixas({m: bmp_mod_pin(m)[1] for m in g.BMP_PINS}, para_cima=False)
+    z = CON_TOP + 1.5 + (len(g.BMP_PINS) - 1 - k) * 1.2   # o de mais à direita vai embaixo: ninguém cruza
+    conn = xy(*g.BMP_PINS[n])
+    return cabo_por_baixo(conn, k, z, conn[1], f[n], mx, my, MOD_BOT)
 
 
 Z_MIN = MOD_BOT - 3 - 0.6
@@ -306,14 +319,15 @@ for n, col in BMP_WIRE.items():
 
 # ---------------------------------------------------------------- LSM6DS3 (acelerômetro e giroscópio) na ponta de outro cabo
 # Conector na linha 16 (o plástico por cima, como o do BMP180). Módulo de 13 x 18 mm (serve para LSM6DS3 ou BMI160),
-# dentro da caixa, à direita da placa: deitado no apoio do fundo (fita dupla-face), com a fileira de 7 pinos virada para
-# a placa e os pinos para baixo; a fileira de 5 fica sem barra e é o lado que encosta no apoio.
+# dentro da caixa, no canto de cima à direita (abaixo do caminho do plugue USB): deitado no apoio do fundo (fita
+# dupla-face), com a fileira de 7 pinos virada para a placa e os pinos para baixo; a fileira de 5 fica sem barra e é o
+# lado que encosta no apoio.
 # Fios curtos no próprio módulo: CS no 3V3 (modo I2C) e SA0 no GND (endereço 0x6A).
 lx = [xy(*cr) for cr in g.LSM_PINS.values()]
 box('placa', '#111111', min(p[0] for p in lx) - P / 2, lx[0][1] - P / 2, T, 4 * P, P, MALE_H)
 for x, y in lx:
     cyl('placa', GOLD, (x, y, -1.0), (x, y, T + MALE_H + 6.0), 0.32)
-LSM_MOD = {'x0': g.W + 4.0, 'y0': 46.0, 'l': 13.0, 'w': 18.0, 'z0': caixa.PISO_Z + 15.1}   # o cabo faz a curva por baixo, acima do fundo
+LSM_MOD = {'x0': g.W + 4.0, 'y0': 2.0, 'l': 13.0, 'w': 18.0, 'z0': MOD_Z0}   # canto de cima à direita, embaixo do plugue USB
 LSM_PINS7 = ['VIN', '3V3', 'GND', 'SCL', 'SDA', 'CS', 'SA0']   # de cima para baixo, na borda do lado da placa
 LSM_PINS5 = ['OCS', 'INT2', 'INT1', 'SCX', 'SDX']
 LSM_WIRE = {'SDA': 'SDA', 'SCL': 'SCL', 'GND': 'GND', 'VCC': 'VIN'}   # pino do conector da placa → pino do módulo
@@ -331,13 +345,12 @@ LSM_BOT = LSM_MOD['z0'] - MALE_H - HOUSING_H
 
 
 def lsm_cable(n):
-    """Sai do conector para a direita (abaixo do ESP32), sobe pela borda da placa e chega por baixo do módulo."""
-    x, y = xy(*g.LSM_PINS[n])
+    """Sai do conector para a direita, desce rente à borda da placa, corre perto do fundo e chega por baixo do módulo."""
     mx, my = lsm_pin(LSM_WIRE[n])
     k = list(g.LSM_PINS).index(n)
-    borda = g.W + 2.4 - k * 0.0
-    return [(x, y, CON_TOP), (x, y, CON_TOP + 3 + k * 0.9), (g.W - 1, y, CON_TOP + 3 + k * 0.9), (borda, y - 2, CON_TOP + 1 + k * 0.9),
-            (borda, my, CON_TOP - 1), (borda, my, LSM_BOT - 2), (mx, my, LSM_BOT - 3), (mx, my, LSM_BOT)]
+    f = faixas({m: lsm_pin(LSM_WIRE[m])[1] for m in g.LSM_PINS}, para_cima=True)
+    conn = xy(*g.LSM_PINS[n])
+    return cabo_por_baixo(conn, k, CON_TOP + 2 + (len(g.LSM_PINS) - 1 - k) * 1.2, conn[1] - 2, f[n], mx, my, LSM_BOT)
 
 
 def lsm_jumper(a, b, dx, dz):
@@ -467,9 +480,8 @@ DET = {
 CAIXA_REF = {
     'placa': (g.W, g.H, T),
     'usb_y': (xy(2, 2)[1] + xy(2, 12)[1]) / 2, 'usb_z': ESP_Z + 1.6 + 1.3,
-    'bmp_y': BMP_SAIDA['y'], 'bmp_z': BMP_SAIDA['z'], 'bmp_z_topo': BMP_SAIDA['z'] + (len(g.BMP_PINS) - 1) * BMP_SAIDA['passo'],
     'obd_y': OBD_BOCA[1], 'obd_z': OBD_Z, 'obd_r': OBD_CAPA_R,
-    'lsm': LSM_MOD,
+    'apoios': [(LSM_MOD, 5.0, 'LSM6DS3'), (BMP_MOD, 5.0, 'BMP180')],   # módulo, onde o apoio começa (x), nome
     'fusivel': (fcx, fcy, T + FUSE_H),
 }
 CAIXA = caixa.montar(CAIXA_REF)
