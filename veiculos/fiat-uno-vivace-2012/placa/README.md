@@ -6,9 +6,9 @@ Placa perfurada de ilhas soltas no tamanho padrão de 5 × 7 cm (18 × 24 furos,
 
 ## Desenho
 
-**Esquema de ligação** (fora de escala):
-
-![Esquema: OBD, fusível, RT8272, ESP32 e TJA1050 com os resistores](esquema.svg)
+| Esquema de ligação (fora de escala) | [Caixa de proteção](#caixa-de-proteção) (medidas em mm) |
+|---|---|
+| ![Esquema: OBD, fusível, RT8272, ESP32 e TJA1050 com os resistores](esquema.svg) | ![Caixa: vista de cima da base e da parede direita, com as cotas](caixa.svg) |
 
 **Etapa 1: antes de encaixar o ESP32 e os módulos** (vista de cima). Barras fêmea do ESP32, resistores, fios isolados J1 a J3, ilhas do TJA1050, pinos do RT8272 e os 4 furos do suporte do fusível:
 
@@ -28,12 +28,41 @@ Para gerar de novo (desenhos e modelo 3D): `python3 veiculos/fiat-uno-vivace-201
 
 ## Modelo 3D
 
-Para ver como a placa fica montada, com as alturas, há duas opções. As posições são as mesmas do desenho. As alturas (barras de pinos, módulos, fusível) são estimadas: servem para ver o encaixe, não para projetar caixa com folga justa.
+Para ver como a placa fica montada, com as alturas, há duas opções. As posições são as mesmas do desenho. As alturas (barras de pinos, módulos, fusível) são estimadas: servem para ver o encaixe. A [caixa de proteção](#caixa-de-proteção) foi feita com elas e deixa folga.
 
 - **No navegador:** abra [`modelo3d.html`](modelo3d.html) com os arquivos `modelo3d-dados.js` e `visor3d.js` na mesma pasta (no GitHub, baixe a pasta; a página não abre pelo site). Não precisa de internet. Arraste para girar, botão direito ou Shift + arrastar para mover e roda (ou pinça no celular) para aproximar. Há vistas de cima, de baixo (espelhada, como a [vista de baixo](baixo.svg)) e de lado, e dá para esconder o ESP32, os módulos, o fusível, os fios e as trilhas para ver o que fica embaixo.
 - **No OpenSCAD:** abra [`modelo3d.scad`](modelo3d.scad) e aperte F5. As variáveis `mostrar_...` no topo do arquivo escondem partes. Dá para exportar STL, por exemplo para desenhar uma caixa.
 
-**Versão detalhada:** o painel web, na página pública `/projeto/placa`, mostra o mesmo modelo com mais detalhe, montado com Three.js: chips, resistores e capacitores SMD, bobina, conectores, solda, sombras, texturas desenhadas dos módulos (sem fotos de terceiros) e o nome da peça ao passar o mouse. O `gerar_3d.py`, chamado pelo `gerar_placa.py`, grava em `modelo3d-dados.js` também as posições de cada componente e copia o arquivo para `server/web/src/modules/projeto/public/`. Um teste do painel confere se a cópia está igual. Não edite `modelo3d-dados.js` nem `modelo3d.scad` à mão.
+**Versão detalhada:** o painel web, na página pública `/projeto/placa`, mostra o mesmo modelo com mais detalhe, montado com Three.js: chips, resistores e capacitores SMD, bobina, conectores, solda, sombras, texturas desenhadas dos módulos (sem fotos de terceiros) e o nome da peça ao passar o mouse. O `gerar_3d.py`, chamado pelo `gerar_placa.py`, grava em `modelo3d-dados.js` também as posições de cada componente e copia o arquivo para `server/web/src/modules/projeto/public/`. Um teste do painel confere se a cópia está igual. Não edite `modelo3d-dados.js` nem `modelo3d.scad` à mão. Na mesma página, os botões **Sem caixa**, **Dentro da caixa** (tampa transparente) e **Fora da caixa** (vista explodida: a placa e a tampa sobem) mostram a placa com a caixa de proteção.
+
+## Caixa de proteção
+
+Caixa para impressora 3D, em duas peças (base e tampa), gerada pelo [`caixa.py`](caixa.py) junto com o modelo 3D. Serve para as duas versões da placa (TJA1050 e SN65HVD230). As cotas estão em [`caixa.svg`](caixa.svg).
+
+- **Para imprimir:** [`caixa-base.stl`](caixa-base.stl) e [`caixa-tampa.stl`](caixa-tampa.stl), já deitados na posição de impressão (a tampa vem virada, com a face de fora na mesa). Não precisa de suporte. Use **PETG ou ASA**: o PLA amolece dentro do carro parado ao sol. Sugestão: bico de 0,4 mm, camada de 0,2 mm, 3 perímetros, 20 % de preenchimento. Cada STL junta peças sobrepostas, e o fatiador (PrusaSlicer, Cura, Bambu Studio, OrcaSlicer) une os volumes sozinho.
+- **Para modificar:** [`caixa.scad`](caixa.scad) abre no OpenSCAD (F5). A variável `mostrar` escolhe a caixa montada, só a base, só a tampa (virada para imprimir) ou explodida. Os números são gerados: para mudar as medidas, ajuste o começo do `caixa.py` e rode o `gerar_placa.py` de novo.
+
+| Medida | Valor |
+|---|---|
+| Por fora (sem torres e abas) | 75 × 86,5 × 29,5 mm (base 27,5 mm + tampa 2 mm) |
+| Por dentro | 71 × 82,5 × 25,5 mm |
+| Paredes, fundo e tampa | 2 mm |
+| Placa | a 5,5 mm do fundo, em 4 apoios nos cantos, com guias em L por fora de cada canto (0,3 mm de folga) |
+| Parafusos da tampa | 4 × M3 × 12 mm nas torres dos cantos, por fora da caixa: furo-guia de 2,6 mm nas torres (o parafuso abre a rosca no plástico) e de 3,4 mm na tampa; 80 × 91,5 mm entre os centros |
+| Abas para prender no carro | uma de cada lado, rente ao fundo: furo de 4,5 mm (parafuso M4 ou abraçadeira de até 4 mm), 89 mm entre os furos |
+| Abertura do USB (parede direita) | 13 × 9 mm, para o cabo de gravar ou recuperar o firmware sem abrir a caixa. Do lado de fora até o conector do ESP32 são uns 21 mm: o plugue precisa entrar isso |
+| Abertura do cabo do BMP180 | 7 mm de largura; a tampa tem uma lingueta que desce até os fios |
+| Abertura do cabo OBD | 6,6 mm de largura, para o cabo de 6 mm; a lingueta da tampa prende a capa |
+
+Como montar:
+
+1. **Placa:** encaixe nos 4 apoios. A tampa tem batentes nos dois cantos de cima, no canto de baixo à direita e em cima da tampa do porta-fusível. Eles seguram a placa com 0,3 mm de folga, sem apertar. Se quiser, ponha um ponto de cola quente num apoio.
+2. **LSM6DS3:** fica **dentro**, à direita da placa, deitado num apoio do fundo, com a fileira de 7 pinos virada para a placa e os pinos para baixo. Prenda com fita dupla-face no apoio. O cabo faz a curva por baixo do módulo e sobe até o conector da linha 16. Com a caixa presa firme no carro, a leitura de força G e de inclinação sai certa. O app aprende sozinho a posição, qualquer que seja.
+3. **BMP180:** fica **fora**, na ponta do cabo, que sai pela abertura da parede direita. Dentro da caixa ele mediria o calor do RT8272 e do ESP32, e não o ar do carro.
+4. **Cabo OBD:** a capa passa pela abertura de baixo da parede direita. Os fios entram na caixa e vão às ilhas da linha 24.
+5. **Tampa:** encaixe (a aba interna centraliza) e aperte os 4 parafusos. Para trocar o fusível, é só tirar a tampa: ele fica logo embaixo.
+
+> As alturas dos componentes são estimadas (veja [Modelo 3D](#modelo-3d)). Antes de imprimir, monte a placa e confira com o paquímetro que nada passe de **18 mm acima da face de cima da placa** (o ESP32 nas barras fêmea chega a uns 17,4 mm). Abaixo da placa, nada pode passar de 5 mm.
 
 ## Montagem prevista
 
@@ -45,8 +74,8 @@ Para ver como a placa fica montada, com as alturas, há duas opções. As posiç
 - **TJA1050 (22 × 11 mm):** soldado pela barra de 4 pinos na coluna 11, linhas 19 a 22 (VCC, TX, RX e GND, de cima para baixo), deitado para a direita, quase rente à borda direita (a ponta fica a cerca de 0,4 mm dela). Na coluna 10 ele encostaria no suporte do fusível. CANH e CANL ficam na outra ponta, fora da grade (cerca de 1,6 mm depois da coluna 18). Solde uma perna curta, que pode ser a sobra cortada de uma perna de resistor, em cada um: ela desce, um pouco inclinada para dentro, até a ilha logo abaixo, CANH em (18,20) e CANL em (18,21). As duas pernas também apoiam essa ponta do módulo. A ligação segue por baixo, em fio estanhado.
 - **RT8272 (módulo HW-108, 21 × 21 mm):** soldado na placa por barra de pinos macho, à esquerda, com a bobina (4R7) embaixo à direita. As duas fileiras de pinos do módulo ficam a 7 furos uma da outra: EN, IN− e IN+ na coluna 8 (linhas 14 a 16); OUT− e OUT+ na coluna 1 (linhas 20 e 21). Fica uma linha acima do desenho de 07/11, para dar lugar ao suporte do fusível, e cobre o começo do fio J3. IN− e OUT− são o mesmo GND dentro do módulo, então só o IN− vai ao GND da placa. O EN fica sem ligação. **Antes de soldar, encaixe o módulo com os pinos na placa e veja se os cinco entram nos furos.** Se não entrarem, use fita dupla-face e fios curtos até os mesmos furos.
 - **Fusível de 1,5 A, na placa:** fusível de vidro 5 × 20 mm num porta-fusível **AS-06** com tampa (corpo de 24,5 × 9,6 mm, tampa de 26 mm, 14,1 mm de altura), deitado na horizontal na linha 24, embaixo do RT8272. Os 2 pinos chatos (1,3 × 0,4 mm, a 20,2 ± 0,3 mm) caem na grade, a 8 furos (20,32 mm): **(1,24) e (9,24)**. Esses dois furos precisam ser **alargados para 1,5 mm**, porque o pino chato não passa no furo comum de 1 mm. O fusível não tem lado: a entrada (12 V do OBD) fica em (9,24) e a saída (12 V com fusível) em (1,24). O corpo cobre as linhas 23 e 24 das colunas 1 a 9, que ficam só com trilhas por baixo. Os pinos saem só cerca de 1,5 mm por baixo da placa: solde rente.
-- **Conector do BMP180:** barra de 4 pinos macho na linha 17, colunas 12 a 15: SDA, SCL, GND e VCC, da esquerda para a direita. O sensor fica na ponta de um cabo de 4 fios, longe do calor da placa. Na placa o cabo encaixa por cima; no sensor, a barra de pinos fica virada para baixo e o cabo chega **por baixo** dele. O VCC é 5 V: use o **GY-68**, que tem regulador próprio, e ligue o fio no pino **VCC** dele, nunca no 3.3V. O SDA e o SCL vêm do D25 e do D26 por **fio isolado por baixo** (F1 e F2), soldado direto nos pinos do ESP32 e do conector, passando por cima da trilha de GND da linha 13.
-- **Conector do LSM6DS3 (acelerômetro e giroscópio):** outra barra de 4 pinos macho, na linha 16, colunas 12 a 15, logo acima da do BMP180, na mesma ordem: SDA, SCL, GND e VCC. É o mesmo barramento I2C: trilhas curtas por baixo ligam cada pino ao da linha 17 (o GND da coluna 14 já passa pelos dois). O módulo (13 × 18 mm, a mesma placa serve para LSM6DS3 ou BMI160) fica na ponta de um cabo de 4 fios, com a barra de 7 pinos virada para baixo. Ele tem regulador: o fio de 5 V vai no **VIN**. No próprio módulo, solde dois fios curtos: **CS no 3V3** (modo I2C) e **SA0 no GND** (endereço 0x6A, sem conflito com o 0x77 do BMP180). A fileira de 5 pinos (OCS, INT2, INT1, SCX, SDX) fica sem ligação por enquanto. Prenda o módulo firme no carro, alinhado com ele, para a força G e a inclinação saírem certas. O firmware 1.3 lê o sensor ([firmware](../../../firmware/esp32-can-listen/README.md#sensor-lsm6ds3-opcional)) e o app aprende sozinho como ele está montado.
+- **Conector do BMP180:** barra de 4 pinos macho na linha 17, colunas 12 a 15: SDA, SCL, GND e VCC, da esquerda para a direita. O sensor fica na ponta de um cabo de 4 fios, fora da [caixa](#caixa-de-proteção), longe do calor da placa. Na placa o cabo encaixa por cima; no sensor, a barra de pinos fica virada para baixo e o cabo chega **por baixo** dele. O VCC é 5 V: use o **GY-68**, que tem regulador próprio, e ligue o fio no pino **VCC** dele, nunca no 3.3V. O SDA e o SCL vêm do D25 e do D26 por **fio isolado por baixo** (F1 e F2), soldado direto nos pinos do ESP32 e do conector, passando por cima da trilha de GND da linha 13.
+- **Conector do LSM6DS3 (acelerômetro e giroscópio):** outra barra de 4 pinos macho, na linha 16, colunas 12 a 15, logo acima da do BMP180, na mesma ordem: SDA, SCL, GND e VCC. É o mesmo barramento I2C: trilhas curtas por baixo ligam cada pino ao da linha 17 (o GND da coluna 14 já passa pelos dois). O módulo (13 × 18 mm, a mesma placa serve para LSM6DS3 ou BMI160) fica na ponta de um cabo de 4 fios, com a barra de 7 pinos virada para baixo, dentro da [caixa](#caixa-de-proteção), à direita da placa. Ele tem regulador: o fio de 5 V vai no **VIN**. No próprio módulo, solde dois fios curtos: **CS no 3V3** (modo I2C) e **SA0 no GND** (endereço 0x6A, sem conflito com o 0x77 do BMP180). A fileira de 5 pinos (OCS, INT2, INT1, SCX, SDX) fica sem ligação por enquanto. Prenda o módulo firme (na caixa, no apoio do fundo, e a caixa firme no carro) para a força G e a inclinação saírem certas. O firmware 1.3 lê o sensor ([firmware](../../../firmware/esp32-can-listen/README.md#sensor-lsm6ds3-opcional)) e o app aprende sozinho como ele está montado.
 - **Cabo OBD:** cabo OBD2 **macho** com fios soltos (pigtail de 16 fios), que encaixa numa das fêmeas do cabo Y. Os quatro fios usados entram pela borda de baixo, à direita do suporte do fusível: 16 (11,24), 4 (12,24), 5 (13,24) e 14 (18,24). O fio do pino 6 (CAN-H) **não é ligado**: corte e isole com termorretrátil, porque o CANH da placa fica em 3,3 V pelo R4. Os outros 11 fios são cortados rente e isolados na boca da capa.
 
   | Pino | Função | Cor do fio (tabela do vendedor) | Furo |

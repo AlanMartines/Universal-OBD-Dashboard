@@ -6,6 +6,13 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Caixa de proteção da placa da escuta CAN, para impressora 3D.** Base e tampa em STL (prontas para fatiar), o mesmo modelo no OpenSCAD e um desenho com as cotas ao lado do esquema. Mede 75 × 86,5 × 29,5 mm por fora e serve para as duas versões da placa. Tem tampa com 4 parafusos M3, abas com furo para prender no carro, abertura para o USB do ESP32 e passagens para os cabos do OBD e do BMP180. O LSM6DS3 fica dentro, num apoio do fundo; o BMP180 fica fora, para medir o ar do carro.
+- **Placa 3D no painel:** botões Sem caixa, Dentro da caixa (tampa transparente) e Fora da caixa (vista explodida).
+
+### Alterado
+- **Placa 3D:** o LSM6DS3 passou para a direita da placa, na posição que ocupa dentro da caixa; o BMP180 foi para fora dela, com o cabo saindo pela parede.
+
 ## [0.9.36] - 2026-11-10
 
 ### Adicionado

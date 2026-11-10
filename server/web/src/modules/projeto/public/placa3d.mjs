@@ -1056,6 +1056,76 @@ function iniciar() {
     }
   }
 
+  // ------------------------------------------------------------ caixa de proteção (caixa.py): base e tampa
+  const CX = X.caixa;
+  const matBase = std(0x4b5661, 0.62);
+  const matTampa = std(0x6f7d89, 0.58, 0, { transparent: true });
+  if (CX) {
+    camadas.caixa = new THREE.Group();
+    camadas.tampa = new THREE.Group();
+    scene.add(camadas.caixa, camadas.tampa);
+    const peca = (p, mat) => {
+      if (p.t === 'box') {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(p.b[0] - p.a[0], p.b[2] - p.a[2], p.b[1] - p.a[1]), mat);
+        m.position.copy(W((p.a[0] + p.b[0]) / 2, (p.a[1] + p.b[1]) / 2, (p.a[2] + p.b[2]) / 2));
+        return m;
+      }
+      const [z0, z1] = p.z;
+      let geo;
+      if (p.t === 'cil') {
+        geo = new THREE.CylinderGeometry(p.r, p.r, z1 - z0, 40);
+      } else {
+        // anel (torre com furo) ou placa com furo (aba): contorno com o furo, extrudado na altura
+        const sh = new THREE.Shape();
+        if (p.t === 'anel') sh.absarc(0, 0, p.r, 0, Math.PI * 2, false);
+        else {
+          sh.moveTo(-p.w / 2, -p.h / 2);
+          sh.lineTo(p.w / 2, -p.h / 2);
+          sh.lineTo(p.w / 2, p.h / 2);
+          sh.lineTo(-p.w / 2, p.h / 2);
+          sh.closePath();
+        }
+        const furo = new THREE.Path();
+        furo.absarc(0, 0, p.ri, 0, Math.PI * 2, true);
+        sh.holes.push(furo);
+        geo = new THREE.ExtrudeGeometry(sh, { depth: z1 - z0, bevelEnabled: false, curveSegments: 32 });
+        geo.rotateX(-Math.PI / 2);
+        geo.translate(0, -(z1 - z0) / 2, 0);
+      }
+      const m = new THREE.Mesh(geo, mat);
+      m.position.copy(W(p.c[0], p.c[1], (z0 + z1) / 2));
+      return m;
+    };
+    for (const p of CX.base) poe(peca(p, matBase), 'caixa', p.n || 'Caixa');
+    for (const p of CX.tampa) poe(peca(p, matTampa), 'tampa', p.n || 'Tampa');
+  }
+  const chaoPlaca = chao.position.y;
+  // sem caixa; dentro (tampa transparente); fora (vista explodida: a placa e a tampa sobem)
+  const EXPLODE = { pecas: 40, tampa: 78 };
+  let modo = 'sem';
+  function modoCaixa(novo) {
+    if (!CX) return;
+    modo = novo;
+    camadas.caixa.visible = camadas.tampa.visible = modo !== 'sem';
+    for (const [key, g] of Object.entries(camadas)) {
+      if (key !== 'caixa' && key !== 'tampa') g.position.y = modo === 'fora' ? EXPLODE.pecas : 0;
+    }
+    camadas.tampa.position.y = modo === 'fora' ? EXPLODE.tampa : 0;
+    const vidro = modo === 'dentro';
+    matTampa.opacity = vidro ? 0.26 : 1;
+    matTampa.depthWrite = !vidro;
+    camadas.tampa.traverse((o) => {
+      if (o.isMesh) o.castShadow = !vidro;
+    });
+    chao.position.y = modo === 'sem' ? chaoPlaca : Math.min(chaoPlaca, CX.externa.z0);
+    for (const b of document.querySelectorAll('[data-caixa]')) {
+      const ativo = b.dataset.caixa === modo;
+      b.classList.toggle('active', ativo);
+      b.setAttribute('aria-pressed', String(ativo));
+    }
+    vista(vistaAtual);
+  }
+
   // ------------------------------------------------------------ câmera e controles
   // dx: onde o alvo fica no eixo do cabo OBD: a placa e o plugue cabem juntos e sobra o canto da legenda (embaixo à esquerda)
   const VISTAS = {
@@ -1064,12 +1134,19 @@ function iniciar() {
     baixo: { yaw: Math.PI, pitch: -1.5607, dist: 220, dx: 78 },
     lado: { yaw: 0, pitch: 0.1, dist: 205, dx: 4 },
   };
-  const alvoPadrao = (dx = 0) => (X.cabo_obd ? new THREE.Vector3(dx, 5, 10) : new THREE.Vector3(8, 5, 0));
+  const alvoPadrao = (dx = 0) => {
+    // com a caixa a cena cresce para a esquerda (torres e abas): o alvo vai junto, longe da legenda
+    const sobe = modo === 'fora' ? EXPLODE.pecas : 0;
+    const lado = modo === 'sem' ? 0 : -14;
+    return X.cabo_obd ? new THREE.Vector3(dx + lado, 5 + sobe, 10) : new THREE.Vector3(8 + lado, 5 + sobe, 0);
+  };
+  let vistaAtual = 'perspectiva';
   const cam = { yaw: 0, pitch: 0, dist: 150, alvo: alvoPadrao() };
   const meta = { ...cam, alvo: alvoPadrao() };
   function vista(nome) {
+    vistaAtual = nome;
     const { dx, ...v } = VISTAS[nome];
-    Object.assign(meta, v, { alvo: alvoPadrao(dx) });
+    Object.assign(meta, v, { alvo: alvoPadrao(dx), dist: v.dist * ({ sem: 1, dentro: 1.12, fora: 1.4 })[modo] });
     if (nome === 'cima' || nome === 'baixo') cam.yaw = meta.yaw;
     pedir();
   }
@@ -1206,6 +1283,12 @@ function iniciar() {
 
   // ------------------------------------------------------------ painel de controle
   for (const btn of document.querySelectorAll('[data-vista]')) btn.addEventListener('click', () => vista(btn.dataset.vista));
+  for (const btn of document.querySelectorAll('[data-caixa]')) btn.addEventListener('click', () => modoCaixa(btn.dataset.caixa));
+  if (CX) {
+    camadas.caixa.visible = camadas.tampa.visible = false;
+    const grupo = document.getElementById('modo-caixa');
+    if (grupo) grupo.hidden = false;
+  }
   const caixaCamadas = document.getElementById('camadas');
   for (const [key, label] of D.layers) {
     const wrap = document.createElement('div');

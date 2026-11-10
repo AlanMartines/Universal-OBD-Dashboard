@@ -18,6 +18,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gerar_placa as g  # noqa: E402
+import caixa  # noqa: E402
 
 OUT = g.OUT
 # O painel web publica o mesmo modelo em /projeto/placa: a imagem Docker só enxerga server/web, então vai uma cópia.
@@ -254,9 +255,11 @@ for x, y in bx:
     cyl('placa', GOLD, (x, y, -1.0), (x, y, T + MALE_H + 6.0), 0.32)
 
 # ---------------------------------------------------------------- Sensor BMP180 (GY-68) na ponta do cabo
-# Deitado ao lado da placa, com a barra de 5 pinos virada para ela e os pinos para baixo; cabo de 4 fios com
-# conector fêmea nas duas pontas: sai por cima da placa, contorna a borda e chega por baixo do sensor.
-BMP_MOD = {'x0': g.W + 5.0, 'y0': 37.0, 'l': 15.0, 'w': 13.0, 'z0': -0.9}
+# Fica fora da caixa (precisa do ar do ambiente), com a barra de 5 pinos virada para ela e os pinos para baixo; cabo de
+# 4 fios com conector fêmea nas duas pontas: sai por cima da placa, desce pela direita dela, passa pela abertura da
+# parede direita da caixa (fios empilhados) e chega por baixo do sensor.
+BMP_SAIDA = {'y': 66.5, 'z': 13.5, 'passo': 1.2, 'x': g.W + 1.0}     # fio mais baixo na parede; corredor ao lado da placa
+BMP_MOD = {'x0': caixa.outer()['x1'] + 8.0, 'y0': BMP_SAIDA['y'] - 15.0, 'l': 15.0, 'w': 13.0, 'z0': caixa.PISO_Z + 15.1}
 BMP_MOD_PINS = ['3.3V', 'SDA', 'SCL', 'GND', 'VCC']   # de cima para baixo, na borda do lado da placa
 BMP_WIRE = {'SDA': g.CYA, 'SCL': g.GRN, 'GND': g.BLK, 'VCC': g.RED}
 BMP_WIRE_INFO = {'SDA': ('ciano', 'Dados I2C, do D25'), 'SCL': ('verde', 'Relógio I2C, do D26'),
@@ -276,9 +279,12 @@ MOD_BOT = BMP_MOD['z0'] - MALE_H - HOUSING_H
 def bmp_cable(n):
     x, y = xy(*g.BMP_PINS[n])
     mx, my = bmp_mod_pin(n)
-    borda = g.W + 2.4                                 # desce entre a borda da placa e o sensor
-    return [(x, y, CON_TOP), (x, y, CON_TOP + 3), ((x + borda) / 2, (y + my) / 2, CON_TOP + 3),
-            (borda, my, CON_TOP - 2), (borda, my, MOD_BOT - 2), (mx, my, MOD_BOT - 3), (mx, my, MOD_BOT)]
+    k = list(g.BMP_PINS).index(n)
+    z = BMP_SAIDA['z'] + (len(g.BMP_PINS) - 1 - k) * BMP_SAIDA['passo']   # o de mais à direita vai embaixo: ninguém cruza
+    cx_, sy = BMP_SAIDA['x'], BMP_SAIDA['y']
+    fora = caixa.outer()['x1'] + 3.0                  # depois da parede, desce e chega por baixo do sensor
+    return [(x, y, CON_TOP), (x, y, z), (cx_, y, z), (cx_, sy, z), (fora, sy, z), (fora + 1.0, my, z - 2),
+            (fora + 1.0, my, MOD_BOT - 2), (mx, my, MOD_BOT - 3), (mx, my, MOD_BOT)]
 
 
 Z_MIN = MOD_BOT - 3 - 0.6
@@ -300,13 +306,14 @@ for n, col in BMP_WIRE.items():
 
 # ---------------------------------------------------------------- LSM6DS3 (acelerômetro e giroscópio) na ponta de outro cabo
 # Conector na linha 16 (o plástico por cima, como o do BMP180). Módulo de 13 x 18 mm (serve para LSM6DS3 ou BMI160),
-# deitado ao lado da placa, acima do BMP180, com a fileira de 7 pinos virada para ela e os pinos para baixo; a fileira de
-# 5 fica sem barra. Fios curtos no próprio módulo: CS no 3V3 (modo I2C) e SA0 no GND (endereço 0x6A).
+# dentro da caixa, à direita da placa: deitado no apoio do fundo (fita dupla-face), com a fileira de 7 pinos virada para
+# a placa e os pinos para baixo; a fileira de 5 fica sem barra e é o lado que encosta no apoio.
+# Fios curtos no próprio módulo: CS no 3V3 (modo I2C) e SA0 no GND (endereço 0x6A).
 lx = [xy(*cr) for cr in g.LSM_PINS.values()]
 box('placa', '#111111', min(p[0] for p in lx) - P / 2, lx[0][1] - P / 2, T, 4 * P, P, MALE_H)
 for x, y in lx:
     cyl('placa', GOLD, (x, y, -1.0), (x, y, T + MALE_H + 6.0), 0.32)
-LSM_MOD = {'x0': g.W + 5.0, 'y0': 12.0, 'l': 13.0, 'w': 18.0, 'z0': -0.9}
+LSM_MOD = {'x0': g.W + 4.0, 'y0': 46.0, 'l': 13.0, 'w': 18.0, 'z0': caixa.PISO_Z + 15.1}   # o cabo faz a curva por baixo, acima do fundo
 LSM_PINS7 = ['VIN', '3V3', 'GND', 'SCL', 'SDA', 'CS', 'SA0']   # de cima para baixo, na borda do lado da placa
 LSM_PINS5 = ['OCS', 'INT2', 'INT1', 'SCX', 'SDX']
 LSM_WIRE = {'SDA': 'SDA', 'SCL': 'SCL', 'GND': 'GND', 'VCC': 'VIN'}   # pino do conector da placa → pino do módulo
@@ -455,6 +462,52 @@ DET = {
     'fios_baixo': [{'n': f'{name}: {desc}', 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts, desc in g.BOTTOM_WIRES],
 }
 
+# ---------------------------------------------------------------- Caixa de proteção (caixa.py)
+# A mesma caixa serve às duas versões da placa; as posições de referência vêm deste modelo.
+CAIXA_REF = {
+    'placa': (g.W, g.H, T),
+    'usb_y': (xy(2, 2)[1] + xy(2, 12)[1]) / 2, 'usb_z': ESP_Z + 1.6 + 1.3,
+    'bmp_y': BMP_SAIDA['y'], 'bmp_z': BMP_SAIDA['z'], 'bmp_z_topo': BMP_SAIDA['z'] + (len(g.BMP_PINS) - 1) * BMP_SAIDA['passo'],
+    'obd_y': OBD_BOCA[1], 'obd_z': OBD_Z, 'obd_r': OBD_CAPA_R,
+    'lsm': LSM_MOD,
+    'fusivel': (fcx, fcy, T + FUSE_H),
+}
+CAIXA = caixa.montar(CAIXA_REF)
+DET['caixa'] = {'base': CAIXA['base'], 'tampa': CAIXA['tampa'], 'medidas': CAIXA['medidas'],
+                'externa': {k: round(v, 3) for k, v in CAIXA['externa'].items()},
+                'interna': {k: round(v, 3) for k, v in CAIXA['interna'].items()}}
+
+
+def _aabb(p):
+    if p[1] == 'box':
+        c, sz = p[3], p[4]
+        return [c[i] - sz[i] / 2 for i in range(3)], [c[i] + sz[i] / 2 for i in range(3)]
+    if p[1] == 'cyl':
+        a, b, r = p[3], p[4], p[5]
+        return [min(a[i], b[i]) - r for i in range(3)], [max(a[i], b[i]) + r for i in range(3)]
+    c, r = p[3], p[4]
+    return [c[i] - r for i in range(3)], [c[i] + r for i in range(3)]
+
+
+def _aabb_caixa(q):
+    if q['t'] == 'box':
+        return q['a'], q['b']
+    r = q['r'] if q['t'] != 'furada' else max(q['w'], q['h']) / 2
+    return [q['c'][0] - r, q['c'][1] - r, q['z'][0]], [q['c'][0] + r, q['c'][1] + r, q['z'][1]]
+
+
+def conferir_caixa():
+    """Lista peças do modelo que encostam em peças da caixa (pelas caixas envolventes: pode acusar a mais)."""
+    achados = []
+    for q in CAIXA['base'] + CAIXA['tampa']:
+        qa, qb = _aabb_caixa(q)
+        for p in parts:
+            pa, pb = _aabb(p)
+            if all(pa[i] < qb[i] - 0.01 and qa[i] < pb[i] - 0.01 for i in range(3)):
+                achados.append((q['n'], p[0], p[1], [round(v, 1) for v in pa], [round(v, 1) for v in pb]))
+    return achados
+
+
 GRID = {'cols': g.COLS, 'rows': g.ROWS, 'mx': round(g.MX, 3), 'my': round(g.MY, 3), 'p': P, 't': T}
 LAYERS = [('esp32', 'ESP32'), ('modulos', f'{g.TRANS_NOME} e RT8272'), ('fusivel', 'Fusível'), ('bmp180', 'BMP180'), ('lsm6ds3', 'LSM6DS3'), ('fios', 'Fios por cima'), ('trilhas', 'Trilhas por baixo')]
 
@@ -523,6 +576,13 @@ def main():
     write_js()
     write_scad()
     print(f'ok: modelo3d{g.SUF}-dados.js, modelo3d{g.SUF}.scad ({len(parts)} peças)')
+    for a in conferir_caixa():
+        print('  atenção, encosta na caixa:', *a)
+    if g.VARIANTE == 'tja':   # a caixa é a mesma nas duas versões
+        nb, nt = caixa.escrever(OUT, CAIXA, CAIXA_REF)
+        m = CAIXA['medidas']
+        print(f'ok: caixa-base.stl ({nb} triângulos), caixa-tampa.stl ({nt}), caixa.scad, caixa.svg;'
+              f' por fora {m["externa"]}, por dentro {m["interna"]}')
 
 
 if __name__ == '__main__':
