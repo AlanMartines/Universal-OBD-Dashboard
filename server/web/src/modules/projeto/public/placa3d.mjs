@@ -116,6 +116,9 @@ function iniciar() {
     modulo: std(0x111214, 0.55),
   };
 
+  // LEDs do ELM327 (preenchidos ao montar o adaptador): piscam como consultas OBD quando o estado é Capturando
+  let elmLeds = [];
+
   function textura(wmm, hmm, desenhar, pxmm = 28) {
     const c = document.createElement('canvas');
     c.width = Math.round(wmm * pxmm);
@@ -1037,34 +1040,130 @@ function iniciar() {
       }
     };
 
-    // ELM327 mini: caixa azul translúcida, com a placa preta e o módulo Bluetooth azul por dentro
+    // ELM327 mini: caixa azul translúcida e, por dentro, as duas placas como nas fotos de montagem (conector para cima):
+    // embaixo a placa do Bluetooth (módulo e LEDs na face de baixo, aparecendo pelo fundo), J1/J2 ligando à placa
+    // principal com o PIC18F25K80 e o cristal virados para baixo, e os 16 pinos subindo até o conector.
     {
       const E = K.elm;
       const [x, y] = E.c;
       const g = new THREE.Group();
-      const vidroAzul = std(0x1f4fd8, 0.25, 0, { transparent: true, opacity: 0.55, depthWrite: false });
+      const vidroAzul = std(0x1f4fd8, 0.25, 0, { transparent: true, opacity: 0.5, depthWrite: false });
       const tex = textura(E.w, E.h, (ctx) => {
         ctx.fillStyle = '#1f4fd8';
         ctx.fillRect(0, 0, E.w, E.h);
         ctx.fillStyle = '#1a237e';
-        ctx.fillRect(3, 4, E.w - 6, E.h - 8);
-        texto(ctx, 'ELM327', E.w / 2, E.h / 2 - 2.2, 4.6, '#ff7043', { peso: 800 });
-        texto(ctx, 'mini · Bluetooth · OBD-II', E.w / 2, E.h / 2 + 3.4, 1.9, '#e3f2fd');
+        ctx.fillRect(3, 3.5, E.w - 6, E.h - 7);
+        ctx.strokeStyle = '#e3f2fd';
+        ctx.lineWidth = 0.35;
+        ctx.strokeRect(3.6, 4.1, E.w - 7.2, E.h - 8.2);
+        texto(ctx, 'ELM 327', E.w / 2 + 1, E.h / 2 - 2.6, 4.4, '#ff7043', { peso: 800 });
+        ctx.fillStyle = '#f5f5f5';
+        ctx.beginPath();
+        ctx.ellipse(E.w - 8.2, E.h / 2 - 1.4, 2.4, 1.1, 0, 0, Math.PI * 2);
+        ctx.fill();
+        texto(ctx, 'MINI', E.w - 8.2, E.h / 2 - 1.4, 1.2, '#1a237e', { peso: 800 });
+        texto(ctx, 'Inter face', E.w / 2, E.h / 2 + 1.3, 2.0, '#e3f2fd', { peso: 700 });
+        texto(ctx, 'Supports all OBDII protocols', E.w / 2, E.h / 2 + 3.9, 1.6, '#e3f2fd', { peso: 600 });
+        texto(ctx, 'ᛒ', 6.3, E.h / 2 - 0.5, 3.2, '#e3f2fd', { peso: 700 });
       });
-      const rotulo = std(0xffffff, 0.5, 0, { map: tex, transparent: true, opacity: 0.92 });
+      const rotulo = std(0xffffff, 0.5, 0, { map: tex, transparent: true, opacity: 0.94 });
       const corpo = new THREE.Mesh(new THREE.BoxGeometry(E.w, E.h, E.d), [vidroAzul, vidroAzul, vidroAzul, vidroAzul, rotulo, vidroAzul]);
       corpo.position.copy(W(x, y, z0 + E.h / 2));
       g.add(corpo);
-      // placas por dentro
-      g.add(caixa(36, 1.2, 20, PCB.modulo, x, y, z0 + 7));
-      g.add(caixa(22, 1.0, 14, PCB.tja, x - 4, y - 1, z0 + 11));
-      g.add(caixa(9, 1.4, 5, M.preto, x - 4, y - 1, z0 + 12));
-      for (let k = 0; k < 3; k++) g.add(caixa(1.6, 0.6, 0.8, M.led, x + 13, y - 5 + k * 3, z0 + 8.2));
-      // plugue macho por cima, com os 16 contatos
-      const boca = bocaDePe(x, y, z0 + E.h, trap(E.plugue_w, E.plugue_w - 7, 14, 2.2), trap(E.plugue_w - 3, E.plugue_w - 9.6, 11.4, 1.6, true), E.plugue, vidroAzul, std(0x15308a, 0.6, 0, { side: THREE.DoubleSide }));
+
+      const verde = std(0x1f8a3a, 0.5);
+      const tBt = 1.0, tMain = 1.2;
+      const zBt = z0 + 4.2;            // placa do Bluetooth (face de baixo virada para o fundo da caixa)
+      const zMain = z0 + 10.5;         // placa principal
+      // placa do Bluetooth: verde, com serigrafia na face de baixo
+      const texBtBaixo = textura(40, 19, (ctx) => {
+        ctx.fillStyle = '#1f8a3a';
+        ctx.fillRect(0, 0, 40, 19);
+        ctx.strokeStyle = '#2fa64e';
+        ctx.lineWidth = 0.3;
+        for (let k = 0; k < 6; k++) trilhaTex(ctx, [[30 + k * 1.4, 2], [30 + k * 1.4, 8], [26, 10]], '#2fa64e', 0.25);
+        ['LED5', 'LED4', 'LED3', 'LED2', 'LED1'].forEach((t, k) => texto(ctx, t, 31.5 + k * 1.9 - 4, 1.2, 0.7, '#f5f5f5', { peso: 600 }));
+        texto(ctx, 'J2', 2.2, 1.6, 0.9, '#f5f5f5');
+        texto(ctx, 'J1', 38, 17.6, 0.9, '#f5f5f5');
+        texto(ctx, 'U4', 27, 9, 0.8, '#f5f5f5');
+        texto(ctx, 'U6', 2.6, 17.4, 0.8, '#f5f5f5');
+        texto(ctx, 'R24 R26 R27 R28', 31, 6.5, 0.6, '#f5f5f5', { peso: 500 });
+      });
+      g.add(placaModulo(x - 20, y - 9.5, 40, 19, zBt, tBt, verde, null, std(0xffffff, 0.5, 0, { map: texBtBaixo })));
+      // módulo Bluetooth (azul, antena em zigue-zague para fora da placa), pendurado embaixo
+      const texBt = textura(27, 13, (ctx) => {
+        ctx.fillStyle = '#1565c0';
+        ctx.fillRect(0, 0, 27, 13);
+        ctx.strokeStyle = '#90caf9';
+        ctx.lineWidth = 0.45;
+        ctx.beginPath();
+        let ax = 1.2;
+        ctx.moveTo(ax, 11.5);
+        for (let k = 0; k < 4; k++) { ctx.lineTo(ax, 1.5); ctx.lineTo(ax + 0.9, 1.5); ctx.lineTo(ax + 0.9, 11.5); ctx.lineTo(ax + 1.8, 11.5); ax += 1.8; }
+        ctx.stroke();
+        ctx.fillStyle = '#212121';
+        ctx.fillRect(14, 4.5, 4.2, 4.2);
+        ctx.fillStyle = '#cfd8dc';
+        ctx.fillRect(10, 3.5, 2.4, 1.6);
+        ctx.fillStyle = '#ffca28';
+        for (let k = 0; k < 13; k++) { ctx.fillRect(9 + k * 1.4, 0, 0.7, 0.8); ctx.fillRect(9 + k * 1.4, 12.2, 0.7, 0.8); }
+        texto(ctx, '16.000', 11.2, 6.2, 0.55, '#eceff1', { peso: 500 });
+      });
+      const bt = new THREE.Mesh(new THREE.BoxGeometry(27, 1.6, 13), [PCB.tja, PCB.tja, PCB.tja, std(0xffffff, 0.45, 0, { map: texBt }), PCB.tja, PCB.tja]);
+      bt.position.copy(W(x - 9, y + 1.5, zBt - 0.8));
+      g.add(bt);
+      // regulador U4 (SOT-23) e os 5 LEDs na face de baixo: acesos pela animação
+      g.add(caixa(2.9, 1.0, 1.6, M.preto, x + 7, y - 0.5, zBt - 1.0));
+      const coresLed = [0xff1744, 0x00e676, 0xffea00, 0xff1744, 0x2979ff];
+      elmLeds = coresLed.map((c, k) => {
+        const mat = std(c, 0.35, 0, { emissive: 0x000000 });
+        mat.userData.cor = c;
+        g.add(caixa(1.6, 0.6, 0.8, mat, x + 7.5 + k * 1.9, y - 8.2, zBt - 0.6));
+        return mat;
+      });
+      // J1 (6 pinos) e J2 (7 pinos) ligando as placas
+      const barra = (n, x0, y0, passoX) => {
+        g.add(caixa(passoX * n, zMain - (zBt + tBt), 2.5, M.preto, x0 + (passoX * (n - 1)) / 2, y0, zBt + tBt));
+        for (let k = 0; k < n; k++) g.add(cilindro(W(x0 + k * passoX, y0, zBt - 0.6), W(x0 + k * passoX, y0, zMain + tMain + 0.6), 0.32, M.ouro, 8));
+      };
+      barra(7, x - 18.5, y - 8.3, 2.54);
+      barra(6, x + 5.5, y + 8.3, 2.54);
+      // placa principal: PIC18F25K80 (SSOP-28) e cristal de 4 MHz virados para baixo
+      const texMain = textura(40, 19, (ctx) => {
+        ctx.fillStyle = '#1f8a3a';
+        ctx.fillRect(0, 0, 40, 19);
+        for (let k = 0; k < 10; k++) trilhaTex(ctx, [[12 + k * 1.3, 4], [12 + k * 1.3, 15]], '#2fa64e', 0.25);
+        texto(ctx, 'U3', 30, 3, 0.8, '#f5f5f5');
+        texto(ctx, 'Y1', 6, 3, 0.8, '#f5f5f5');
+      });
+      g.add(placaModulo(x - 20, y - 9.5, 40, 19, zMain, tMain, verde, null, std(0xffffff, 0.5, 0, { map: texMain })));
+      const texPic = textura(10.2, 5.3, (ctx) => {
+        ctx.fillStyle = '#1f1f21';
+        ctx.fillRect(0, 0, 10.2, 5.3);
+        texto(ctx, 'PIC18F25K80', 5.1, 1.7, 0.95, '#cfcfcf', { peso: 500 });
+        texto(ctx, '-I/SS', 5.1, 2.9, 0.8, '#bdbdbd', { peso: 500 });
+        texto(ctx, '1850AAJ', 5.1, 4.1, 0.8, '#bdbdbd', { peso: 500 });
+      }, 60);
+      const pic = new THREE.Mesh(new THREE.BoxGeometry(10.2, 1.5, 5.3), [M.preto, M.preto, M.preto, std(0xffffff, 0.6, 0, { map: texPic }), M.preto, M.preto]);
+      pic.position.copy(W(x + 4, y, zMain - 0.75));
+      g.add(pic);
+      for (let k = 0; k < 14; k++) for (const s of [-1, 1]) g.add(caixa(0.3, 0.2, 1.0, M.estanho, x + 4 - 4.2 + k * 0.65, y + s * 3.1, zMain - 0.2));
+      const cristal = new THREE.Mesh(new THREE.BoxGeometry(11, 3.4, 4.6), M.niquel);
+      cristal.position.copy(W(x - 10, y, zMain - 1.7));
+      g.add(cristal);
+      // 16 pinos da placa principal até o conector
+      for (const fy of [-2.6, 2.6]) {
+        for (let k = 0; k < 8; k++) {
+          const px = x + (k - 3.5) * 3.2 + (k >= 4 ? 1.4 : -1.4);
+          g.add(cilindro(W(px, y + fy, zMain + tMain), W(px, y + fy, z0 + E.h), 0.22, M.ouro, 6));
+        }
+      }
+      // conector OBD2 macho por cima, com os 16 contatos
+      const pw = E.plugue_w;
+      const boca = bocaDePe(x, y, z0 + E.h, trap(pw, pw - 7, 14, 2.2), trap(pw - 3, pw - 9.6, 11.4, 1.6, true), E.plugue, vidroAzul, std(0x15308a, 0.6, 0, { side: THREE.DoubleSide }));
       g.add(boca);
-      contatos(g, x, y, z0 + E.h, E.plugue - 3);
-      poe(g, 'acessorios', 'Adaptador ELM327 mini (Bluetooth): consultas OBD no conector do carro, numa das fêmeas do cabo Y');
+      contatos(g, x, y, z0 + E.h, E.plugue - 2.5);
+      poe(g, 'acessorios', 'Adaptador ELM327 mini (Bluetooth, PIC18F25K80): consultas OBD no conector do carro, numa das fêmeas do cabo Y');
     }
 
     // Cabo Y: corpo com nervuras e boca para cima
@@ -1378,6 +1477,13 @@ function iniciar() {
       if (on) ledTri.emissive.set(e.cor); else ledTri.emissive.copy(PRETO);
       ledTri.emissiveIntensity = on ? 2.6 : 1;
     }
+    // ELM327: LED de energia aceso; RX/TX piscando rápido enquanto há consultas (estado Capturando)
+    const consultando = anim.led === 'capturando';
+    elmLeds.forEach((m, k) => {
+      const aceso = anim.led !== 'descanso' && (k === 1 || (consultando && (k === 0 || k === 4) && Math.floor(ms / (90 + k * 23)) % 2 === 0));
+      m.emissive.set(aceso ? m.userData.cor : 0x000000);
+      m.emissiveIntensity = aceso ? 2.2 : 1;
+    });
   }
 
   // Sinais nos fios: pulsos de luz andando pelos caminhos; rápidos nos de dados, lentos na alimentação, nada no GND.

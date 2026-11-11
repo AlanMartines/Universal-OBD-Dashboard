@@ -443,9 +443,10 @@ ball('led', '#eef3f6', (LED_C[0], LED_C[1], caixa.TOPO_Z + 5.1), 2.5)
 # ELM327 mini em pé, com o plugue para cima; cabo Y com o macho e as duas fêmeas deitados, as bocas para cima, e os
 # cabos chatos de 16 vias (encurtados no desenho; o de verdade tem uns 30 cm) correndo atrás.
 AC_Z = caixa.outer()['z0']
-# ELM327: 49 mm de largura no corpo, 41 mm no conector e 32 mm de altura total (medidas do vendedor, 11/11/2026);
-# a divisão corpo/conector e a profundidade são estimadas pela foto.
-ELM = {'c': (18.0, -34.0), 'w': 49.0, 'd': 26.0, 'h': 18.0, 'plugue': 14.0, 'plugue_w': 41.0}
+# ELM327 mini: 47 × 24 mm e 30 mm de altura total (medidas do vendedor, 11/11/2026); a divisão corpo/conector é
+# estimada pela foto. Por dentro (fotos da montagem): placa do Bluetooth perto do fundo, placa principal com o
+# PIC18F25K80 por cima, ligadas por J1/J2, e os 16 pinos subindo até o conector.
+ELM = {'c': (18.0, -34.0), 'w': 47.0, 'd': 24.0, 'h': 19.0, 'plugue': 11.0, 'plugue_w': 40.0}
 CON_Y = {'w': 42.0, 'd': 24.0, 'h': 10.0}
 Y_MACHO = (72.0, -32.0)
 Y_FEMEAS = [(118.0, -32.0), (162.0, -32.0)]
