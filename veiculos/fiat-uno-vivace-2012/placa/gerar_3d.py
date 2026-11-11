@@ -443,7 +443,9 @@ ball('led', '#eef3f6', (LED_C[0], LED_C[1], caixa.TOPO_Z + 5.1), 2.5)
 # ELM327 mini em pé, com o plugue para cima; cabo Y com o macho e as duas fêmeas deitados, as bocas para cima, e os
 # cabos chatos de 16 vias (encurtados no desenho; o de verdade tem uns 30 cm) correndo atrás.
 AC_Z = caixa.outer()['z0']
-ELM = {'c': (18.0, -34.0), 'w': 42.0, 'd': 26.0, 'h': 20.0, 'plugue': 16.0}
+# ELM327: 49 mm de largura no corpo, 41 mm no conector e 32 mm de altura total (medidas do vendedor, 11/11/2026);
+# a divisão corpo/conector e a profundidade são estimadas pela foto.
+ELM = {'c': (18.0, -34.0), 'w': 49.0, 'd': 26.0, 'h': 18.0, 'plugue': 14.0, 'plugue_w': 41.0}
 CON_Y = {'w': 42.0, 'd': 24.0, 'h': 10.0}
 Y_MACHO = (72.0, -32.0)
 Y_FEMEAS = [(118.0, -32.0), (162.0, -32.0)]
@@ -464,7 +466,7 @@ def fitas():
 
 ex, ey = ELM['c']
 box('acessorios', '#1f4fd8', ex - ELM['w'] / 2, ey - ELM['d'] / 2, AC_Z, ELM['w'], ELM['d'], ELM['h'])
-box('acessorios', '#1f4fd8', ex - 19, ey - 7, AC_Z + ELM['h'], 38, 14, ELM['plugue'])
+box('acessorios', '#1f4fd8', ex - ELM['plugue_w'] / 2, ey - 7, AC_Z + ELM['h'], ELM['plugue_w'], 14, ELM['plugue'])
 for cx_, cy_ in [Y_MACHO] + Y_FEMEAS:
     box('acessorios', '#2a2a2a', cx_ - CON_Y['w'] / 2, cy_ - CON_Y['d'] / 2, AC_Z, CON_Y['w'], CON_Y['d'], CON_Y['h'])
     box('acessorios', '#2a2a2a', cx_ - 18, cy_ - 6.5, AC_Z + CON_Y['h'], 36, 13, 9)

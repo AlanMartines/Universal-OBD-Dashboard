@@ -1061,7 +1061,7 @@ function iniciar() {
       g.add(caixa(9, 1.4, 5, M.preto, x - 4, y - 1, z0 + 12));
       for (let k = 0; k < 3; k++) g.add(caixa(1.6, 0.6, 0.8, M.led, x + 13, y - 5 + k * 3, z0 + 8.2));
       // plugue macho por cima, com os 16 contatos
-      const boca = bocaDePe(x, y, z0 + E.h, trap(38, 31, 14, 2.2), trap(35, 28.4, 11.4, 1.6, true), E.plugue, vidroAzul, std(0x15308a, 0.6, 0, { side: THREE.DoubleSide }));
+      const boca = bocaDePe(x, y, z0 + E.h, trap(E.plugue_w, E.plugue_w - 7, 14, 2.2), trap(E.plugue_w - 3, E.plugue_w - 9.6, 11.4, 1.6, true), E.plugue, vidroAzul, std(0x15308a, 0.6, 0, { side: THREE.DoubleSide }));
       g.add(boca);
       contatos(g, x, y, z0 + E.h, E.plugue - 3);
       poe(g, 'acessorios', 'Adaptador ELM327 mini (Bluetooth): consultas OBD no conector do carro, numa das fêmeas do cabo Y');
