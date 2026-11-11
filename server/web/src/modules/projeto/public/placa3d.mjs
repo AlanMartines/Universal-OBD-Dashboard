@@ -108,6 +108,7 @@ function iniciar() {
     trimpot: std(0xe9e4da, 0.5),
     led: std(0xd32f2f, 0.25, 0, { emissive: 0x5a0000 }),
     ledEsp: std(0x3d6fd6, 0.3, 0, { emissive: 0x000000 }),   // LED azul da placa do ESP32 (pisca na animação)
+    ledPwr: std(0xd32f2f, 0.3, 0, { emissive: 0x000000 }),   // LED vermelho de energia do ESP32 (aceso com a placa ligada)
   };
   const PCB = {
     esp: std(0x0f1846, 0.5),
@@ -363,7 +364,7 @@ function iniciar() {
       ctx.fillStyle = '#121c52';
       ctx.fillRect(0, 0, E.l, E.w);
       // trilhas decorativas
-      for (let k = 0; k < 6; k++) trilhaTex(ctx, [[33 + k * 1.2, 4.2], [33 + k * 1.2, 6.5], [35 + k * 0.9, 7.6]], 'rgba(90,120,220,0.35)', 0.22);
+      for (let k = 0; k < 5; k++) trilhaTex(ctx, [[34 + k * 1.1, 11.2], [34 + k * 1.1, 12.6], [27.7 + k * 1.2, 13.6]], 'rgba(90,120,220,0.35)', 0.22);
       for (const fila2 of filas) {
         for (const pin of fila2) {
           const px = pin.p[0] - E.x0, py = pin.p[1] - E.y0;
@@ -374,11 +375,11 @@ function iniciar() {
         }
       }
       contorno(ctx, 0.5, 0.5, E.l - 1, E.w - 1, 'rgba(255,255,255,0.65)', 0.15);
-      texto(ctx, 'ESP32 DEVKIT V1', 29.0, 14, 1.15, '#ffffff', { peso: 700, rot: -Math.PI / 2 });
-      texto(ctx, 'DOIT', 31.0, 14, 0.85, '#e0e0e0', { rot: -Math.PI / 2 });
-      texto(ctx, 'EN', 41.7, 22.4, 0.8, '#ffffff');
-      texto(ctx, 'BOOT', 41.7, 5.3, 0.8, '#ffffff');
-      contorno(ctx, 33, 15.5, 6.6, 6.6, 'rgba(255,255,255,0.7)');
+      // posições do layout de cima (a partir da ponta do USB, em E.l): nome entre os LEDs e os transistores
+      texto(ctx, 'ESP32 DEVKIT V1', E.l - 20.8, E.w / 2, 0.85, '#ffffff', { peso: 700, rot: -Math.PI / 2 });
+      texto(ctx, 'BOOT', E.l - 7.0, E.w / 2 - 7.4, 0.75, '#ffffff', { rot: -Math.PI / 2 });
+      texto(ctx, 'EN', E.l - 7.0, E.w / 2 + 7.4, 0.75, '#ffffff', { rot: -Math.PI / 2 });
+      contorno(ctx, E.l - 15.4, E.w / 2 - 9.0, 6.0, 6.0, 'rgba(255,255,255,0.7)');   // CP2102
     });
     g.add(placaModulo(E.x0, E.y0, E.l, E.w, A.ESP_Z, A.ESP_T ?? 1.6, PCB.esp, tex));
     // plástico das barras macho e pinos
@@ -415,23 +416,26 @@ function iniciar() {
     const blind = new THREE.Mesh(new THREE.BoxGeometry(18, hBlind, 16), [M.niquel, M.niquel, std(0xffffff, 0.38, 0.85, { map: texBlind }), M.niquel, M.niquel, M.niquel]);
     blind.position.copy(W(mx0 + 6.5 + 9, cy, topo + 0.8 + hBlind / 2));
     g.add(blind);
-    // micro-USB, botões EN/BOOT, regulador, CP2102, LED. Posições conferidas no modelo STEP do DevKit V1
-    // (distâncias medidas a partir da ponta do USB); o LED segue as fotos da placa usada (furo da tampa da caixa).
+    // micro-USB, botões, CP2102, regulador, transistores, diodo e LEDs. Posições pela ilustração da placa (11/11/2026)
+    // e tamanhos pelo modelo STEP do DevKit V1, medidas a partir da ponta do USB. Lado do 3V3 = cy − ; lado do VIN = cy +.
     const fimUsb = E.x0 + E.l;
-    g.add(caixa(5.6, 3.0, 7.9, M.niquel, fimUsb - 2.1, cy, topo));            // passa 0,7 mm da borda
+    g.add(caixa(5.6, 3.0, 7.9, M.niquel, fimUsb - 2.1, cy, topo));            // micro-USB, passa 0,7 mm da borda
     g.add(caixa(0.1, 1.5, 6.4, M.furo, fimUsb + 0.72, cy, topo + 0.7));
-    for (const by of [cy - 8.2, cy + 8.2]) {                                    // EN e BOOT, ao lado do USB
-      g.add(caixa(3.7, 0.9, 2.9, M.niquel, fimUsb - 3.0, by, topo));
+    for (const by of [cy - 7.4, cy + 7.4]) {                                    // BOOT (3V3) e EN (VIN), ao lado do USB
+      g.add(caixa(3.7, 0.9, 2.9, M.niquel, fimUsb - 4.2, by, topo));
       const botao = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.6, 20), M.preto);
-      botao.position.copy(W(fimUsb - 3.0, by, topo + 1.2));
+      botao.position.copy(W(fimUsb - 4.2, by, topo + 1.2));
       g.add(botao);
     }
-    g.add(sot223(fimUsb - 18.3, cy + 3.8, topo, 'AMS1117'));                    // do lado do VIN
-    g.add(caixa(5.0, 0.9, 5.0, M.preto, fimUsb - 10.1, cy, topo));              // CP2102 (QFN 5 × 5)
-    g.add(smd(E.x0 + 30, cy + 7.6, topo, 1.6, 0.8, M.ceramica));
-    g.add(smd(E.x0 + 30, cy - 7.6, topo, 1.6, 0.8, M.ceramica));
-    g.add(smd(E.x0 + 46.6, cy - 6.2, topo, 1.6, 0.8, M.ledEsp, true));
-    g.add(smd(E.x0 + 32.2, cy + 1, topo, 2.0, 1.25, M.resistor, true));
+    for (const by of [cy - 2.6, cy - 0.9, cy + 0.9, cy + 2.6]) g.add(smd(fimUsb - 7.8, by, topo, 1.6, 0.8, M.ceramica, true));
+    g.add(caixa(5.0, 0.9, 5.0, M.preto, fimUsb - 12.4, cy - 6.0, topo));       // CP2102 (QFN 5 × 5), lado do 3V3
+    g.add(sot223(fimUsb - 13.0, cy + 4.5, topo, 'AMS1117'));                    // regulador, lado do VIN
+    for (const by of [cy - 5.8, cy + 0.5]) g.add(caixa(2.9, 1.0, 1.6, M.preto, fimUsb - 18.5, by, topo));   // SOT-23
+    g.add(caixa(2.6, 2.0, 4.3, M.preto, fimUsb - 18.5, cy + 6.7, topo));        // diodo SMA
+    g.add(caixa(2.6, 0.05, 0.7, M.estanho, fimUsb - 18.5, cy + 8.4, topo + 2.0));
+    for (let k = 0; k < 5; k++) g.add(smd(fimUsb - 22.3, cy - 2.4 + k * 1.2, topo, 1.6, 0.8, M.resistor));
+    g.add(smd(fimUsb - 22.3, cy - 4.3, topo, 1.6, 0.8, M.ledPwr));             // LED vermelho: energia
+    g.add(smd(fimUsb - 22.3, cy + 4.7, topo, 1.6, 0.8, M.ledEsp));             // LED azul (D2): o que o firmware pisca
     poe(g, 'esp32', 'ESP32 DevKit V1 (30 pinos), encaixado nas barras fêmea');
   }
 
@@ -1473,6 +1477,9 @@ function iniciar() {
     const on = ledAceso(e, ms);
     M.ledEsp.emissive.set(on ? 0x3b82ff : 0x000000);
     M.ledEsp.emissiveIntensity = on ? 3 : 1;
+    // LED de energia: sempre aceso (no descanso o ESP32 dorme, mas a placa continua alimentada)
+    M.ledPwr.emissive.set(0xff1a1a);
+    M.ledPwr.emissiveIntensity = 1.8;
     if (ledTri) {
       if (on) ledTri.emissive.set(e.cor); else ledTri.emissive.copy(PRETO);
       ledTri.emissiveIntensity = on ? 2.6 : 1;
