@@ -592,8 +592,8 @@ CAIXA_REF = {
     'apoios': [(LSM_MOD, 5.0, 'LSM6DS3'), (BMP_MOD, 5.0, 'BMP180')],   # módulo, onde o apoio começa (x), nome
     'fusivel': (fcx, fcy, T + FUSE_H),
     # furos da tampa: o LED azul do ESP32 (na placa dele, perto do USB) e o LED tricolor opcional
-    # LED azul (D2) do ESP32: logo antes do módulo WROOM, do lado do VIN, a ~22 mm da ponta do USB (ilustração da placa, 11/11/2026)
-    'furos_tampa': [(x0 + g.ESP_L - 22.3, (xy(2, 2)[1] + xy(2, 12)[1]) / 2 + 4.7, 1.5, 'Tampa: furo de 3 mm para ver o LED azul do ESP32'),
+    # LED azul (D2) do ESP32: logo antes do módulo WROOM, do lado do 3V3, a ~22 mm da ponta do USB (conferido na placa, 11/11/2026)
+    'furos_tampa': [(x0 + g.ESP_L - 22.3, (xy(2, 2)[1] + xy(2, 12)[1]) / 2 - 4.3, 1.5, 'Tampa: furo de 3 mm para ver o LED azul do ESP32'),
                     (LED_C[0], LED_C[1], 2.55, 'Tampa: furo de 5 mm do LED tricolor')],
 }
 CAIXA = caixa.montar(CAIXA_REF)

@@ -434,8 +434,9 @@ function iniciar() {
     g.add(caixa(2.6, 2.0, 4.3, M.preto, fimUsb - 18.5, cy + 6.7, topo));        // diodo SMA
     g.add(caixa(2.6, 0.05, 0.7, M.estanho, fimUsb - 18.5, cy + 8.4, topo + 2.0));
     for (let k = 0; k < 5; k++) g.add(smd(fimUsb - 22.3, cy - 2.4 + k * 1.2, topo, 1.6, 0.8, M.resistor));
-    g.add(smd(fimUsb - 22.3, cy - 4.3, topo, 1.6, 0.8, M.ledPwr));             // LED vermelho: energia
-    g.add(smd(fimUsb - 22.3, cy + 4.7, topo, 1.6, 0.8, M.ledEsp));             // LED azul (D2): o que o firmware pisca
+    // LEDs conferidos na placa do Alan (11/11/2026): azul do lado do 3V3, vermelho do lado do VIN
+    g.add(smd(fimUsb - 22.3, cy - 4.3, topo, 1.6, 0.8, M.ledEsp));             // LED azul (D2): o que o firmware pisca
+    g.add(smd(fimUsb - 22.3, cy + 4.7, topo, 1.6, 0.8, M.ledPwr));             // LED vermelho: energia
     poe(g, 'esp32', 'ESP32 DevKit V1 (30 pinos), encaixado nas barras fêmea');
   }
 
