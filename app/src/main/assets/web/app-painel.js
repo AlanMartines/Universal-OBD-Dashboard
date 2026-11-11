@@ -152,6 +152,7 @@ function renderCanPill(s, status) {
 }
 
 /** Chamado pelo app a cada atualização (ligado em app-main.js, depois de tudo carregado). */
+let endedTripId = null;
 function onTelemetry(s) {
   if (lastState && lastState.profileId !== s.profileId && s.profileId) {
     meta = parse(bridge.getProfileMeta(), meta);
@@ -159,6 +160,9 @@ function onTelemetry(s) {
     Dash.setMeta(meta);
   }
   const wasRunning = lastState && lastState.running;
+  // Resumo ao encerrar: guarda a viagem em andamento e, quando a captura termina, mostra o resumo dela
+  if (s.running && s.tripId) endedTripId = s.tripId;
+  if (wasRunning && !s.running && endedTripId) { scheduleTripSummary(endedTripId); endedTripId = null; }
   lastState = s;
   // Ajustes: com a captura rodando, o nível acompanha a estimativa (exceto enquanto é editado).
   const fl = $('fuel-level');

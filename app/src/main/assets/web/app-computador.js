@@ -71,14 +71,62 @@ async function showTripSummary(btn) {
   const r = parse(await nativeAsync((id) => bridge.getTripSummary(id, Number(btn.dataset.summary))).catch((e) => JSON.stringify({ ok: false, error: e.message })), { ok: false });
   box.innerHTML = '';
   if (!r.ok) { box.textContent = r.error || 'Falha ao calcular o resumo.'; return; }
-  const lines = [
+  fillTripSummary(box, r);
+}
+
+/** Linhas do resumo de uma viagem (Histórico e aviso de fim de viagem). */
+function tripSummaryLines(r) {
+  const imu = r.imu;
+  const g = (v) => fmt(v, 2) + ' g';
+  return [
     `${fmt(r.km, 1)} km · ${fmt(r.liters, 2)} L${r.kmPerL != null ? ' · ' + fmt(r.kmPerL, 1) + ' km/l' : ''}`,
     r.cost != null ? `${brl(r.cost)}${r.costPerKm != null ? ' · ' + brl(r.costPerKm) + '/km' : ''}` : null,
-    `Andando ${pcDuration(r.movingS)}${r.avgMovingKmh != null ? ' · média ' + fmt(r.avgMovingKmh) + ' km/h' : ''}`,
+    r.durationS != null ? `Duração ${pcDuration(r.durationS)}` : null,
+    `Andando ${pcDuration(r.movingS)}${r.avgMovingKmh != null ? ' · média ' + fmt(r.avgMovingKmh) + ' km/h' : ''}${r.maxSpeedKmh ? ' · máxima ' + fmt(r.maxSpeedKmh) + ' km/h' : ''}`,
     r.idleS ? `Marcha lenta ${pcDuration(r.idleS)} · ${fmt(r.idleFuelL, 2)} L${r.idleCost != null ? ' · ' + brl(r.idleCost) : ''}` : null,
     r.fuelCutKm >= 0.1 ? `Injeção cortada ${fmt(r.fuelCutKm, 1)} km` : null,
     r.ecoPct ? `Verde ${fmt(r.ecoPct[0])}% · meio ${fmt(r.ecoPct[1])}% · vermelho ${fmt(r.ecoPct[2])}%` : null,
+    r.maxCoolantC != null ? `Motor chegou a ${fmt(r.maxCoolantC)} °C` : null,
+    imu ? `Freada mais forte ${g(imu.maxBrakeG)} · arrancada ${g(imu.maxAccelG)} · curva ${g(imu.maxLateralG)}` : null,
+    imu ? (imu.bumps ? `${imu.bumps} ${imu.bumps === 1 ? 'buraco ou impacto' : 'buracos ou impactos'}` : 'Nenhum buraco ou impacto forte') : null,
     r.samples < 30 ? 'Poucas amostras gravadas: resumo aproximado.' : null,
   ].filter(Boolean);
-  lines.forEach((t) => { const sp = document.createElement('span'); sp.textContent = t; box.appendChild(sp); });
 }
+
+function fillTripSummary(box, r) {
+  box.textContent = '';
+  tripSummaryLines(r).forEach((t) => { const sp = document.createElement('span'); sp.textContent = t; box.appendChild(sp); });
+}
+
+/* ---------------------------------------------------------------- Resumo ao encerrar a viagem */
+const TRIP_SUMMARY_KEY = 'app.tripSummaryOnStop';
+function tripSummaryAuto() {
+  try { return localStorage.getItem(TRIP_SUMMARY_KEY) !== '0'; } catch (e) { return true; }
+}
+let tripSummaryTimer = null;
+/** Chamado quando a captura termina: espera a viagem ser gravada e mostra o resumo dela. */
+function scheduleTripSummary(tripId) {
+  if (!tripId || !tripSummaryAuto()) return;
+  clearTimeout(tripSummaryTimer);
+  // O encerramento grava a viagem em até ~3 s (STOP_WAIT_MS no serviço)
+  tripSummaryTimer = setTimeout(() => showEndSummary(tripId), 3500);
+}
+async function showEndSummary(tripId) {
+  const r = parse(await nativeAsync((id) => bridge.getTripSummary(id, Number(tripId))).catch(() => null), { ok: false });
+  // Conexão de teste, sem sair do lugar: não vale um aviso
+  if (!r.ok || (r.km < 0.2 && (r.durationS || 0) < 180)) return;
+  if (lastState && lastState.running) return;   // já começou outra captura
+  fillTripSummary($('trip-dialog-body'), r);
+  $('trip-dialog-auto').checked = true;
+  const d = $('trip-dialog');
+  if (!d.open && typeof d.showModal === 'function') d.showModal();
+}
+$('trip-dialog-auto').addEventListener('change', (e) => {
+  try { localStorage.setItem(TRIP_SUMMARY_KEY, e.target.checked ? '1' : '0'); } catch (err) { /* sem armazenamento */ }
+});
+$('trip-dialog-close').addEventListener('click', () => $('trip-dialog').close());
+$('trip-dialog-history').addEventListener('click', () => {
+  $('trip-dialog').close();
+  const tab = document.querySelector('.tab[data-tab="history"]');
+  if (tab) tab.click();
+});

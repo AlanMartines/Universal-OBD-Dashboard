@@ -713,6 +713,15 @@
   </div>
 
   <div id="toasts" class="toasts" aria-live="polite"></div>
+  <dialog id="trip-dialog" class="app-dialog" aria-labelledby="trip-dialog-title">
+    <h3 id="trip-dialog-title">Viagem encerrada</h3>
+    <div id="trip-dialog-body" class="trip-summary kv small"></div>
+    <label class="check small"><input type="checkbox" id="trip-dialog-auto" checked> Mostrar este resumo ao encerrar</label>
+    <div class="dialog-actions">
+      <button id="trip-dialog-history" class="btn">Ver no histórico</button>
+      <button id="trip-dialog-close" class="btn btn-primary">Fechar</button>
+    </div>
+  </dialog>
   <dialog id="can-dialog" class="app-dialog" aria-labelledby="can-dialog-title">
     <h3 id="can-dialog-title">Escuta CAN (ESP32) não conectou</h3>
     <p>O módulo de escuta CAN não respondeu desde o início da captura. Confira se ele está ligado e perto do celular.</p>
