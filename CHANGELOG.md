@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.37] - 2026-11-10
+
 ### Adicionado
 - **Firmware do ESP32 (esp32-can-listen 1.4): LEDs de estado.** O LED azul da placa do ESP32 pisca 1 vez por segundo sem o app ou sem quadros da rede, 2 vezes capturando, rápido no erro, e apaga no descanso. Um LED tricolor externo, opcional, mostra o mesmo só com as cores puras (azul sem o app, verde com o app, vermelho no erro), com o comum no D18: o firmware o põe em 3,3 V ou 0 V, então a mesma ligação serve para anodo e catodo comum (`LED_ANODO_COMUM`).
 - **Placa e caixa:** conector do LED tricolor na linha 1 e dois furos na tampa, um para ver o LED azul do ESP32 e outro para o LED tricolor.
