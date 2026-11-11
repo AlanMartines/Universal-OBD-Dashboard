@@ -20,6 +20,14 @@ import kotlin.math.sqrt
 // =====================================================================================
 
 @Serializable
+data class MaintenancePlanItem(
+    val name: String,
+    @SerialName("interval_km") val intervalKm: Double? = null,
+    @SerialName("interval_months") val intervalMonths: Int? = null,
+    val notes: String? = null,
+)
+
+@Serializable
 data class VehicleProfile(
     @SerialName("schema_version") val schemaVersion: Int = 1,
     @SerialName("profile_id") val profileId: String,
@@ -49,6 +57,8 @@ data class VehicleProfile(
     @SerialName("can_listen") val canListen: CanListenSettings? = null,
     /** Descrição de códigos de falha específicos do veículo/ECU, ex.: {"P0130": "Sonda lambda pré-catalisador"}. */
     @SerialName("dtc_descriptions") val dtcDescriptions: Map<String, String> = emptyMap(),
+    /** Plano de manutenção do manual do proprietário: vira a lista sugerida da aba Manutenção. */
+    @SerialName("maintenance_plan") val maintenancePlan: List<MaintenancePlanItem> = emptyList(),
 ) {
     /** Descrição do código (sem diferenciar maiúsculas), ou null se o perfil não a define. */
     fun describeDtc(code: String): String? = dtcDescriptions[code.uppercase()] ?: dtcDescriptions[code]

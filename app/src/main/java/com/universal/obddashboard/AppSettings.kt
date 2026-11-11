@@ -197,6 +197,13 @@ object AppSettings {
     fun setResumeWindowMin(context: Context, minutes: Int) =
         prefs(context).edit { putInt(KEY_RESUME_WINDOW_MIN, minutes.coerceIn(0, 24 * 60)) }
 
+    /** Último aviso de manutenção mostrado para o veículo (no máximo um por dia). */
+    fun maintenanceNotifiedAt(context: Context, vehicleId: String): Long? =
+        prefs(context).getLong("maintenance_notified_$vehicleId", -1).takeIf { it >= 0 }
+
+    fun setMaintenanceNotifiedAt(context: Context, vehicleId: String, at: Long) =
+        prefs(context).edit { putLong("maintenance_notified_$vehicleId", at) }
+
     fun lastScanAt(context: Context, profileId: String): Long? =
         prefs(context).getLong(KEY_LAST_SCAN_PREFIX + profileId, -1).takeIf { it >= 0 }
 

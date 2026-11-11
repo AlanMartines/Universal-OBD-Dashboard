@@ -25,6 +25,7 @@
     <button class="tab" data-tab="panel">Detalhes</button>
     <button class="tab" data-tab="sensors">Sensores</button>
     <button class="tab" data-tab="fuel">Abastecimentos</button>
+    <button class="tab" data-tab="maint">Manutenção</button>
     <button class="tab" data-tab="history">Histórico</button>
     <button class="tab" data-tab="faults">Falhas</button>
     <button class="tab" data-tab="settings">Ajustes</button>
@@ -203,6 +204,63 @@
         <button id="fu-import" class="btn">Importar</button>
         <p id="fu-import-result" class="small"></p>
       </div>
+      </div>
+    </section>
+
+    <section id="tab-maint" class="tab-page split">
+      <div class="tiles span">
+        <div class="card tile"><span class="label">Hodômetro</span><b id="mt-km">--</b><small>km (Total do app)</small></div>
+        <div class="card tile"><span class="label">Vencidos</span><b id="mt-due">0</b><small>itens</small></div>
+        <div class="card tile"><span class="label">Perto de vencer</span><b id="mt-soon">0</b><small>itens</small></div>
+      </div>
+
+      <div class="col col-sticky">
+      <div class="card form" id="mt-rec-form" hidden>
+        <span class="label">Registrar serviço feito</span>
+        <b id="mt-rec-name"></b>
+        <div class="row">
+          <label class="grow">Data <input id="mt-rec-when" type="date"></label>
+          <label class="grow">Hodômetro (km) <input id="mt-rec-km" type="number" min="0" step="1" inputmode="numeric"></label>
+        </div>
+        <div class="row">
+          <label class="grow">Custo (R$) <input id="mt-rec-cost" type="number" min="0" step="0.01" inputmode="decimal"></label>
+          <label class="grow">Oficina / observação <input id="mt-rec-notes" type="text"></label>
+        </div>
+        <div class="row">
+          <button id="mt-rec-save" class="btn btn-primary">Salvar registro</button>
+          <button id="mt-rec-cancel" class="btn">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="card form">
+        <span class="label" id="mt-form-title">Novo item de manutenção</span>
+        <label>Nome <input id="mt-name" type="text" maxlength="80" placeholder="Troca de óleo"></label>
+        <div class="row">
+          <label class="grow">A cada (km) <input id="mt-ikm" type="number" min="0" step="500" inputmode="numeric" placeholder="15000"></label>
+          <label class="grow">A cada (meses) <input id="mt-imonths" type="number" min="0" max="240" step="1" inputmode="numeric" placeholder="12"></label>
+        </div>
+        <div class="row" id="mt-last-wrap">
+          <label class="grow">Última vez (data) <input id="mt-last-when" type="date"></label>
+          <label class="grow">Última vez (km) <input id="mt-last-km" type="number" min="0" step="1" inputmode="numeric"></label>
+        </div>
+        <label>Observação <input id="mt-notes" type="text" maxlength="200" placeholder="Óleo 5W30, 2,7 L"></label>
+        <div class="row">
+          <button id="mt-save" class="btn btn-primary">Salvar item</button>
+          <button id="mt-cancel" class="btn" hidden>Cancelar edição</button>
+        </div>
+        <p class="small muted">Vence pelo que chegar primeiro: km ou meses. Avisa 30 dias antes ou 10% do intervalo em km (entre 300 e 1.000 km), e uma notificação por dia ao começar a captura.</p>
+      </div>
+
+      <div class="card form" id="mt-presets-card" hidden>
+        <span class="label" id="mt-presets-title">Plano sugerido</span>
+        <div id="mt-presets"></div>
+        <button id="mt-presets-add" class="btn">Adicionar selecionados</button>
+      </div>
+      </div>
+
+      <div class="col">
+      <h2>Itens</h2>
+      <div id="mt-list" class="list"></div>
       </div>
     </section>
 
@@ -666,6 +724,7 @@
   <script src="app-painel.js"></script>
   <script src="app-historico.js"></script>
   <script src="app-abastecimentos.js"></script>
+  <script src="app-manutencao.js"></script>
   <script src="app-ajustes.js"></script>
   <script src="app-console.js"></script>
   <script src="app-backup.js"></script>

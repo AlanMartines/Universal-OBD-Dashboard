@@ -231,6 +231,24 @@
     "default_ethanol_pct": 0
   },
 
+  "_comment_maintenance": "Plano de manutenção programada do manual do proprietário (Uno Vivace 1.0 Fire Flex, impresso 60355478 V/2013, cap. D). Óleo a cada 7.500 km em uso severo (trajetos curtos < 8 km, muita marcha lenta, estrada de terra).",
+  "maintenance_plan": [
+    { "name": "Troca de óleo e filtro de óleo", "interval_km": 15000, "interval_months": 12, "notes": "Selènia K Pure Energy 5W30 (API SL), 2,7 L com filtro. Uso severo: 7.500 km." },
+    { "name": "Filtro de ar do motor", "interval_km": 15000, "notes": "Conferir a cada 500 km; trocar antes se estiver muito sujo." },
+    { "name": "Filtro de combustível", "interval_km": 15000 },
+    { "name": "Filtro antipólen (cabine)", "interval_km": 15000, "notes": "Verificar e trocar se preciso; mais cedo em estrada de terra." },
+    { "name": "Velas de ignição", "interval_km": 30000, "notes": "NGK BKR6E ou Bosch FR6DE; conferir os cabos." },
+    { "name": "Folga de válvulas", "interval_km": 30000 },
+    { "name": "Correia dentada", "interval_km": 60000, "interval_months": 36, "notes": "Trocar também as correias auxiliares." },
+    { "name": "Fluido de freio", "interval_km": 45000, "interval_months": 24, "notes": "DOT 4 (Tutela TOP 4/S)." },
+    { "name": "Líquido de arrefecimento", "interval_months": 24, "notes": "50% Coolant UP (vermelho) + 50% água pura; nunca o verde." },
+    { "name": "Óleo do câmbio", "interval_km": 120000, "notes": "Tutela Car Epyx 80W90, 2,0 L; conferir o nível aos 45, 90 e 135 mil km." },
+    { "name": "Lonas e tambores do freio traseiro", "interval_km": 60000 },
+    { "name": "Rodízio dos pneus", "interval_km": 10000, "notes": "Sem cruzar lados; depois, balanceamento e alinhamento. 28 psi (32 com carga)." },
+    { "name": "Palhetas do limpador", "interval_months": 12 },
+    { "name": "Gasolina do tanquinho de partida a frio", "interval_months": 3, "notes": "Trocar se não for consumida (gasolina aditivada ou de alta octanagem)." }
+  ],
+
   "_comment_shift": "Velocidades de troca econômica do manual do proprietário. gear_kmh_per_1000rpm medido numa viagem de teste (picos de km/h por 1000 rpm em ~6.000 pares RPM/velocidade).",
   "shift_indicator": {
     "upshift_speeds_kmh": [14.8, 28.2, 43.8, 61.4],
