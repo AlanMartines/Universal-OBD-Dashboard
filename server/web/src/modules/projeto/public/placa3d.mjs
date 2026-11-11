@@ -1195,6 +1195,42 @@ function iniciar() {
         tabela(document.getElementById('legenda3d-lsm'), 'Cabo do LSM6DS3: pino, função e cor do fio', ['Cor', 'Pino', 'Função', 'Fio'],
           X.lsm_modulo.cabo.map((f) => ({ ...f, pino: f.n })));
       }
+      // LEDs de estado (firmware esp32-can-listen 1.4): só cores puras no tricolor; o azul da placa pisca junto
+      if (X.led) {
+        const h = document.createElement('h2');
+        h.textContent = 'LEDs de estado: cor e ritmo';
+        const t = document.createElement('table');
+        const cab = t.createTHead().insertRow();
+        for (const c of ['Cor', 'Situação', 'Ritmo']) {
+          const th = document.createElement('th');
+          th.className = 'visually-hidden';
+          th.textContent = c;
+          cab.appendChild(th);
+        }
+        const tb = t.createTBody();
+        const linhas = [
+          ['#1e88e5', 'azul', 'Sem o app', '1 piscada por segundo'],
+          ['#43a047', 'verde', 'Com o app, rede sem quadros', '1 piscada por segundo'],
+          ['#43a047', 'verde', 'Capturando', '2 piscadas por segundo'],
+          ['#e53935', 'vermelho', 'Erro do transceptor', 'rápido, por 10 s'],
+          [null, 'apagado', 'Descanso (rede parada)', 'apagado'],
+        ];
+        for (const [c, nome, situacao, ritmo] of linhas) {
+          const tr = tb.insertRow();
+          if (!c) tr.className = 'isolado';
+          const sw = document.createElement('span');
+          sw.className = 'placa3d-cor led';
+          if (c) sw.style.background = c;
+          sw.title = nome;
+          tr.insertCell().appendChild(sw);
+          tr.insertCell().textContent = situacao;
+          tr.insertCell().textContent = ritmo;
+        }
+        const nota = document.createElement('p');
+        nota.className = 'placa3d-nota';
+        nota.textContent = 'Cores do LED tricolor (opcional). O LED azul da placa do ESP32 pisca junto, no mesmo ritmo, sempre em azul. As piscadas são curtas (80 ms).';
+        document.getElementById('legenda3d-led').replaceChildren(h, t, nota);
+      }
       // a legenda começa fechada, para não cobrir a placa; abre com um clique
       leg.hidden = false;
     }

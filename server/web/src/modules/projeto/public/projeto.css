@@ -116,3 +116,16 @@
   border: 1px solid rgba(0, 0, 0, 0.35);
   border-radius: 4px;
 }
+
+.placa3d-cor.led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.placa3d-nota {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--bs-secondary-color);
+  max-width: 22rem;
+}
