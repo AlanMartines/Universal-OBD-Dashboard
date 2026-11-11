@@ -169,6 +169,39 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     };
   });
 
+  // Saúde do carro ao longo do tempo: o resumo diário (guardado além da limpeza das amostras).
+  app.get('/internal/devices/:id/health', {
+    preValidation: requireReady,
+    schema: {
+      params: uuidParam,
+      querystring: {
+        type: 'object',
+        additionalProperties: false,
+        properties: { days: { type: 'string', pattern: '^[0-9]{1,4}$' } },
+      },
+    },
+  }, async (request) => {
+    const days = request.query.days === undefined ? 365 : Number(request.query.days);
+    if (days < 7 || days > 1100) throw fail(400, 'invalid_request');
+    const device = await loadDevice(request);
+    const { rows } = await pool.query(
+      `SELECT to_char(day, 'YYYY-MM-DD') AS day, samples, km, liters, coolant_warm_avg, coolant_max, stft_warm_avg, stft_idle_avg,
+              idle_rpm_avg, volts_off_avg, volts_off_min, volts_running_avg, lambda_post_avg, lambda_post_sd, mil_on, dtc_max
+         FROM health_daily WHERE device_id = $1 AND day >= current_date - make_interval(days => $2) ORDER BY day`,
+      [device.id, days],
+    );
+    const n = (v) => (v == null ? null : Number(v));
+    return {
+      days: rows.map((r) => ({
+        day: r.day, samples: r.samples, km: n(r.km), liters: n(r.liters),
+        coolantWarmAvg: n(r.coolant_warm_avg), coolantMax: n(r.coolant_max),
+        stftWarmAvg: n(r.stft_warm_avg), stftIdleAvg: n(r.stft_idle_avg), idleRpmAvg: n(r.idle_rpm_avg),
+        voltsOffAvg: n(r.volts_off_avg), voltsOffMin: n(r.volts_off_min), voltsRunningAvg: n(r.volts_running_avg),
+        lambdaPostAvg: n(r.lambda_post_avg), lambdaPostSd: n(r.lambda_post_sd), milOn: r.mil_on, dtcMax: r.dtc_max,
+      })),
+    };
+  });
+
   // Leituras de uma viagem, em ordem, para reproduzir nos mostradores do painel (só leitura).
   // Viagem longa é resumida: no máximo REPLAY_MAX_SAMPLES leituras, sempre com a primeira e a última.
   app.get('/internal/devices/:id/trips/:tripId/samples', {

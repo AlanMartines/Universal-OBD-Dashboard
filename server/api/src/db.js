@@ -91,6 +91,56 @@ export async function audit(db, { actor = null, action, target = null, ip = null
 /** Dias que um abastecimento apagado no app fica no painel, marcado como removido. */
 export const FUEL_REMOVED_DAYS = 30;
 
+/** Fuso dos dias do resumo de saúde (o mesmo das datas do painel). */
+export const HEALTH_TZ = 'America/Sao_Paulo';
+
+/**
+ * Resume as amostras dos últimos [days] dias em health_daily (um registro por dia e veículo), refazendo
+ * os dias que já existiam. Roda antes da limpeza, para o histórico de saúde não se perder com as amostras.
+ */
+export async function rollupHealth(pool, days) {
+  await pool.query(
+    `WITH s AS (
+       SELECT device_id, (ts AT TIME ZONE '${HEALTH_TZ}')::date AS day, ts, trip_id,
+              (metrics->>'rpm')::float AS rpm, (metrics->>'speed')::float AS speed,
+              (metrics->>'coolant_temp')::float AS coolant, (metrics->>'stft_b1')::float AS stft,
+              (metrics->>'battery_volts')::float AS volts, (metrics->>'lambda_b1s2_v')::float AS lambda,
+              (metrics->>'derived.fuelLph')::float AS lph, (metrics->>'odometer_km')::float AS odo,
+              (metrics->>'mil_on')::float AS mil, (metrics->>'dtc_count')::float AS dtc,
+              extract(epoch FROM ts - lag(ts) OVER (PARTITION BY device_id, trip_id ORDER BY ts)) AS dt
+         FROM telemetry_samples
+        WHERE ts >= ((now() AT TIME ZONE '${HEALTH_TZ}')::date - make_interval(days => $1)) AT TIME ZONE '${HEALTH_TZ}')
+     INSERT INTO health_daily AS h (device_id, day, samples, km, liters, coolant_warm_avg, coolant_max, stft_warm_avg,
+            stft_idle_avg, idle_rpm_avg, volts_off_avg, volts_off_min, volts_running_avg, lambda_post_avg, lambda_post_sd,
+            mil_on, dtc_max, updated_at)
+     SELECT device_id, day, count(*)::int,
+            -- km pelo hodômetro do painel quando há; senão, velocidade somada no tempo
+            coalesce(nullif(max(odo) - min(odo), 0), sum(CASE WHEN dt <= 30 THEN coalesce(speed, 0) * dt / 3600 END)),
+            sum(CASE WHEN dt <= 30 THEN coalesce(lph, 0) * dt / 3600 END),
+            avg(coolant) FILTER (WHERE coolant >= 80), max(coolant),
+            avg(stft) FILTER (WHERE coolant >= 80 AND rpm > 400),
+            avg(stft) FILTER (WHERE coolant >= 80 AND rpm > 400 AND speed < 3),
+            avg(rpm) FILTER (WHERE coolant >= 80 AND rpm > 400 AND speed < 3),
+            avg(volts) FILTER (WHERE (rpm IS NULL OR rpm < 100) AND volts > 5),
+            min(volts) FILTER (WHERE (rpm IS NULL OR rpm < 100) AND volts > 5),
+            avg(volts) FILTER (WHERE rpm > 400 AND volts > 5),
+            avg(lambda) FILTER (WHERE coolant >= 80 AND speed BETWEEN 40 AND 120),
+            stddev_samp(lambda) FILTER (WHERE coolant >= 80 AND speed BETWEEN 40 AND 120),
+            coalesce(bool_or(mil > 0), false), max(dtc)::int, now()
+       FROM s GROUP BY device_id, day
+     ON CONFLICT (device_id, day) DO UPDATE SET
+            samples = EXCLUDED.samples, km = EXCLUDED.km, liters = EXCLUDED.liters,
+            coolant_warm_avg = EXCLUDED.coolant_warm_avg, coolant_max = EXCLUDED.coolant_max,
+            stft_warm_avg = EXCLUDED.stft_warm_avg, stft_idle_avg = EXCLUDED.stft_idle_avg, idle_rpm_avg = EXCLUDED.idle_rpm_avg,
+            volts_off_avg = EXCLUDED.volts_off_avg, volts_off_min = EXCLUDED.volts_off_min, volts_running_avg = EXCLUDED.volts_running_avg,
+            lambda_post_avg = EXCLUDED.lambda_post_avg, lambda_post_sd = EXCLUDED.lambda_post_sd,
+            mil_on = EXCLUDED.mil_on, dtc_max = EXCLUDED.dtc_max, updated_at = now()
+      -- dia já sem amostras suficientes (limpeza parcial) não sobrescreve o resumo completo de antes
+      WHERE EXCLUDED.samples >= h.samples OR h.day >= (now() AT TIME ZONE '${HEALTH_TZ}')::date - 2`,
+    [days],
+  );
+}
+
 export async function purgeExpired(pool, retentionDays) {
   await pool.query('DELETE FROM sessions WHERE expires_at < now()');
   await pool.query('DELETE FROM email_changes WHERE expires_at < now()');

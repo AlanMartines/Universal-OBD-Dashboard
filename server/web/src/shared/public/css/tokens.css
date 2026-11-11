@@ -59,6 +59,9 @@
 :root,
 [data-bs-theme="light"] {
   --app-brand: #128a49;
+  /* séries dos gráficos (validadas: faixa de luminosidade, daltonismo e contraste com o cartão) */
+  --app-series-1: #128a49;
+  --app-series-2: #2a78d6;
   --app-brand-rgb: 18, 138, 73;
   --app-brand-hover: #0f7a40;
   --app-brand-active: #0c6a37;
@@ -91,6 +94,8 @@
   --bs-border-color: rgb(255 255 255 / 9%);
   --app-card-bg: #141b23;
   --app-brand: #3ddc84;
+  --app-series-1: #25ad63;
+  --app-series-2: #3987e5;
   --app-brand-rgb: 61, 220, 132;
   --app-brand-hover: #5be49a;
   --app-brand-active: #2fc372;

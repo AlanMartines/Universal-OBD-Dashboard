@@ -26,6 +26,7 @@
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-trips" data-bs-toggle="tab" data-bs-target="#pane-trips" data-hash="viagens" type="button" role="tab" aria-controls="pane-trips" aria-selected="false"><i class="fa-solid fa-road me-1" aria-hidden="true"></i>Viagens</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-fuel" data-bs-toggle="tab" data-bs-target="#pane-fuel" data-hash="abastecimentos" type="button" role="tab" aria-controls="pane-fuel" aria-selected="false"><i class="fa-solid fa-gas-pump me-1" aria-hidden="true"></i>Abastecimentos</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-reports" data-bs-toggle="tab" data-bs-target="#pane-reports" data-hash="relatorios" type="button" role="tab" aria-controls="pane-reports" aria-selected="false"><i class="fa-solid fa-chart-column me-1" aria-hidden="true"></i>Relatórios</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-health" data-bs-toggle="tab" data-bs-target="#pane-health" data-hash="saude" type="button" role="tab" aria-controls="pane-health" aria-selected="false"><i class="fa-solid fa-heart-pulse me-1" aria-hidden="true"></i>Saúde</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-faults" data-bs-toggle="tab" data-bs-target="#pane-faults" data-hash="falhas" type="button" role="tab" aria-controls="pane-faults" aria-selected="false"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Falhas{{#if faultsActive}} <span class="badge text-bg-danger">{{faultsActive}}</span>{{/if}}</button></li>
   </ul>
 
@@ -170,6 +171,47 @@
     {{> emptyState icon="fa-calendar-days" title="Nada para resumir ainda" text="O resumo aparece com as primeiras viagens e abastecimentos."}}
     {{/if}}
   </section>
+  </div>
+
+  <div class="tab-pane fade" id="pane-health" role="tabpanel" aria-labelledby="tab-health" tabindex="0">
+  {{#if health.days}}
+  <section class="stat-panel mb-3" aria-labelledby="health-title">
+    <h2 class="h6 mb-1" id="health-title"><i class="fa-solid fa-heart-pulse me-1" aria-hidden="true"></i>Como o carro está</h2>
+    <p class="small text-body-secondary mb-3">Últimos 14 dias com captura, comparados com as faixas usuais. São indícios para levar à oficina, não um diagnóstico. Resumo diário desde {{health.since}} ({{health.days}} dias); fica guardado mesmo depois que as leituras detalhadas são apagadas.</p>
+    {{#if health.findings.length}}
+    <ul class="list-unstyled health-findings mb-0">
+      {{#each health.findings}}
+      <li class="health-finding"><span class="badge health-badge health-{{level}}">{{#if (eq level "ok")}}<i class="fa-solid fa-circle-check" aria-hidden="true"></i> Normal{{/if}}{{#if (eq level "warn")}}<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Atenção{{/if}}{{#if (eq level "bad")}}<i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> Verificar{{/if}}{{#if (eq level "info")}}<i class="fa-solid fa-circle-info" aria-hidden="true"></i> Mudança{{/if}}</span> <strong>{{topic}}:</strong> {{text}}</li>
+      {{/each}}
+    </ul>
+    {{else}}
+    <p class="small mb-0">Ainda há poucos dias com o motor aquecido para tirar conclusões (mínimo de 3).</p>
+    {{/if}}
+  </section>
+  <div class="row g-3 mb-3" data-health="{{healthJson}}">
+    <div class="col-12 col-lg-6"><section class="stat-panel h-100" aria-labelledby="hc-stft-t"><h3 class="h6 mb-1" id="hc-stft-t">Correção de combustível (%)</h3><p class="small text-body-secondary mb-2">Motor aquecido. Perto de 0 é o ideal; acima de +8 indica mistura pobre, abaixo de −8, rica.</p><div class="health-chart"><canvas id="hc-stft" role="img" aria-label="Correção de combustível por dia"></canvas></div></section></div>
+    <div class="col-12 col-lg-6"><section class="stat-panel h-100" aria-labelledby="hc-volts-t"><h3 class="h6 mb-1" id="hc-volts-t">Tensão (V)</h3><p class="small text-body-secondary mb-2">Desligado é a bateria (ideal 12,4 V ou mais); ligado é a carga do alternador (13,5 a 14,7 V).</p><div class="health-chart"><canvas id="hc-volts" role="img" aria-label="Tensão por dia"></canvas></div></section></div>
+    <div class="col-12 col-lg-6"><section class="stat-panel h-100" aria-labelledby="hc-cool-t"><h3 class="h6 mb-1" id="hc-cool-t">Temperatura do motor (°C)</h3><p class="small text-body-secondary mb-2">Média com o motor aquecido e a máxima do dia.</p><div class="health-chart"><canvas id="hc-cool" role="img" aria-label="Temperatura do motor por dia"></canvas></div></section></div>
+    <div class="col-12 col-lg-6"><section class="stat-panel h-100" aria-labelledby="hc-lambda-t"><h3 class="h6 mb-1" id="hc-lambda-t">Oscilação da sonda pós-catalisador (V)</h3><p class="small text-body-secondary mb-2">Em velocidade de cruzeiro. Baixa é bom; subindo para perto de 0,2 V, o catalisador pode estar cansando.</p><div class="health-chart"><canvas id="hc-lambda" role="img" aria-label="Oscilação da sonda pós-catalisador por dia"></canvas></div></section></div>
+  </div>
+  <details class="stat-panel mb-3">
+    <summary class="h6 mb-0">Ver em tabela (últimos 30 dias)</summary>
+    <div class="table-responsive mt-3">
+      <table class="table table-sm table-striped table-hover table-stack align-middle mb-0">
+        <thead class="table-dark"><tr><th scope="col">Dia</th><th scope="col" class="text-end">km</th><th scope="col" class="text-end">Correção %</th><th scope="col" class="text-end">Marcha lenta %</th><th scope="col" class="text-end">Bateria V</th><th scope="col" class="text-end">Ligado V</th><th scope="col" class="text-end">Motor °C</th><th scope="col" class="text-end">Máx. °C</th><th scope="col" class="text-end">Sonda pós V</th></tr></thead>
+        <tbody>
+          {{#each health.table}}
+          <tr><td data-label="Dia">{{day}}</td><td data-label="km" class="text-end">{{num km 0}}</td><td data-label="Correção %" class="text-end">{{num stftWarmAvg 1}}</td><td data-label="Marcha lenta %" class="text-end">{{num stftIdleAvg 1}}</td><td data-label="Bateria V" class="text-end">{{num voltsOffAvg 2}}</td><td data-label="Ligado V" class="text-end">{{num voltsRunningAvg 2}}</td><td data-label="Motor °C" class="text-end">{{num coolantWarmAvg 0}}</td><td data-label="Máx. °C" class="text-end">{{num coolantMax 0}}</td><td data-label="Sonda pós V" class="text-end">{{num lambdaPostSd 3}}</td></tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {{else}}
+  <section class="stat-panel mb-3">
+    {{> emptyState icon="fa-heart-pulse" title="Ainda sem resumo de saúde" text="O resumo diário é montado a cada hora a partir das leituras enviadas pelo app; aparece depois das primeiras capturas."}}
+  </section>
+  {{/if}}
   </div>
 
   <div class="tab-pane fade" id="pane-fuel" role="tabpanel" aria-labelledby="tab-fuel" tabindex="0">
