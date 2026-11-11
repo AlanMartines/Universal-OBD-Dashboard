@@ -64,7 +64,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
     presets: [{ name: 'Velas de ignição', intervalKm: 30000, intervalMonths: null, notes: 'NGK BKR6E', exists: false }, { name: 'Fluido de freio', intervalKm: 45000, intervalMonths: 24, exists: true }] }),
   saveMaintenanceItem: () => '{"ok":true}', deleteMaintenanceItem: () => '{"ok":true}', addMaintenanceRecord: () => '{"ok":true}',
   deleteMaintenanceRecord: () => '{"ok":true}', addMaintenancePresets: () => '{"ok":true,"added":1}',
-  resetTripA: () => 'ok', getTripSummary: () => JSON.stringify({ ok: true, samples: 400, km: 12.3, liters: 1.1, kmPerL: 11.2, cost: 7.1, costPerKm: 0.58, movingS: 1320, idleS: 300, idleFuelL: 0.08, idleCost: 0.5, avgMovingKmh: 33, fuelCutKm: 0.9, ecoPct: [55, 20, 25] }),
+  resetTripA: () => 'ok', getTripSummary: () => JSON.stringify({ ok: true, samples: 400, km: 12.3, liters: 1.1, kmPerL: 11.2, cost: 7.1, costPerKm: 0.58, movingS: 1320, idleS: 300, idleFuelL: 0.08, idleCost: 0.5, avgMovingKmh: 33, fuelCutKm: 0.9, ecoPct: [55, 20, 25], durationS: 1680, maxSpeedKmh: 74, maxCoolantC: 96, imu: { maxBrakeG: 0.38, maxAccelG: 0.21, maxLateralG: 0.29, bumps: 3 } }),
 };
 
 /* Consultas ao banco respondem depois, em window.onBridgeResult, para não prender a tela enquanto o banco trabalha.

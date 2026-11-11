@@ -11,6 +11,7 @@ import com.universal.obddashboard.service.ObdForegroundService
 import com.universal.obddashboard.telemetry.Leg
 import com.universal.obddashboard.telemetry.SpeedCalibration
 import com.universal.obddashboard.telemetry.TripComputer
+import com.universal.obddashboard.telemetry.TripImuSummary
 import com.universal.obddashboard.telemetry.TripStats
 import org.json.JSONArray
 import org.json.JSONObject
@@ -62,6 +63,14 @@ class HistoryBridge(private val activity: MainActivity) {
             .put("movingS", st.movingS).put("idleS", st.idleS).put("idleFuelL", st.idleFuelL)
             .put("idleCost", price?.times(st.idleFuelL).orNull()).put("avgMovingKmh", st.avgMovingKmh.orNull())
             .put("fuelCutKm", st.fuelCutKm).put("ecoPct", st.ecoPct()?.let { JSONArray(it) } ?: JSONObject.NULL)
+            .put("startTime", trip.startTime).put("endTime", trip.endTime ?: JSONObject.NULL)
+            .put("durationS", ((trip.endTime ?: logs.lastOrNull()?.timestamp ?: trip.startTime) - trip.startTime) / 1000)
+            .put("maxSpeedKmh", trip.maxSpeedKmh).put("maxCoolantC", trip.maxCoolantC.orNull())
+            .put("endReason", trip.endReason ?: JSONObject.NULL)
+            .put("imu", TripImuSummary.fromExtras(logs.map { it.extraJson })?.let { m ->
+                JSONObject().put("maxBrakeG", m.maxBrakeG).put("maxAccelG", m.maxAccelG)
+                    .put("maxLateralG", m.maxLateralG).put("bumps", m.bumps)
+            } ?: JSONObject.NULL)
             .toString()
     }
 
