@@ -97,6 +97,8 @@ data class DashboardState(
     val canStatus: String? = null,
     /** Conexão com o ESP32 nesta captura: connecting, connected ou lost; null antes de tentar ou sem escuta. */
     val canLink: String? = null,
+    /** O que o ESP32 informou nesta captura (versão, sensores, quadros/s); null sem escuta. */
+    val canInfo: com.universal.obddashboard.can.Esp32Info? = null,
 ) {
     /** Valor de uma saída, se lido há no máximo [maxAgeMs]. */
     fun value(id: String?, now: Long = System.currentTimeMillis(), maxAgeMs: Long = STALE_AFTER_MS): Double? {

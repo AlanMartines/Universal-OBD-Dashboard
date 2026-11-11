@@ -21,7 +21,12 @@ class CanListenLink(
     private val onRaw: ((String) -> Unit)? = null,
     /** Estado da conexão: [LINK_CONNECTING], [LINK_CONNECTED] ou [LINK_LOST]. */
     private val onLink: (String) -> Unit = {},
+    /** Estado do adaptador (versão, sensores, contadores), a cada linha "# ..." que muda algo. */
+    private val onInfo: (Esp32Info) -> Unit = {},
 ) {
+    @Volatile var info = Esp32Info()
+        private set
+
     private val decoder = CanDecoder(signals)
 
     @Volatile var frames = 0L
@@ -39,6 +44,7 @@ class CanListenLink(
 
     private fun handle(line: String) {
         onRaw?.invoke(line)
+        if (line.startsWith("#")) Esp32Info.apply(info, line, System.currentTimeMillis(), frames)?.let { info = it; onInfo(it); return }
         Slcan.parseAmbient(line)?.let { onValues(it, System.currentTimeMillis()); return }
         Slcan.parseImu(line)?.let { onValues(it, System.currentTimeMillis()); return }
         val frame = Slcan.parse(line) ?: return

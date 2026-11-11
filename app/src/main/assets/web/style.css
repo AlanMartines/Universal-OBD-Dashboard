@@ -262,6 +262,9 @@ a:not(.btn) { color: var(--accent); text-underline-offset: 2px; }
 /* ---------- Histórico ---------- */
 .list .item { background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 0.85rem; }
 .list .item b { font-size: 0.95rem; }
+.esp-card { margin-bottom: 12px; }
+.esp-card .kv { font-size: 0.85rem; }
+.esp-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .kv { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); margin-top: 4px; }
 .list .actions { display: flex; gap: 8px; margin-top: 8px; }
 .btn-small { min-height: 34px; padding: 6px 12px; font-size: 0.8rem; }

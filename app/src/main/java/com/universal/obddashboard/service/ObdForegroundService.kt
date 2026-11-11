@@ -589,6 +589,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 }
             },
             onLink = { link -> TelemetryHub.update { it.copy(canLink = link) } },
+            onInfo = { info -> TelemetryHub.update { it.copy(canInfo = info) } },
             onStatus = { text ->
                 TelemetryHub.update { it.copy(canStatus = text) }
                 recorder?.event("esp32_status") { put("text", text) }
@@ -1002,7 +1003,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             TelemetryHub.update {
                 it.copy(
                     power = PowerState.SHUTTING_DOWN, statusMessage = reasonLabel(reason),
-                    connection = ConnectionStatus.STOPPED, canLink = null, canStatus = null,
+                    connection = ConnectionStatus.STOPPED, canLink = null, canStatus = null, canInfo = null,
                 )
             }
             val job = sessionJob
@@ -1032,7 +1033,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 TelemetryHub.update {
                     it.copy(
                         connection = ConnectionStatus.STOPPED, power = PowerState.ACTIVE, statusMessage = reasonLabel(reason),
-                        canLink = null, canStatus = null,
+                        canLink = null, canStatus = null, canInfo = null,
                     )
                 }
                 finishService()

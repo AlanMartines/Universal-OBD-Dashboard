@@ -123,6 +123,11 @@
 
     <!-- ===================== SENSORES ===================== -->
     <section id="tab-sensors" class="tab-page">
+      <div id="esp-card" class="card esp-card" hidden>
+        <div class="esp-head"><span class="label">Escuta CAN (ESP32)</span><span id="esp-pill" class="pill"></span></div>
+        <div class="kv" id="esp-kv"></div>
+        <p id="esp-note" class="small muted" hidden></p>
+      </div>
       <div id="sensor-grid" class="sensor-grid"></div>
       <p id="disabled-pids" class="muted small"></p>
     </section>
