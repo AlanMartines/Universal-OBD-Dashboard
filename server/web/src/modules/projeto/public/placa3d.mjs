@@ -107,6 +107,7 @@ function iniciar() {
     branco: std(0xf2f2f2, 0.45),
     trimpot: std(0xe9e4da, 0.5),
     led: std(0xd32f2f, 0.25, 0, { emissive: 0x5a0000 }),
+    ledEsp: std(0x3d6fd6, 0.3, 0, { emissive: 0x000000 }),   // LED azul da placa do ESP32 (pisca na animação)
   };
   const PCB = {
     esp: std(0x0f1846, 0.5),
@@ -426,7 +427,7 @@ function iniciar() {
     g.add(caixa(4.4, 0.9, 4.4, M.preto, E.x0 + 36.5, cy + 4.2, topo));
     g.add(smd(E.x0 + 30, cy + 7.6, topo, 1.6, 0.8, M.ceramica));
     g.add(smd(E.x0 + 30, cy - 7.6, topo, 1.6, 0.8, M.ceramica));
-    g.add(smd(E.x0 + 46.6, cy - 6.2, topo, 1.6, 0.8, M.led, true));
+    g.add(smd(E.x0 + 46.6, cy - 6.2, topo, 1.6, 0.8, M.ledEsp, true));
     g.add(smd(E.x0 + 32.2, cy + 1, topo, 2.0, 1.25, M.resistor, true));
     poe(g, 'esp32', 'ESP32 DevKit V1 (30 pinos), encaixado nas barras fêmea');
   }
@@ -1237,6 +1238,7 @@ function iniciar() {
   }
 
   // ------------------------------------------------------------ LED tricolor (opcional): conector na linha 1 e LED na tampa
+  let ledTri = null;   // vidro do LED tricolor: a animação acende a cor dele
   if (X.led) {
     const L = X.led;
     const ys = L.pinos[0][1];
@@ -1259,7 +1261,8 @@ function iniciar() {
       poe(g, 'led', `LED tricolor: fio do ${nome}${f.resistor ? ', com o resistor no termorretrátil' : ''}`);
     }
     const led = new THREE.Group();
-    const vidro = std(0xeef3f6, 0.15, 0, { transparent: true, opacity: 0.82 });
+    const vidro = std(0xeef3f6, 0.15, 0, { transparent: true, opacity: 0.82, emissive: 0x000000 });
+    ledTri = vidro;
     led.add(cilindro(W(L.c[0], L.c[1], L.z), W(L.c[0], L.c[1], L.z + 1), 2.9, vidro, 32));
     led.add(cilindro(W(L.c[0], L.c[1], L.z + 1), W(L.c[0], L.c[1], L.topo), 2.5, vidro, 32));
     const domo = new THREE.Mesh(new THREE.SphereGeometry(2.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), vidro);
@@ -1317,12 +1320,17 @@ function iniciar() {
   let modo = 'sem';
   function modoCaixa(novo) {
     if (!CX) return;
+    const antes = modo;
     modo = novo;
-    camadas.caixa.visible = camadas.tampa.visible = modo !== 'sem';
-    for (const [key, g] of Object.entries(camadas)) {
-      if (key !== 'caixa' && key !== 'tampa' && key !== 'acessorios') g.position.y = modo === 'fora' ? EXPLODE.pecas : 0;
+    // A tampa e a placa vão até a posição nova devagar (anim.caixa); ao mostrar a caixa, a tampa desce de cima.
+    if (antes === 'sem' && modo !== 'sem') {
+      camadas.caixa.visible = camadas.tampa.visible = true;
+      anim.caixa.tampa = EXPLODE.tampa + 50;
     }
-    camadas.tampa.position.y = modo === 'fora' ? EXPLODE.tampa : 0;
+    anim.caixa.alvoPecas = modo === 'fora' ? EXPLODE.pecas : 0;
+    anim.caixa.alvoTampa = modo === 'fora' ? EXPLODE.tampa : modo === 'sem' ? EXPLODE.tampa + 50 : 0;
+    anim.caixa.ativa = true;
+    pedir();
     const vidro = modo === 'dentro';
     matTampa.opacity = vidro ? 0.26 : 1;
     matTampa.depthWrite = !vidro;
@@ -1336,6 +1344,105 @@ function iniciar() {
       b.setAttribute('aria-pressed', String(ativo));
     }
     vista(vistaAtual);
+  }
+
+  // ------------------------------------------------------------ animações: LEDs, caixa, giro e sinais nos fios
+  const poucoMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const anim = {
+    led: 'capturando',
+    girar: !poucoMovimento,
+    sinais: !poucoMovimento,
+    caixa: { pecas: 0, tampa: 0, alvoPecas: 0, alvoTampa: 0, ativa: false },
+  };
+  // Cores e ritmos do firmware esp32-can-listen 1.4 (piscadas curtas de 80 ms; só cores puras no tricolor)
+  const LED_ESTADOS = {
+    sem_app: { cor: 0x1e88e5, porSeg: 1 },
+    sem_rede: { cor: 0x43a047, porSeg: 1 },
+    capturando: { cor: 0x43a047, porSeg: 2 },
+    erro: { cor: 0xe53935, rapido: true },
+    descanso: null,
+  };
+  function ledAceso(e, ms) {
+    if (!e) return false;
+    if (e.rapido) return ms % 200 < 100;
+    const f = ms % 1000;
+    return f < 80 || (e.porSeg === 2 && f >= 500 && f < 580);
+  }
+  const PRETO = new THREE.Color(0x000000);
+  function acenderLeds(ms) {
+    const e = LED_ESTADOS[anim.led];
+    const on = ledAceso(e, ms);
+    M.ledEsp.emissive.set(on ? 0x3b82ff : 0x000000);
+    M.ledEsp.emissiveIntensity = on ? 3 : 1;
+    if (ledTri) {
+      if (on) ledTri.emissive.set(e.cor); else ledTri.emissive.copy(PRETO);
+      ledTri.emissiveIntensity = on ? 2.6 : 1;
+    }
+  }
+
+  // Sinais nos fios: pulsos de luz andando pelos caminhos; rápidos nos de dados, lentos na alimentação, nada no GND.
+  const pulsos = [];
+  const geoPulso = new THREE.SphereGeometry(1.15, 14, 10);
+  const branco = new THREE.Color(0xffffff);
+  function sinal(camada, nome, cor, pts, raio = 0.8) {
+    if (!pts || pts.length < 2 || !camadas[camada]) return;
+    if (/GND|[Tt]erra|IN−|OUT−|isolado|sem liga/.test(nome)) return;
+    const curva = caminho(pts, raio);
+    const len = curva.getLength();
+    if (len < 4) return;
+    const energia = /12 V|5 V|VCC|VIN|3V3|OUT\+|fusível|comum|\+12/.test(nome);
+    const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(cor).lerp(branco, 0.6) });
+    const n = Math.max(1, Math.min(4, Math.round(len / 25)));
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(geoPulso, mat);
+      m.visible = anim.sinais;
+      camadas[camada].add(m);
+      pulsos.push({ m, curva, len, vel: energia ? 14 : 45, fase: i / n });
+    }
+  }
+  for (const f of X.fios) sinal('fios', f.n, f.cor, f.pts, 1.4);
+  for (const t of X.trilhas) sinal('trilhas', t.n, t.cor, t.pts.map(([x, y]) => [x, y, A.BOT_Z]), 0.6);
+  for (const f of X.fios_baixo || []) sinal('trilhas', f.n, f.cor, f.pts.map(([x, y]) => [x, y, -1.05]));
+  if (X.cabo_obd) for (const f of X.cabo_obd.fios) sinal('fios', `${f.n} ${f.funcao}`, f.cor, f.pts);
+  if (X.bmp_modulo) for (const f of X.bmp_modulo.cabo) sinal('bmp180', `${f.n} ${f.funcao}`, f.cor, f.pts);
+  if (X.lsm_modulo) for (const f of X.lsm_modulo.cabo) sinal('lsm6ds3', `${f.n} ${f.funcao}`, f.cor, f.pts);
+  if (X.tja) for (const p of X.tja.can) if (p.fio && p.n === 'CANL') sinal('modulos', 'CANL', '#1e88e5', p.fio);
+  if (X.led) for (const f of X.led.fios) sinal('led', f.n === 'COM' ? 'comum' : f.n, f.cor, f.pts);
+
+  function animarQuadro(dt, agora) {
+    acenderLeds(agora);
+    if (anim.girar) meta.yaw -= dt * 0.22;
+    if (anim.sinais) {
+      const s = agora / 1000;
+      for (const p of pulsos) p.m.position.copy(p.curva.getPointAt((s * p.vel / p.len + p.fase) % 1));
+    }
+    const C = anim.caixa;
+    if (C.ativa && CX) {
+      const k = poucoMovimento ? 1 : 1 - Math.exp(-dt * 4);
+      C.pecas += (C.alvoPecas - C.pecas) * k;
+      C.tampa += (C.alvoTampa - C.tampa) * k;
+      if (Math.abs(C.alvoPecas - C.pecas) < 0.05 && Math.abs(C.alvoTampa - C.tampa) < 0.05) {
+        C.pecas = C.alvoPecas;
+        C.tampa = C.alvoTampa;
+        C.ativa = false;
+        if (modo === 'sem') {   // a tampa já saiu de vista: esconde a caixa e deixa a tampa no lugar para a próxima
+          camadas.caixa.visible = camadas.tampa.visible = false;
+          C.tampa = 0;
+        }
+      }
+      for (const [key, g] of Object.entries(camadas)) {
+        if (key !== 'caixa' && key !== 'tampa' && key !== 'acessorios') g.position.y = C.pecas;
+      }
+      camadas.tampa.position.y = C.tampa;
+    }
+  }
+  // Pisca sempre (os LEDs), mas no descanso, sem giro, sem pulsos e sem transição, a cena fica parada.
+  const animando = () => anim.girar || anim.sinais || anim.caixa.ativa || anim.led !== 'descanso';
+  function pararGiro() {
+    if (!anim.girar) return;
+    anim.girar = false;
+    const c = document.getElementById('girar3d');
+    if (c) c.checked = false;
   }
 
   // ------------------------------------------------------------ câmera e controles
@@ -1387,8 +1494,13 @@ function iniciar() {
     const v = getComputedStyle(document.documentElement).getPropertyValue('--fundo-cena').trim();
     scene.background = new THREE.Color(v || '#e9eef2');
   }
+  let ultimoQuadro = performance.now();
   function quadro() {
     pendente = false;
+    const agora = performance.now();
+    const dt = Math.min(0.1, (agora - ultimoQuadro) / 1000);
+    ultimoQuadro = agora;
+    animarQuadro(dt, agora);
     const k = 0.22;
     let mexeu = false;
     for (const c of ['yaw', 'pitch', 'dist']) {
@@ -1411,7 +1523,7 @@ function iniciar() {
     }
     posicionar();
     renderer.render(scene, camera);
-    if (mexeu) pedir();
+    if (mexeu || animando()) pedir();
   }
 
   const ponteiros = new Map();
@@ -1419,6 +1531,7 @@ function iniciar() {
   let arrastou = false;
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   canvas.addEventListener('pointerdown', (e) => {
+    pararGiro();
     canvas.setPointerCapture(e.pointerId);
     ponteiros.set(e.pointerId, { x: e.clientX, y: e.clientY, mover: e.button !== 0 || e.shiftKey });
     arrastou = false;
@@ -1467,6 +1580,7 @@ function iniciar() {
   });
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
+    pararGiro();
     meta.dist = Math.min(500, Math.max(25, meta.dist * Math.exp(e.deltaY * 0.0012)));
     pedir();
   }, { passive: false });
@@ -1499,6 +1613,30 @@ function iniciar() {
   // ------------------------------------------------------------ painel de controle
   for (const btn of document.querySelectorAll('[data-vista]')) btn.addEventListener('click', () => vista(btn.dataset.vista));
   for (const btn of document.querySelectorAll('[data-caixa]')) btn.addEventListener('click', () => modoCaixa(btn.dataset.caixa));
+  for (const btn of document.querySelectorAll('[data-led]')) {
+    btn.addEventListener('click', () => {
+      anim.led = btn.dataset.led;
+      for (const b of document.querySelectorAll('[data-led]')) {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-pressed', String(b === btn));
+      }
+      pedir();
+    });
+  }
+  const girar = document.getElementById('girar3d');
+  if (girar) {
+    girar.checked = anim.girar;
+    girar.addEventListener('change', () => { anim.girar = girar.checked; pedir(); });
+  }
+  const sinais = document.getElementById('sinais3d');
+  if (sinais) {
+    sinais.checked = anim.sinais;
+    sinais.addEventListener('change', () => {
+      anim.sinais = sinais.checked;
+      for (const p of pulsos) p.m.visible = anim.sinais;
+      pedir();
+    });
+  }
   if (CX) {
     camadas.caixa.visible = camadas.tampa.visible = false;
     const grupo = document.getElementById('modo-caixa');

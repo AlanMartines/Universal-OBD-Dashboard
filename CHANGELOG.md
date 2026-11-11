@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Placa 3D animada no painel web:** os LEDs (tricolor e o azul do ESP32) piscam no ritmo do firmware 1.4, com botões para cada estado; a caixa abre e fecha devagar ao trocar de modo; o modelo gira sozinho até um toque; e pulsos de luz correm pelos fios e trilhas (rápidos nos de dados, lentos na alimentação, nada no GND). Com a opção de reduzir movimento do sistema, o giro e os pulsos começam desligados.
+
 ## [0.9.37] - 2026-11-10
 
 ### Adicionado
