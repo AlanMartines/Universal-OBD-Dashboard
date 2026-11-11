@@ -1087,7 +1087,8 @@ function iniciar() {
         ctx.strokeStyle = '#2fa64e';
         ctx.lineWidth = 0.3;
         for (let k = 0; k < 6; k++) trilhaTex(ctx, [[30 + k * 1.4, 2], [30 + k * 1.4, 8], [26, 10]], '#2fa64e', 0.25);
-        ['LED5', 'LED4', 'LED3', 'LED2', 'LED1'].forEach((t, k) => texto(ctx, t, 31.5 + k * 1.9 - 4, 1.2, 0.7, '#f5f5f5', { peso: 600 }));
+        // LEDs na ponta oposta à antena (foto da placa): dois verdes de tráfego e o vermelho de energia
+        [['LED1', 4.2], ['LED3', 9.5], ['LED4', 13.9]].forEach(([t, ly]) => texto(ctx, t, 35.2, ly, 0.7, '#f5f5f5', { peso: 600, rot: -Math.PI / 2 }));
         texto(ctx, 'J2', 2.2, 1.6, 0.9, '#f5f5f5');
         texto(ctx, 'J1', 38, 17.6, 0.9, '#f5f5f5');
         texto(ctx, 'U4', 27, 9, 0.8, '#f5f5f5');
@@ -1117,13 +1118,14 @@ function iniciar() {
       const bt = new THREE.Mesh(new THREE.BoxGeometry(27, 1.6, 13), [PCB.tja, PCB.tja, PCB.tja, std(0xffffff, 0.45, 0, { map: texBt }), PCB.tja, PCB.tja]);
       bt.position.copy(W(x - 9, y + 1.5, zBt - 0.8));
       g.add(bt);
-      // regulador U4 (SOT-23) e os 5 LEDs na face de baixo: acesos pela animação
+      // regulador U4 (SOT-23) e os 3 LEDs na face de baixo, na ponta oposta à antena (foto da placa do Alan):
+      // dois verdes que piscam com o tráfego OBD e o vermelho de energia, sempre aceso
       g.add(caixa(2.9, 1.0, 1.6, M.preto, x + 7, y - 0.5, zBt - 1.0));
-      const coresLed = [0xff1744, 0x00e676, 0xffea00, 0xff1744, 0x2979ff];
-      elmLeds = coresLed.map((c, k) => {
+      elmLeds = [[0x00e676, 4.4, 'trafego'], [0x00e676, 0, 'trafego'], [0xff1744, -5.3, 'energia']].map(([c, dy, papel]) => {
         const mat = std(c, 0.35, 0, { emissive: 0x000000 });
         mat.userData.cor = c;
-        g.add(caixa(1.6, 0.6, 0.8, mat, x + 7.5 + k * 1.9, y - 8.2, zBt - 0.6));
+        mat.userData.papel = papel;
+        g.add(caixa(0.8, 0.6, 1.6, mat, x + 17.4, y + dy, zBt - 0.6));
         return mat;
       });
       // J1 (6 pinos) e J2 (7 pinos) ligando as placas
@@ -1485,10 +1487,11 @@ function iniciar() {
       if (on) ledTri.emissive.set(e.cor); else ledTri.emissive.copy(PRETO);
       ledTri.emissiveIntensity = on ? 2.6 : 1;
     }
-    // ELM327: LED de energia aceso; RX/TX piscando rápido enquanto há consultas (estado Capturando)
+    // ELM327: vermelho de energia sempre aceso (alimentado pela tomada do carro); os dois verdes piscam
+    // rápido enquanto há tráfego OBD (estado Capturando) e ficam apagados sem tráfego
     const consultando = anim.led === 'capturando';
     elmLeds.forEach((m, k) => {
-      const aceso = anim.led !== 'descanso' && (k === 1 || (consultando && (k === 0 || k === 4) && Math.floor(ms / (90 + k * 23)) % 2 === 0));
+      const aceso = m.userData.papel === 'energia' || (consultando && Math.floor(ms / (70 + k * 37)) % 2 === 0);
       m.emissive.set(aceso ? m.userData.cor : 0x000000);
       m.emissiveIntensity = aceso ? 2.2 : 1;
     });
