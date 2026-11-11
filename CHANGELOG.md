@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.39] - 2026-11-11
+
 ### Adicionado
 - **Resumo ao encerrar a viagem (app):** quando a captura termina, um aviso mostra distância, litros, km/l, custo, duração, tempo andando e parado, velocidade média e máxima, injeção cortada, faixas do econômetro, temperatura máxima do motor e, com o LSM6DS3, a freada, a arrancada e a curva mais fortes e os buracos. Dá para desligar no próprio aviso. O resumo do Histórico ganhou as mesmas informações.
 
