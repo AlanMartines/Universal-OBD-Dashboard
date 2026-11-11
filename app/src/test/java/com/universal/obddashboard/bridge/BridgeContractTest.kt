@@ -21,6 +21,7 @@ class BridgeContractTest {
         "AndroidAi" to AiBridge::class.java,
         "AndroidRemote" to RemoteBridge::class.java,
         "AndroidCapture" to CaptureBridge::class.java,
+        "AndroidMaintenance" to MaintenanceBridge::class.java,
     )
 
     private val web = File("src/main/assets/web")

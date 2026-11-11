@@ -8,7 +8,10 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [TripEntity::class, TelemetryLogEntity::class, DiagnosticTroubleCodeEntity::class, FuelUpEntity::class, AiAnswerEntity::class],
+    entities = [
+        TripEntity::class, TelemetryLogEntity::class, DiagnosticTroubleCodeEntity::class, FuelUpEntity::class, AiAnswerEntity::class,
+        MaintenanceItemEntity::class, MaintenanceRecordEntity::class,
+    ],
     version = AppDatabase.VERSION,
     exportSchema = true,
 )
@@ -20,9 +23,11 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun aiAnswerDao(): AiAnswerDao
 
+    abstract fun maintenanceDao(): MaintenanceDao
+
     companion object {
         const val NAME = "obd_blackbox.db"
-        const val VERSION = 4
+        const val VERSION = 5
 
         @Volatile private var instance: AppDatabase? = null
 
@@ -62,7 +67,22 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) = MIGRATION_3_4_SQL.forEach { db.execSQL(it) }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        /** v5: lembretes de manutenção (itens e registros de cada vez feita). O resto fica intacto. */
+        val MIGRATION_4_5_SQL = listOf(
+            "CREATE TABLE IF NOT EXISTS `maintenance_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `vehicle_id` TEXT NOT NULL, " +
+                "`name` TEXT NOT NULL, `interval_km` REAL, `interval_months` INTEGER, `notes` TEXT, `created_at` INTEGER NOT NULL)",
+            "CREATE INDEX IF NOT EXISTS `index_maintenance_items_vehicle_id` ON `maintenance_items` (`vehicle_id`)",
+            "CREATE TABLE IF NOT EXISTS `maintenance_records` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `item_id` INTEGER NOT NULL, " +
+                "`vehicle_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `odometer_km` REAL, `cost` REAL, `notes` TEXT)",
+            "CREATE INDEX IF NOT EXISTS `index_maintenance_records_item_id` ON `maintenance_records` (`item_id`)",
+            "CREATE INDEX IF NOT EXISTS `index_maintenance_records_vehicle_id` ON `maintenance_records` (`vehicle_id`)",
+        )
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) = MIGRATION_4_5_SQL.forEach { db.execSQL(it) }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
 
         /** Fecha o banco para o backup ser restaurado; o próximo [get] reabre (e migra, se preciso). */
         fun closeForRestore() = synchronized(this) {

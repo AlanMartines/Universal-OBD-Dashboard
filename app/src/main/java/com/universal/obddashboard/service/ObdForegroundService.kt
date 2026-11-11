@@ -44,6 +44,8 @@ import com.universal.obddashboard.BuildConfig
 import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.R
 import com.universal.obddashboard.db.AppDatabase
+import com.universal.obddashboard.maintenance.Maintenance
+import com.universal.obddashboard.maintenance.MaintenanceStore
 import com.universal.obddashboard.remote.RemoteClient
 import com.universal.obddashboard.remote.RemotePayload
 import com.universal.obddashboard.remote.RemoteSettings
@@ -268,6 +270,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         TelemetryHub.update { it.copy(tripId = tripId, tripStartedAt = acc.startTime, tripDistanceKm = acc.distanceKm, userAlarmsLoaded = userAlerts.size) }
         startLocationUpdates(highAccuracy = true)
 
+        scope.launch(Dispatchers.IO) { maintenanceReminder() }
         val reason = coroutineScope {
             val workers = listOfNotNull(
                 launch { derivedLoop(loaded) },
@@ -1202,6 +1205,32 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             .build()
     }
 
+    /** Itens de manutenção vencidos ou perto de vencer: um aviso por dia por veículo, ao começar a captura. */
+    private suspend fun maintenanceReminder() {
+        val now = System.currentTimeMillis()
+        val last = AppSettings.maintenanceNotifiedAt(this, vehicleId)
+        if (last != null && now - last < MAINTENANCE_REPEAT_MS) return
+        val views = runCatching { MaintenanceStore.overview(AppDatabase.get(this), vehicleId, appOdometerKm(), now) }.getOrNull() ?: return
+        val due = views.filter { it.status.level == Maintenance.Level.DUE }
+        val soon = views.filter { it.status.level == Maintenance.Level.SOON }
+        if (due.isEmpty() && soon.isEmpty()) return
+        val first = (due + soon).first()
+        val title = if (due.isNotEmpty()) "Manutenção vencida" else "Manutenção perto de vencer"
+        val extra = due.size + soon.size - 1
+        val text = first.item.name + Maintenance.describe(first.status) + (if (extra > 0) " (e mais $extra)" else "")
+        val notification = NotificationCompat.Builder(this, CHANNEL_ALERTS)
+            .setSmallIcon(R.drawable.ic_stat_obd)
+            .setColor(getColor(R.color.ic_launcher_background))
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text + ". Veja na aba Manutenção."))
+            .setAutoCancel(true)
+            .setContentIntent(activityPendingIntent())
+            .build()
+        safeNotify(NOTIF_MAINTENANCE, notification)
+        AppSettings.setMaintenanceNotifiedAt(this, vehicleId, now)
+    }
+
     private fun notifyAlert(alert: ActiveAlert) {
         val now = System.currentTimeMillis()
         synchronized(lastAlertNotifiedAt) {
@@ -1293,6 +1322,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         private const val NOTIF_STATUS = 1001
         private const val NOTIF_IDLE = 1002
         private const val NOTIF_ALERT_BASE = 2000
+        private const val NOTIF_MAINTENANCE = 1003
+        private const val MAINTENANCE_REPEAT_MS = 20 * 60 * 60 * 1000L
 
         const val REASON_USER_STOP = "user_stop"
         const val REASON_BT_DISCONNECTED = "bluetooth_disconnected"

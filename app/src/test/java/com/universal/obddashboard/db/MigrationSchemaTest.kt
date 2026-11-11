@@ -43,6 +43,17 @@ class MigrationSchemaTest {
         assertEquals("ALTER TABLE `diagnostic_trouble_codes` ADD COLUMN `ecu_freeze_json` TEXT", AppDatabase.MIGRATION_2_3_ALTER)
     }
 
+    @Test fun migration4to5CreatesMaintenanceTables() {
+        val v4 = entities(4)
+        val v5 = entities(5)
+        assertEquals(v4.keys + "maintenance_items" + "maintenance_records", v5.keys)
+        for (t in v4.keys) assertEquals(t, v4[t], v5[t])
+        assertEquals(
+            sqlOf(v5["maintenance_items"]!!, "maintenance_items") + sqlOf(v5["maintenance_records"]!!, "maintenance_records"),
+            AppDatabase.MIGRATION_4_5_SQL,
+        )
+    }
+
     @Test fun existingTablesAreUnchanged() {
         val v1 = entities(1)
         val v2 = entities(2)
