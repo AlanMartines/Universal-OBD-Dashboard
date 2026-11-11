@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, test } from 'node:test';
 import { loadConfig } from '../src/config.js';
-import { bootstrap, purgeExpired } from '../src/db.js';
+import { bootstrap, purgeExpired, rollupHealth } from '../src/db.js';
 import sharp from 'sharp';
 import { resetPassword } from '../bin/user-reset-password.js';
 import { base32Encode, codeForStep, generateRecoveryCodes, stepAt } from '../src/totp.js';
@@ -823,6 +823,50 @@ describe('API', () => {
       assert.equal(r.total, 4500);
       assert.ok(r.points.length <= 2001);
       assert.ok(Math.abs(r.points.at(-1).lat - (-10 - 4500 / 100000)) < 1e-9);
+    });
+  });
+
+  describe('saúde ao longo do tempo', () => {
+    test('resume por dia, sobrevive à limpeza e só o dono vê', async () => {
+      const dono = await userToken(app, admin, 'saude');
+      const d = await pairDevice(app, dono, 'dddddddd-2222-4222-8222-dddddddddddd');
+      // Dia 1 (3 dias atrás, 12h): motor quente em marcha lenta e em cruzeiro, depois desligado
+      // Dia 2 (ontem, 12h): igual, com mistura mais rica
+      const ins = (daysAgo, base, rows) => pool.query(
+        `INSERT INTO telemetry_samples (device_id, seq, ts, trip_id, metrics)
+         SELECT $1, $2 + i, date_trunc('day', now() AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'America/Sao_Paulo'
+                - make_interval(days => $3) + make_interval(hours => 12, secs => i * 2), 1, (r)::jsonb
+           FROM jsonb_array_elements($4::jsonb) WITH ORDINALITY AS t(r, i)`,
+        [d.id, base, daysAgo, JSON.stringify(rows)],
+      );
+      const day = (stft) => [
+        ...Array.from({ length: 10 }, () => ({ rpm: 850, speed: 0, coolant_temp: 90, stft_b1: stft, battery_volts: 14.1 })),
+        ...Array.from({ length: 10 }, (_, i) => ({ rpm: 2500, speed: 80, coolant_temp: 92, stft_b1: stft, battery_volts: 14.0, lambda_b1s2_v: i % 2 ? 0.7 : 0.6 })),
+        ...Array.from({ length: 3 }, () => ({ rpm: 0, speed: 0, coolant_temp: 95, battery_volts: 12.5 })),
+      ];
+      await ins(3, 0, day(2));
+      await ins(1, 100, day(-4));
+      await rollupHealth(pool, 10);
+      const res = await internal(app, 'GET', `/internal/devices/${d.id}/health?days=30`, { token: dono });
+      assert.equal(res.statusCode, 200, res.body);
+      const r = res.json();
+      assert.equal(r.days.length, 2);
+      const [a, b] = r.days;
+      assert.equal(a.samples, 23);
+      assert.ok(Math.abs(a.stftIdleAvg - 2) < 1e-9);
+      assert.ok(Math.abs(b.stftWarmAvg + 4) < 1e-9);
+      assert.ok(Math.abs(a.voltsOffAvg - 12.5) < 1e-9);
+      assert.ok(Math.abs(a.voltsRunningAvg - 14.05) < 1e-9);
+      assert.equal(a.coolantMax, 95);
+      assert.ok(a.lambdaPostSd > 0.04 && a.lambdaPostSd < 0.06);
+      assert.ok(a.km > 0.3 && a.km < 0.6);   // 80 km/h por ~20 s
+      // A limpeza apaga as amostras, mas o resumo fica
+      await pool.query('DELETE FROM telemetry_samples WHERE device_id = $1', [d.id]);
+      await rollupHealth(pool, 10);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${d.id}/health`, { token: dono })).json().days.length, 2);
+      const outro = await userToken(app, admin, 'saudeoutro');
+      assert.equal((await internal(app, 'GET', `/internal/devices/${d.id}/health`, { token: outro })).statusCode, 404);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${d.id}/health?days=2`, { token: dono })).statusCode, 400);
     });
   });
 

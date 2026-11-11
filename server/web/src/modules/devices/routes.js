@@ -1,4 +1,5 @@
 import { ago } from '../account/user-agent.js';
+import { buildHealth } from './health.js';
 import { Readable } from 'node:stream';
 import { ApiError, message } from '../../shared/errors.js';
 import { pageParam, pagerFor } from '../../shared/pagination.js';
@@ -106,11 +107,14 @@ export default function devicesRoutes(app, {
 
   app.get('/dispositivos/:id', { preHandler: requireUser }, async (request, reply) => {
     const data = await api(request, 'GET', `/internal/devices/${requireUuid(request)}`);
-    const [fuel, { trips }, { faults }] = await Promise.all([
+    const [fuel, { trips }, { faults }, healthData] = await Promise.all([
       api(request, 'GET', `/internal/devices/${data.device.id}/fuel-ups`),
       api(request, 'GET', `/internal/devices/${data.device.id}/trips`),
       api(request, 'GET', `/internal/devices/${data.device.id}/faults`),
+      // A saúde é um extra: se a API ainda não a tiver (atualização em andamento), a página abre sem ela.
+      api(request, 'GET', `/internal/devices/${data.device.id}/health`).catch(() => ({ days: [] })),
     ]);
+    const health = buildHealth(healthData.days);
     const months = Object.entries(fuel.summary.costByMonth);
     const lastMonth = months.length ? months[months.length - 1] : null;
     const report = buildReport(fuel, trips);
@@ -131,6 +135,8 @@ export default function devicesRoutes(app, {
       trips: tripsShown,
       report,
       reportJson: JSON.stringify(report.chart),
+      health,
+      healthJson: JSON.stringify(health.chart),
       faults,
       faultsActive: faults.filter((f) => f.active).length,
       title: data.device.name,
@@ -139,7 +145,7 @@ export default function devicesRoutes(app, {
       lastValidJson: JSON.stringify(data.lastValid ?? {}),
       limitsJson: JSON.stringify(data.device.dashLimits),
       ...DEVICE_ASSETS,
-      pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/static/js/chart-theme.js', '/static/js/tabs.js', '/static/js/dtc-sae.js', '/modules/devices/live.js', '/modules/devices/faults.js', '/modules/devices/reports.js', ...(data.locationAllowed ? ['/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js'] : [])],
+      pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/static/js/chart-theme.js', '/static/js/tabs.js', '/static/js/dtc-sae.js', '/modules/devices/live.js', '/modules/devices/faults.js', '/modules/devices/reports.js', '/modules/devices/health.js', ...(data.locationAllowed ? ['/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js'] : [])],
       pageModules: data.locationAllowed ? ['/modules/devices/route.js'] : [],
       pageCss: ['/modules/devices/devices.css', ...(data.locationAllowed ? ['/vendor/maplibre/maplibre-gl.css'] : [])],
       locationAllowed: data.locationAllowed,

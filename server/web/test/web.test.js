@@ -8,6 +8,7 @@ import { buildApp, checkFormToken, isSameOriginRequest, issueFormToken } from '.
 import { loadConfig } from '../src/config.js';
 import { ago, describeAgent } from '../src/modules/account/user-agent.js';
 import { buildReport } from '../src/modules/devices/routes.js';
+import { buildHealth, healthFindings } from '../src/modules/devices/health.js';
 // A API real, com banco real: o teste atravessa a mesma fronteira da produção.
 import { ADMIN, KEY, sample, startApi } from '../../api/test/helpers.js';
 
@@ -690,5 +691,45 @@ describe('fluxo pelo navegador', () => {
     const human = await post('/cadastro', { username: 'humano', password: 'frase longa de quem preencheu', confirm: 'frase longa de quem preencheu', formToken: aged });
     assert.equal(human.statusCode, 303);
     await post('/admin/cadastro', { _csrf: csrf, open: 'false' }, adminCookie);
+  });
+});
+
+describe('saúde do carro', () => {
+  const dia = (i, extra) => ({ day: `2026-10-${String(i + 1).padStart(2, '0')}`, samples: 100, stftWarmAvg: 1, voltsOffAvg: 12.6, voltsOffMin: 12.5,
+    voltsRunningAvg: 14.1, coolantWarmAvg: 90, coolantMax: 97, lambdaPostSd: 0.05, milOn: false, ...extra });
+  const nivel = (f, topic) => f.filter((x) => x.topic === topic).map((x) => x.level);
+
+  test('tudo normal com dias suficientes', () => {
+    const f = healthFindings(Array.from({ length: 10 }, (_, i) => dia(i)));
+    for (const t of ['Mistura', 'Bateria', 'Alternador', 'Arrefecimento', 'Catalisador']) assert.deepEqual(nivel(f, t), ['ok'], t);
+  });
+
+  test('pouca coisa vira silêncio, não alarme', () => {
+    assert.equal(healthFindings([dia(0, { stftWarmAvg: 20 }), dia(1, { stftWarmAvg: 20 })]).length, 0);
+  });
+
+  test('mistura pobre, bateria fraca, alternador baixo, superaquecimento e catalisador', () => {
+    const f = healthFindings(Array.from({ length: 5 }, (_, i) => dia(i, {
+      stftWarmAvg: 11, voltsOffAvg: 12.1, voltsRunningAvg: 13, coolantMax: 106, lambdaPostSd: 0.3, milOn: i === 4,
+    })));
+    assert.deepEqual(nivel(f, 'Mistura'), ['warn']);
+    assert.deepEqual(nivel(f, 'Bateria'), ['bad']);
+    assert.deepEqual(nivel(f, 'Alternador'), ['warn']);
+    assert.deepEqual(nivel(f, 'Arrefecimento'), ['bad']);
+    assert.deepEqual(nivel(f, 'Catalisador'), ['warn']);
+    assert.deepEqual(nivel(f, 'Injeção'), ['bad']);
+  });
+
+  test('mudança da correção em relação às semanas anteriores', () => {
+    const days = [...Array.from({ length: 10 }, (_, i) => dia(i, { stftWarmAvg: -2 })), ...Array.from({ length: 14 }, (_, i) => dia(i + 10, { stftWarmAvg: 4 }))];
+    assert.deepEqual(nivel(healthFindings(days), 'Mistura'), ['ok', 'info']);
+  });
+
+  test('gráficos e tabela', () => {
+    const h = buildHealth([dia(0), dia(1, { stftWarmAvg: null })]);
+    assert.deepEqual(h.chart.labels, ['01/10', '02/10']);
+    assert.deepEqual(h.chart.stftWarm, [1, null]);
+    assert.equal(h.table[0].day, '02/10/2026');
+    assert.equal(h.since, '01/10/2026');
   });
 });
