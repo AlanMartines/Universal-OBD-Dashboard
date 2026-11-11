@@ -63,7 +63,7 @@ class CaptureBridge(private val activity: MainActivity) {
     /** Com o roteiro aberto, a parada longa não encerra a captura: a tela chama isto a cada minuto. */
     @JavascriptInterface
     fun captureKeepAlive() {
-        if (!ObdForegroundService.isRunning) return
+        if (!ObdForegroundService.isRunning || ObdForegroundService.isStopping) return
         activity.startService(Intent(activity, ObdForegroundService::class.java).setAction(ObdForegroundService.ACTION_KEEP_ALIVE))
     }
 

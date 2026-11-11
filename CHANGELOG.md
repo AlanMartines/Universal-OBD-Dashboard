@@ -18,6 +18,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - **Placa da escuta CAN: módulos encaixados.** O transceptor (TJA1050 ou SN65HVD230) e o RT8272 vão em barras fêmea, como o ESP32, e saem sem solda para trocar. No TJA1050, o CANH e o CANL vão por dois fios curtos até um conector de 2 vias na linha 24, com as ligações de baixo refeitas.
 - **Placa 3D:** o LSM6DS3 e o BMP180 passaram para a direita da placa, nas posições que ocupam dentro da caixa, com os cabos correndo perto do fundo.
 
+### Corrigido
+- **Encerrar a captura deixava o CAN "conectado" e o botão preso em "Encerrar".** O encerramento terminava, mas, ao fechar o Bluetooth do ELM327, o aviso de desconexão do Android chegava ao serviço que estava parando e o mantinha de pé, sem captura; novos toques em Encerrar eram ignorados. Agora esse aviso é ignorado durante o encerramento, um aviso que chega sem captura não segura o serviço, e tocar em Encerrar de novo termina o serviço se ele tiver ficado de pé. Além disso, o OBD e o CAN aparecem parados na hora, as duas conexões Bluetooth (ELM327 e ESP32) fecham já, o botão mostra "Encerrando…" e a espera pelas tarefas da sessão tem limite de 3 s.
+
 ## [0.9.36] - 2026-11-10
 
 ### Adicionado

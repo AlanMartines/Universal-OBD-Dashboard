@@ -83,7 +83,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -118,6 +117,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var sessionJob: Job? = null
     private val finishing = AtomicBoolean(false)
+    /** Encerramento em andamento (salvar a viagem, fechar links). */
+    private var stopJob: Job? = null
 
     private lateinit var serial: BluetoothSerialManager
     @Volatile private var queue: CommandQueue? = null
@@ -164,10 +165,19 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> requestStop(intent.getStringExtra(EXTRA_REASON) ?: REASON_USER_STOP)
-            ACTION_KEEP_ALIVE -> keepAlive()
-            ACTION_LINK_LOST -> {
-                Log.i(TAG, "ACL_DISCONNECTED do adaptador recebido")
-                serial.close() // a CommandQueue recebe IOException e o laço de conexão decide
+            ACTION_KEEP_ALIVE, ACTION_LINK_LOST -> {
+                // Aviso que chega sem captura em andamento (por exemplo, o ACL_DISCONNECTED do próprio encerramento,
+                // ao fechar o Bluetooth do ELM327): não pode manter o serviço de pé.
+                if (sessionJob?.isActive != true || finishing.get()) {
+                    Log.i(TAG, "${intent.action} sem captura em andamento: ignorado")
+                    if (stopJob?.isActive != true) finishService()
+                    return START_NOT_STICKY
+                }
+                if (intent.action == ACTION_KEEP_ALIVE) keepAlive()
+                else {
+                    Log.i(TAG, "ACL_DISCONNECTED do adaptador recebido")
+                    serial.close() // a CommandQueue recebe IOException e o laço de conexão decide
+                }
             }
             else -> startSession(intent?.getStringExtra(EXTRA_REASON) ?: "sticky_restart")
         }
@@ -177,6 +187,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     override fun onDestroy() {
         if (current === this) current = null
         isRunning = false
+        isStopping = false
         closeRecorder()
         scope.cancel()
         stopLocationUpdates()
@@ -196,6 +207,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             return
         }
         finishing.set(false)
+        isStopping = false
         Log.i(TAG, "Iniciando captura (gatilho: $trigger)")
         acquireWakeLock()
         sessionJob = scope.launch { runSession(trigger) }
@@ -582,8 +594,16 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             // no mesmo relógio: dá para comparar as duas fontes depois.
             onRaw = recorder?.let { rec -> { line -> rec.event("esp32") { put("l", line) } } },
         )
-        link.run(names)
+        canListen = link
+        try {
+            link.run(names)
+        } finally {
+            if (canListen === link) canListen = null
+        }
     }
+
+    /** Escuta CAN em uso, para fechar a conexão com o ESP32 na hora do encerramento. */
+    @Volatile private var canListen: CanListenLink? = null
 
     /**
      * Total do app: hodômetro informado em Ajustes + distância das viagens desde então (a viagem em
@@ -967,12 +987,35 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     // =================================================================================
 
     private fun requestStop(reason: String) {
-        if (!finishing.compareAndSet(false, true)) return
+        if (!finishing.compareAndSet(false, true)) {
+            // Já encerrado, mas o serviço ficou de pé (um aviso atrasado o segurou): termina agora.
+            if (stopJob?.isActive != true) finishService()
+            return
+        }
+        isStopping = true
         Log.i(TAG, "Encerrando captura: $reason")
-        scope.launch {
-            TelemetryHub.update { it.copy(power = PowerState.SHUTTING_DOWN, statusMessage = reasonLabel(reason)) }
+        stopJob = scope.launch {
+            // A tela já mostra OBD e CAN parados: o encerramento não depende de cada tarefa terminar.
+            TelemetryHub.update {
+                it.copy(
+                    power = PowerState.SHUTTING_DOWN, statusMessage = reasonLabel(reason),
+                    connection = ConnectionStatus.STOPPED, canLink = null, canStatus = null,
+                )
+            }
             val job = sessionJob
-            if (job != null && job !== coroutineContext[Job]) job.cancelAndJoin()
+            if (job != null && job !== coroutineContext[Job]) {
+                job.cancel()
+                // Fecha os dois links já: destrava leituras e conexões Bluetooth que não respondem ao cancelamento.
+                withContext(Dispatchers.IO) {
+                    serial.close()
+                    canListen?.close()
+                }
+                // Uma tarefa presa (por exemplo, um envio pela internet do celular) não segura o encerramento.
+                if (withTimeoutOrNull(STOP_WAIT_MS) { job.join() } == null) {
+                    Log.w(TAG, "Sessão não terminou em $STOP_WAIT_MS ms; encerrando assim mesmo")
+                    recorder?.event("stop_timeout") { put("ms", STOP_WAIT_MS) }
+                }
+            }
             recorder?.event("stop") { put("reason", reason) }
             withContext(NonCancellable + Dispatchers.IO) {
                 persistTripEnd(reason)
@@ -984,12 +1027,22 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 releaseWakeLock()
                 NotificationManagerCompat.from(this@ObdForegroundService).cancel(NOTIF_IDLE)
                 TelemetryHub.update {
-                    it.copy(connection = ConnectionStatus.STOPPED, power = PowerState.ACTIVE, statusMessage = reasonLabel(reason))
+                    it.copy(
+                        connection = ConnectionStatus.STOPPED, power = PowerState.ACTIVE, statusMessage = reasonLabel(reason),
+                        canLink = null, canStatus = null,
+                    )
                 }
-                ServiceCompat.stopForeground(this@ObdForegroundService, ServiceCompat.STOP_FOREGROUND_REMOVE)
-                stopSelf()
+                finishService()
             }
         }
+    }
+
+    /** Sai do primeiro plano e termina o serviço; a tela volta a "Iniciar" já, sem esperar o onDestroy. */
+    private fun finishService() {
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        isRunning = false
+        isStopping = false
+        stopSelf()
     }
 
     private suspend fun persistTripEnd(reason: String) {
@@ -1227,6 +1280,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
 
         const val ACTION_START = "com.universal.obddashboard.action.START"
         const val ACTION_STOP = "com.universal.obddashboard.action.STOP"
+        /** Espera máxima pelas tarefas da sessão ao encerrar; depois disso encerra assim mesmo. */
+        const val STOP_WAIT_MS = 3_000L
         const val ACTION_KEEP_ALIVE = "com.universal.obddashboard.action.KEEP_ALIVE"
         const val ACTION_LINK_LOST = "com.universal.obddashboard.action.LINK_LOST"
         const val EXTRA_REASON = "reason"
@@ -1284,6 +1339,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         }
 
         @Volatile var isRunning = false
+        /** Encerrando: avisos de Bluetooth e pedidos de manter viva não devem mais chegar ao serviço. */
+        @Volatile var isStopping = false
             private set
 
         /** Captura em andamento com gravação de diagnóstico: as marcas do roteiro têm onde ir. */

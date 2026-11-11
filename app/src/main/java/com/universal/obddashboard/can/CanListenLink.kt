@@ -29,6 +29,14 @@ class CanListenLink(
     @Volatile var decoded = 0L
         private set
 
+    /** Conexão em uso: [close] a derruba na hora, sem esperar o cancelamento chegar à leitura. */
+    @Volatile private var activeSerial: BluetoothSerialManager? = null
+
+    /** Fecha a conexão com o ESP32 agora (ao encerrar a captura). O laço termina pelo cancelamento. */
+    fun close() {
+        activeSerial?.close()
+    }
+
     private fun handle(line: String) {
         onRaw?.invoke(line)
         Slcan.parseAmbient(line)?.let { onValues(it, System.currentTimeMillis()); return }
@@ -45,9 +53,11 @@ class CanListenLink(
     /** Conecta e lê até [durationMs] (null = até cancelar), reconectando se o link cair. */
     suspend fun run(names: List<String>, durationMs: Long? = null) {
         val serial = BluetoothSerialManager(context)
+        activeSerial = serial
         try {
             if (durationMs == null) loop(serial, names) else withTimeoutOrNull(durationMs) { loop(serial, names) }
         } finally {
+            activeSerial = null
             serial.close()
         }
     }

@@ -95,7 +95,8 @@ function renderCanPill(s, status) {
   status.textContent = 'OBD · ' + status.textContent;
   pill.hidden = !s.canConfigured;
   if (!s.canConfigured) return;
-  const [text, cls] = s.running ? (CAN_PILL[s.canLink] || CAN_PILL.connecting) : ['CAN · desligado', 'pill'];
+  const ativo = s.running && s.power !== 'SHUTTING_DOWN';   // encerrando: já mostra desligado
+  const [text, cls] = ativo ? (CAN_PILL[s.canLink] || CAN_PILL.connecting) : ['CAN · desligado', 'pill'];
   pill.textContent = text;
   pill.className = cls;
   pill.title = s.canStatus || '';
@@ -143,8 +144,10 @@ function onTelemetry(s) {
   if (s.diagRecording && s.running) status.textContent += ' ● REC';
   renderCanPill(s, status);
   const toggle = $('toggle');
-  toggle.textContent = s.running ? 'Encerrar' : 'Iniciar';
+  const encerrando = s.running && s.power === 'SHUTTING_DOWN';
+  toggle.textContent = encerrando ? 'Encerrando…' : s.running ? 'Encerrar' : 'Iniciar';
   toggle.className = 'btn ' + (s.running ? 'btn-danger' : 'btn-primary');
+  toggle.disabled = encerrando;
 
   // RPM
   const rpm = r[roles.rpm || 'rpm'];

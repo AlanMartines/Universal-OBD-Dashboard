@@ -57,7 +57,8 @@ class AutoDisconnectReceiver : BroadcastReceiver() {
                 if (!ObdForegroundService.start(context, "bt_acl:$name")) postTapToStart(context, name)
             }
             BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
-                if (!isAdapter || !ObdForegroundService.isRunning) return
+                // No encerramento, o próprio app fecha o Bluetooth: esse aviso não pode reabrir o serviço.
+                if (!isAdapter || !ObdForegroundService.isRunning || ObdForegroundService.isStopping) return
                 Log.i(TAG, "Adaptador OBD desconectado: $name")
                 ObdForegroundService.send(context, ObdForegroundService.ACTION_LINK_LOST)
             }
