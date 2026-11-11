@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.38] - 2026-11-11
+
 ### Adicionado
 - **Pinagem da tomada OBD2 desenhada pelo projeto:** a da norma SAE J1962, com os pinos de cada protocolo (`docs/img/pinagem-obd2.svg`), e a do Uno Vivace, com o que tem em cada pino e o que o ELM327 e a placa do ESP32 usam. Nos docs e na página /projeto do painel.
 - **ELM327 mini detalhado no modelo 3D:** 47 × 24 × 30 mm, com as duas placas por dentro (Bluetooth, PIC18F25K80, cristal, J1/J2 e LEDs que piscam na animação).
