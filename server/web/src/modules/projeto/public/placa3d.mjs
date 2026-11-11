@@ -415,19 +415,19 @@ function iniciar() {
     const blind = new THREE.Mesh(new THREE.BoxGeometry(18, hBlind, 16), [M.niquel, M.niquel, std(0xffffff, 0.38, 0.85, { map: texBlind }), M.niquel, M.niquel, M.niquel]);
     blind.position.copy(W(mx0 + 6.5 + 9, cy, topo + 0.8 + hBlind / 2));
     g.add(blind);
-    // micro-USB, botões, regulador, CP2102, LED
-    const usb = caixa(5.6, 2.6, 7.6, M.niquel, E.x0 + E.l - 1.6, cy, topo);
-    g.add(usb);
-    const boca = caixa(0.1, 1.3, 6.0, M.furo, E.x0 + E.l + 1.25, cy, topo + 0.6);
-    g.add(boca);
-    for (const by of [cy - 8.6, cy + 8.6]) {
-      g.add(caixa(5.2, 1.4, 3.4, M.niquel, E.x0 + 41.7, by, topo));
-      const botao = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.7, 20), M.preto);
-      botao.position.copy(W(E.x0 + 41.7, by, topo + 1.75));
+    // micro-USB, botões EN/BOOT, regulador, CP2102, LED. Posições conferidas no modelo STEP do DevKit V1
+    // (distâncias medidas a partir da ponta do USB); o LED segue as fotos da placa usada (furo da tampa da caixa).
+    const fimUsb = E.x0 + E.l;
+    g.add(caixa(5.6, 3.0, 7.9, M.niquel, fimUsb - 2.1, cy, topo));            // passa 0,7 mm da borda
+    g.add(caixa(0.1, 1.5, 6.4, M.furo, fimUsb + 0.72, cy, topo + 0.7));
+    for (const by of [cy - 8.2, cy + 8.2]) {                                    // EN e BOOT, ao lado do USB
+      g.add(caixa(3.7, 0.9, 2.9, M.niquel, fimUsb - 3.0, by, topo));
+      const botao = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.6, 20), M.preto);
+      botao.position.copy(W(fimUsb - 3.0, by, topo + 1.2));
       g.add(botao);
     }
-    g.add(sot223(E.x0 + 36.5, cy - 4.6, topo, 'AMS1117'));
-    g.add(caixa(4.4, 0.9, 4.4, M.preto, E.x0 + 36.5, cy + 4.2, topo));
+    g.add(sot223(fimUsb - 18.3, cy + 3.8, topo, 'AMS1117'));                    // do lado do VIN
+    g.add(caixa(5.0, 0.9, 5.0, M.preto, fimUsb - 10.1, cy, topo));              // CP2102 (QFN 5 × 5)
     g.add(smd(E.x0 + 30, cy + 7.6, topo, 1.6, 0.8, M.ceramica));
     g.add(smd(E.x0 + 30, cy - 7.6, topo, 1.6, 0.8, M.ceramica));
     g.add(smd(E.x0 + 46.6, cy - 6.2, topo, 1.6, 0.8, M.ledEsp, true));
