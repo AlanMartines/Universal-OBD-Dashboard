@@ -91,6 +91,39 @@ let canSeenFor = null;
 let runningSince = null;
 
 /** Etiqueta do OBD sempre; a do CAN só com a escuta em uso (perfil com sinais e ESP32 escolhido). */
+/* Estado do adaptador de escuta (ESP32), das linhas "# ..." do firmware: aba Sensores. */
+const ESP_SENSOR = { ok: 'ok', ausente: 'não encontrado', 'sem resposta': 'sem resposta' };
+function renderEspCard(s) {
+  const i = s.running ? s.canInfo : null;
+  $('esp-card').hidden = !i;
+  if (!i) return;
+  const stale = i.statsAt != null && Date.now() - i.statsAt > 25000;
+  const [txt, cls] = i.error ? ['Erro', 'pill-bad'] : i.resting ? ['Descanso', 'pill-warn']
+    : stale ? ['Sem contadores', 'pill-warn'] : i.framesPerSec > 0 ? ['Recebendo', 'pill-ok'] : ['Sem quadros', 'pill-warn'];
+  $('esp-pill').textContent = txt;
+  $('esp-pill').className = 'pill ' + cls;
+  const parts = [
+    'Firmware ' + (i.firmware || '?'),
+    i.bitrateKbps ? i.bitrateKbps + ' kbps' : null,
+    i.framesPerSec != null ? fmt(i.framesPerSec, 0) + ' quadros/s' : null,
+    i.frames != null ? fmt(i.frames, 0) + ' quadros no ESP32' : null,
+    'App recebeu ' + fmt(i.appFrames, 0),
+    i.lost != null ? (i.lost ? fmt(i.lost, 0) + ' perdidos' : 'nenhum perdido') : null,
+    i.busErrors ? fmt(i.busErrors, 0) + ' erros na rede' : null,
+    'BMP180: ' + (ESP_SENSOR[i.bmp] || '?'),
+    'LSM6DS3: ' + (ESP_SENSOR[i.lsm] || '?'),
+    i.restarts ? `reiniciou ${i.restarts}×` : null,
+  ].filter(Boolean);
+  const kv = $('esp-kv');
+  kv.textContent = '';
+  for (const p of parts) { const sp = document.createElement('span'); sp.textContent = p; kv.appendChild(sp); }
+  const note = i.error ? `O ESP32 parou: ${i.error}. Ele não enviou nada à rede e tenta de novo em 10 min.`
+    : i.resting ? 'A rede do carro parou e o ESP32 entrou em descanso; acorda sozinho quando a rede voltar.'
+      : i.lost ? 'Quadros perdidos: o ESP32 não deu conta de tudo que passou na rede (fila cheia).' : '';
+  $('esp-note').textContent = note;
+  $('esp-note').hidden = !note;
+}
+
 function renderCanPill(s, status) {
   if (s.running && runningSince === null) runningSince = Date.now();
   if (!s.running) runningSince = null;
@@ -151,6 +184,7 @@ function onTelemetry(s) {
   status.title = s.statusMessage || '';
   if (s.diagRecording && s.running) status.textContent += ' ● REC';
   renderCanPill(s, status);
+  renderEspCard(s);
   const toggle = $('toggle');
   const encerrando = s.running && s.power === 'SHUTTING_DOWN';
   toggle.textContent = encerrando ? 'Encerrando…' : s.running ? 'Encerrar' : 'Iniciar';

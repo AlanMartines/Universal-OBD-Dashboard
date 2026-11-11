@@ -131,6 +131,7 @@ window.ObdSim = (function () {
 
     return {
       running: true, diagRecording: true, profileId: meta.id, vehicleName: meta.vehicleName,
+      canLink: 'connected', canInfo: { firmware: '1.4', bitrateKbps: 50, bmp: 'ok', lsm: 'ausente', frames: 48210, lost: 0, busErrors: 0, framesPerSec: 312, statsAt: Date.now(), appFrames: 48190, resting: false, error: null, restarts: 0 },
       connection: 'STREAMING', statusMessage: 'Capturando • ' + meta.ecuModel, power: 'ACTIVE',
       readings,
       derived: {
