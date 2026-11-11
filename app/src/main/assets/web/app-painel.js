@@ -82,7 +82,11 @@ const CAN_PILL = {
 };
 /** Tempo para o ESP32 conectar depois de iniciar antes de perguntar se segue só com o OBD. */
 const CAN_WARN_AFTER_MS = 10000;
+/** Só pergunta no começo da captura: depois disso, o ESP32 cair é o fim natural da viagem (carro desligado). */
+const CAN_WARN_WINDOW_MS = 60000;
 let canWarnedFor = null;
+/** Captura em que o ESP32 já conectou: se cair depois, não pergunta. */
+let canSeenFor = null;
 /** Quando esta tela viu a captura começar (a viagem pode ser retomada, com início antigo). */
 let runningSince = null;
 
@@ -103,9 +107,13 @@ function renderCanPill(s, status) {
 
   const dialog = $('can-dialog');
   if (s.running && s.canLink === 'connected' && dialog.open) dialog.close();
-  // Uma pergunta por captura: só se o ESP32 não conectou nos primeiros segundos.
-  if (!s.running || canWarnedFor === runningSince || s.canLink === 'connected') return;
+  if (s.running && s.canLink === 'connected') canSeenFor = runningSince;
+  // Uma pergunta por captura, só no começo e só se o ESP32 ainda não conectou nenhuma vez. Se ele conectou e caiu
+  // depois (carro desligado, USB da multimídia sem energia), a etiqueta mostra "sem conexão" e pronto.
+  if (!s.running || canWarnedFor === runningSince || canSeenFor === runningSince || s.canLink === 'connected') return;
   if (Date.now() - runningSince < CAN_WARN_AFTER_MS) return;
+  // Viagem retomada ou tela aberta no meio da captura: o começo já passou
+  if (Date.now() - (s.tripStartedAt || runningSince) > CAN_WARN_WINDOW_MS) return;
   canWarnedFor = runningSince;
   if (!dialog.open && typeof dialog.showModal === 'function') dialog.showModal();
 }
