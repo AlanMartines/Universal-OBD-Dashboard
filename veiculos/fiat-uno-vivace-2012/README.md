@@ -18,6 +18,8 @@ Fonte: *Mecânica 2000 Automotive*, volume 54 (2011), "Uno Vivace 1.0 Flex – I
 
 ## Comunicação OBD
 
+![Pinagem OBD2 do Uno Vivace 2012: o que tem em cada pino e o que o projeto liga](img/pinagem-obd2-uno.svg)
+
 - O conector de diagnóstico fica no habitáculo, na parte inferior esquerda do painel (pág. 163).
 - O módulo de comando (MC) chega ao **pino 7** do conector (linha K, ISO 9141-2 / ISO 14230 KWP2000). Os pinos 6 e 14 (CAN) vão ao painel de instrumentos (pág. 163). O MC também está na rede CAN do veículo (bornes B13/B14, pág. 162), mas o caminho de diagnóstico desenhado no manual é a linha K.
 - Por isso o perfil usa busca automática de protocolo (`ATSP0`) e o app identifica o protocolo real com `ATDPN`. Confirmar com a gravação de diagnóstico do primeiro uso no carro.

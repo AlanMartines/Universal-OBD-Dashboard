@@ -129,6 +129,9 @@ describe('arquivos', () => {
   test('página da placa usa o mesmo modelo 3D da pasta do veículo', () => {
     const placa = join(HERE, '../../../veiculos/fiat-uno-vivace-2012/placa');
     if (!existsSync(placa)) return;
+    // pinagens: a página /projeto usa cópias dos desenhos dos docs
+    assert.ok(readFileSync(join(HERE, '../src/modules/projeto/public/pinagem-obd2.svg')).equals(readFileSync(join(HERE, '../../../docs/img/pinagem-obd2.svg'))), 'pinagem-obd2.svg: copie de docs/img');
+    assert.ok(readFileSync(join(HERE, '../src/modules/projeto/public/pinagem-obd2-uno.svg')).equals(readFileSync(join(placa, '../img/pinagem-obd2-uno.svg'))), 'pinagem-obd2-uno.svg: copie de veiculos/.../img');
     for (const name of ['modelo3d-dados.js', 'modelo3d-sn65-dados.js']) {
       assert.ok(readFileSync(join(HERE, '../src/modules/projeto/public', name)).equals(readFileSync(join(placa, name))), `${name}: rode gerar_placa.py`);
     }

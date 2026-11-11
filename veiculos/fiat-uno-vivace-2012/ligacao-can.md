@@ -7,6 +7,8 @@ Situação em 04/11/2026:
 - O ELM327 e o ESP32 funcionaram juntos em duas viagens, sem cabo Y, pela [ligação por pinos](#elm327-e-esp32-juntos-sem-cabo-y).
 - A montagem final (alimentação fixa pelo conversor) e o SN65HVD230 ainda não foram testados.
 
+![Pinagem OBD2 do Uno Vivace 2012: o que tem em cada pino e o que o projeto liga](img/pinagem-obd2-uno.svg)
+
 ## Teste com Arduino Uno + MCP2515
 
 Material: Arduino Uno e cabo USB, módulo MCP2515 com TJA1050, resistor de 1 kΩ e conector OBD2 macho com fios soltos.
