@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Manutenção pela próxima troca que o mecânico passa:** o formulário tem um select com os itens do manual (mais "Outro…"), a última vez (data e km, com o hodômetro atual já preenchido) e a próxima troca em "daqui a X km" ou "no km" e, opcional, "daqui a X meses" ou "na data" (data de hoje ou passada não conta). O "Feito" também pede a próxima troca, sugerindo o intervalo anterior. Sai o card do plano com caixas de seleção. Banco do app na versão 6 (próxima troca no item), sem perder os itens já cadastrados.
+
 ## [0.9.39] - 2026-11-11
 
 ### Adicionado

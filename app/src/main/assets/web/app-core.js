@@ -61,9 +61,9 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
     { id: 1, name: 'Troca de óleo e filtro de óleo', intervalKm: 15000, intervalMonths: 12, notes: '5W30, 2,7 L', status: { level: 'SOON', nextKm: 183900, remainingKm: 700, nextAt: Date.now() + 90 * 864e5, remainingDays: 90 }, records: [{ id: 1, timestamp: Date.now() - 275 * 864e5, odometerKm: 168900, cost: 230, notes: null }] },
     { id: 2, name: 'Fluido de freio', intervalKm: null, intervalMonths: 24, notes: null, status: { level: 'DUE', nextKm: null, remainingKm: null, nextAt: Date.now() - 10 * 864e5, remainingDays: -10 }, records: [{ id: 2, timestamp: Date.now() - 740 * 864e5, odometerKm: null, cost: null, notes: null }] },
     { id: 3, name: 'Correia dentada', intervalKm: 60000, intervalMonths: 36, notes: null, status: { level: 'UNKNOWN' }, records: [] }],
-    presets: [{ name: 'Velas de ignição', intervalKm: 30000, intervalMonths: null, notes: 'NGK BKR6E', exists: false }, { name: 'Fluido de freio', intervalKm: 45000, intervalMonths: 24, exists: true }] }),
+    presets: [{ name: 'Troca de óleo e filtro de óleo', intervalKm: 15000, intervalMonths: 12, notes: '5W30, 2,7 L' }, { name: 'Velas de ignição', intervalKm: 30000, intervalMonths: null, notes: 'NGK BKR6E' }, { name: 'Correia dentada', intervalKm: 60000, intervalMonths: 36 }, { name: 'Fluido de freio', intervalKm: 45000, intervalMonths: 24 }] }),
   saveMaintenanceItem: () => '{"ok":true}', deleteMaintenanceItem: () => '{"ok":true}', addMaintenanceRecord: () => '{"ok":true}',
-  deleteMaintenanceRecord: () => '{"ok":true}', addMaintenancePresets: () => '{"ok":true,"added":1}',
+  deleteMaintenanceRecord: () => '{"ok":true}',
   resetTripA: () => 'ok', getTripSummary: () => JSON.stringify({ ok: true, samples: 400, km: 12.3, liters: 1.1, kmPerL: 11.2, cost: 7.1, costPerKm: 0.58, movingS: 1320, idleS: 300, idleFuelL: 0.08, idleCost: 0.5, avgMovingKmh: 33, fuelCutKm: 0.9, ecoPct: [55, 20, 25], durationS: 1680, maxSpeedKmh: 74, maxCoolantC: 96, imu: { maxBrakeG: 0.38, maxAccelG: 0.21, maxLateralG: 0.29, bumps: 3 } }),
 };
 

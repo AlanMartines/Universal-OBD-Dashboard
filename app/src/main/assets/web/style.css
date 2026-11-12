@@ -450,3 +450,6 @@ input[readonly] { opacity: .7; }
 
 /* Resumo ao encerrar a viagem: uma informação por linha */
 #trip-dialog-body { display: grid; gap: 3px; margin: 0 0 12px; }
+
+/* Manutenção: subtítulo dentro do formulário */
+.form .label.sub { margin-top: 4px; }

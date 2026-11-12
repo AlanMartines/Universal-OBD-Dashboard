@@ -40,7 +40,6 @@ class MaintenanceBridge(private val activity: MainActivity) {
         activity.refreshTotalKm()
         val km = activity.totalKm
         val views = MaintenanceStore.overview(db(), vehicle(), km)
-        val existing = views.map { it.item.name.lowercase() }.toSet()
         JSONObject()
             .put("totalKm", km.orNull())
             .put("items", JSONArray().apply {
@@ -53,6 +52,8 @@ class MaintenanceBridge(private val activity: MainActivity) {
                             .put("intervalKm", v.item.intervalKm.orNull())
                             .put("intervalMonths", v.item.intervalMonths ?: JSONObject.NULL)
                             .put("notes", v.item.notes ?: JSONObject.NULL)
+                            .put("setNextKm", v.item.nextKm.orNull())
+                            .put("setNextAt", v.item.nextAt ?: JSONObject.NULL)
                             .put("status", JSONObject()
                                 .put("level", s.level.name)
                                 .put("nextKm", s.nextKm.orNull())
@@ -72,34 +73,63 @@ class MaintenanceBridge(private val activity: MainActivity) {
             .put("presets", JSONArray().apply {
                 for (p in presets()) put(
                     JSONObject().put("name", p.name).put("intervalKm", p.intervalKm.orNull())
-                        .put("intervalMonths", p.intervalMonths ?: JSONObject.NULL).put("notes", p.notes ?: JSONObject.NULL)
-                        .put("exists", p.name.lowercase() in existing),
+                        .put("intervalMonths", p.intervalMonths ?: JSONObject.NULL).put("notes", p.notes ?: JSONObject.NULL),
                 )
             })
             .put("presetsFromProfile", runCatching { activity.currentProfile().profile.maintenancePlan.isNotEmpty() }.getOrDefault(false))
             .toString()
     }
 
-    /** Cria ({id} ausente) ou altera um item. Com "lastAt" (e "lastKm") num item novo, já registra a última vez. */
+    /**
+     * Próxima troca de um formulário: km e data do que o mecânico passou. A data só vale se for futura (hoje ou
+     * antes = sem data). Precisa de pelo menos um dos dois. Devolve (km, data) ou a mensagem de erro.
+     */
+    private fun nextDue(o: JSONObject, lastKm: Double?): Pair<Pair<Double?, Long?>?, String?> {
+        val km = o.optDoubleOrNull("nextKm")?.takeIf { it > 0 }
+        val at = o.optLongOrNull("nextAt")?.takeIf { it > System.currentTimeMillis() + DAY_MS / 2 }
+        if (km == null && at == null) return null to "Informe a próxima troca: o km (ou daqui a quantos km) ou uma data futura."
+        if (km != null && km > 3_000_000) return null to "Km da próxima troca grande demais."
+        if (km != null && lastKm != null && km <= lastKm) return null to "O km da próxima troca precisa ser maior que o da última vez."
+        return (km to at) to null
+    }
+
+    /** Intervalo guardado por trás (para sugerir o próximo): diferença entre a última vez e a próxima troca. */
+    private fun intervals(lastKm: Double?, lastAt: Long?, nextKm: Double?, nextAt: Long?): Pair<Double?, Int?> {
+        val km = if (lastKm != null && nextKm != null) (nextKm - lastKm).takeIf { it > 0 } else null
+        val months = if (lastAt != null && nextAt != null) Math.round((nextAt - lastAt) / (DAY_MS * 30.44)).toInt().takeIf { it in 1..240 } else null
+        return km to months
+    }
+
+    /**
+     * Cria ({id} ausente) ou altera um item: {name, notes, nextKm, nextAt} e, num item novo, {lastAt, lastKm} da última
+     * vez (registro). Ao alterar, a última vez continua a dos registros.
+     */
     @JavascriptInterface
     fun saveMaintenanceItem(requestId: String, json: String) = activity.answerAsync(requestId) {
         val o = JSONObject(json)
-        val name = o.optTextOrNull("name") ?: return@answerAsync err("Dê um nome ao item.")
-        val km = o.optDoubleOrNull("intervalKm")?.takeIf { it > 0 }
-        val months = o.optLongOrNull("intervalMonths")?.toInt()?.takeIf { it in 1..240 }
-        if (km == null && months == null) return@answerAsync err("Informe o intervalo em km, em meses ou nos dois.")
-        if (km != null && km > 1_000_000) return@answerAsync err("Intervalo de km grande demais.")
+        val name = o.optTextOrNull("name") ?: return@answerAsync err("Escolha o item ou dê um nome.")
         val notes = o.optTextOrNull("notes")
         val dao = db().maintenanceDao()
         val id = o.optLongOrNull("id")
         if (id != null) {
             val cur = dao.item(id, vehicle()) ?: return@answerAsync err("Item não encontrado.")
-            dao.updateItem(cur.copy(name = name, intervalKm = km, intervalMonths = months, notes = notes))
+            val last = dao.records(vehicle()).filter { it.itemId == id }
+            val lastKm = last.firstOrNull { it.odometerKm != null }?.odometerKm
+            val (due, e) = nextDue(o, lastKm)
+            if (due == null) return@answerAsync err(e!!)
+            val (ik, im) = intervals(lastKm, last.firstOrNull()?.timestamp, due.first, due.second)
+            dao.updateItem(cur.copy(name = name, notes = notes, nextKm = due.first, nextAt = due.second,
+                intervalKm = ik ?: cur.intervalKm, intervalMonths = im ?: cur.intervalMonths))
         } else {
-            val newId = dao.insertItem(MaintenanceItemEntity(vehicleId = vehicle(), name = name, intervalKm = km, intervalMonths = months, notes = notes, createdAt = System.currentTimeMillis()))
-            o.optLongOrNull("lastAt")?.let { at ->
-                dao.insertRecord(MaintenanceRecordEntity(itemId = newId, vehicleId = vehicle(), timestamp = at, odometerKm = o.optDoubleOrNull("lastKm")))
-            }
+            val lastAt = o.optLongOrNull("lastAt") ?: System.currentTimeMillis()
+            if (lastAt > System.currentTimeMillis() + 60_000) return@answerAsync err("A última vez não pode ser no futuro.")
+            val lastKm = o.optDoubleOrNull("lastKm")?.takeIf { it >= 0 }
+            val (due, e) = nextDue(o, lastKm)
+            if (due == null) return@answerAsync err(e!!)
+            val (ik, im) = intervals(lastKm, lastAt, due.first, due.second)
+            val newId = dao.insertItem(MaintenanceItemEntity(vehicleId = vehicle(), name = name, intervalKm = ik, intervalMonths = im,
+                notes = notes, createdAt = System.currentTimeMillis(), nextKm = due.first, nextAt = due.second))
+            dao.insertRecord(MaintenanceRecordEntity(itemId = newId, vehicleId = vehicle(), timestamp = lastAt, odometerKm = lastKm))
         }
         ok
     }
@@ -112,18 +142,25 @@ class MaintenanceBridge(private val activity: MainActivity) {
         ok
     }
 
-    /** Registra uma vez feita: {itemId, timestamp, odometerKm?, cost?, notes?}. */
+    /**
+     * Registra uma vez feita: {itemId, timestamp, odometerKm?, cost?, notes?, nextKm?, nextAt?}. A próxima troca
+     * que o mecânico passou vira a do item; o intervalo por trás é atualizado para sugerir a seguinte.
+     */
     @JavascriptInterface
     fun addMaintenanceRecord(requestId: String, json: String) = activity.answerAsync(requestId) {
         val o = JSONObject(json)
         val itemId = o.optLongOrNull("itemId") ?: return@answerAsync err("Item não informado.")
         val dao = db().maintenanceDao()
-        dao.item(itemId, vehicle()) ?: return@answerAsync err("Item não encontrado.")
+        val item = dao.item(itemId, vehicle()) ?: return@answerAsync err("Item não encontrado.")
         val at = o.optLongOrNull("timestamp") ?: System.currentTimeMillis()
         if (at > System.currentTimeMillis() + 60_000) return@answerAsync err("A data não pode ser no futuro.")
         val km = o.optDoubleOrNull("odometerKm")?.takeIf { it >= 0 }
+        val (due, e) = nextDue(o, km)
+        if (due == null) return@answerAsync err(e!!)
         val cost = o.optDoubleOrNull("cost")?.takeIf { it >= 0 }
         dao.insertRecord(MaintenanceRecordEntity(itemId = itemId, vehicleId = vehicle(), timestamp = at, odometerKm = km, cost = cost, notes = o.optTextOrNull("notes")))
+        val (ik, im) = intervals(km, at, due.first, due.second)
+        dao.updateItem(item.copy(nextKm = due.first, nextAt = due.second, intervalKm = ik ?: item.intervalKm, intervalMonths = im ?: item.intervalMonths))
         ok
     }
 
@@ -133,18 +170,7 @@ class MaintenanceBridge(private val activity: MainActivity) {
         ok
     }
 
-    /** Acrescenta os itens sugeridos escolhidos (nomes em JSON) que ainda não existem. */
-    @JavascriptInterface
-    fun addMaintenancePresets(requestId: String, namesJson: String) = activity.answerAsync(requestId) {
-        val names = JSONArray(namesJson).let { a -> (0 until a.length()).map { a.optString(it) } }.toSet()
-        val dao = db().maintenanceDao()
-        val existing = dao.items(vehicle()).map { it.name.lowercase() }.toSet()
-        var added = 0
-        for (p in presets()) {
-            if (p.name !in names || p.name.lowercase() in existing) continue
-            dao.insertItem(MaintenanceItemEntity(vehicleId = vehicle(), name = p.name, intervalKm = p.intervalKm, intervalMonths = p.intervalMonths, notes = p.notes, createdAt = System.currentTimeMillis()))
-            added++
-        }
-        JSONObject().put("ok", true).put("added", added).toString()
+    private companion object {
+        const val DAY_MS = 24 * 60 * 60 * 1000L
     }
 }

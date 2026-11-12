@@ -36,6 +36,7 @@ class RoomMigrationTest {
         helper.runMigrationsAndValidate(name, 3, true, AppDatabase.MIGRATION_2_3).close()
         helper.runMigrationsAndValidate(name, 4, true, AppDatabase.MIGRATION_3_4).close()
         helper.runMigrationsAndValidate(name, 5, true, AppDatabase.MIGRATION_4_5).close()
+        helper.runMigrationsAndValidate(name, 6, true, AppDatabase.MIGRATION_5_6).close()
 
         // E o app abre o banco migrado com as migrações que usa de fato
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java, name)

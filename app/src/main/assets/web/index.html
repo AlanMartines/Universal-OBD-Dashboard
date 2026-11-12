@@ -227,6 +227,15 @@
           <label class="grow">Data <input id="mt-rec-when" type="date"></label>
           <label class="grow">Hodômetro (km) <input id="mt-rec-km" type="number" min="0" step="1" inputmode="numeric"></label>
         </div>
+        <span class="label sub">Próxima troca (o que o mecânico passou)</span>
+        <div class="row">
+          <label class="grow">Daqui a (km) <input id="mt-rec-in-km" type="number" min="0" step="100" inputmode="numeric" placeholder="7000"></label>
+          <label class="grow">No km <input id="mt-rec-next-km" type="number" min="0" step="1" inputmode="numeric" placeholder="190000"></label>
+        </div>
+        <div class="row">
+          <label class="grow">Daqui a (meses) <input id="mt-rec-in-months" type="number" min="0" max="240" step="1" inputmode="numeric" placeholder="opcional"></label>
+          <label class="grow">Na data <input id="mt-rec-next-date" type="date"></label>
+        </div>
         <div class="row">
           <label class="grow">Custo (R$) <input id="mt-rec-cost" type="number" min="0" step="0.01" inputmode="decimal"></label>
           <label class="grow">Oficina / observação <input id="mt-rec-notes" type="text"></label>
@@ -239,27 +248,27 @@
 
       <div class="card form">
         <span class="label" id="mt-form-title">Novo item de manutenção</span>
-        <label>Nome <input id="mt-name" type="text" maxlength="80" placeholder="Troca de óleo"></label>
-        <div class="row">
-          <label class="grow">A cada (km) <input id="mt-ikm" type="number" min="0" step="500" inputmode="numeric" placeholder="15000"></label>
-          <label class="grow">A cada (meses) <input id="mt-imonths" type="number" min="0" max="240" step="1" inputmode="numeric" placeholder="12"></label>
-        </div>
+        <label>Item <select id="mt-sel"></select></label>
+        <label id="mt-name-wrap" hidden>Nome <input id="mt-name" type="text" maxlength="80" placeholder="Ex.: Troca do fluido da direção"></label>
         <div class="row" id="mt-last-wrap">
           <label class="grow">Última vez (data) <input id="mt-last-when" type="date"></label>
           <label class="grow">Última vez (km) <input id="mt-last-km" type="number" min="0" step="1" inputmode="numeric"></label>
+        </div>
+        <span class="label sub">Próxima troca (o que o mecânico passou)</span>
+        <div class="row">
+          <label class="grow">Daqui a (km) <input id="mt-in-km" type="number" min="0" step="100" inputmode="numeric" placeholder="7000"></label>
+          <label class="grow">No km <input id="mt-next-km" type="number" min="0" step="1" inputmode="numeric" placeholder="190000"></label>
+        </div>
+        <div class="row">
+          <label class="grow">Daqui a (meses) <input id="mt-in-months" type="number" min="0" max="240" step="1" inputmode="numeric" placeholder="opcional"></label>
+          <label class="grow">Na data <input id="mt-next-date" type="date"></label>
         </div>
         <label>Observação <input id="mt-notes" type="text" maxlength="200" placeholder="Óleo 5W30, 2,7 L"></label>
         <div class="row">
           <button id="mt-save" class="btn btn-primary">Salvar item</button>
           <button id="mt-cancel" class="btn" hidden>Cancelar edição</button>
         </div>
-        <p class="small muted">Vence pelo que chegar primeiro: km ou meses. Avisa 30 dias antes ou 10% do intervalo em km (entre 300 e 1.000 km), e uma notificação por dia ao começar a captura.</p>
-      </div>
-
-      <div class="card form" id="mt-presets-card" hidden>
-        <span class="label" id="mt-presets-title">Plano sugerido</span>
-        <div id="mt-presets"></div>
-        <button id="mt-presets-add" class="btn">Adicionar selecionados</button>
+        <p class="small muted">O km da próxima troca é o principal; a data é opcional e só vale se for futura. Vence pelo que chegar primeiro. Os itens do manual só sugerem os valores: vale o que o mecânico passar. Avisa perto de vencer, e uma notificação por dia ao começar a captura.</p>
       </div>
       </div>
 

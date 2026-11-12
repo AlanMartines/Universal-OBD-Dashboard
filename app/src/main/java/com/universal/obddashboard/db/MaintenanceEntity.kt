@@ -22,6 +22,9 @@ data class MaintenanceItemEntity(
     @ColumnInfo(name = "interval_months") val intervalMonths: Int? = null,
     val notes: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long,
+    /** Próxima troca anotada (o que o mecânico passou): km do hodômetro e/ou data. Vale no lugar do intervalo. */
+    @ColumnInfo(name = "next_km") val nextKm: Double? = null,
+    @ColumnInfo(name = "next_at") val nextAt: Long? = null,
 )
 
 /** Uma vez em que o serviço foi feito: data, hodômetro, custo e observação. */
