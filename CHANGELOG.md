@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.40] - 2026-11-12
+
 ### Adicionado
 - **Manutenção no painel web:** o app envia a lista de manutenção ao painel (itens e registros, como os abastecimentos; a observação de cada registro fica no celular). Nova aba Manutenção na página do veículo, com a situação de cada item pelo hodômetro mais recente, o histórico e o gasto registrado, e um aviso no cartão do veículo na página inicial quando algo vence. Edição só no app.
 
