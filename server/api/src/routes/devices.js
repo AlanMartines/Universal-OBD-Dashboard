@@ -1,5 +1,6 @@
 import { createMatcher } from '../map-match.js';
 import { fuelSummary } from '../fuel.js';
+import { maintenanceOverview } from '../maintenance.js';
 import { audit, FUEL_REMOVED_DAYS } from '../db.js';
 import { fail } from '../errors.js';
 import { pageNumberSchema, pageSizeSchema, paged } from '../pagination.js';
@@ -96,6 +97,36 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     };
   });
 
+  /** Itens, registros e hodômetro atual de cada veículo: Map(id → maintenanceOverview). */
+  async function loadMaintenance(ids) {
+    if (!ids.length) return new Map();
+    const [items, records, odo] = await Promise.all([
+      pool.query(`SELECT device_id, local_id, name, interval_km, interval_months, next_km, next_at, notes
+                    FROM maintenance_items WHERE device_id = ANY($1::uuid[])`, [ids]),
+      pool.query(`SELECT device_id, local_id, item_local_id, ts, odometer_km, cost
+                    FROM maintenance_records WHERE device_id = ANY($1::uuid[])`, [ids]),
+      pool.query(`SELECT d.id, coalesce(d.odometer_km, (s.metrics->>'odometer_km')::float) AS km
+                    FROM devices d LEFT JOIN LATERAL (
+                      SELECT metrics FROM telemetry_samples t WHERE t.device_id = d.id AND t.metrics ? 'odometer_km' ORDER BY ts DESC LIMIT 1
+                    ) s ON true WHERE d.id = ANY($1::uuid[])`, [ids]),
+    ]);
+    const out = new Map();
+    for (const id of ids) {
+      const mine = items.rows.filter((r) => r.device_id === id);
+      if (!mine.length) continue;
+      const its = mine.map((r) => ({
+        id: Number(r.local_id), name: r.name, intervalKm: r.interval_km, intervalMonths: r.interval_months,
+        nextKm: r.next_km, nextAt: r.next_at ? r.next_at.getTime() : null, notes: r.notes,
+      }));
+      const recs = records.rows.filter((r) => r.device_id === id).map((r) => ({
+        id: Number(r.local_id), itemId: Number(r.item_local_id), ts: r.ts.getTime(), odometerKm: r.odometer_km, cost: r.cost,
+      }));
+      const km = odo.rows.find((r) => r.id === id)?.km ?? null;
+      out.set(id, { ...maintenanceOverview(its, recs, km), odometerKm: km });
+    }
+    return out;
+  }
+
   // Resumo de cada veículo para a página inicial: situação, falhas e abastecimentos do mês.
   app.get('/internal/devices/overview', { preValidation: requireReady }, async (request) => {
     const { user } = request.session;
@@ -118,6 +149,7 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
       [ids],
     )).rows : [];
     const month = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit' }).format(new Date());
+    const maint = await loadMaintenance(ids);
     return {
       month,
       vehicles: rows.map((r) => {
@@ -136,6 +168,8 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
           avgKmPerL: summary.avgKmPerL, monthCost: summary.costByMonth[month] ?? 0,
           // Último retrato do computador de bordo enviado pelo app (null se nunca enviou).
           computer: r.computer ? { ...r.computer, at: r.computer_at } : null,
+          maintenanceDue: maint.get(r.id)?.due ?? 0,
+          maintenanceSoon: maint.get(r.id)?.soon ?? 0,
         };
       }),
     };
@@ -200,6 +234,13 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
         lambdaPostAvg: n(r.lambda_post_avg), lambdaPostSd: n(r.lambda_post_sd), milOn: r.mil_on, dtcMax: r.dtc_max,
       })),
     };
+  });
+
+  // Manutenção espelhada do app, com a situação de cada item pelo hodômetro mais recente.
+  app.get('/internal/devices/:id/maintenance', { preValidation: requireReady, schema: { params: uuidParam } }, async (request) => {
+    const device = await loadDevice(request);
+    const data = await loadMaintenance([device.id]);
+    return data.get(device.id) ?? maintenanceOverview([], [], null);
   });
 
   // Leituras de uma viagem, em ordem, para reproduzir nos mostradores do painel (só leitura).

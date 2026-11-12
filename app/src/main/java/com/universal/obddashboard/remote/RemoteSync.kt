@@ -49,6 +49,20 @@ object RemoteSync {
         }
     }
 
+    /** Manutenção do veículo (itens e registros), enviada quando muda. Falha aqui não atrapalha a telemetria. */
+    private suspend fun syncMaintenance(c: Context, v: String, client: RemoteClient, token: String) {
+        val dao = AppDatabase.get(c).maintenanceDao()
+        val body = RemotePayload.maintenance(dao.items(v), dao.records(v))
+        val hash = sha256(body)
+        if (hash == RemoteSettings.maintSentHash(c, v)) return
+        try {
+            val code = client.uploadMaintenance(token, body)
+            if (code in 200..299) RemoteSettings.setMaintSentHash(c, hash, v) else Log.w(TAG, "Manutenção recusada: $code")
+        } catch (e: java.io.IOException) {
+            Log.i(TAG, "Manutenção fica para o próximo envio: ${e.message}")
+        }
+    }
+
     /** Aba Abastecimentos → "Enviar ao painel": a lista do veículo selecionado, na hora. null = não pareado. */
     suspend fun sendFuelUpsNow(context: Context): FuelSync? = lock.withLock {
         val c = context.applicationContext
@@ -68,7 +82,7 @@ object RemoteSync {
     private fun sha256(text: String): String =
         java.security.MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
 
-    /** Abastecimento mudou: tenta enviar já, sem esperar a próxima captura. */
+    /** Abastecimento ou manutenção mudou: tenta enviar já, sem esperar a próxima captura. */
     fun syncSoon(context: Context) {
         val c = context.applicationContext
         if (!RemoteSettings.enabled(c) || RemoteSettings.token(c) == null) return
@@ -92,7 +106,10 @@ object RemoteSync {
             override fun currentDtcs(): List<String> = if (current) TelemetryHub.state.value.confirmedDtcs else emptyList()
         }
         val result = RemoteUploader(source) { body -> client.upload(token, body) }.drain()
-        if (result.outcome != RemoteUploader.Outcome.REVOKED) syncFuelUps(c, v, client, token)
+        if (result.outcome != RemoteUploader.Outcome.REVOKED) {
+            syncFuelUps(c, v, client, token)
+            syncMaintenance(c, v, client, token)
+        }
         when (result.outcome) {
             RemoteUploader.Outcome.REVOKED -> {
                 Log.w(TAG, "Dispositivo revogado no servidor")

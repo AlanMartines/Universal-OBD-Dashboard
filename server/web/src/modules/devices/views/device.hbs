@@ -26,6 +26,7 @@
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-trips" data-bs-toggle="tab" data-bs-target="#pane-trips" data-hash="viagens" type="button" role="tab" aria-controls="pane-trips" aria-selected="false"><i class="fa-solid fa-road me-1" aria-hidden="true"></i>Viagens</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-fuel" data-bs-toggle="tab" data-bs-target="#pane-fuel" data-hash="abastecimentos" type="button" role="tab" aria-controls="pane-fuel" aria-selected="false"><i class="fa-solid fa-gas-pump me-1" aria-hidden="true"></i>Abastecimentos</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-reports" data-bs-toggle="tab" data-bs-target="#pane-reports" data-hash="relatorios" type="button" role="tab" aria-controls="pane-reports" aria-selected="false"><i class="fa-solid fa-chart-column me-1" aria-hidden="true"></i>Relatórios</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="tab-maint" data-bs-toggle="tab" data-bs-target="#pane-maint" data-hash="manutencao" type="button" role="tab" aria-controls="pane-maint" aria-selected="false"><i class="fa-solid fa-wrench me-1" aria-hidden="true"></i>Manutenção{{#if maintenance.due}} <span class="badge text-bg-danger">{{maintenance.due}}</span>{{else if maintenance.soon}} <span class="badge text-bg-warning">{{maintenance.soon}}</span>{{/if}}</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-health" data-bs-toggle="tab" data-bs-target="#pane-health" data-hash="saude" type="button" role="tab" aria-controls="pane-health" aria-selected="false"><i class="fa-solid fa-heart-pulse me-1" aria-hidden="true"></i>Saúde</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" id="tab-faults" data-bs-toggle="tab" data-bs-target="#pane-faults" data-hash="falhas" type="button" role="tab" aria-controls="pane-faults" aria-selected="false"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Falhas{{#if faultsActive}} <span class="badge text-bg-danger">{{faultsActive}}</span>{{/if}}</button></li>
   </ul>
@@ -171,6 +172,48 @@
     {{> emptyState icon="fa-calendar-days" title="Nada para resumir ainda" text="O resumo aparece com as primeiras viagens e abastecimentos."}}
     {{/if}}
   </section>
+  </div>
+
+  <div class="tab-pane fade" id="pane-maint" role="tabpanel" aria-labelledby="tab-maint" tabindex="0">
+  {{#if maintenance.items.length}}
+  <section class="stat-panel mb-3" aria-labelledby="maint-title">
+    <h2 class="h6 mb-1" id="maint-title"><i class="fa-solid fa-wrench me-1" aria-hidden="true"></i>Manutenção</h2>
+    <p class="small text-body-secondary mb-3">Espelho da aba Manutenção do app (é lá que se registra e edita). A situação usa o hodômetro mais recente{{#if maintenance.odometerKm}}: {{num maintenance.odometerKm 0}} km{{/if}}.</p>
+    <dl class="row row-cols-2 row-cols-md-4 g-2 mb-0 maint-stats">
+      <div class="col"><dt class="small text-body-secondary">Vencidos</dt><dd class="h5 mb-0 {{#if maintenance.due}}text-danger{{/if}}">{{maintenance.due}}</dd></div>
+      <div class="col"><dt class="small text-body-secondary">Perto de vencer</dt><dd class="h5 mb-0">{{maintenance.soon}}</dd></div>
+      <div class="col"><dt class="small text-body-secondary">Itens</dt><dd class="h5 mb-0">{{maintenance.items.length}}</dd></div>
+      <div class="col"><dt class="small text-body-secondary">Gasto registrado</dt><dd class="h5 mb-0">{{brl maintenance.totalCost}}</dd></div>
+    </dl>
+  </section>
+  <div class="row row-cols-1 row-cols-lg-2 g-3 mb-3">
+    {{#each maintenance.items}}
+    <div class="col">
+      <section class="stat-panel h-100">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+          <h3 class="h6 mb-0 me-auto">{{name}}</h3>
+          <span class="badge health-badge health-{{tone}}"><i class="fa-solid {{icon}}" aria-hidden="true"></i> {{label}}</span>
+        </div>
+        <p class="mb-1">{{when}}</p>
+        <p class="small text-body-secondary mb-1">{{#if last}}Última vez: {{last}}{{else}}Nunca registrado{{/if}}{{#if spent}} · gasto {{brl spent}}{{/if}}</p>
+        {{#if notes}}<p class="small text-body-secondary mb-1">{{notes}}</p>{{/if}}
+        {{#if history.length}}
+        <details class="small">
+          <summary>Histórico ({{history.length}})</summary>
+          <ul class="list-unstyled mb-0 mt-1">
+            {{#each history}}<li>{{dateText}} · {{#if odometerKm}}{{num odometerKm 0}} km{{else}}sem km{{/if}}{{#if cost}} · {{brl cost}}{{/if}}</li>{{/each}}
+          </ul>
+        </details>
+        {{/if}}
+      </section>
+    </div>
+    {{/each}}
+  </div>
+  {{else}}
+  <section class="stat-panel mb-3">
+    {{> emptyState icon="fa-wrench" title="Nenhuma manutenção enviada" text="Os itens da aba Manutenção do app aparecem aqui depois do próximo envio ao painel (app 0.9.40 ou mais novo)."}}
+  </section>
+  {{/if}}
   </div>
 
   <div class="tab-pane fade" id="pane-health" role="tabpanel" aria-labelledby="tab-health" tabindex="0">

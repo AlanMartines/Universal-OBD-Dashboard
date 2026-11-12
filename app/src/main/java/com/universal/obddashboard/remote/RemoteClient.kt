@@ -57,6 +57,10 @@ class RemoteClient(baseUrl: String, private val transport: Transport = UrlTransp
     fun uploadFuelUps(token: String, json: String): Int =
         transport.post("$base/api/v1/fuel-ups", JSON_HEADERS + ("Authorization" to "Bearer $token"), json, TIMEOUT_MS).code
 
+    /** @return código HTTP. @throws IOException sem rede */
+    fun uploadMaintenance(token: String, json: String): Int =
+        transport.post("$base/api/v1/maintenance", JSON_HEADERS + ("Authorization" to "Bearer $token"), json, TIMEOUT_MS).code
+
     /** @return quantas pessoas assistem agora, ou null se o servidor recusou. @throws IOException sem rede */
     fun live(token: String, json: String): Int? {
         val res = transport.post("$base/api/v1/live", JSON_HEADERS + ("Authorization" to "Bearer $token"), json, LIVE_TIMEOUT_MS)

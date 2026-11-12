@@ -193,6 +193,90 @@ export default function deviceRoutes(app, { pool, live, limit }) {
     return { stored: items.length };
   });
 
+  // Manutenção do veículo, lista inteira (itens e registros): o painel troca tudo de uma vez, como espelho do app.
+  // A observação de cada registro (oficina) não vem: fica no celular.
+  app.post('/api/v1/maintenance', {
+    ...limit(30, '1 minute', (request) => sha256(String(request.headers.authorization ?? request.clientIp)).toString('hex')),
+    bodyLimit: 256 * 1024,
+    preValidation: requireDevice,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['items', 'records'],
+        additionalProperties: false,
+        properties: {
+          items: {
+            type: 'array',
+            maxItems: 200,
+            items: {
+              type: 'object',
+              required: ['id', 'name'],
+              additionalProperties: false,
+              properties: {
+                id: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+                name: { type: 'string', minLength: 1, maxLength: 120 },
+                intervalKm: { type: ['number', 'null'], exclusiveMinimum: 0, maximum: 1000000 },
+                intervalMonths: { type: ['integer', 'null'], minimum: 1, maximum: 240 },
+                nextKm: { type: ['number', 'null'], exclusiveMinimum: 0, maximum: 10000000 },
+                nextAt: { type: ['integer', 'null'], minimum: 0, maximum: 8640000000000000 },
+                notes: { type: ['string', 'null'], maxLength: 300 },
+              },
+            },
+          },
+          records: {
+            type: 'array',
+            maxItems: 5000,
+            items: {
+              type: 'object',
+              required: ['id', 'itemId', 'ts'],
+              additionalProperties: false,
+              properties: {
+                id: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+                itemId: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+                ts: { type: 'integer', minimum: 0, maximum: 8640000000000000 },
+                odometerKm: { type: ['number', 'null'], minimum: 0, maximum: 10000000 },
+                cost: { type: ['number', 'null'], minimum: 0, maximum: 1000000 },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, async (request) => {
+    const { items, records } = request.body;
+    const ids = new Set(items.map((i) => i.id));
+    if (ids.size !== items.length) throw fail(400, 'duplicate_id');
+    if (new Set(records.map((r) => r.id)).size !== records.length) throw fail(400, 'duplicate_id');
+    if (records.some((r) => !ids.has(r.itemId))) throw fail(400, 'unknown_item');
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM maintenance_records WHERE device_id = $1', [request.device.id]);
+      await client.query('DELETE FROM maintenance_items WHERE device_id = $1', [request.device.id]);
+      for (const it of items) {
+        await client.query(
+          `INSERT INTO maintenance_items (device_id, local_id, name, interval_km, interval_months, next_km, next_at, notes)
+           VALUES ($1, $2, $3, $4, $5, $6, CASE WHEN $7::bigint IS NULL THEN NULL ELSE to_timestamp($7::bigint / 1000.0) END, $8)`,
+          [request.device.id, it.id, it.name, it.intervalKm ?? null, it.intervalMonths ?? null, it.nextKm ?? null, it.nextAt ?? null, it.notes ?? null],
+        );
+      }
+      for (const r of records) {
+        await client.query(
+          `INSERT INTO maintenance_records (device_id, local_id, item_local_id, ts, odometer_km, cost)
+           VALUES ($1, $2, $3, to_timestamp($4 / 1000.0), $5, $6)`,
+          [request.device.id, r.id, r.itemId, r.ts, r.odometerKm ?? null, r.cost ?? null],
+        );
+      }
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+    return { stored: items.length, records: records.length };
+  });
+
   // Última leitura, para quem está olhando agora. Não vai ao banco; quem guarda o histórico é /telemetry.
   // A resposta só diz quantas pessoas assistem, para o app reduzir o envio: nunca leva comandos.
   app.post('/api/v1/live', {

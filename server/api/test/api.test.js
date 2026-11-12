@@ -826,6 +826,64 @@ describe('API', () => {
     });
   });
 
+  describe('manutenção espelhada do app', () => {
+    const post = (token, body) => app.inject({ method: 'POST', url: '/api/v1/maintenance', headers: { authorization: `Bearer ${token}` }, payload: body });
+    const DAY = 864e5;
+
+    test('recebe a lista, calcula a situação pelo hodômetro e troca tudo no envio seguinte', async () => {
+      const dono = await userToken(app, admin, 'manut');
+      const d = await pairDevice(app, dono, 'aaaaaaaa-3333-4333-8333-aaaaaaaaaaaa');
+      await pool.query('UPDATE devices SET odometer_km = 189600 WHERE id = $1', [d.id]);
+      const now = Date.now();
+      const body = {
+        items: [
+          { id: 1, name: 'Troca de óleo e filtro de óleo', intervalKm: 7000, intervalMonths: null, nextKm: 190000, nextAt: null, notes: '5W30' },
+          { id: 2, name: 'Correia dentada', intervalKm: null, intervalMonths: null, nextKm: 230000, nextAt: null, notes: null },
+          { id: 3, name: 'Fluido de freio', intervalKm: null, intervalMonths: 24, nextKm: null, nextAt: now - 5 * DAY, notes: null },
+        ],
+        records: [
+          { id: 10, itemId: 1, ts: now - 100 * DAY, odometerKm: 183000, cost: 230 },
+          { id: 11, itemId: 1, ts: now - 400 * DAY, odometerKm: 176000, cost: 210 },
+          { id: 12, itemId: 3, ts: now - 735 * DAY, odometerKm: null, cost: null },
+        ],
+      };
+      assert.equal((await post(d.deviceToken, body)).statusCode, 200);
+      const r = (await internal(app, 'GET', `/internal/devices/${d.id}/maintenance`, { token: dono })).json();
+      assert.deepEqual(r.items.map((i) => [i.name, i.status.level]), [
+        ['Fluido de freio', 'DUE'], ['Troca de óleo e filtro de óleo', 'SOON'], ['Correia dentada', 'OK'],
+      ]);
+      const oleo = r.items.find((i) => i.id === 1);
+      assert.equal(oleo.status.remainingKm, 400);
+      assert.equal(oleo.records.length, 2);
+      assert.equal(oleo.records[0].odometerKm, 183000);   // mais novo primeiro
+      assert.equal(r.totalCost, 440);
+      assert.equal(r.due, 1);
+      assert.equal(r.soon, 1);
+      assert.equal(r.odometerKm, 189600);
+      const ov = (await internal(app, 'GET', '/internal/devices/overview', { token: dono })).json();
+      assert.equal(ov.vehicles.find((v) => v.id === d.id).maintenanceDue, 1);
+      // envio seguinte sem a correia: ela some do painel
+      body.items = body.items.filter((i) => i.id !== 2);
+      assert.equal((await post(d.deviceToken, body)).statusCode, 200);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${d.id}/maintenance`, { token: dono })).json().items.length, 2);
+      const outro = await userToken(app, admin, 'manutoutro');
+      assert.equal((await internal(app, 'GET', `/internal/devices/${d.id}/maintenance`, { token: outro })).statusCode, 404);
+    });
+
+    test('recusa registro de item que não veio, id repetido, campo a mais e sem token', async () => {
+      const dono = await userToken(app, admin, 'manut2');
+      const d = await pairDevice(app, dono, 'aaaaaaaa-4444-4444-8444-aaaaaaaaaaaa');
+      const it = { id: 1, name: 'Velas' };
+      assert.equal((await post(d.deviceToken, { items: [it], records: [{ id: 1, itemId: 9, ts: 1 }] })).statusCode, 400);
+      assert.equal((await post(d.deviceToken, { items: [it, it], records: [] })).statusCode, 400);
+      assert.equal((await post(d.deviceToken, { items: [{ ...it, oficina: 'x' }], records: [] })).statusCode, 400);
+      assert.equal((await post(d.deviceToken, { items: [it], records: [{ id: 1, itemId: 1, ts: 1, notes: 'oficina' }] })).statusCode, 400);
+      assert.equal((await post(null, { items: [], records: [] })).statusCode, 401);
+      const vazio = (await internal(app, 'GET', `/internal/devices/${d.id}/maintenance`, { token: dono })).json();
+      assert.deepEqual([vazio.items.length, vazio.totalCost], [0, 0]);
+    });
+  });
+
   describe('saúde ao longo do tempo', () => {
     test('resume por dia, sobrevive à limpeza e só o dono vê', async () => {
       const dono = await userToken(app, admin, 'saude');

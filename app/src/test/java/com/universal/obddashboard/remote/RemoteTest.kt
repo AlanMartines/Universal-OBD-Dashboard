@@ -199,6 +199,21 @@ class RemoteTest {
         File(dir, "batch.json").writeText(body)
     }
 
+    @Test fun maintenanceLeavesRecordNotesOnThePhone() {
+        val item = com.universal.obddashboard.db.MaintenanceItemEntity(
+            id = 1, vehicleId = "v1", name = "Troca de óleo", intervalKm = 7000.0, notes = "5W30", createdAt = 1, nextKm = 190_000.0,
+        )
+        val rec = com.universal.obddashboard.db.MaintenanceRecordEntity(
+            id = 5, itemId = 1, vehicleId = "v1", timestamp = 2_000, odometerKm = 183_000.0, cost = 230.0, notes = "Oficina do bairro",
+        )
+        val text = RemotePayload.maintenance(listOf(item), listOf(rec, rec.copy(id = 6, itemId = 99)))
+        val o = Json.parseToJsonElement(text).jsonObject
+        assertEquals(1, o["items"]!!.jsonArray.size)
+        assertEquals("registro de item que não foi junto fica de fora", 1, o["records"]!!.jsonArray.size)
+        assertEquals("190000.0", o["items"]!!.jsonArray[0].jsonObject["nextKm"]!!.jsonPrimitive.content)
+        assertTrue(text.contains("5W30") && !text.contains("Oficina") && !text.contains("bairro"))
+    }
+
     @Test fun fuelUpsLeaveStationAndNotesOnThePhone() {
         val f = com.universal.obddashboard.db.FuelUpEntity(
             id = 3, timestamp = 1_000, profileId = "p", odometerKm = 1234.0, liters = 7.473, totalPrice = 50.0, pricePerLiter = 6.691,

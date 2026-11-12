@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { buildApp, checkFormToken, isSameOriginRequest, issueFormToken } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
 import { ago, describeAgent } from '../src/modules/account/user-agent.js';
-import { buildReport } from '../src/modules/devices/routes.js';
+import { buildMaintenance, buildReport } from '../src/modules/devices/routes.js';
 import { buildHealth, healthFindings } from '../src/modules/devices/health.js';
 // A API real, com banco real: o teste atravessa a mesma fronteira da produção.
 import { ADMIN, KEY, sample, startApi } from '../../api/test/helpers.js';
@@ -734,5 +734,23 @@ describe('saúde do carro', () => {
     assert.deepEqual(h.chart.stftWarm, [1, null]);
     assert.equal(h.table[0].day, '02/10/2026');
     assert.equal(h.since, '01/10/2026');
+  });
+});
+
+describe('manutenção no painel', () => {
+  test('texto do vencimento, selo e histórico', () => {
+    const m = buildMaintenance({ items: [
+      { id: 1, name: 'Óleo', notes: null, records: [{ id: 1, ts: Date.UTC(2026, 9, 1, 15), odometerKm: 183000, cost: 230 }],
+        status: { level: 'SOON', nextKm: 190000, remainingKm: 400, nextAt: null, remainingDays: null } },
+      { id: 2, name: 'Fluido de freio', notes: null, records: [],
+        status: { level: 'DUE', nextKm: null, remainingKm: null, nextAt: Date.UTC(2026, 9, 1, 15), remainingDays: -12 } },
+    ], totalCost: 230, due: 1, soon: 1, odometerKm: 189600 });
+    assert.equal(m.items[0].when, 'faltam 400 km (aos 190.000 km)');
+    assert.equal(m.items[0].label, 'Perto de vencer');
+    assert.equal(m.items[0].last, '01/10/2026 · 183.000 km');
+    assert.equal(m.items[0].spent, 230);
+    assert.equal(m.items[1].when, 'vencido há 12 dias');
+    assert.equal(m.items[1].tone, 'bad');
+    assert.equal(m.items[1].last, null);
   });
 });

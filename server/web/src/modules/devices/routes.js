@@ -18,6 +18,33 @@ const DAY = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', da
  * Relatórios da tela do dispositivo: km/l de cada tanque (entre tanques cheios) para o gráfico e o resumo
  * dos últimos 6 meses (km das viagens enviadas, litros e gasto dos abastecimentos, km/l dos tanques fechados no mês).
  */
+const MT_LABEL = { DUE: ['Vencido', 'bad', 'fa-circle-exclamation'], SOON: ['Perto de vencer', 'warn', 'fa-triangle-exclamation'], OK: ['Em dia', 'ok', 'fa-circle-check'], UNKNOWN: ['Sem registro', 'info', 'fa-circle-info'] };
+const ptDate = (ms) => new Date(ms).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+const ptNum = (v) => Math.round(v).toLocaleString('pt-BR');
+
+/** Manutenção espelhada do app, pronta para a aba: texto do vencimento, selo e histórico. */
+export function buildMaintenance(m) {
+  return {
+    ...m,
+    items: m.items.map((it) => {
+      const s = it.status;
+      const parts = [];
+      if (s.remainingKm != null) parts.push(s.remainingKm <= 0 ? `vencido há ${ptNum(-s.remainingKm)} km (era aos ${ptNum(s.nextKm)} km)` : `faltam ${ptNum(s.remainingKm)} km (aos ${ptNum(s.nextKm)} km)`);
+      else if (s.nextKm != null) parts.push(`aos ${ptNum(s.nextKm)} km`);
+      if (s.remainingDays != null) parts.push(s.remainingDays < 0 ? `vencido há ${-s.remainingDays} dias` : `até ${ptDate(s.nextAt)} (${s.remainingDays} dias)`);
+      const [label, tone, icon] = MT_LABEL[s.level] ?? MT_LABEL.UNKNOWN;
+      const last = it.records[0];
+      return {
+        ...it, label, tone, icon,
+        when: parts.join(' · ') || 'Sem próxima troca anotada.',
+        last: last ? `${ptDate(last.ts)}${last.odometerKm != null ? ' · ' + ptNum(last.odometerKm) + ' km' : ''}` : null,
+        history: it.records.map((r) => ({ ...r, dateText: ptDate(r.ts) })),
+        spent: it.records.reduce((sum, r) => sum + (r.cost ?? 0), 0),
+      };
+    }),
+  };
+}
+
 export function buildReport(fuel, trips) {
   const active = fuel.items.filter((f) => !f.removedAt);
   const intervals = [...fuel.summary.intervals].reverse().slice(-12);
@@ -77,6 +104,8 @@ export default function devicesRoutes(app, {
     ]);
     const vehicles = overview.vehicles.map((v) => ({
       ...v, status: freshness(v.latestTs ?? v.lastSeenAt), dtcCount: v.dtcs.length,
+      maintenanceLabel: v.maintenanceDue ? `Manutenção: ${v.maintenanceDue} vencido${v.maintenanceDue > 1 ? 's' : ''}`
+        : v.maintenanceSoon ? `Manutenção: ${v.maintenanceSoon} perto de vencer` : null,
       computerAgo: v.computer?.at ? `atualizado ${ago(v.computer.at)}` : '',
     }));
     return reply.code(status).view('modules/devices/views/devices.hbs', context(request, {
@@ -114,6 +143,8 @@ export default function devicesRoutes(app, {
       // A saúde é um extra: se a API ainda não a tiver (atualização em andamento), a página abre sem ela.
       api(request, 'GET', `/internal/devices/${data.device.id}/health`).catch(() => ({ days: [] })),
     ]);
+    const maintenance = await api(request, 'GET', `/internal/devices/${data.device.id}/maintenance`)
+      .catch(() => ({ items: [], totalCost: 0, due: 0, soon: 0, odometerKm: null }));
     const health = buildHealth(healthData.days);
     const months = Object.entries(fuel.summary.costByMonth);
     const lastMonth = months.length ? months[months.length - 1] : null;
@@ -137,6 +168,7 @@ export default function devicesRoutes(app, {
       reportJson: JSON.stringify(report.chart),
       health,
       healthJson: JSON.stringify(health.chart),
+      maintenance: buildMaintenance(maintenance),
       faults,
       faultsActive: faults.filter((f) => f.active).length,
       title: data.device.name,
