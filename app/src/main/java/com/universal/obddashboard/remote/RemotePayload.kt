@@ -1,6 +1,8 @@
 package com.universal.obddashboard.remote
 
 import com.universal.obddashboard.db.FuelUpEntity
+import com.universal.obddashboard.db.MaintenanceItemEntity
+import com.universal.obddashboard.db.MaintenanceRecordEntity
 import com.universal.obddashboard.db.TelemetryLogEntity
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -145,6 +147,41 @@ object RemotePayload {
         )
     }.toString()
 
+    /**
+     * Manutenção do veículo, lista inteira (itens e registros). A observação de cada registro (oficina) fica no
+     * celular: revelaria por onde a pessoa anda. A do item (ex.: "5W30, 2,7 L") vai.
+     */
+    fun maintenance(items: List<MaintenanceItemEntity>, records: List<MaintenanceRecordEntity>): String = buildJsonObject {
+        val sent = items.filter { it.id > 0 }.take(MAX_MAINT_ITEMS)
+        val ids = sent.map { it.id }.toSet()
+        put("items", buildJsonArray {
+            sent.forEach { i ->
+                add(buildJsonObject {
+                    put("id", i.id)
+                    put("name", i.name.take(120))
+                    put("intervalKm", i.intervalKm?.takeIf { it.isFinite() && it > 0 && it <= 1_000_000 })
+                    put("intervalMonths", i.intervalMonths?.takeIf { it in 1..240 })
+                    put("nextKm", i.nextKm?.takeIf { it.isFinite() && it > 0 && it <= 10_000_000 })
+                    put("nextAt", i.nextAt?.takeIf { it >= 0 })
+                    put("notes", i.notes?.take(300))
+                })
+            }
+        })
+        put("records", buildJsonArray {
+            records.filter { it.id > 0 && it.itemId in ids }.take(MAX_MAINT_RECORDS).forEach { r ->
+                add(buildJsonObject {
+                    put("id", r.id)
+                    put("itemId", r.itemId)
+                    put("ts", r.timestamp)
+                    put("odometerKm", r.odometerKm?.takeIf { it.isFinite() && it >= 0 && it <= 10_000_000 })
+                    put("cost", r.cost?.takeIf { it.isFinite() && it >= 0 && it <= 1_000_000 })
+                })
+            }
+        })
+    }.toString()
+
+    private const val MAX_MAINT_ITEMS = 200
+    private const val MAX_MAINT_RECORDS = 5000
     private const val MAX_FUEL_UPS = 1000
     private const val MAX_LITERS = 1000.0
 

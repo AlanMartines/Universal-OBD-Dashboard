@@ -9,6 +9,7 @@ import com.universal.obddashboard.db.MaintenanceRecordEntity
 import com.universal.obddashboard.maintenance.Maintenance
 import com.universal.obddashboard.maintenance.MaintenanceStore
 import com.universal.obddashboard.orNull
+import com.universal.obddashboard.remote.RemoteSync
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -131,6 +132,7 @@ class MaintenanceBridge(private val activity: MainActivity) {
                 notes = notes, createdAt = System.currentTimeMillis(), nextKm = due.first, nextAt = due.second))
             dao.insertRecord(MaintenanceRecordEntity(itemId = newId, vehicleId = vehicle(), timestamp = lastAt, odometerKm = lastKm))
         }
+        RemoteSync.syncSoon(activity)
         ok
     }
 
@@ -139,6 +141,7 @@ class MaintenanceBridge(private val activity: MainActivity) {
         val dao = db().maintenanceDao()
         dao.deleteRecordsOf(id, vehicle())
         dao.deleteItem(id, vehicle())
+        RemoteSync.syncSoon(activity)
         ok
     }
 
@@ -161,12 +164,14 @@ class MaintenanceBridge(private val activity: MainActivity) {
         dao.insertRecord(MaintenanceRecordEntity(itemId = itemId, vehicleId = vehicle(), timestamp = at, odometerKm = km, cost = cost, notes = o.optTextOrNull("notes")))
         val (ik, im) = intervals(km, at, due.first, due.second)
         dao.updateItem(item.copy(nextKm = due.first, nextAt = due.second, intervalKm = ik ?: item.intervalKm, intervalMonths = im ?: item.intervalMonths))
+        RemoteSync.syncSoon(activity)
         ok
     }
 
     @JavascriptInterface
     fun deleteMaintenanceRecord(requestId: String, id: Long) = activity.answerAsync(requestId) {
         db().maintenanceDao().deleteRecord(id, vehicle())
+        RemoteSync.syncSoon(activity)
         ok
     }
 
