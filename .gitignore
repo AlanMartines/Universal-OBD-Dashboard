@@ -26,3 +26,6 @@ veiculos/**/*.pdf
 
 # Python
 __pycache__/
+
+# Custom
+.claude
