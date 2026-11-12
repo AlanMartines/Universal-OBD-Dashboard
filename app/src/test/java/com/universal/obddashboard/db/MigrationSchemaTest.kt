@@ -54,6 +54,17 @@ class MigrationSchemaTest {
         )
     }
 
+    @Test fun migration5to6AddsNextDueColumns() {
+        val v5 = entities(5)
+        val v6 = entities(6)
+        assertEquals(v5.keys, v6.keys)
+        for (t in v5.keys - "maintenance_items") assertEquals(t, v5[t], v6[t])
+        val before = v5["maintenance_items"]!!["createSql"]!!.jsonPrimitive.content
+        val after = v6["maintenance_items"]!!["createSql"]!!.jsonPrimitive.content
+        assertEquals(before.replace("`created_at` INTEGER NOT NULL", "`created_at` INTEGER NOT NULL, `next_km` REAL, `next_at` INTEGER"), after)
+        assertEquals(listOf("ALTER TABLE `maintenance_items` ADD COLUMN `next_km` REAL", "ALTER TABLE `maintenance_items` ADD COLUMN `next_at` INTEGER"), AppDatabase.MIGRATION_5_6_SQL)
+    }
+
     @Test fun existingTablesAreUnchanged() {
         val v1 = entities(1)
         val v2 = entities(2)

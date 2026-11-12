@@ -64,6 +64,32 @@ class MaintenanceTest {
         assertNull(s.remainingKm)
     }
 
+    @Test fun mechanicNextKmWinsOverInterval() {
+        // mecânico: "próxima troca daqui 7.000 km" → anotado 187.000, mesmo com intervalo de 15.000
+        val s = Maintenance.status(15_000.0, 12, 180_000.0, day(2026, 11, 1), 186_500.0, day(2026, 11, 11), tz, setNextKm = 187_000.0)
+        assertEquals(187_000.0, s.nextKm!!, 0.01)
+        assertEquals(500.0, s.remainingKm!!, 0.01)
+        assertEquals(Level.SOON, s.level)   // 10% de 7.000 = 700 km
+    }
+
+    @Test fun nextByKmOnlyIgnoresDateWhenNotSet() {
+        val s = Maintenance.status(null, null, 180_000.0, day(2026, 11, 1), 181_000.0, day(2026, 11, 11), tz, setNextKm = 190_000.0)
+        assertEquals(Level.OK, s.level)
+        assertNull(s.nextAt)
+    }
+
+    @Test fun nextDateSetCountsEvenWithoutInterval() {
+        val s = Maintenance.status(null, null, 180_000.0, day(2026, 11, 1), 181_000.0, day(2026, 11, 11), tz,
+            setNextKm = 200_000.0, setNextAt = day(2026, 11, 30))
+        assertEquals(Level.SOON, s.level)
+        assertEquals(19L, s.remainingDays)
+    }
+
+    @Test fun nextDueWithoutAnyRecordStillWorks() {
+        val s = Maintenance.status(null, null, null, null, 189_900.0, day(2026, 11, 11), tz, setNextKm = 190_000.0)
+        assertEquals(Level.SOON, s.level)   // sem última vez: aviso a 500 km
+    }
+
     @Test fun addMonthsKeepsEndOfMonthSane() {
         assertEquals(day(2027, 2, 28), Maintenance.addMonths(day(2026, 1, 31), 13, tz))
     }

@@ -29,20 +29,23 @@ object Maintenance {
     /**
      * @param lastKm hodômetro da última vez (null = não anotado); @param lastAt data da última vez (null = nunca feito);
      * @param currentKm hodômetro de agora (null = desconhecido).
+     * @param setNextKm / @param setNextAt próxima troca anotada (o que o mecânico passou): vale no lugar do intervalo.
      */
     fun status(
         intervalKm: Double?, intervalMonths: Int?, lastKm: Double?, lastAt: Long?, currentKm: Double?, now: Long,
-        tz: TimeZone = TimeZone.getDefault(),
+        tz: TimeZone = TimeZone.getDefault(), setNextKm: Double? = null, setNextAt: Long? = null,
     ): Status {
-        if (lastAt == null) return Status(Level.UNKNOWN, null, null, null, null)
-        val nextKm = if (intervalKm != null && intervalKm > 0 && lastKm != null) lastKm + intervalKm else null
+        if (lastAt == null && setNextKm == null && setNextAt == null) return Status(Level.UNKNOWN, null, null, null, null)
+        val nextKm = setNextKm ?: if (intervalKm != null && intervalKm > 0 && lastKm != null) lastKm + intervalKm else null
         val remainingKm = if (nextKm != null && currentKm != null) nextKm - currentKm else null
-        val nextAt = if (intervalMonths != null && intervalMonths > 0) addMonths(lastAt, intervalMonths, tz) else null
+        val nextAt = setNextAt ?: if (lastAt != null && intervalMonths != null && intervalMonths > 0) addMonths(lastAt, intervalMonths, tz) else null
         val remainingDays = nextAt?.let { Math.floorDiv(it - now, DAY_MS) }
+        // Aviso antes do km: 10% do trecho entre a última vez e a próxima (ou do intervalo); sem nenhum dos dois, 500 km
+        val spanKm = if (nextKm != null && lastKm != null && nextKm > lastKm) nextKm - lastKm else intervalKm?.takeIf { it > 0 } ?: 5_000.0
         val byKm = when {
             remainingKm == null -> null
             remainingKm <= 0 -> Level.DUE
-            remainingKm <= soonKm(intervalKm!!) -> Level.SOON
+            remainingKm <= soonKm(spanKm) -> Level.SOON
             else -> Level.OK
         }
         val byDate = when {

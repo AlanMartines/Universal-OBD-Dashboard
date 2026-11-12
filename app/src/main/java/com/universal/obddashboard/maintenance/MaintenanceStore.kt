@@ -25,7 +25,10 @@ object MaintenanceStore {
             val recs = byItem[item.id].orEmpty()   // já vem do mais novo para o mais velho
             // O km da última vez é o do registro mais novo que tiver hodômetro anotado
             val lastKm = recs.firstOrNull { it.odometerKm != null }?.odometerKm
-            val status = Maintenance.status(item.intervalKm, item.intervalMonths, lastKm, recs.firstOrNull()?.timestamp, currentKm, now)
+            val status = Maintenance.status(
+                item.intervalKm, item.intervalMonths, lastKm, recs.firstOrNull()?.timestamp, currentKm, now,
+                setNextKm = item.nextKm, setNextAt = item.nextAt,
+            )
             ItemView(item, recs, status)
         }.sortedWith(compareBy<ItemView> { ORDER.indexOf(it.status.level) }.thenBy { it.status.remainingKm ?: Double.MAX_VALUE })
     }
