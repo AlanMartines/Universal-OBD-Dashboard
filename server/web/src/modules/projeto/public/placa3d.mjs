@@ -809,39 +809,40 @@ function iniciar() {
     const g = new THREE.Group();
     const xs = X.mag.map((p) => p.p[0]);
     g.add(caixa(Math.max(...xs) - Math.min(...xs) + P, G.housing, P, M.nylon, (Math.min(...xs) + Math.max(...xs)) / 2, X.mag[0].p[1], A.T + A.MALE_H));
-    // Coordenadas do módulo: u para a direita (0 a 13), v da borda dos pinos para a dos furos (0 a 18)
+    // Coordenadas do módulo: u da borda dos pinos (lado da placa) para a dos furos (0 a 18), v de cima para baixo (0 a 13).
+    // É a foto do componente girada meia volta: pinos à esquerda, DRDY em cima e VCC embaixo.
     const tex = textura(G.l, G.w, (ctx) => {
       ctx.fillStyle = '#1d5db5';
       ctx.fillRect(0, 0, G.l, G.w);
       // trilhas sob a máscara, um pouco mais claras
       ctx.globalAlpha = 0.45;
-      for (const [a, b] of [[[1.42, 1.4], [1.42, 4.2]], [[3.96, 1.4], [3.96, 4.0]], [[6.5, 1.4], [6.5, 8.6]], [[9.04, 1.4], [9.04, 8.6]],
-        [[6.5, 8.6], [5.6, 9.2]], [[9.04, 8.6], [8.2, 9.2]], [[3.4, 7.3], [5.4, 9.6]], [[6.6, 13.4], [6.6, 11.6]]]) {
+      for (const [a, b] of [[[1.3, 11.58], [4.6, 11.58]], [[1.3, 9.04], [4.4, 9.04]], [[1.3, 6.5], [8.6, 6.5]], [[1.3, 3.96], [8.6, 3.96]],
+        [[8.6, 6.5], [9.4, 5.6]], [[8.6, 3.96], [9.4, 4.4]], [[5.8, 9.6], [8.6, 7.4]], [[13.4, 6.4], [11.6, 6.4]]]) {
         trilhaTex(ctx, [a, b], '#3f86e0', 0.32);
       }
       ctx.globalAlpha = 1;
-      // ilhas dos 5 pinos (VCC, GND, SCL, SDA, DRDY) e dos componentes
-      G.pinos.forEach((p, k) => ilha(ctx, p.p[0] - G.x0, p.p[1] - G.y0, 0.85, k === 0));
+      // ilhas dos 5 pinos (a do VCC quadrada)
+      for (const p of G.pinos) ilha(ctx, p.p[0] - G.x0, p.p[1] - G.y0, 0.85, p.n === 'VCC');
       // furos de 3 mm, com o anel estanhado
-      for (const hu of [2.6, 10.4]) {
+      for (const hv of [2.6, 10.4]) {
         ctx.fillStyle = '#d9dee3';
         ctx.beginPath();
-        ctx.arc(hu, 15.1, 1.85, 0, Math.PI * 2);
+        ctx.arc(15.1, hv, 1.85, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#0c1a2e';
         ctx.beginPath();
-        ctx.arc(hu, 15.1, 1.5, 0, Math.PI * 2);
+        ctx.arc(15.1, hv, 1.5, 0, Math.PI * 2);
         ctx.fill();
       }
-      // eixos impressos: X para a esquerda, Y para os furos, Z saindo da placa
+      // eixos impressos: X para baixo, Y para os furos, Z saindo da placa
       ctx.strokeStyle = '#ffffff';
       ctx.fillStyle = '#ffffff';
       ctx.lineWidth = 0.2;
       ctx.beginPath();
-      ctx.moveTo(3.0, 10.4); ctx.lineTo(1.1, 10.4);
-      ctx.moveTo(3.0, 10.4); ctx.lineTo(3.0, 12.4);
+      ctx.moveTo(10.4, 10.0); ctx.lineTo(10.4, 11.9);
+      ctx.moveTo(10.4, 10.0); ctx.lineTo(12.4, 10.0);
       ctx.stroke();
-      for (const [x, y, dx, dy] of [[0.9, 10.4, 1, 0], [3.0, 12.6, 0, -1]]) {
+      for (const [x, y, dx, dy] of [[10.4, 12.1, 0, -1], [12.6, 10.0, -1, 0]]) {
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x + dx * 0.6 - dy * 0.35, y + dy * 0.6 + dx * 0.35);
@@ -849,12 +850,12 @@ function iniciar() {
         ctx.fill();
       }
       ctx.beginPath();
-      ctx.arc(3.0, 10.4, 0.22, 0, Math.PI * 2);
+      ctx.arc(10.4, 10.0, 0.22, 0, Math.PI * 2);
       ctx.fill();
-      texto(ctx, 'X', 1.0, 11.3, 0.75, '#ffffff', { rot: -Math.PI / 2 });
-      texto(ctx, 'Y', 3.9, 12.9, 0.75, '#ffffff', { rot: -Math.PI / 2 });
-      texto(ctx, 'Z', 3.6, 9.6, 0.75, '#ffffff', { rot: -Math.PI / 2 });
-      texto(ctx, 'HMC5883L', 11.7, 11.6, 1.15, '#ffffff', { peso: 700, rot: -Math.PI / 2 });
+      texto(ctx, 'X', 11.2, 12.1, 0.75, '#ffffff', { rot: Math.PI });
+      texto(ctx, 'Y', 12.9, 9.2, 0.75, '#ffffff', { rot: Math.PI });
+      texto(ctx, 'Z', 9.5, 9.5, 0.75, '#ffffff', { rot: Math.PI });
+      texto(ctx, 'HMC5883L', 11.7, 1.4, 1.15, '#ffffff', { peso: 700, rot: Math.PI });
     });
     g.add(placaModulo(G.x0, G.y0, G.l, G.w, G.z0, 1.6, std(0x1a52a3, 0.5), tex));
     const topo = G.z0 + 1.6;
@@ -864,54 +865,54 @@ function iniciar() {
       const texChip = textura(3, 3, (ctx) => {
         ctx.fillStyle = '#222224';
         ctx.fillRect(0, 0, 3, 3);
-        for (const [t, du] of [['DA', 0.85], ['5883', 0.0], ['6014', -0.85]]) texto(ctx, t, 1.5 + du, 1.5, 0.62, '#bdbdbd', { peso: 500, rot: -Math.PI / 2 });
+        for (const [t, dv] of [['DA', 0.85], ['5883', 0.0], ['6014', -0.85]]) texto(ctx, t, 1.5, 1.5 + dv, 0.62, '#bdbdbd', { peso: 500, rot: Math.PI });
         ctx.fillStyle = '#4a4a4c';
         ctx.beginPath();
         ctx.arc(2.45, 2.45, 0.22, 0, Math.PI * 2);
         ctx.fill();
       }, 80);
-      const [cx, cy] = U(6.9, 10.1);
+      const [cx, cy] = U(10.1, 6.1);
       const chip = new THREE.Mesh(new THREE.BoxGeometry(3, 0.9, 3), [M.preto, M.preto, new THREE.MeshStandardMaterial({ map: texChip, roughness: 0.6 }), M.preto, M.preto, M.preto]);
       chip.position.copy(W(cx, cy, topo + 0.45));
       g.add(chip);
       for (const s of [-1, 1]) for (let i = 0; i < 4; i++) {   // ilhas estanhadas aparecendo dos dois lados
-        const pad = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.12, 0.3), M.estanho);
-        pad.position.copy(W(cx - 0.75 + i * 0.5, cy + s * 1.62, topo + 0.06));
+        const pad = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.35), M.estanho);
+        pad.position.copy(W(cx + s * 1.62, cy - 0.75 + i * 0.5, topo + 0.06));
         g.add(pad);
       }
     }
-    // regulador SOT-23 "662K": corpo deitado ao longo de v, duas pernas de um lado e uma do outro
+    // regulador SOT-23 "662K": corpo deitado ao longo de u, duas pernas de um lado e uma do outro
     {
-      const [cx, cy] = U(3.4, 5.8);
-      const texReg = textura(1.3, 2.9, (ctx) => {
+      const [cx, cy] = U(5.8, 9.6);
+      const texReg = textura(2.9, 1.3, (ctx) => {
         ctx.fillStyle = '#222224';
-        ctx.fillRect(0, 0, 1.3, 2.9);
-        texto(ctx, '662K', 0.65, 1.45, 0.62, '#cfcfcf', { peso: 500, rot: -Math.PI / 2 });
+        ctx.fillRect(0, 0, 2.9, 1.3);
+        texto(ctx, '662K', 1.45, 0.65, 0.62, '#cfcfcf', { peso: 500, rot: Math.PI });
       }, 80);
-      const corpo = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.0, 2.9), [M.preto, M.preto, new THREE.MeshStandardMaterial({ map: texReg, roughness: 0.6 }), M.preto, M.preto, M.preto]);
+      const corpo = new THREE.Mesh(new THREE.BoxGeometry(2.9, 1.0, 1.3), [M.preto, M.preto, new THREE.MeshStandardMaterial({ map: texReg, roughness: 0.6 }), M.preto, M.preto, M.preto]);
       corpo.position.copy(W(cx, cy, topo + 0.55));
       g.add(corpo);
-      for (const [du, dv] of [[-0.95, -0.95], [-0.95, 0.95], [0.95, 0]]) {
-        const perna = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.42), M.estanho);
+      for (const [du, dv] of [[-0.95, 0.95], [0.95, 0.95], [0, -0.95]]) {
+        const perna = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.15, 0.6), M.estanho);
         perna.position.copy(W(cx + du, cy + dv, topo + 0.08));
         g.add(perna);
       }
     }
     // capacitores (bege) e os dois resistores "472" de 4,7 kΩ, como na foto
-    for (const [u, v, rot] of [[6.1, 14.4, false], [6.1, 13.2, false], [6.4, 5.7, true], [7.8, 5.7, true]]) {
+    for (const [u, v, rot] of [[14.4, 6.4, true], [13.4, 6.4, true], [5.7, 6.6, false], [5.7, 5.2, false]]) {
       const [x, y] = U(u, v);
       g.add(smd(x, y, topo, 1.6, 0.8, M.ceramica, rot));
     }
-    for (const v of [9.3, 10.6]) {
-      const [x, y] = U(v, 5.7);
-      g.add(smd(x, y, topo, 1.6, 0.8, M.resistor, true, '472'));
+    for (const v of [3.7, 2.4]) {
+      const [x, y] = U(5.7, v);
+      g.add(smd(x, y, topo, 1.6, 0.8, M.resistor, false, '472'));
     }
     // barra de 5 pinos para baixo e o conector fêmea do cabo, por baixo (o DRDY fica sem fio)
-    const pxs = G.pinos.map((p) => p.p[0]);
-    const py = G.pinos[0].p[1];
-    const cx = (Math.min(...pxs) + Math.max(...pxs)) / 2, lx = Math.max(...pxs) - Math.min(...pxs) + P;
-    g.add(caixa(lx, A.MALE_H, P, M.preto, cx, py, G.z0 - A.MALE_H));
-    g.add(caixa(lx, G.housing, P, M.nylon, cx, py, G.z0 - A.MALE_H - G.housing));
+    const pys = G.pinos.map((p) => p.p[1]);
+    const px = G.pinos[0].p[0];
+    const cy = (Math.min(...pys) + Math.max(...pys)) / 2, ly = Math.max(...pys) - Math.min(...pys) + P;
+    g.add(caixa(P, A.MALE_H, ly, M.preto, px, cy, G.z0 - A.MALE_H));
+    g.add(caixa(P, G.housing, ly, M.nylon, px, cy, G.z0 - A.MALE_H - G.housing));
     for (const p of G.pinos) {
       g.add(cilindro(W(p.p[0], p.p[1], G.z0 - A.MALE_H - G.housing + 2), W(p.p[0], p.p[1], topo + 0.6), 0.32, M.ouro, 4));
       g.add(solda(p.p[0], p.p[1], topo, 0.7, 0.5, false));

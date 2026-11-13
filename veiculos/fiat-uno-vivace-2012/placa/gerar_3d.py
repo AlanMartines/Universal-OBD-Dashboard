@@ -410,46 +410,51 @@ for _, a, b, dx, dz in LSM_JUMPERS:
 # Conector na linha 15 (o plástico por cima, como os outros). Placa de 13 x 18 mm (fotos do vendedor, 13/11/2026):
 # serigrafia HMC5883L, chip marcado "DA 5883" (o QMC5883L), regulador SOT-23 "662K", dois resistores "472" (4,7 kΩ,
 # pull-up do I2C), capacitores e dois furos de 3 mm na ponta oposta aos pinos. Dentro da caixa, à direita da placa,
-# entre o LSM6DS3 e o BMP180: deitado num apoio do fundo, com a barra de 5 pinos (VCC, GND, SCL, SDA, DRDY) na borda
-# de cima, virada para baixo. O cabo passa por cima da placa, desce rente ao módulo pelo lado do LSM6DS3, corre no fundo
-# e chega por baixo do conector; o DRDY fica sem fio. Longe de ímãs e de fios de força (a bússola calibra pelo GPS).
+# entre o LSM6DS3 e o BMP180, de frente como os outros: a barra de 5 pinos virada para a placa e para baixo (DRDY,
+# SDA, SCL, GND, VCC, de cima para baixo) e os furos para a parede. Os 18 mm só cabem colado à borda da placa, e um
+# pouco mais alto que os outros (o conector passa por cima dos fios do LSM6DS3 que correm no fundo). O cabo passa por
+# cima da placa, desce do lado do BMP180, corre por baixo do módulo e chega por baixo do conector; o DRDY fica sem fio.
 gx = [xy(*cr) for cr in g.MAG_PINS.values()]
 box('placa', '#111111', min(p[0] for p in gx) - P / 2, gx[0][1] - P / 2, T, 4 * P, P, MALE_H)
 for x, y in gx:
     cyl('placa', GOLD, (x, y, -1.0), (x, y, T + MALE_H + 6.0), 0.32)
-MAG_MOD = {'x0': g.W + 5.0, 'y0': 22.7, 'l': 13.0, 'w': 18.0, 'z0': MOD_Z0}   # fio do LSM6DS3 desce em y = 41,9
-MAG_MOD_PINS = ['VCC', 'GND', 'SCL', 'SDA', 'DRDY']   # da esquerda para a direita, na borda de cima (y0)
+MAG_MOD = {'x0': g.W + 0.2, 'y0': 25.5, 'l': 18.0, 'w': 13.0, 'z0': MOD_Z0 + 2.0}
+MAG_MOD_PINS = ['DRDY', 'SDA', 'SCL', 'GND', 'VCC']   # de cima para baixo, na borda do lado da placa
 MAG_WIRE_INFO = {'SDA': ('ciano', 'Dados I2C, do D25'), 'SCL': ('verde', 'Relógio I2C, do D26'),
                  'GND': ('preto', 'GND'), 'VCC': ('vermelho', '5 V (no VCC, o GY-273 tem regulador)')}
 MAG_BOT = MAG_MOD['z0'] - MALE_H - HOUSING_H
-MAG_DESCE_Y = MAG_MOD['y0'] - 1.6       # o cabo desce entre o LSM6DS3 (até y = 20) e o GY-273
-# Apoio: a borda dos pinos fica livre para o conector e o cabo, que chegam por baixo
-MAG_APOIO = {**MAG_MOD, 'y0': MAG_MOD['y0'] + 4.5, 'w': MAG_MOD['w'] - 4.5}
+MAG_DESCE_Y = MAG_MOD['y0'] + MAG_MOD['w'] + 1.5     # o cabo desce entre o GY-273 e os fios do LSM6DS3 (y = 41,9)
+MAG_LEG_Z = MAG_BOT - 1.5                            # por cima dos fios do LSM6DS3, que correm no fundo
+# Faixa de descida de cada fio (x): o que vai mais longe (SDA) desce mais longe da placa; ninguém cruza
+MAG_FAIXA = {'VCC': 0, 'GND': 1, 'SCL': 2, 'SDA': 3}
+# Apoio: só a ponta dos furos, longe do conector e das descidas do cabo
+MAG_APOIO = {**MAG_MOD, 'x0': g.W + 8.9, 'l': MAG_MOD['x0'] + MAG_MOD['l'] - (g.W + 8.9)}
 
 
 def mag_pin(n):
-    return MAG_MOD['x0'] + MAG_MOD['l'] / 2 + (MAG_MOD_PINS.index(n) - 2) * P, MAG_MOD['y0'] + 1.3
+    return MAG_MOD['x0'] + 1.3, MAG_MOD['y0'] + MAG_MOD['w'] / 2 + (MAG_MOD_PINS.index(n) - 2) * P
 
 
 def mag_cable(n):
-    """Sobe do conector, vai para a direita por cima da placa (o da direita mais baixo: ninguém cruza), desce na frente
-    do próprio pino, entre o LSM6DS3 e o módulo, corre no fundo e entra por baixo do conector do módulo."""
+    """Sobe do conector, vai para cima (y) e para a direita por cima da placa (o da direita mais baixo: ninguém
+    cruza), desce do lado do BMP180, corre no fundo por baixo do módulo e entra por baixo do conector dele."""
     px, py = mag_pin(n)
     k = list(g.MAG_PINS).index(n)
     x, y = xy(*g.MAG_PINS[n])
     z = CON_TOP + 1.0 + (len(g.MAG_PINS) - 1 - k) * 1.2
-    return [(x, y, CON_TOP), (x, y, z), (g.W - 1, y, z), (px, MAG_DESCE_Y, z - 2), (px, MAG_DESCE_Y, MAG_BOT - 1.5),
-            (px, py, MAG_BOT - 1.5), (px, py, MAG_BOT)]
+    fx = g.W + 3.8 + MAG_FAIXA[n] * 1.25
+    return [(x, y, CON_TOP), (x, y, z), (x, MAG_DESCE_Y, z), (fx - 1.5, MAG_DESCE_Y, z), (fx, MAG_DESCE_Y, z - 1.0),
+            (fx, MAG_DESCE_Y, MAG_LEG_Z), (fx, py, MAG_LEG_Z), (px, py, MAG_LEG_Z), (px, py, MAG_BOT)]
 
 
 box('gy273', '#1b1b1b', min(p[0] for p in gx) - P / 2, gx[0][1] - P / 2, T + MALE_H, 4 * P, P, HOUSING_H)
 m = MAG_MOD
 box('gy273', '#1e5fb4', m['x0'], m['y0'], m['z0'], m['l'], m['w'], 1.6)
-box('gy273', '#1f1f21', m['x0'] + 5.7, m['y0'] + 8.5, m['z0'] + 1.6, 3.0, 3.0, 0.9)    # QMC5883L (3 x 3 mm)
-box('gy273', '#1f1f21', m['x0'] + 2.4, m['y0'] + 4.4, m['z0'] + 1.6, 1.6, 2.9, 1.1)    # regulador SOT-23
-_py = mag_pin('VCC')[1]
-box('gy273', '#111111', m['x0'] + m['l'] / 2 - 2.5 * P, _py - P / 2, m['z0'] - MALE_H, 5 * P, P, MALE_H)
-box('gy273', '#1b1b1b', m['x0'] + m['l'] / 2 - 2.5 * P, _py - P / 2, MAG_BOT, 5 * P, P, HOUSING_H)
+box('gy273', '#1f1f21', m['x0'] + 8.6, m['y0'] + 4.6, m['z0'] + 1.6, 3.0, 3.0, 0.9)    # QMC5883L (3 x 3 mm)
+box('gy273', '#1f1f21', m['x0'] + 4.35, m['y0'] + 8.95, m['z0'] + 1.6, 2.9, 1.3, 1.1)  # regulador SOT-23
+_px = mag_pin('VCC')[0]
+box('gy273', '#111111', _px - P / 2, m['y0'] + m['w'] / 2 - 2.5 * P, m['z0'] - MALE_H, P, 5 * P, MALE_H)
+box('gy273', '#1b1b1b', _px - P / 2, m['y0'] + m['w'] / 2 - 2.5 * P, MAG_BOT, P, 5 * P, HOUSING_H)
 for n in MAG_MOD_PINS:
     mx, my = mag_pin(n)
     cyl('gy273', GOLD, (mx, my, MAG_BOT + 2.0), (mx, my, m['z0'] + 1.6 + 0.6), 0.32)
@@ -644,7 +649,7 @@ CAIXA_REF = {
     'placa': (g.W, g.H, T),
     'usb_y': (xy(2, 2)[1] + xy(2, 12)[1]) / 2, 'usb_z': ESP_Z + ESP_T + 1.3,
     'obd_y': OBD_BOCA[1], 'obd_z': OBD_Z, 'obd_r': OBD_CAPA_R,
-    'apoios': [(LSM_MOD, 5.0, 'LSM6DS3'), (MAG_APOIO, 1.0, 'GY-273'), (BMP_MOD, 5.0, 'BMP180')],   # módulo, onde o apoio começa (x), nome
+    'apoios': [(LSM_MOD, 5.0, 'LSM6DS3'), (MAG_APOIO, 0.0, 'GY-273'), (BMP_MOD, 5.0, 'BMP180')],   # módulo, onde o apoio começa (x), nome
     'fusivel': (fcx, fcy, T + FUSE_H),
     # furos da tampa: o LED azul do ESP32 (na placa dele, perto do USB) e o LED tricolor opcional
     # LED azul (D2) do ESP32: logo antes do módulo WROOM, do lado do 3V3, a ~22 mm da ponta do USB (conferido na placa, 11/11/2026)
