@@ -725,49 +725,128 @@ function iniciar() {
     const g = new THREE.Group();
     const xs = X.lsm.map((p) => p.p[0]);
     g.add(caixa(Math.max(...xs) - Math.min(...xs) + P, L.housing, P, M.nylon, (Math.min(...xs) + Math.max(...xs)) / 2, X.lsm[0].p[1], A.T + A.MALE_H));
-    // placa roxa do módulo, com a serigrafia desenhada (nomes dos pinos e os eixos X, Y e Z)
-    const tex = textura(L.l, L.w, (ctx) => {
-      ctx.fillStyle = '#6a1b9a';
-      ctx.fillRect(0, 0, L.l, L.w);
-      const pinos = (lista, lado) => lista.forEach((p, k) => {
-        const px = p.p[0] - L.x0, py = p.p[1] - L.y0;
-        ilha(ctx, px, py, 0.8, k === 0 && lado > 0);
-        texto(ctx, p.n, px + lado * 1.5, py, 0.7, '#ffffff', { alinha: lado > 0 ? 'left' : 'right' });
-      });
-      pinos(L.pinos7, 1);
-      pinos(L.pinos5, -1);
-      for (const hy of [2.3, L.w - 2.3]) {
-        ctx.fillStyle = '#e3c06a';
+    // Desenhado pelas fotos do módulo (vista de cima, lado dos componentes): placa roxa de 13 x 18 mm, regulador
+    // SOT-23-5 ao lado do VIN, três capacitores, o LSM6DS3 (LGA de 2,5 x 3 mm) no meio com um capacitor acima, quatro
+    // resistores "103" (10 kΩ), os eixos X, Y e Z, "LSM 6DS3" e dois furos de 3 mm nos cantos do lado dos 5 pinos.
+    // Coordenadas: u da borda dos 7 pinos (lado da placa) para a dos 5 (0 a 13), v de VIN para SA0 (0 a 18). É a foto
+    // de cima girada um quarto de volta: os 7 pinos à esquerda, VIN em cima. Os nomes dos pinos ficam só embaixo.
+    const FUROS = [[9.1, 2.2], [9.1, 16.2]];
+    const furo = (ctx, cor) => {
+      for (const [hu, hv] of FUROS) {
+        ctx.fillStyle = cor;
         ctx.beginPath();
-        ctx.arc(L.l / 2, hy, 1.7, 0, Math.PI * 2);
+        ctx.arc(hu, hv, 1.75, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#0c1a2e';
         ctx.beginPath();
-        ctx.arc(L.l / 2, hy, 1.25, 0, Math.PI * 2);
+        ctx.arc(hu, hv, 1.5, 0, Math.PI * 2);
         ctx.fill();
       }
-      // eixos impressos: X para a direita, Y para cima (na placa), Z saindo dela
+    };
+    const tex = textura(L.l, L.w, (ctx) => {
+      ctx.fillStyle = '#6a1b9a';
+      ctx.fillRect(0, 0, L.l, L.w);
+      // trilhas sob a máscara, puxando para o rosa como na foto
+      ctx.globalAlpha = 0.75;
+      for (const t of [
+        [[11.7, 3.92], [10.2, 3.92], [8.1, 7.9]], [[11.7, 6.46], [10.0, 6.46], [8.1, 8.5]], [[11.7, 9.0], [10.4, 9.6], [8.1, 9.4]],
+        [[11.7, 11.54], [10.3, 11.54], [8.1, 9.9]], [[11.7, 14.08], [10.6, 14.08], [8.65, 12.0], [7.9, 10.4]],
+        [[1.3, 1.38], [3.6, 1.75]], [[1.3, 3.92], [2.7, 3.92], [3.8, 4.3]], [[1.3, 6.46], [2.6, 6.46], [3.0, 5.6], [3.8, 5.4]],
+        [[1.3, 9.0], [2.4, 9.0], [3.4, 10.5], [5.6, 9.4]], [[1.3, 11.54], [2.6, 11.54], [5.6, 9.9]], [[1.3, 14.08], [2.8, 14.08], [4.3, 12.6], [5.6, 10.2]],
+        [[1.3, 16.62], [2.6, 16.62], [4.3, 14.0]], [[6.6, 2.7], [6.6, 4.3], [6.1, 6.4], [5.65, 8.0]], [[6.1, 12.6], [7.6, 11.6]],
+      ]) trilhaTex(ctx, t, '#a8357f', 0.3);
+      ctx.globalAlpha = 1;
+      furo(ctx, '#7b2aa8');
+      for (const p of [...L.pinos7, ...L.pinos5]) ilha(ctx, p.p[0] - L.x0, p.p[1] - L.y0, 0.9);
+      // eixos impressos: X para o VIN, Y para os 7 pinos, Z saindo da placa (com as setas de giro)
       ctx.strokeStyle = '#ffffff';
+      ctx.fillStyle = '#ffffff';
       ctx.lineWidth = 0.18;
+      const [ou, ov] = [8.65, 13.4];
       ctx.beginPath();
-      ctx.moveTo(8.4, 17.1); ctx.lineTo(10.2, 17.1);
-      ctx.moveTo(8.4, 17.1); ctx.lineTo(8.4, 15.6);
+      ctx.moveTo(ou, ov); ctx.lineTo(ou, 11.6);
+      ctx.moveTo(ou, ov); ctx.lineTo(6.8, ov);
       ctx.stroke();
-      texto(ctx, 'X', 10.7, 17.1, 0.55, '#ffffff');
-      texto(ctx, 'Y', 8.4, 15.15, 0.55, '#ffffff');
-      texto(ctx, 'Z', 7.8, 17.55, 0.5, '#ffffff');
+      for (const [x, y, dx, dy] of [[ou, 11.3, 0, 1], [6.5, ov, 1, 0]]) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + dx * 0.6 - dy * 0.35, y + dy * 0.6 + dx * 0.35);
+        ctx.lineTo(x + dx * 0.6 + dy * 0.35, y + dy * 0.6 - dx * 0.35);
+        ctx.fill();
+      }
+      ctx.lineWidth = 0.13;
+      for (const [cu, cv, a0] of [[ou, 12.3, 0], [7.6, ov, Math.PI / 2]]) {
+        ctx.beginPath();
+        ctx.ellipse(cu, cv, 0.55, 0.3, a0, 0.3, Math.PI * 1.7);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(ou, ov, 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      texto(ctx, 'X', 9.8, 11.5, 0.7, '#ffffff', { rot: Math.PI / 2 });
+      texto(ctx, 'Y', 7.0, 12.3, 0.7, '#ffffff', { rot: Math.PI / 2 });
+      texto(ctx, 'Z', 9.7, 14.0, 0.7, '#ffffff', { rot: Math.PI / 2 });
+      texto(ctx, 'LSM', 4.9, 14.95, 0.95, '#ffffff', { peso: 700 });
+      texto(ctx, '6DS3', 4.9, 16.05, 0.95, '#ffffff', { peso: 700 });
     });
-    g.add(placaModulo(L.x0, L.y0, L.l, L.w, L.z0, 1.6, std(0x5b1787, 0.5), tex));
+    // por baixo: os nomes dos pinos, como impressos no módulo (lidos com a placa virada)
+    const texBaixo = textura(L.l, L.w, (ctx) => {
+      ctx.fillStyle = '#6a1b9a';
+      ctx.fillRect(0, 0, L.l, L.w);
+      furo(ctx, '#7b2aa8');
+      for (const p of [...L.pinos7, ...L.pinos5]) {
+        const pu = p.p[0] - L.x0, pv = p.p[1] - L.y0;
+        ilha(ctx, pu, pv, 0.9);
+        const dentro = L.pinos7.includes(p) ? 1 : -1;
+        texto(ctx, p.n, pu + dentro * 1.35, pv, 0.85, '#ffffff', { alinha: dentro > 0 ? 'left' : 'right' });
+      }
+    });
+    g.add(placaModulo(L.x0, L.y0, L.l, L.w, L.z0, 1.6, std(0x5b1787, 0.5), tex, new THREE.MeshStandardMaterial({ map: texBaixo, roughness: 0.5 })));
     const topo = L.z0 + 1.6;
-    // LSM6DS3: encapsulamento LGA pequeno; regulador ao lado e os resistores e capacitores SMD
-    const chip = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.86, 3.0), std(0x1f1f21, 0.5));
-    chip.position.copy(W(L.x0 + 6.65, L.y0 + 9.2, topo + 0.43));
-    g.add(chip);
-    g.add(caixa(3.0, 1.1, 1.7, M.preto, L.x0 + 10.3, L.y0 + 13.85, topo));
-    g.add(smd(L.x0 + 9.4, L.y0 + 4.4, topo, 1.6, 0.8, M.resistor, true, '392'));
-    g.add(smd(L.x0 + 10.6, L.y0 + 4.4, topo, 1.6, 0.8, M.resistor, true, '392'));
-    g.add(smd(L.x0 + 9.0, L.y0 + 7.6, topo, 1.6, 0.8, M.ceramica));
-    g.add(smd(L.x0 + 9.0, L.y0 + 9.4, topo, 1.6, 0.8, M.ceramica));
+    const U = (u, v) => [L.x0 + u, L.y0 + v];
+    // LSM6DS3: LGA de 2,5 x 3 mm, com as ilhas aparecendo nas bordas
+    {
+      const texChip = textura(2.5, 3, (ctx) => {
+        ctx.fillStyle = '#222224';
+        ctx.fillRect(0, 0, 2.5, 3);
+        for (const [t, dv] of [['DSM', -0.45], ['504', 0.45]]) texto(ctx, t, 1.25, 1.5 + dv, 0.6, '#9a9a9a', { peso: 500, rot: Math.PI / 2 });
+        ctx.fillStyle = '#4a4a4c';
+        ctx.beginPath();
+        ctx.arc(0.45, 0.45, 0.18, 0, Math.PI * 2);
+        ctx.fill();
+      }, 80);
+      const [cx, cy] = U(6.9, 8.9);
+      const chip = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.86, 3.0), [M.preto, M.preto, new THREE.MeshStandardMaterial({ map: texChip, roughness: 0.6 }), M.preto, M.preto, M.preto]);
+      chip.position.copy(W(cx, cy, topo + 0.43));
+      g.add(chip);
+      for (const s of [-1, 1]) for (let i = 0; i < 4; i++) {
+        const pad = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.3), M.estanho);
+        pad.position.copy(W(cx + s * 1.37, cy - 1.05 + i * 0.7, topo + 0.06));
+        g.add(pad);
+      }
+    }
+    // regulador SOT-23-5: corpo ao longo de v, três pernas do lado dos pinos e duas do outro
+    {
+      const [cx, cy] = U(5.1, 1.75);
+      const texReg = textura(1.6, 2.9, (ctx) => {
+        ctx.fillStyle = '#222224';
+        ctx.fillRect(0, 0, 1.6, 2.9);
+        texto(ctx, 'S20F', 0.8, 1.45, 0.62, '#cfcfcf', { peso: 500, rot: Math.PI / 2 });
+      }, 80);
+      const corpo = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 2.9), [M.preto, M.preto, new THREE.MeshStandardMaterial({ map: texReg, roughness: 0.6 }), M.preto, M.preto, M.preto]);
+      corpo.position.copy(W(cx, cy, topo + 0.55));
+      g.add(corpo);
+      for (const [du, dv] of [[-1.05, -0.95], [-1.05, 0], [-1.05, 0.95], [1.05, -0.95], [1.05, 0.95]]) {
+        const perna = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.42), M.estanho);
+        perna.position.copy(W(cx + du, cy + dv, topo + 0.08));
+        g.add(perna);
+      }
+    }
+    // três capacitores ao lado do regulador, um acima do LSM6DS3 e os quatro resistores de 10 kΩ
+    for (const v of [4.3, 5.35, 6.4]) g.add(smd(...U(5.0, v), topo, 2.0, 0.9, M.ceramica));
+    g.add(smd(...U(8.8, 8.9), topo, 1.6, 0.8, M.ceramica, true));
+    for (const v of [12.6, 14.0]) g.add(smd(...U(5.1, v), topo, 1.6, 0.8, M.resistor, false, '103'));
+    for (const v of [7.6, 10.5]) g.add(smd(...U(3.4, v), topo, 1.6, 0.8, M.resistor, true, '103'));
     // barra de 7 pinos para baixo (a de 5 fica sem barra) e o conector fêmea do cabo, por baixo
     const ys = L.pinos7.map((p) => p.p[1]);
     const px = L.pinos7[0].p[0];
