@@ -24,6 +24,8 @@ class ImuMotionTest {
 
     private var t = 0L
     private var speed = 0.0
+    /** Desvio do giroscópio do módulo (°/s, eixos do módulo): zero nos testes antigos. */
+    private var bias = DoubleArray(3)
 
     /** Anda [s] segundos com a velocidade mudando [kmhPerS], com a força nos eixos do carro; velocidade a cada 250 ms, sensor a cada 200 ms. */
     private fun ImuMotion.drive(s: Double, kmhPerS: Double, f: Double, l: Double, u: Double, peak: Double = 0.02, yawDps: Double = 0.0) {
@@ -32,7 +34,7 @@ class ImuMotionTest {
             t += 50
             speed = (speed + kmhPerS * 0.05).coerceAtLeast(0.0)
             if (t % 250 == 0L) onSpeed(t, Math.round(speed).toDouble())   // OBD em km/h inteiros
-            if (t % 200 == 0L) update(t, 0.2, sensor(f, l, u), DoubleArray(3) { up[it] * yawDps }, peak)
+            if (t % 200 == 0L) update(t, 0.2, sensor(f, l, u), DoubleArray(3) { up[it] * yawDps + bias[it] }, peak)
         }
     }
 
@@ -46,6 +48,31 @@ class ImuMotionTest {
             m.drive(8.0, -7.0, -a, 0.0, 1.0)    // frenagem
         }
         return m
+    }
+
+    @Test fun gyroBiasOfTheBenchModuleIsMeasuredAndRemoved() {
+        // Desvio medido na bancada (13/11/2026): parado, o giro total passa de 3 °/s
+        bias = doubleArrayOf(1.8, -3.0, -2.3)
+        val m = learned()
+        assertEquals("calibra mesmo com o desvio", 2, m.stage)
+        val b = m.gyroBiasDps!!
+        for (i in 0..2) assertEquals(bias[i], b[i], 0.05)
+        // Reta: giro perto de zero, sem curva falsa
+        m.drive(4.0, 0.0, 0.0, 0.0, 1.0)
+        m.drive(3.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(0.0, m.yawDps!!, 0.2)
+        // Curva à esquerda de 10 °/s
+        speed = 40.0
+        m.drive(3.0, 0.0, 0.0, 40 / 3.6 * Math.toRadians(10.0) / ImuMotion.G, 1.0, yawDps = 10.0)
+        assertEquals(10.0, m.yawDps!!, 0.3)
+    }
+
+    @Test fun noYawBeforeTheBiasIsKnown() {
+        bias = doubleArrayOf(1.8, -3.0, -2.3)
+        val m = ImuMotion()
+        speed = 40.0
+        m.drive(3.0, 0.0, 0.0, 0.0, 1.0)
+        assertNull(m.yawDps)
     }
 
     @Test fun learnsMountingFromStopsAndSpeedChanges() {

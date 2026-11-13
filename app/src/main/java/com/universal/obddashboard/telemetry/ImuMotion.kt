@@ -138,7 +138,15 @@ class ImuMotion(calibration: Calibration? = null) {
     private var offS = 0.0
     // Amostras de "parado" esperam STILL_HOLD_MS antes de contar: o OBD demora a acusar a arrancada,
     // e o começo dela não pode entrar como gravidade.
-    private val pending = ArrayDeque<Pair<Long, DoubleArray>>()
+    private val pending = ArrayDeque<Triple<Long, DoubleArray, DoubleArray>>()
+
+    // Desvio do giroscópio: cada chip marca alguns °/s parado (a folha de dados do LSM6DS3 aceita até ±10) e o valor
+    // muda com a temperatura. Medido em toda parada quieta e descontado de todas as leituras.
+    private val gyroBias = DoubleArray(3)
+    private var biasW = 0.0
+    private var prevA: DoubleArray? = null
+    /** Desvio do giroscópio medido (°/s, eixos do módulo); null antes da primeira parada. */
+    val gyroBiasDps: DoubleArray? get() = gyroBias.copyOf().takeIf { biasW >= BIAS_READY_S }
 
     // Zerar nível: soma da gravidade parado, até LEVEL_S
     private var levelAcc = DoubleArray(3)
@@ -195,11 +203,17 @@ class ImuMotion(calibration: Calibration? = null) {
         val norm = len(a)
         if (norm < 0.2) return
         val v = speedKmh
-        val rot = len(gyroDps)
+        val gyro = gyroDps.minus(gyroBias)
+        val rot = len(gyro)
         impactG = peakG
+        // Aceleração estável entre duas leituras: ninguém mexendo no módulo
+        val calm = prevA?.let { len(a.minus(it)) < CALM_G } ?: false
+        prevA = a.copyOf()
 
-        // Parado e quieto: aprende o "cima" (ou percebe que o módulo mudou de posição)
-        val still = v != null && v < STOP_KMH && rot < STILL_DPS && abs(norm - 1) < 0.06
+        // Parado e quieto: aprende o "cima" e o desvio do giroscópio (ou percebe que o módulo mudou de posição).
+        // Antes de conhecer o desvio, o giro cru pode passar de STILL_DPS mesmo parado: vale um limite maior.
+        val stillDps = if (biasW >= BIAS_READY_S) STILL_DPS else BIAS_MAX_DPS
+        val still = v != null && v < STOP_KMH && rot < stillDps && abs(norm - 1) < 0.06 && calm
         if (still) {
             val au = a.times(1 / norm)
             if (upW >= UP_READY_S && dot(au, unit(upAcc)) < RESET_COS && action != Action.LEVEL_PENDING) {
@@ -208,9 +222,10 @@ class ImuMotion(calibration: Calibration? = null) {
             } else {
                 offS = 0.0
             }
-            pending.addLast(now to au.times(dt))
+            pending.addLast(Triple(now, au.times(dt), gyroDps.copyOf()))
             while (pending.isNotEmpty() && now - pending.first().first >= STILL_HOLD_MS) {
-                val w = pending.removeFirst().second
+                val (_, w, gRaw) = pending.removeFirst()
+                learnBias(gRaw, len(w))
                 if (!upLocked) {
                     upAcc = upAcc.plus(w)
                     upW += len(w)
@@ -228,10 +243,11 @@ class ImuMotion(calibration: Calibration? = null) {
         if (upW < UP_READY_S) return clearOutputs()
         val up = unit(upAcc)
         val horiz = a.minus(up.times(dot(a, up)))
-        val yaw = dot(gyroDps, up)
+        val yaw = dot(gyro, up)
         val ky = 1 - exp(-dt / YAW_TAU_S)
         smYaw = smYaw?.let { it + (yaw - it) * ky } ?: yaw
-        yawDps = smYaw
+        // Giro só depois de medir o desvio do giroscópio: antes, uma reta poderia aparecer como curva
+        yawDps = smYaw.takeIf { biasW >= BIAS_READY_S }
 
         // Andando em linha reta com a velocidade mudando: aprende a frente (de ré não, que inverteria)
         val dv = dvdtG
@@ -390,6 +406,13 @@ class ImuMotion(calibration: Calibration? = null) {
         rollDeg = null
     }
 
+    /** Média do giro cru parado: as primeiras paradas acertam rápido; depois, acompanha devagar a temperatura. */
+    private fun learnBias(raw: DoubleArray, dt: Double) {
+        biasW += dt
+        val k = dt / minOf(biasW, BIAS_TAU_S)
+        for (i in 0..2) gyroBias[i] += (raw[i] - gyroBias[i]) * k
+    }
+
     private fun reset() {
         upAcc = DoubleArray(3); upW = 0.0
         fwdAcc = DoubleArray(3); fwdW = 0.0
@@ -408,6 +431,12 @@ class ImuMotion(calibration: Calibration? = null) {
         const val FWD_READY = 0.15      // soma de (dv/dt em g)² × s: umas duas arrancadas e uma frenagem
         const val FWD_MAX = 30.0
         const val STILL_DPS = 3.0
+        /** Desvio do giroscópio: limite antes de medir, tempo parado até valer e quão devagar acompanha. */
+        const val BIAS_MAX_DPS = 12.0
+        const val BIAS_READY_S = 2.0
+        const val BIAS_TAU_S = 30.0
+        /** Diferença máxima da aceleração entre duas leituras (g) para contar como parado e quieto. */
+        const val CALM_G = 0.05
         const val STILL_HOLD_MS = 1000L
         const val RESET_COS = 0.94      // cerca de 20° fora do "cima" aprendido
         const val RESET_S = 10.0
