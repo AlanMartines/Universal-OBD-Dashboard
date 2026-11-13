@@ -406,6 +406,56 @@ for n in g.LSM_PINS:
 for _, a, b, dx, dz in LSM_JUMPERS:
     tube('lsm6ds3', '#9e9e9e', lsm_jumper(a, b, dx, dz), 0.3)
 
+# ---------------------------------------------------------------- Magnetômetro GY-273 (bússola) na ponta de um terceiro cabo
+# Conector na linha 15 (o plástico por cima, como os outros). Placa de 13 x 18 mm (fotos do vendedor, 13/11/2026):
+# serigrafia HMC5883L, chip marcado "DA 5883" (o QMC5883L), regulador SOT-23 "662K", dois resistores "472" (4,7 kΩ,
+# pull-up do I2C), capacitores e dois furos de 3 mm na ponta oposta aos pinos. Dentro da caixa, à direita da placa,
+# entre o LSM6DS3 e o BMP180: deitado num apoio do fundo, com a barra de 5 pinos (VCC, GND, SCL, SDA, DRDY) na borda
+# de cima, virada para baixo. O cabo passa por cima da placa, desce rente ao módulo pelo lado do LSM6DS3, corre no fundo
+# e chega por baixo do conector; o DRDY fica sem fio. Longe de ímãs e de fios de força (a bússola calibra pelo GPS).
+gx = [xy(*cr) for cr in g.MAG_PINS.values()]
+box('placa', '#111111', min(p[0] for p in gx) - P / 2, gx[0][1] - P / 2, T, 4 * P, P, MALE_H)
+for x, y in gx:
+    cyl('placa', GOLD, (x, y, -1.0), (x, y, T + MALE_H + 6.0), 0.32)
+MAG_MOD = {'x0': g.W + 5.0, 'y0': 22.7, 'l': 13.0, 'w': 18.0, 'z0': MOD_Z0}   # fio do LSM6DS3 desce em y = 41,9
+MAG_MOD_PINS = ['VCC', 'GND', 'SCL', 'SDA', 'DRDY']   # da esquerda para a direita, na borda de cima (y0)
+MAG_WIRE_INFO = {'SDA': ('ciano', 'Dados I2C, do D25'), 'SCL': ('verde', 'Relógio I2C, do D26'),
+                 'GND': ('preto', 'GND'), 'VCC': ('vermelho', '5 V (no VCC, o GY-273 tem regulador)')}
+MAG_BOT = MAG_MOD['z0'] - MALE_H - HOUSING_H
+MAG_DESCE_Y = MAG_MOD['y0'] - 1.6       # o cabo desce entre o LSM6DS3 (até y = 20) e o GY-273
+# Apoio: a borda dos pinos fica livre para o conector e o cabo, que chegam por baixo
+MAG_APOIO = {**MAG_MOD, 'y0': MAG_MOD['y0'] + 4.5, 'w': MAG_MOD['w'] - 4.5}
+
+
+def mag_pin(n):
+    return MAG_MOD['x0'] + MAG_MOD['l'] / 2 + (MAG_MOD_PINS.index(n) - 2) * P, MAG_MOD['y0'] + 1.3
+
+
+def mag_cable(n):
+    """Sobe do conector, vai para a direita por cima da placa (o da direita mais baixo: ninguém cruza), desce na frente
+    do próprio pino, entre o LSM6DS3 e o módulo, corre no fundo e entra por baixo do conector do módulo."""
+    px, py = mag_pin(n)
+    k = list(g.MAG_PINS).index(n)
+    x, y = xy(*g.MAG_PINS[n])
+    z = CON_TOP + 1.0 + (len(g.MAG_PINS) - 1 - k) * 1.2
+    return [(x, y, CON_TOP), (x, y, z), (g.W - 1, y, z), (px, MAG_DESCE_Y, z - 2), (px, MAG_DESCE_Y, MAG_BOT - 1.5),
+            (px, py, MAG_BOT - 1.5), (px, py, MAG_BOT)]
+
+
+box('gy273', '#1b1b1b', min(p[0] for p in gx) - P / 2, gx[0][1] - P / 2, T + MALE_H, 4 * P, P, HOUSING_H)
+m = MAG_MOD
+box('gy273', '#1e5fb4', m['x0'], m['y0'], m['z0'], m['l'], m['w'], 1.6)
+box('gy273', '#1f1f21', m['x0'] + 5.7, m['y0'] + 8.5, m['z0'] + 1.6, 3.0, 3.0, 0.9)    # QMC5883L (3 x 3 mm)
+box('gy273', '#1f1f21', m['x0'] + 2.4, m['y0'] + 4.4, m['z0'] + 1.6, 1.6, 2.9, 1.1)    # regulador SOT-23
+_py = mag_pin('VCC')[1]
+box('gy273', '#111111', m['x0'] + m['l'] / 2 - 2.5 * P, _py - P / 2, m['z0'] - MALE_H, 5 * P, P, MALE_H)
+box('gy273', '#1b1b1b', m['x0'] + m['l'] / 2 - 2.5 * P, _py - P / 2, MAG_BOT, 5 * P, P, HOUSING_H)
+for n in MAG_MOD_PINS:
+    mx, my = mag_pin(n)
+    cyl('gy273', GOLD, (mx, my, MAG_BOT + 2.0), (mx, my, m['z0'] + 1.6 + 0.6), 0.32)
+for n in g.MAG_PINS:
+    tube('gy273', BMP_WIRE[n], mag_cable(n), 0.55)
+
 # ---------------------------------------------------------------- LED tricolor (opcional) na tampa da caixa
 # Conector de 5 pinos macho na linha 1 (colunas 8 a 12): comum, sem ligação, vermelho, verde e azul. O LED de 5 mm fica
 # num furo da tampa, perto do conector, preso por dentro (a aba encosta na tampa); fios com conector fêmea em cada pino
@@ -488,7 +538,7 @@ for _, a, b, _ in g.RES:
     legs |= {a, b}
 for row in (2, 12):
     legs |= {(c, row) for c in range(2, 17)}
-legs |= set(g.BUCK_PINS.values()) | set(g.TRANS_PINS.values()) | set(g.OBD_PADS.values()) | set(g.CAN_HOLES.values()) | set(g.BMP_PINS.values()) | set(g.LSM_PINS.values())
+legs |= set(g.BUCK_PINS.values()) | set(g.TRANS_PINS.values()) | set(g.OBD_PADS.values()) | set(g.CAN_HOLES.values()) | set(g.BMP_PINS.values()) | set(g.LSM_PINS.values()) | set(g.MAG_PINS.values())
 for _, _, pts, _ in g.JUMPERS:
     legs |= {p for p in (pts[0], pts[-1]) if is_hole(*p)}
 for track_pts in [t[2] for t in g.TRACKS]:
@@ -569,6 +619,11 @@ DET = {
                              'pts': [rr(p) for p in lsm_cable(n)]} for n in g.LSM_PINS],
                    'jumpers': [{'n': f'Fio curto no módulo: {nome}', 'pts': [rr(p) for p in lsm_jumper(a, b, dx, dz)]}
                                for nome, a, b, dx, dz in LSM_JUMPERS]},
+    'mag': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.MAG_PINS.items()],
+    'mag_modulo': {**{k: round(v, 3) for k, v in MAG_MOD.items()}, 'housing': HOUSING_H,
+                   'pinos': [{'n': n, 'p': rr(mag_pin(n))} for n in MAG_MOD_PINS],
+                   'cabo': [{'n': n, 'cor': BMP_WIRE[n], 'cor_nome': MAG_WIRE_INFO[n][0], 'funcao': MAG_WIRE_INFO[n][1],
+                             'pts': [rr(p) for p in mag_cable(n)]} for n in g.MAG_PINS]},
     'bmp_modulo': {**{k: round(v, 3) for k, v in BMP_MOD.items()}, 'housing': HOUSING_H,
                    'z_min': round(Z_MIN, 3),
                    'pinos': [{'n': n, 'p': rr(bmp_mod_pin(n))} for n in BMP_MOD_PINS],
@@ -589,7 +644,7 @@ CAIXA_REF = {
     'placa': (g.W, g.H, T),
     'usb_y': (xy(2, 2)[1] + xy(2, 12)[1]) / 2, 'usb_z': ESP_Z + ESP_T + 1.3,
     'obd_y': OBD_BOCA[1], 'obd_z': OBD_Z, 'obd_r': OBD_CAPA_R,
-    'apoios': [(LSM_MOD, 5.0, 'LSM6DS3'), (BMP_MOD, 5.0, 'BMP180')],   # módulo, onde o apoio começa (x), nome
+    'apoios': [(LSM_MOD, 5.0, 'LSM6DS3'), (MAG_APOIO, 1.0, 'GY-273'), (BMP_MOD, 5.0, 'BMP180')],   # módulo, onde o apoio começa (x), nome
     'fusivel': (fcx, fcy, T + FUSE_H),
     # furos da tampa: o LED azul do ESP32 (na placa dele, perto do USB) e o LED tricolor opcional
     # LED azul (D2) do ESP32: logo antes do módulo WROOM, do lado do 3V3, a ~22 mm da ponta do USB (conferido na placa, 11/11/2026)
@@ -638,7 +693,7 @@ def conferir_caixa():
 
 
 GRID = {'cols': g.COLS, 'rows': g.ROWS, 'mx': round(g.MX, 3), 'my': round(g.MY, 3), 'p': P, 't': T}
-LAYERS = [('esp32', 'ESP32'), ('modulos', f'{g.TRANS_NOME} e RT8272'), ('fusivel', 'Fusível'), ('bmp180', 'BMP180'), ('lsm6ds3', 'LSM6DS3'), ('led', 'LED tricolor'), ('fios', 'Fios por cima'), ('acessorios', 'ELM327 e cabo Y'), ('trilhas', 'Trilhas por baixo')]
+LAYERS = [('esp32', 'ESP32'), ('modulos', f'{g.TRANS_NOME} e RT8272'), ('fusivel', 'Fusível'), ('bmp180', 'BMP180'), ('lsm6ds3', 'LSM6DS3'), ('gy273', 'GY-273 (bússola)'), ('led', 'LED tricolor'), ('fios', 'Fios por cima'), ('acessorios', 'ELM327 e cabo Y'), ('trilhas', 'Trilhas por baixo')]
 
 
 # ---------------------------------------------------------------- Saídas
