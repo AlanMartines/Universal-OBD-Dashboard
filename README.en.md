@@ -9,13 +9,20 @@ Open-source car telemetry for Android and Android Auto. It reads OBD-II data thr
 
 The app UI and most documentation are in Brazilian Portuguese; this page is a short English overview. Full details are in [README.md](README.md).
 
-| Minimal (day) | Capsule (night) | HUD (night) |
-|---|---|---|
-| ![Minimal](docs/img/tema-minimal-dia.png) | ![Capsule](docs/img/tema-capsule-noite.png) | ![HUD](docs/img/tema-hud-noite.png) |
+The six dashboard themes in night mode, on each bottom tab (simulator data):
+
+| Theme | Road | Engine | Trip | Dynamics |
+|---|---|---|---|---|
+| **Minimal** | ![Minimal – Road](docs/img/tela-minimal-road.png) | ![Minimal – Engine](docs/img/tela-minimal-engine.png) | ![Minimal – Trip](docs/img/tela-minimal-trip.png) | ![Minimal – Dynamics](docs/img/tela-minimal-motion.png) |
+| **Capsule** | ![Capsule – Road](docs/img/tela-capsule-road.png) | ![Capsule – Engine](docs/img/tela-capsule-engine.png) | ![Capsule – Trip](docs/img/tela-capsule-trip.png) | ![Capsule – Dynamics](docs/img/tela-capsule-motion.png) |
+| **HUD** | ![HUD – Road](docs/img/tela-hud-road.png) | ![HUD – Engine](docs/img/tela-hud-engine.png) | ![HUD – Trip](docs/img/tela-hud-trip.png) | ![HUD – Dynamics](docs/img/tela-hud-motion.png) |
+| **Track** | ![Track – Road](docs/img/tela-sport-road.png) | ![Track – Engine](docs/img/tela-sport-engine.png) | ![Track – Trip](docs/img/tela-sport-trip.png) | ![Track – Dynamics](docs/img/tela-sport-motion.png) |
+| **Classic** | ![Classic – Road](docs/img/tela-classic-road.png) | ![Classic – Engine](docs/img/tela-classic-engine.png) | ![Classic – Trip](docs/img/tela-classic-trip.png) | ![Classic – Dynamics](docs/img/tela-classic-motion.png) |
+| **Horizon** | ![Horizon – Road](docs/img/tela-horizon-road.png) | ![Horizon – Engine](docs/img/tela-horizon-engine.png) | ![Horizon – Trip](docs/img/tela-horizon-trip.png) | ![Horizon – Dynamics](docs/img/tela-horizon-motion.png) |
 
 ## Features
 
-- **Dashboards:** six themes (Minimal, Capsule, HUD, Track, Classic, Horizon) with day/night modes, landscape full screen and three pages (road, engine, trip).
+- **Dashboards:** six themes (Minimal, Capsule, HUD, Track, Classic, Horizon) with day/night modes, landscape full screen and four pages: road, engine, trip and **Dynamics** (gear P/D/R, tilt, g-force, compass with artificial horizon, turn rate and altitude, from the ESP32 board's IMU and magnetometer cross-checked with the phone's GPS).
 - **Background capture:** a foreground service keeps reading with the screen off. Capture starts automatically when the adapter or the car's head unit connects and resumes after short disconnections.
 - **Trip black box:** a local Room/SQLite database with trips, 2-second telemetry samples, trouble codes and freeze frames, plus CSV/GPX export.
 - **Fuel log:** real consumption between full tanks, cost per km and monthly spend, and when ethanol pays off in this car. Consumption calibration comes from your own fill-ups.

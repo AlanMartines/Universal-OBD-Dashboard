@@ -9,9 +9,16 @@ Universal-OBD-Dashboard é uma plataforma de telemetria automotiva de código ab
 
 *English summary: [README.en.md](README.en.md).*
 
-| Minimal (dia) | Cápsula (noite) | HUD (noite) |
-|---|---|---|
-| ![Tema Minimal](docs/img/tema-minimal-dia.png) | ![Tema Cápsula](docs/img/tema-capsule-noite.png) | ![Tema HUD](docs/img/tema-hud-noite.png) |
+Os seis temas do painel no modo noite, em cada aba do rodapé (dados do simulador):
+
+| Tema | Estrada | Motor | Viagem | Dinâmica |
+|---|---|---|---|---|
+| **Minimal** | ![Minimal – Estrada](docs/img/tela-minimal-road.png) | ![Minimal – Motor](docs/img/tela-minimal-engine.png) | ![Minimal – Viagem](docs/img/tela-minimal-trip.png) | ![Minimal – Dinâmica](docs/img/tela-minimal-motion.png) |
+| **Cápsula** | ![Cápsula – Estrada](docs/img/tela-capsule-road.png) | ![Cápsula – Motor](docs/img/tela-capsule-engine.png) | ![Cápsula – Viagem](docs/img/tela-capsule-trip.png) | ![Cápsula – Dinâmica](docs/img/tela-capsule-motion.png) |
+| **HUD** | ![HUD – Estrada](docs/img/tela-hud-road.png) | ![HUD – Motor](docs/img/tela-hud-engine.png) | ![HUD – Viagem](docs/img/tela-hud-trip.png) | ![HUD – Dinâmica](docs/img/tela-hud-motion.png) |
+| **Pista** | ![Pista – Estrada](docs/img/tela-sport-road.png) | ![Pista – Motor](docs/img/tela-sport-engine.png) | ![Pista – Viagem](docs/img/tela-sport-trip.png) | ![Pista – Dinâmica](docs/img/tela-sport-motion.png) |
+| **Clássico** | ![Clássico – Estrada](docs/img/tela-classic-road.png) | ![Clássico – Motor](docs/img/tela-classic-engine.png) | ![Clássico – Viagem](docs/img/tela-classic-trip.png) | ![Clássico – Dinâmica](docs/img/tela-classic-motion.png) |
+| **Horizonte** | ![Horizonte – Estrada](docs/img/tela-horizon-road.png) | ![Horizonte – Motor](docs/img/tela-horizon-engine.png) | ![Horizonte – Viagem](docs/img/tela-horizon-trip.png) | ![Horizonte – Dinâmica](docs/img/tela-horizon-motion.png) |
 
 ## Destaques
 - **Compatibilidade com Android Auto**: Interface nativa baseada na AndroidX Car App Library. Instalado por APK, o app não aparece no carro a partir do Android Auto 17.7 ([detalhes](docs/android-auto.md#no-carro-apk-fora-da-play-store)).
@@ -173,7 +180,7 @@ Depois de uma **desconexão automática** (ignição desligada, queda de Bluetoo
 
 ### Painel de instrumentos
 
-A aba **Painel** mostra os instrumentos em seis temas, trocados pelo botão no rodapé do painel: **Minimal** (barra de RPM no topo, marcha e velocidade grandes), **Cápsula** (velocímetro e conta-giros de arco na cor escolhida, verde ou vermelho, cápsula central com luzes, barras de combustível/temperatura e células), **HUD** (moldura neon com escalas na borda e estrada animada pela velocidade), **Pista** (conta-giros em setores com a marcha no miolo e luzes de troca), **Clássico** (dois mostradores redondos com aro metálico e ponteiro) e **Horizonte** (arco largo de RPM com a velocidade no centro). Cada tema tem modo dia/noite (automático pelo tema do Android ou pelo horário) e três telas de seis campos (**Estrada**, **Motor**, **Viagem**), trocadas por toque, por deslize ou sozinhas (Viagem quando o carro para). Limites, faixas térmicas, relações de marcha e papéis vêm do perfil JSON, então o painel serve para qualquer veículo.
+A aba **Painel** mostra os instrumentos em seis temas, trocados pelo botão no rodapé do painel: **Minimal** (barra de RPM no topo, marcha e velocidade grandes), **Cápsula** (velocímetro e conta-giros de arco na cor escolhida, verde ou vermelho, cápsula central com luzes, barras de combustível/temperatura e células), **HUD** (moldura neon com escalas na borda e estrada animada pela velocidade), **Pista** (conta-giros em setores com a marcha no miolo e luzes de troca), **Clássico** (dois mostradores redondos com aro metálico e ponteiro) e **Horizonte** (arco largo de RPM com a velocidade no centro). Cada tema tem modo dia/noite (automático pelo tema do Android ou pelo horário) e três telas de seis campos (**Estrada**, **Motor**, **Viagem**), trocadas por toque, por deslize ou sozinhas (Viagem quando o carro para). A quarta aba, **Dinâmica**, ocupa a tela toda com o câmbio (P parado, D andando, R de ré), o inclinômetro lateral e frontal, a força G, a bússola com o horizonte, a curva (direção e giro) e o ambiente (altitude e pressão); usa o LSM6DS3 e o magnetômetro da placa do ESP32, cruzados com o GPS do celular, e tem os botões **Zerar nível** e **Calibrar frente**. Limites, faixas térmicas, relações de marcha e papéis vêm do perfil JSON, então o painel serve para qualquer veículo.
 
 Com o celular **na horizontal** e o Painel aberto, o app entra em tela cheia; durante a captura, com o Painel aberto, a tela fica ligada. O painel anterior, com todos os sensores, alertas e falhas em lista, continua na aba **Detalhes**. Para avaliar os temas fora do app (simulador ou trecho de viagem real), veja [tools/painel-preview](tools/painel-preview/README.md).
 
