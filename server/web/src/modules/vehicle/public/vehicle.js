@@ -16,7 +16,19 @@
     milOn: null, dtcCount: null, cabinTemp: 'cabin_temp',
   };
   var DERIVED = ['fuelLph', 'shiftUp', 'instantKmPerL', 'tripKmPerL', 'tripFuelUsedL', 'fuelRemainingL', 'realKmPerL', 'recommendedGear', 'estimatedGear', 'estimatedLoadPct', 'vacuumKpa', 'tripCost',
-    'imuStage', 'accelG', 'lateralG', 'slopePct', 'impactG', 'bumps', 'maxBrakeG', 'maxAccelG', 'maxLateralG'];
+    'imuStage', 'accelG', 'lateralG', 'slopePct', 'impactG', 'bumps', 'maxBrakeG', 'maxAccelG', 'maxLateralG',
+    // tela Dinâmica
+    'pitchDeg', 'rollDeg', 'yawDps', 'maxPitchDeg', 'maxRollDeg', 'driveState', 'headingDeg', 'headingSource', 'compassPct',
+    'compassReady', 'altitudeM', 'altitudeTrend', 'altitudeGps'];
+  /** O app manda só números: a fonte do rumo vem como 1 (GPS) ou 2 (bússola), e os sim/não como 1 ou 0. */
+  function forDash(d) {
+    var o = {};
+    Object.keys(d).forEach(function (k) { o[k] = d[k]; });
+    if (typeof d.headingSource === 'number') o.headingSource = d.headingSource === 2 ? 'mag' : 'gps';
+    if (typeof d.altitudeGps === 'number') o.altitudeGps = d.altitudeGps === 1;
+    if (typeof d.compassReady === 'number') o.compassReady = d.compassReady === 1;
+    return o;
+  }
   var DEFAULT_DASH = { rpmMax: 8000, rpmRedline: 6500, speedMax: 220, voltageMin: 11, voltageMax: 15 };
 
   var status = document.getElementById('vehicle-status');
@@ -68,7 +80,7 @@
       statusMessage: '',
       power: 'ACTIVE',
       readings: fresh ? readings : {},
-      derived: fresh ? derived : {},
+      derived: fresh ? forDash(derived) : {},
       alerts: fresh ? lastAlerts : [],
       confirmedDtcs: fresh ? lastDtcs : [],
       pendingDtcs: [],
@@ -165,7 +177,10 @@
   function startReplay(tripId) {
     var GAP_MS = 30000;
     // Valores em degraus (marcha, alertas, contadores) não se interpolam: 2,79ª não existe.
-    var STEPS = ['derived.estimatedGear', 'derived.recommendedGear', 'derived.shiftUp', 'derived.imuStage', 'derived.bumps', 'pc.ecoBand'];
+    // O rumo também não: de 350° para 10° passaria pelo sul.
+    var STEPS = ['derived.estimatedGear', 'derived.recommendedGear', 'derived.shiftUp', 'derived.imuStage', 'derived.bumps', 'pc.ecoBand',
+      'derived.driveState', 'derived.headingDeg', 'derived.headingSource', 'derived.compassPct', 'derived.compassReady',
+      'derived.altitudeTrend', 'derived.altitudeGps'];
     var TICK_MS = 100;
     var playBtn = document.getElementById('replay-play');
     var seek = document.getElementById('replay-seek');

@@ -47,6 +47,7 @@ class CanListenLink(
         if (line.startsWith("#")) Esp32Info.apply(info, line, System.currentTimeMillis(), frames)?.let { info = it; onInfo(it); return }
         Slcan.parseAmbient(line)?.let { onValues(it, System.currentTimeMillis()); return }
         Slcan.parseImu(line)?.let { onValues(it, System.currentTimeMillis()); return }
+        Slcan.parseMag(line)?.let { onValues(it, System.currentTimeMillis()); return }
         val frame = Slcan.parse(line) ?: return
         frames++
         val values = decoder.decode(frame)

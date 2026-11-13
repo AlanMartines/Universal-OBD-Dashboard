@@ -28,8 +28,14 @@ class RemoteUploader(private val source: Source, private val send: (String) -> I
         var sent = 0
         var dropped = 0
         while (true) {
-            val samples = source.samplesAfter(source.cursor, BATCH)
-            if (samples.isEmpty()) return Result(if (sent + dropped > 0) Outcome.SENT else Outcome.IDLE, sent, dropped)
+            val fetched = source.samplesAfter(source.cursor, BATCH)
+            if (fetched.isEmpty()) return Result(if (sent + dropped > 0) Outcome.SENT else Outcome.IDLE, sent, dropped)
+            // O servidor recusa pacotes grandes (e um pacote recusado é pulado): corta pelo tamanho, não só pela contagem
+            var chars = 0
+            val samples = fetched.takeWhile {
+                chars += RemotePayload.sample(it, source.sendGps).toString().length + 1
+                chars <= MAX_BODY_CHARS
+            }.ifEmpty { fetched.take(1) }
             val newest = samples.last().id
             val body = RemotePayload.batch(
                 samples.map {
@@ -59,6 +65,8 @@ class RemoteUploader(private val source: Source, private val send: (String) -> I
 
     companion object {
         const val BATCH = 200
+        /** Bem abaixo dos 512 KB do servidor (/telemetry), com folga para os DTCs e o envelope. */
+        const val MAX_BODY_CHARS = 380_000
         const val INTERVAL_MS = 5_000L
         private const val MAX_BACKOFF_MS = 5 * 60_000L
 

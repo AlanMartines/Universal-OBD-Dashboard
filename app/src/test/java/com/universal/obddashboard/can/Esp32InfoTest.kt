@@ -20,6 +20,16 @@ class Esp32InfoTest {
         assertEquals(0, i.restarts)
     }
 
+    @Test fun magnetometerStatusAndModel() {
+        val i = feed(0L to "# mag ok qmc5883l em 0x0D")
+        assertEquals("ok", i.mag)
+        assertEquals("qmc5883l", i.magChip)
+        assertEquals("sem resposta", feed(0L to "# mag ok hmc5883l em 0x1E", 1L to "# mag sem resposta").mag)
+        assertEquals("ausente", feed(0L to "# mag ausente").mag)
+        // A linha de leitura não é de estado: segue para o leitor de valores
+        assertEquals(null, Esp32Info.apply(Esp32Info(), "# mag x=1.0 y=2.0 z=3.0", 0L, 0L))
+    }
+
     @Test fun absentSensors() {
         val i = feed(0L to "# bmp180 ausente", 1L to "# lsm6ds3 sem resposta")
         assertEquals("ausente", i.bmp)

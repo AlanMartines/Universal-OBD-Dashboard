@@ -47,6 +47,16 @@ class CanListenTest {
         assertNull("não é quadro", Slcan.parse("# lsm6ds3 ax=0.012 ay=-0.034 az=0.998 gx=0.1 gy=-0.2 gz=0.0 pico=0.15"))
     }
 
+    @Test fun parsesMagnetometerLine() {
+        val v = Slcan.parseMag("# mag x=12.3 y=-4.5 z=30.1")!!
+        assertEquals(12.3, v[Slcan.MAG_X]!!, 1e-9)
+        assertEquals(-4.5, v[Slcan.MAG_Y]!!, 1e-9)
+        assertEquals(30.1, v[Slcan.MAG_Z]!!, 1e-9)
+        assertNull("leitura quebrada", Slcan.parseMag("# mag x=9000.0 y=0.0 z=0.0"))
+        assertNull(Slcan.parseMag("# mag ok qmc5883l em 0x0D"))
+        assertNull(Slcan.parseMag("# mag ausente"))
+    }
+
     @Test fun unoProfileDecodesConfirmedSignals() {
         assertEquals(56.0, decode("t2A04038000DE")["can_speed"]!!, 1e-9)
         assertEquals(39.0, decode("t3808000000000027FF00")["fuel_level_pct"]!!, 1e-9)

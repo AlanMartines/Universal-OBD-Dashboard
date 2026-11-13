@@ -22,7 +22,7 @@ import kotlinx.serialization.json.put
 object RemotePayload {
     private val METRIC_ID = Regex("^[A-Za-z0-9_.-]{1,48}$")
     private val DTC = Regex("^[PCBU][0-9A-F]{4}$")
-    private const val MAX_METRICS = 120
+    private const val MAX_METRICS = 200
     private const val MAX_DTCS = 50
 
     fun sample(s: TelemetryLogEntity, sendGps: Boolean, dtcs: List<String> = emptyList()): JsonObject {

@@ -6,6 +6,17 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Tela Dinâmica (app, painel web e Android Auto):** a antiga tela Movimento vira Dinâmica e ocupa a tela toda (as abas continuam embaixo), sempre visível, com as cores do tema escolhido. Traz o horizonte artificial (inclinação frontal e lateral) dentro de uma bússola, o câmbio, o inclinômetro com os picos, a força G com rastro, o ambiente (altitude e pressão) e a curva (lado e giro em °/s). No painel web aparece ao vivo e na reprodução das viagens; no Android Auto, como uma segunda tela de números (o modelo do Android Auto não permite desenho livre).
+- **Câmbio P/D/R no lugar da marcha estimada:** P parado, D andando e R de ré, em todos os temas e no Android Auto. A ré sai do sentido da aceleração na arrancada (precisa do LSM6DS3 calibrado). Saem a marcha estimada (1ª a 5ª) e o aviso de troca de marcha (▲ 4ª) da tela, também na aba Detalhes; as luzes de troca do tema Pista seguem só pelo RPM.
+- **Inclinação lateral e giro:** o app separa a inclinação lateral da força da curva (velocidade × giro), como já fazia com a frontal e a aceleração.
+- **Zerar nível e Calibrar frente:** ajustes à mão do sensor de movimento, que passam a valer no lugar do aprendizado automático. Ficam no app; nada vai ao ESP32 nem ao carro.
+- **Bússola:** suporte ao magnetômetro GY-273 (QMC5883L, QMC5883P ou HMC5883L) no firmware 1.5. O app calibra a bússola sozinho pelo rumo do GPS (tabela de desvio por faixa de 10°, que já inclui a declinação). Andando, o rumo vem do GPS; parado, devagar ou sem sinal, da bússola. Se o módulo for mexido, ela percebe e recomeça.
+- **Altitude:** pela pressão do BMP180, acertada pela altitude do GPS, com a seta de subida ou descida.
+
+### Alterado
+- **Envio ao painel:** até 200 métricas por amostra (eram 120), e o lote é cortado pelo tamanho para nunca passar do limite do servidor (antes um lote grande demais era recusado e pulado). O servidor precisa ser atualizado antes do app.
+
 ## [0.9.40] - 2026-11-12
 
 ### Adicionado

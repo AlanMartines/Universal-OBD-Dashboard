@@ -107,6 +107,18 @@ class RemoteTest {
         assertEquals(RemoteUploader.Outcome.IDLE, RemoteUploader(source) { 200 }.drain().outcome)
     }
 
+    @Test fun amostrasGrandesVaoEmPacotesMenores() = runBlocking {
+        // 150 métricas por amostra: 200 delas passariam dos 512 KB do servidor, que recusaria (e o pacote seria pulado)
+        val extra = (1..150).joinToString(",", "{", "}") { "\"sensor_$it\":${1000.123456 + it}" }
+        val source = FakeSource((1L..200L).map { entity(it, extra) })
+        val bodies = mutableListOf<String>()
+        val r = RemoteUploader(source) { b -> bodies += b; 200 }.drain()
+        assertEquals(200, r.sent)
+        assertTrue(bodies.size > 1)
+        assertTrue(bodies.all { it.length < 512 * 1024 })
+        assertEquals("os DTCs vão na última amostra de cada pacote", bodies.size, bodies.count { it.contains("P0420") })
+    }
+
     @Test fun semRedeNaoPerdeNada() = runBlocking {
         val source = FakeSource((1L..5L).map { entity(it) })
         val r = RemoteUploader(source) { throw IOException("sem rede") }.drain()

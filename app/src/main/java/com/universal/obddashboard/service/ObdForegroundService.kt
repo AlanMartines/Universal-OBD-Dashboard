@@ -264,6 +264,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             },
             speedCorrectionPct = AppSettings.dashboard(this, loaded).speedCorrectionPct,
             imuCalibration = AppSettings.imuCalibration(this),
+            compassCalibration = AppSettings.compassCalibration(this),
         )
         // Viagem retomada: o computador de bordo continua de onde parou, refeito pelas amostras gravadas.
         if (resumeId != null) runCatching { engine?.restoreStats(dao.telemetryForTrip(tripId)) }
@@ -497,10 +498,16 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 }
             }
 
+            TelemetryHub.takeImuRequest()?.let { r ->
+                eng.imuRequest(r, now)
+                recorder?.event("imu_request") { put("kind", r.name) }
+            }
+
             val result = eng.compute(state, trip, now, dtS)
             result.timedRuns.forEach { AppSettings.recordTimedRun(this, it, now) }
             result.atmosphericKpa?.let { AppSettings.setAtmosphericKpa(this, it) }
             result.imuCalibration?.let { AppSettings.setImuCalibration(this, it) }
+            result.compassCalibration?.let { AppSettings.setCompassCalibration(this, it) }
             val gpsAlert = gpsLostAlert(loaded, state, now, mono)
             TelemetryHub.update {
                 it.copy(derived = result.derived, alerts = result.alerts + listOfNotNull(gpsAlert), tripDistanceKm = trip?.distanceKm ?: 0.0)
@@ -687,7 +694,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                             "dash.reserveL" to v.fuel?.reserveMaxL,
                             // Total do app (hodômetro informado + viagens desde então), para o painel web
                             "app.odometer_km" to odometerNow,
-                        ) + pc.metrics(),
+                        ) + dynamicsForRemote(d) + pc.metrics(),
                         s.alerts.map { RemotePayload.LiveAlert(it.level.name, it.message) },
                         BuildConfig.VERSION_NAME,
                     )
@@ -754,6 +761,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         "derived.estimatedLoadPct" to d.estimatedLoadPct,
         "derived.vacuumKpa" to d.vacuumKpa,
         "derived.mapOffsetKpa" to d.mapOffsetKpa,
+        "derived.imuStage" to d.imuStage?.toDouble(),
         "derived.accelG" to d.accelG,
         "derived.lateralG" to d.lateralG,
         "derived.slopePct" to d.slopePct,
@@ -764,6 +772,24 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         "derived.maxLateralG" to d.maxLateralG,
         "derived.tripCost" to d.tripCost,
         "pc.ecoBand" to d.ecoBand?.toDouble(),
+    ) + dynamicsForRemote(d)
+
+    /** Aba Dinâmica: o painel web mostra a mesma tela, ao vivo e no histórico. */
+    private fun dynamicsForRemote(d: DerivedMetrics): Map<String, Double?> = mapOf(
+        "derived.pitchDeg" to d.pitchDeg,
+        "derived.rollDeg" to d.rollDeg,
+        "derived.yawDps" to d.yawDps,
+        "derived.maxPitchDeg" to d.maxPitchDeg,
+        "derived.maxRollDeg" to d.maxRollDeg,
+        "derived.driveState" to d.driveState?.toDouble(),
+        "derived.headingDeg" to d.headingDeg,
+        // 1 = GPS, 2 = magnetômetro
+        "derived.headingSource" to when (d.headingSource) { "gps" -> 1.0; "mag" -> 2.0; else -> null },
+        "derived.compassPct" to d.compassPct?.toDouble(),
+        "derived.compassReady" to (if (d.compassPct != null) (if (d.compassReady) 1.0 else 0.0) else null),
+        "derived.altitudeM" to d.altitudeM,
+        "derived.altitudeTrend" to d.altitudeTrend?.toDouble(),
+        "derived.altitudeGps" to (if (d.altitudeM != null) (if (d.altitudeGps) 1.0 else 0.0) else null),
     )
 
     /**
@@ -1126,6 +1152,13 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                     accuracyM = loc.accuracy,
                     bearing = if (loc.hasBearing()) loc.bearing else null,
                     timestamp = System.currentTimeMillis(),
+                    altitudeM = when {
+                        Build.VERSION.SDK_INT >= 34 && loc.hasMslAltitude() -> loc.mslAltitudeMeters
+                        // Antes do Android 14 só há a altura sobre o elipsoide: no Brasil, uns 5 a 20 m acima do mar
+                        loc.hasAltitude() -> loc.altitude
+                        else -> null
+                    },
+                    verticalAccuracyM = if (loc.hasVerticalAccuracy()) loc.verticalAccuracyMeters else null,
                 )
                 lastGpsFixMono = SystemClock.elapsedRealtime()
                 if (gpsLostSince != null) {

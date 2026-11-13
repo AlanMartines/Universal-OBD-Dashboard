@@ -69,12 +69,9 @@ class TelemetryScreen(carContext: CarContext) : Screen(carContext) {
         val volts = s.value(roles.batteryVolts, now)
         val d = s.derived
 
-        // --- RPM + indicador de troca ---
-        val gearHint = when {
-            d.shiftUp && d.recommendedGear != null -> " • ${d.recommendedGear}ª ▲"
-            d.estimatedGear != null -> " • ${d.estimatedGear}ª"
-            else -> ""
-        }
+        // --- RPM + câmbio (P parado, D andando, R de ré) ---
+        val drive = d.driveState?.let { listOf("P", "D", "R").getOrNull(it) }
+        val gearHint = drive?.let { " • $it" } ?: ""
         val rpmItem = tile(
             "RPM",
             (rpm?.let { fmt(it, 0) } ?: "--") + gearHint,
@@ -82,7 +79,6 @@ class TelemetryScreen(carContext: CarContext) : Screen(carContext) {
             when {
                 rpm == null -> CarColor.DEFAULT
                 rpm >= dash.rpmRedline -> CarColor.RED
-                d.shiftUp -> CarColor.YELLOW
                 else -> CarColor.GREEN
             },
         )
@@ -153,12 +149,18 @@ class TelemetryScreen(carContext: CarContext) : Screen(carContext) {
             }
             .build()
 
+        // A barra aceita um só botão com texto: a Dinâmica entra só com o ícone
+        val dynamics = Action.Builder()
+            .setIcon(CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.ic_compass)).build())
+            .setOnClickListener { screenManager.push(DynamicsScreen(carContext)) }
+            .build()
+
         @Suppress("DEPRECATION") // setTitle/setHeaderAction mantêm compatibilidade com hosts Car API 1
         val template = GridTemplate.Builder()
             .setTitle(s.vehicleName.ifEmpty { carContext.getString(R.string.app_name) })
             .setHeaderAction(Action.APP_ICON)
             .setSingleList(items)
-            .setActionStrip(ActionStrip.Builder().addAction(toggle).build())
+            .setActionStrip(ActionStrip.Builder().addAction(dynamics).addAction(toggle).build())
             .build()
         return template
     }

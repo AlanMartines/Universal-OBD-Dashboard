@@ -11,6 +11,9 @@ data class Esp32Info(
     /** "ok", "ausente" ou "sem resposta"; null = ainda não informado. */
     val bmp: String? = null,
     val lsm: String? = null,
+    /** Magnetômetro (bússola): "ok", "ausente" ou "sem resposta", e o modelo encontrado (qmc5883l, qmc5883p, hmc5883l). */
+    val mag: String? = null,
+    val magChip: String? = null,
     val frames: Long? = null,
     val lost: Long? = null,
     val busErrors: Long? = null,
@@ -29,6 +32,7 @@ data class Esp32Info(
         private val BITRATE = Regex("^# listen-only (\\d+) kbps$")
         private val STATS = Regex("^# stats quadros=(\\d+) perdidos=(\\d+) erros=(\\d+)$")
         private val SENSOR = Regex("^# (bmp180|lsm6ds3) (ok|ausente|sem resposta)\\b.*$")
+        private val MAG = Regex("^# mag (ok|ausente|sem resposta)(?: (qmc5883l|qmc5883p|hmc5883l)\\b)?.*$")
         private val ERROR = Regex("^# ERRO (.+)$")
 
         /** Novo estado se a linha diz algo do adaptador; null se não é linha de estado. */
@@ -47,6 +51,10 @@ data class Esp32Info(
             BITRATE.matchEntire(l)?.let { return cur.copy(bitrateKbps = it.groupValues[1].toInt()) }
             SENSOR.matchEntire(l)?.let { m ->
                 return if (m.groupValues[1] == "bmp180") cur.copy(bmp = m.groupValues[2]) else cur.copy(lsm = m.groupValues[2])
+            }
+            MAG.matchEntire(l)?.let { m ->
+                val chip = m.groupValues[2].ifEmpty { null }
+                return cur.copy(mag = m.groupValues[1], magChip = chip ?: cur.magChip.takeIf { m.groupValues[1] != "ausente" })
             }
             STATS.matchEntire(l)?.let { m ->
                 val frames = m.groupValues[1].toLong()

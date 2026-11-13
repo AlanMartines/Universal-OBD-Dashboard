@@ -112,6 +112,8 @@ function renderEspCard(s) {
     i.busErrors ? fmt(i.busErrors, 0) + ' erros na rede' : null,
     'BMP180: ' + (ESP_SENSOR[i.bmp] || '?'),
     'LSM6DS3: ' + (ESP_SENSOR[i.lsm] || '?'),
+    // Bússola só a partir do firmware 1.5; antes disso a linha não existe
+    i.mag ? 'Bússola' + (i.magChip ? ' (' + i.magChip.toUpperCase() + ')' : '') + ': ' + (ESP_SENSOR[i.mag] || '?') : null,
     i.restarts ? `reiniciou ${i.restarts}×` : null,
   ].filter(Boolean);
   const kv = $('esp-kv');
@@ -203,13 +205,11 @@ function onTelemetry(s) {
   arc.setAttribute('d', arcPath(0, frac));
   arc.classList.toggle('redline', rpm != null && rpm >= dash.rpmRedline);
 
-  // Marcha
+  // Câmbio: P parado, D andando, R de ré (a marcha estimada e o aviso de troca saíram)
   const d = s.derived || {};
   const gear = $('gear');
-  if (d.shiftUp && d.recommendedGear) { gear.textContent = `▲ ${d.recommendedGear}ª`; gear.className = 'gear up'; }
-  else if (d.estimatedGear) { gear.textContent = `${d.estimatedGear}ª`; gear.className = 'gear'; }
-  else if (d.recommendedGear) { gear.textContent = `ideal ${d.recommendedGear}ª`; gear.className = 'gear'; }
-  else { gear.textContent = ''; }
+  gear.textContent = d.driveState == null ? '' : ['P', 'D', 'R'][d.driveState] || '';
+  gear.className = 'gear';
 
   // Velocidade
   const rawSpeed = r[roles.speed || 'speed'];

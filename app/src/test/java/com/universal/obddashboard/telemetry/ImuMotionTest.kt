@@ -64,9 +64,12 @@ class ImuMotionTest {
         m.drive(15.0, 0.0, s, 0.0, sqrt(1 - s * s))
         assertEquals(5.0, m.slopePct!!, 0.6)
         assertEquals(0.0, m.accelG!!, 0.03)
-        // Curva à esquerda, no plano
-        m.drive(4.0, 0.0, 0.0, 0.3, 1.0, yawDps = 20.0)
+        // Curva à esquerda, no plano: 0,3 g a 50 km/h é um giro de v·ω = 0,3 g
+        val yaw = Math.toDegrees(0.3 * ImuMotion.G / (50 / 3.6))
+        m.drive(4.0, 0.0, 0.0, 0.3, 1.0, yawDps = yaw)
         assertEquals(0.3, m.lateralG!!, 0.03)
+        assertEquals("curva não é inclinação", 0.0, m.rollDeg!!, 1.5)
+        assertEquals(yaw, m.yawDps!!, 0.5)
         // Frenagem forte no plano
         m.drive(3.0, -15.0, -15.0 / 3.6 / ImuMotion.G, 0.0, 1.0)
         assertTrue(m.accelG!! < -0.3)
@@ -105,5 +108,104 @@ class ImuMotionTest {
         }
         assertTrue("recomeça a aprender", m.stage < 2)
         assertNull(ImuMotion.Calibration.decode("lixo"))
+    }
+
+    @Test fun lateralTiltParkedAndDriving() {
+        val m = learned()
+        // Parado com o lado direito 5° mais baixo: o eixo da esquerda aponta um pouco para cima
+        val s5 = Math.sin(Math.toRadians(5.0))
+        m.drive(8.0, 0.0, 0.0, s5, Math.cos(Math.toRadians(5.0)))
+        assertEquals(5.0, m.rollDeg!!, 0.5)
+        assertEquals(0.0, m.pitchDeg!!, 0.5)
+        // Andando reto na mesma pista inclinada: continua 5°, e a força lateral é zero
+        speed = 40.0
+        m.drive(10.0, 0.0, 0.0, s5, Math.cos(Math.toRadians(5.0)))
+        assertEquals(5.0, m.rollDeg!!, 0.6)
+        assertEquals(0.0, m.lateralG!!, 0.02)
+        assertTrue(m.maxRollDeg >= 4.5)
+    }
+
+    @Test fun parkDriveAndReverse() {
+        val m = learned()
+        speed = 0.0
+        m.drive(2.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(ImuMotion.DIR_STOPPED, m.direction)
+        // Arrancada de ré: a velocidade sobe, mas o sensor acusa aceleração para trás
+        val a = 4.0 / 3.6 / ImuMotion.G
+        m.drive(2.5, 4.0, -a, 0.0, 1.0)
+        assertEquals(ImuMotion.DIR_REVERSE, m.direction)
+        // Freando a ré continua ré até parar
+        m.drive(1.0, -4.0, a, 0.0, 1.0)
+        assertEquals(ImuMotion.DIR_REVERSE, m.direction)
+        m.drive(3.0, -4.0, 0.0, 0.0, 1.0)
+        assertEquals(ImuMotion.DIR_STOPPED, m.direction)
+        // Arrancada para a frente
+        m.drive(2.5, 4.0, a, 0.0, 1.0)
+        assertEquals(ImuMotion.DIR_FORWARD, m.direction)
+    }
+
+    @Test fun levelButtonZeroesTheSlopeAndKeepsForward() {
+        val m = learned()
+        val fwdBefore = m.calibration!!.forward!!.toDoubleArray()
+        speed = 0.0
+        m.drive(120.0, 0.0, 0.0, 0.0, 1.0)   // bastante tempo parado no plano: o "cima" automático firma
+        // Parado numa rampa de 3°: antes do ajuste aparece 3°
+        val s3 = Math.sin(Math.toRadians(3.0))
+        m.drive(6.0, 0.0, s3, 0.0, Math.cos(Math.toRadians(3.0)))
+        assertEquals(3.0, m.pitchDeg!!, 0.5)
+        m.requestLevel(t)
+        assertEquals(ImuMotion.Action.LEVEL_PENDING, m.action(t))
+        m.drive(6.0, 0.0, s3, 0.0, Math.cos(Math.toRadians(3.0)))
+        assertEquals(ImuMotion.Action.LEVEL_DONE, m.action(t))
+        assertEquals(0.0, m.pitchDeg!!, 0.3)
+        val cal = m.calibration!!
+        assertTrue(cal.upLocked)
+        assertEquals("a frente fica", 1.0, dot(cal.forward!!.toDoubleArray(), fwdBefore), 0.01)
+        // Travado: paradas depois não mexem no zero
+        m.drive(30.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(-3.0, m.pitchDeg!!, 0.5)
+        val back = ImuMotion.Calibration.decode(cal.encode())!!
+        assertTrue(back.upLocked && !back.forwardLocked)
+        // Calibração antiga (sem as travas) continua valendo
+        assertTrue(!ImuMotion.Calibration.decode(cal.encode().substringBeforeLast(";"))!!.upLocked)
+    }
+
+    @Test fun levelFailsIfTheCarMoves() {
+        val m = learned()
+        speed = 0.0
+        m.drive(2.0, 0.0, 0.0, 0.0, 1.0)
+        m.requestLevel(t)
+        m.drive(2.0, 4.0, 0.1, 0.0, 1.0)
+        assertEquals(ImuMotion.Action.LEVEL_FAILED, m.action(t))
+    }
+
+    @Test fun forwardButtonUsesTheNextStraightLaunch() {
+        val m = ImuMotion()
+        speed = 0.0
+        m.drive(5.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(1, m.stage)
+        m.armForward(t)
+        assertEquals(ImuMotion.Action.FORWARD_ARMED, m.action(t))
+        // Uma arrancada só, de 0 a 25 km/h em reta, basta
+        val a = 6.0 / 3.6 / ImuMotion.G
+        m.drive(4.5, 6.0, a, 0.0, 1.0)
+        assertEquals(ImuMotion.Action.FORWARD_DONE, m.action(t))
+        assertEquals(2, m.stage)
+        val cal = m.calibration!!
+        assertTrue(cal.forwardLocked)
+        assertEquals(1.0, dot(cal.forward!!.toDoubleArray(), fwd), 0.02)
+    }
+
+    @Test fun forwardButtonIgnoresALaunchInACurve() {
+        val m = ImuMotion()
+        speed = 0.0
+        m.drive(5.0, 0.0, 0.0, 0.0, 1.0)
+        m.armForward(t)
+        val a = 6.0 / 3.6 / ImuMotion.G
+        m.drive(4.5, 6.0, a, 0.2, 1.0, yawDps = 15.0)
+        assertEquals(ImuMotion.Action.FORWARD_ARMED, m.action(t))
+        // Apertar de novo cancela
+        m.armForward(t)
+        assertNull(m.action(t))
     }
 }

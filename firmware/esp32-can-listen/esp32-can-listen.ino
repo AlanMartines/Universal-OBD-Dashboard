@@ -32,6 +32,14 @@
  * módulo: o app converte para frente, lado e cima do carro depois de calibrar com o carro parado.
  * Sem o sensor, aparece uma vez "# lsm6ds3 ausente". No descanso, o sensor também desliga.
  *
+ * Magnetômetro opcional (bússola), no mesmo I2C: placa GY-273, que sai com um de três chips, achado sozinho
+ * pelo endereço e pela identificação: QMC5883L (0x0D), QMC5883P (0x2C) ou HMC5883L (0x1E). A cada MAG_MS sai a
+ * média do intervalo, em microtesla (µT), nos eixos impressos no módulo:
+ *   # mag x=12.3 y=-4.5 z=30.1
+ * Na partida: "# mag ok qmc5883l em 0x0D" (ou o chip achado), ou "# mag ausente". O app calibra a bússola sozinho
+ * pelo rumo do GPS: não precisa alinhar o módulo com o carro, só prendê-lo firme e longe de fios de força e ímãs
+ * (alto-falante). No descanso, o magnetômetro também desliga.
+ *
  * LEDs de estado: o azul da própria placa (D2) e, opcional, um LED tricolor (RGB) externo com um resistor em
  * cada cor, no conector da placa: comum no D18, vermelho no TX2 (GPIO17), verde no RX2 (GPIO16) e azul no D4.
  * O D18 faz as vezes de 3V3 (anodo comum) ou de GND (catodo comum), conforme LED_ANODO_COMUM: a ligação é a
@@ -74,6 +82,10 @@ const uint8_t LSM_ADDRS[] = {0x6A, 0x6B};  // SA0 no GND ou no 3V3
 const unsigned long IMU_SAMPLE_MS = 20;
 const unsigned long IMU_MS = 200;
 
+// Magnetômetro (opcional), no mesmo I2C. Leitura a 20 Hz, uma linha a cada MAG_MS (média do intervalo).
+const unsigned long MAG_SAMPLE_MS = 50;
+const unsigned long MAG_MS = 200;
+
 // LEDs de estado (veja o cabeçalho). O LED da placa acende com nível alto.
 const int LED_PLACA = 2;
 const bool LED_RGB = true;           // false se não houver LED tricolor (os pinos ficam livres)
@@ -92,6 +104,8 @@ BluetoothSerial bt;
 unsigned long lastAmb = 0;
 unsigned long lastImuSample = 0;
 unsigned long lastImu = 0;
+unsigned long lastMagSample = 0;
+unsigned long lastMag = 0;
 unsigned long lastStats = 0;
 unsigned long lastFrame = 0;
 unsigned long frames = 0;
@@ -173,6 +187,7 @@ void startListening() {
 }
 
 void lsmSleep();
+void magSleep();
 
 // Dorme até a rede CAN acordar. Na volta, reinicia: Bluetooth e TWAI começam do zero.
 void rest() {
@@ -185,6 +200,7 @@ void rest() {
   twai_driver_uninstall();
   bt.end();
   lsmSleep();
+  magSleep();
   ledsOff();  // no sono leve os pinos mantêm o nível: apagados
   // RX como entrada simples: repouso (recessivo) é nível alto; o primeiro bit dominante (baixo) acorda.
   gpio_reset_pin(RX_PIN);
@@ -372,6 +388,103 @@ void sendImu() {
   imuCount = 0;
 }
 
+// ---------- Magnetômetro: QMC5883L, QMC5883P ou HMC5883L, lidos direto pelos registradores ----------
+enum MagChip { MAG_NENHUM, MAG_QMC5883L, MAG_QMC5883P, MAG_HMC5883L };
+MagChip magChip = MAG_NENHUM;
+uint8_t magAddr = 0;
+float magUtPerLsb = 0;   // microtesla por unidade (1 gauss = 100 µT)
+float magSum[3];
+int magCount = 0;
+
+bool i2cRead(uint8_t addr, uint8_t reg, uint8_t *buf, uint8_t n) {
+  Wire.beginTransmission(addr);
+  Wire.write(reg);
+  if (Wire.endTransmission(false) != 0) return false;
+  if (Wire.requestFrom(addr, n) != n) return false;
+  for (uint8_t i = 0; i < n; i++) buf[i] = Wire.read();
+  return true;
+}
+
+bool i2cWrite(uint8_t addr, uint8_t reg, uint8_t value) {
+  Wire.beginTransmission(addr);
+  Wire.write(reg);
+  Wire.write(value);
+  return Wire.endTransmission() == 0;
+}
+
+void magBegin() {
+  uint8_t id[3] = {0, 0, 0};
+  const char *name = nullptr;
+  // QMC5883L: registrador 0x0D (identificação) responde 0xFF
+  if (i2cRead(0x0D, 0x0D, id, 1) && id[0] == 0xFF &&
+      i2cWrite(0x0D, 0x0B, 0x01) &&                // período de SET/RESET recomendado pela folha de dados
+      i2cWrite(0x0D, 0x09, 0x1D)) {                // contínuo, 50 Hz, ±8 G, 512 amostras por média
+    magChip = MAG_QMC5883L; magAddr = 0x0D; magUtPerLsb = 100.0f / 3000.0f; name = "qmc5883l";
+  } else if (i2cRead(0x2C, 0x00, id, 1) && id[0] == 0x80 &&
+      // QMC5883P: identificação 0x80 no registrador 0x00
+      i2cWrite(0x2C, 0x29, 0x06) &&                // sinal dos eixos, como no exemplo da folha de dados
+      i2cWrite(0x2C, 0x0B, 0x08) &&                // SET/RESET ligado, ±8 G
+      i2cWrite(0x2C, 0x0A, 0xCD)) {                // modo normal, 200 Hz
+    magChip = MAG_QMC5883P; magAddr = 0x2C; magUtPerLsb = 100.0f / 3750.0f; name = "qmc5883p";
+  } else if (i2cRead(0x1E, 0x0A, id, 3) && id[0] == 'H' && id[1] == '4' && id[2] == '3' &&
+      // HMC5883L: identificação "H43" nos registradores 0x0A a 0x0C
+      i2cWrite(0x1E, 0x00, 0x70) &&                // média de 8, 15 Hz
+      i2cWrite(0x1E, 0x01, 0x20) &&                // ±1,3 G: 1090 unidades por gauss
+      i2cWrite(0x1E, 0x02, 0x00)) {                // contínuo
+    magChip = MAG_HMC5883L; magAddr = 0x1E; magUtPerLsb = 100.0f / 1090.0f; name = "hmc5883l";
+  }
+  if (!name) {
+    sendLine("# mag ausente");
+    return;
+  }
+  char line[48];
+  snprintf(line, sizeof(line), "# mag ok %s em 0x%02X", name, magAddr);
+  sendLine(line);
+}
+
+// Desliga o magnetômetro antes do descanso.
+void magSleep() {
+  if (magChip == MAG_QMC5883L) i2cWrite(magAddr, 0x09, 0x00);
+  else if (magChip == MAG_QMC5883P) i2cWrite(magAddr, 0x0A, 0x00);
+  else if (magChip == MAG_HMC5883L) i2cWrite(magAddr, 0x02, 0x03);
+}
+
+void magSample() {
+  uint8_t b[6];
+  int16_t x, y, z;
+  if (magChip == MAG_QMC5883L) {
+    if (!i2cRead(magAddr, 0x00, b, 6)) return;      // X, Y, Z, byte baixo primeiro
+    x = (int16_t)(b[1] << 8 | b[0]); y = (int16_t)(b[3] << 8 | b[2]); z = (int16_t)(b[5] << 8 | b[4]);
+  } else if (magChip == MAG_QMC5883P) {
+    if (!i2cRead(magAddr, 0x01, b, 6)) return;      // X, Y, Z, byte baixo primeiro
+    x = (int16_t)(b[1] << 8 | b[0]); y = (int16_t)(b[3] << 8 | b[2]); z = (int16_t)(b[5] << 8 | b[4]);
+  } else {
+    if (!i2cRead(magAddr, 0x03, b, 6)) return;      // X, Z, Y, byte alto primeiro
+    x = (int16_t)(b[0] << 8 | b[1]); z = (int16_t)(b[2] << 8 | b[3]); y = (int16_t)(b[4] << 8 | b[5]);
+    if (x == -4096 || y == -4096 || z == -4096) return;   // estouro da faixa
+  }
+  magSum[0] += x * magUtPerLsb;
+  magSum[1] += y * magUtPerLsb;
+  magSum[2] += z * magUtPerLsb;
+  magCount++;
+}
+
+void sendMag() {
+  if (magCount == 0) {
+    static unsigned long lastWarn = 0;
+    if (millis() - lastWarn >= 5000) {
+      lastWarn = millis();
+      sendLine("# mag sem resposta");
+    }
+    return;
+  }
+  char line[80];
+  snprintf(line, sizeof(line), "# mag x=%.1f y=%.1f z=%.1f", magSum[0] / magCount, magSum[1] / magCount, magSum[2] / magCount);
+  sendLine(line);
+  magSum[0] = magSum[1] = magSum[2] = 0;
+  magCount = 0;
+}
+
 void sendFrame(const twai_message_t &m) {
   bool ext = m.flags & TWAI_MSG_FLAG_EXTD;
   bool rtr = m.flags & TWAI_MSG_FLAG_RTR;
@@ -389,11 +502,12 @@ void setup() {
   Serial.begin(500000);
   ledsInit();
   if (!bt.begin(BT_NAME)) Serial.println("# ERRO Bluetooth nao iniciou; seguindo so pela USB");
-  sendLine("# esp32-can-listen 1.4");
+  sendLine("# esp32-can-listen 1.5");
   if (woke) sendLine("# acordou: atividade na rede CAN");
-  Wire.begin(I2C_SDA, I2C_SCL, 100000);   // BMP180 e LSM6DS3 dividem o mesmo I2C
+  Wire.begin(I2C_SDA, I2C_SCL, 100000);   // BMP180, LSM6DS3 e magnetômetro dividem o mesmo I2C
   bmpBegin();
   lsmBegin();
+  magBegin();
   startListening();
   lastFrame = millis();
 }
@@ -418,6 +532,15 @@ void loop() {
   if (lsmAddr && now - lastImu >= IMU_MS) {
     lastImu = now;
     sendImu();
+  }
+
+  if (magChip != MAG_NENHUM && now - lastMagSample >= MAG_SAMPLE_MS) {
+    lastMagSample = now;
+    magSample();
+  }
+  if (magChip != MAG_NENHUM && now - lastMag >= MAG_MS) {
+    lastMag = now;
+    sendMag();
   }
 
   if (bmpOk && now - lastAmb >= AMB_MS) {

@@ -27,7 +27,7 @@ export const sampleSchema = {
     tripId: { type: ['integer', 'null'], minimum: 0, maximum: Number.MAX_SAFE_INTEGER },
     metrics: {
       type: 'object',
-      maxProperties: 120,
+      maxProperties: 200,
       additionalProperties: false,
       patternProperties: { '^[A-Za-z0-9_.-]{1,48}$': { type: 'number' } },
     },

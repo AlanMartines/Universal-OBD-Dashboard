@@ -13,7 +13,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   getRemoteStatus: () => '{"paired":false,"installationId":"pré-visualização"}',
   remotePair: () => '{"ok":false,"error":"Pareamento disponível só no app"}',
   remoteSave: () => 'ok', remoteSendNow: () => '{"ok":true,"message":"Disponível só no app"}', remoteUnpair: () => 'ok',
-  startCapture() {}, stopCapture() {}, requestPermissions() {},
+  startCapture() {}, stopCapture() {}, requestPermissions() {}, imuCalibrate: () => true,
   getPermissions: () => '{}',
   getProfileMeta: () => JSON.stringify({ vehicleName: 'Pré-visualização', outputs: [], dashboard: { rpmMax: 7000, rpmRedline: 6250 },
     thermal: { thermostatOpenC: 87, fanStage1C: 97, fanStage2C: 103, criticalC: 105 }, fuel: { tankCapacityL: 48, flex: true }, roles: {} }),

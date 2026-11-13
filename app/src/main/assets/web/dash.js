@@ -9,14 +9,15 @@
  *   classic  dois mostradores redondos com ponteiro e coluna central de dados
  *   horizon  arco largo de RPM em ciano com a velocidade ao centro, réguas curvas e painéis laterais
  *
- * Todos mostram as mesmas telas de seis campos (Estrada, Motor, Viagem e, com o sensor de movimento do
- * ESP32, Movimento), a troca automática
+ * Todos mostram as mesmas telas de seis campos (Estrada, Motor, Viagem), a tela cheia Dinâmica (horizonte,
+ * bússola, força G, sensores do ESP32), a troca automática
  * de tela, as luzes-espia, o alerta em camada própria e o modo dia/noite. Recebe o mesmo estado
  * que window.onTelemetry (MainActivity.stateJson) e os metadados do perfil (profileMetaJson).
  *
  *   Dash.mount(hostElement)  ·  Dash.setMeta(meta)  ·  Dash.update(state)
  *   Dash.setLook('minimal'|'capsule'|'hud'|'sport'|'classic'|'horizon'), Dash.setMode('auto'|'day'|'night'),
  *   Dash.setPage('road'|'engine'|'trip'|'motion'), Dash.setAutoPage(bool)
+ *   Dash.setImuAction(fn): liga os botões Zerar nível / Calibrar frente da Dinâmica (fn('level'|'forward'))
  */
 window.Dash = (function () {
   const SVGNS = 'http://www.w3.org/2000/svg';
@@ -24,7 +25,7 @@ window.Dash = (function () {
   const MODES = ['auto', 'day', 'night'];
   // Rótulos distintos: o rodapé também tem o botão "Telas auto" (troca automática de tela).
   const MODE_LABEL = { auto: 'Luz auto', day: 'Luz dia', night: 'Luz noite' };
-  const PAGES = [['road', 'Estrada'], ['engine', 'Motor'], ['trip', 'Viagem'], ['motion', 'Movimento']];
+  const PAGES = [['road', 'Estrada'], ['engine', 'Motor'], ['trip', 'Viagem'], ['motion', 'Dinâmica']];
   const TAU_MS = 120;            // suavização de RPM e velocidade entre leituras
   const STOP_TO_TRIP_MS = 6000;  // parado há tanto tempo → tela Viagem (com troca automática)
 
@@ -235,16 +236,14 @@ window.Dash = (function () {
       note: (s) => s.gps && s.gps.ageMs < 5000 ? '±' + num(s.gps.accuracyM) + ' m' : 'sem sinal',
     },
   };
-  /** Seis campos por tela, na ordem dos espaços de cada tema (três "esquerda", três "direita"). */
+  /** Seis campos por tela, na ordem dos espaços de cada tema (três "esquerda", três "direita"). A Dinâmica cobre os campos. */
   const LAYOUT = {
     road: ['kml', 'avg', 'range', 'coolant', 'iat', 'volts'],
     engine: ['tps', 'map', 'load', 'timing', 'lambda', 'trim'],
     trip: ['dist', 'time', 'used', 'avg', 'tank', 'gps'],
     motion: ['accel', 'lateral', 'slope', 'impact', 'bumps', 'gmax'],
   };
-  // A tela Movimento só aparece depois da primeira leitura do sensor (ou se for a escolhida)
-  let motionSeen = false;
-  const pageShown = (id) => id !== 'motion' || motionSeen || page === 'motion';
+  const pageShown = () => true;
 
   function tempBand(c) {
     const t = thermal();
@@ -310,7 +309,7 @@ window.Dash = (function () {
           <div class="cl-rpm-num"><span data-ui="rpmNum">--</span><small>RPM</small></div></div>
         <div class="cl-side cl-left">${fields(3)}</div>
         <div class="cl-center">
-          <div class="cl-gear" data-ui="gear"><b data-ui="gearNum">–</b><small data-ui="gearSub">marcha</small></div>
+          <div class="cl-gear" data-ui="gear"><b data-ui="gearNum">–</b><small data-ui="gearSub">câmbio</small></div>
           <span class="cl-divider"></span>
           <div class="cl-speed"><b data-ui="speedNum">--</b><small>km/h</small></div>
           <div class="cl-eco"><span class="in-trip">Viagem <b data-ui="tripKm">--</b><em>km</em></span>${ecoLeaf()}<span class="in-trip">Tempo <b data-ui="tripTime">--</b></span></div>
@@ -349,7 +348,7 @@ window.Dash = (function () {
     },
     render(c) {
       big(ui.rpmNum, c.rpm == null ? '--' : String(Math.round(c.rpm)));
-      ui.rpm.dataset.state = c.redline ? 'redline' : c.shift ? 'shift' : '';
+      ui.rpm.dataset.state = c.redline ? 'redline' : '';
     },
   };
 
@@ -484,8 +483,7 @@ window.Dash = (function () {
     paint(sh) { this.sg.set(sh.speed); this.rg.set(sh.rpm); },
     render(c) {
       this.sg.text(num(c.speed), 'KM/H');
-      const gear = c.shift ? '▲ ' + c.recommended + 'ª' : c.gear ? c.gear + 'ª' : '';
-      this.rg.text(c.rpm == null ? '--' : String(Math.round(c.rpm)), gear ? 'RPM · ' + gear : 'RPM', c.shift);
+      this.rg.text(c.rpm == null ? '--' : String(Math.round(c.rpm)), c.gear ? 'RPM · ' + c.gear : 'RPM');
     },
   };
 
@@ -538,7 +536,7 @@ window.Dash = (function () {
           <div class="hud-lights" data-ui="lightsL"></div>
           <div class="hud-lights hud-lights-r" data-ui="lightsR"></div>
           <div class="hud-tab-bot" data-ui="tabBot">${bar('tempBar', 'temp', ['', ''])}
-            <div class="hud-gear" data-ui="gear"><b data-ui="gearNum">N</b><small data-ui="gearSub"></small></div>
+            <div class="hud-gear" data-ui="gear"><b data-ui="gearNum">–</b><small data-ui="gearSub"></small></div>
             ${bar('fuelBar', 'fuel', ['', ''], true)}${ecoLeaf()}</div>
         </div>
         ${foot({})}`;
@@ -663,7 +661,7 @@ window.Dash = (function () {
       const moving = c.speed != null && c.speed >= 1 && !reduceMotion;
       ui.road.classList.toggle('moving', moving);
       if (moving) ui.road.style.setProperty('--road-dur', clamp(14 / c.speed, 0.12, 2.5).toFixed(2) + 's');
-      if (this.chevron) this.chevron.dataset.state = c.critical ? 'bad' : c.shift ? 'ok' : '';
+      if (this.chevron) this.chevron.dataset.state = c.critical ? 'bad' : '';
     },
   };
 
@@ -731,15 +729,14 @@ window.Dash = (function () {
     render(c) {
       big(ui.rpmNum, c.rpm == null ? '--' : num(c.rpm));
       big(ui.speedNum, num(c.speed));
-      const g = c.gear ? String(c.gear) : c.rpm != null && (c.speed || 0) < 3 ? 'N' : '–';
+      const g = c.gear || '–';
       if (this.gear.textContent !== g) this.gear.textContent = g;
-      this.gearSub.textContent = c.shift ? '▲ ' + c.recommended + 'ª' : 'marcha';
-      this.gearSub.classList.toggle('hint', c.shift);
+      this.gearSub.textContent = 'câmbio';
       const red = dashCfg().rpmRedline;
       const from = red - 2500;
       const lit = c.rpm == null ? 0 : clamp(Math.floor((c.rpm - from) / 250) + 1, 0, 10);
-      ui.shift.dataset.state = c.redline ? 'redline' : c.shift ? 'shift' : '';
-      this.dots.forEach((d, i) => d.classList.toggle('on', c.shift || c.redline || i < lit));
+      ui.shift.dataset.state = c.redline ? 'redline' : '';
+      this.dots.forEach((d, i) => d.classList.toggle('on', c.redline || i < lit));
     },
   };
 
@@ -851,11 +848,10 @@ window.Dash = (function () {
     render(c) {
       const d = (state && state.derived) || {};
       const tps = reading('throttle');
-      this.rg.text(c.rpm == null ? '--' : num(c.rpm), c.shift ? 'trocar' : 'acelerador',
-        c.shift ? '▲ ' + c.recommended + 'ª' : tps == null ? '--' : num(tps, 1) + ' %', c.shift);
+      this.rg.text(c.rpm == null ? '--' : num(c.rpm), 'acelerador', tps == null ? '--' : num(tps, 1) + ' %');
       this.rg.progress(tps == null ? null : tps / 100);
       const tf = tankFrac(d);
-      this.sg.text(num(c.speed), c.gear ? 'marcha' : 'tanque', c.gear ? c.gear + 'ª' : tf == null ? '--' : num(tf * 100) + ' %');
+      this.sg.text(num(c.speed), c.gear ? 'câmbio' : 'tanque', c.gear ? c.gear : tf == null ? '--' : num(tf * 100) + ' %');
       this.sg.progress(tf);
       const cool = reading('coolant');
       const band = tempBand(cool)[0];
@@ -964,8 +960,7 @@ window.Dash = (function () {
       if (this.main.textContent !== m) this.main.textContent = m;
       this.main.classList.toggle('empty', isEmpty(m));
       this.rpm.textContent = c.rpm == null ? '--' : num(c.rpm);
-      this.rpmSub.textContent = c.shift ? '▲ ' + c.recommended + 'ª' : c.gear ? 'RPM · ' + c.gear + 'ª' : 'RPM';
-      this.rpmSub.classList.toggle('hint', c.shift);
+      this.rpmSub.textContent = c.gear ? 'RPM · ' + c.gear : 'RPM';
       const d = (state && state.derived) || {};
       const tf = tankFrac(d);
       const nf = tf == null ? 0 : Math.round(clamp(tf, 0, 1) * this.fuelTape.length);
@@ -982,6 +977,258 @@ window.Dash = (function () {
   };
 
   const THEMES = { minimal, capsule, hud, sport, classic, horizon };
+
+  /* ================================================================ Tela Dinâmica */
+  /*
+   * Ocupa a tela toda (menos o rodapé com as abas), por cima de qualquer tema, com as cores dele:
+   * câmbio (P/D/R) e velocidade · inclinômetro · força G | horizonte artificial dentro da bússola |
+   * estado do ESP32 · ambiente (altitude e pressão) · curva. Embaixo, Zerar nível e Calibrar frente (só no app).
+   */
+  const DRIVE = ['P', 'D', 'R'];
+  const PX_PER_DEG = 3.2;           // escada do horizonte: 20° = 64 unidades do raio de 138
+  const IMU_ACTIONS = {
+    LEVEL_PENDING: ['level', 'Zerando: fique parado…', 'info'],
+    LEVEL_DONE: ['level', 'Nível zerado', 'ok'],
+    LEVEL_FAILED: ['level', 'Não zerou: o carro andou', 'warn'],
+    FORWARD_ARMED: ['forward', 'Arranque em linha reta até 20 km/h', 'info'],
+    FORWARD_CAPTURING: ['forward', 'Calibrando a frente…', 'info'],
+    FORWARD_DONE: ['forward', 'Frente calibrada', 'ok'],
+  };
+  const GEAR_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8zm8.4 4.6l1.8 1.4-2 3.4-2.1-.8a7.6 7.6 0 0 1-2.3 1.3L15.5 21h-4l-.3-2.5a7.6 7.6 0 0 1-2.3-1.3l-2.1.8-2-3.4 1.8-1.4a7.7 7.7 0 0 1 0-2.6L4.8 9.2l2-3.4 2.1.8a7.6 7.6 0 0 1 2.3-1.3L11.5 3h4l.3 2.3a7.6 7.6 0 0 1 2.3 1.3l2.1-.8 2 3.4-1.8 1.4a7.7 7.7 0 0 1 0 2.6z" fill="currentColor" fill-rule="evenodd"/></svg>';
+  const TURN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4 3.5v4.2h4.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  const dyn = {
+    markup() {
+      const row = (label, ui, peak) => `<div class="dyn-row"><span class="dyn-k">${label}</span><b class="dyn-v" data-ui="${ui}">--</b>` +
+        (peak ? `<span class="dyn-peak"><small>pico</small><i data-ui="${peak}">--</i></span>` : '') + '</div>';
+      return `
+        <div class="dyn" data-ui="dyn">
+          <div class="dyn-gear"><b data-ui="dynGear">–</b><span><b data-ui="dynSpeed">--</b> km/h</span></div>
+          <div class="dyn-status" data-ui="dynStatus"></div>
+          <section class="dyn-card dyn-incl"><h3>Inclinômetro</h3>${row('Lateral', 'dynRoll', 'dynRollMax')}${row('Frontal', 'dynPitch', 'dynPitchMax')}
+            <p class="dyn-note" data-ui="dynInclNote"></p></section>
+          <section class="dyn-card dyn-g"><h3>Força G</h3><div class="dyn-gbox"><div>${row('Lateral', 'dynLat')}${row('Long.', 'dynLong')}</div>
+            <svg class="dyn-ball" data-ui="dynBall" viewBox="-50 -50 100 100" aria-hidden="true"></svg></div></section>
+          <section class="dyn-card dyn-amb"><h3>Ambiente</h3>${row('Altitude', 'dynAlt')}${row('Pressão', 'dynHpa')}
+            <p class="dyn-note" data-ui="dynAltNote"></p></section>
+          <section class="dyn-card dyn-turn"><h3>Curva</h3>${row('Direção', 'dynDir')}${row('Giro', 'dynYaw')}</section>
+          <div class="dyn-dial">
+            <svg data-ui="dynDial" viewBox="-200 -200 400 400" role="img" aria-label="Horizonte artificial e bússola"></svg>
+            <div class="dyn-head" data-ui="dynHead"><b data-ui="dynHeadTxt">--</b><small data-ui="dynHeadSrc"></small></div>
+          </div>
+          <button type="button" class="dyn-btn dyn-btn-l" id="dyn-level" data-ui="dynLevel">${GEAR_ICON}<span>Zerar nível</span></button>
+          <button type="button" class="dyn-btn dyn-btn-r" id="dyn-forward" data-ui="dynForward">${TURN_ICON}<span>Calibrar frente</span></button>
+          <p class="dyn-msg" data-ui="dynMsg" role="status"></p>
+        </div>`;
+    },
+    build() {
+      this.headShown = null;
+      this.trail = [];
+      const s = ui.dynDial;
+      s.innerHTML = '';
+      const defs = svg('defs', {}, s);
+      const clip = svg('clipPath', { id: 'dyn-clip' }, defs);
+      svg('circle', { cx: 0, cy: 0, r: 138 }, clip);
+      const grad = svg('linearGradient', { id: 'dyn-ring', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+      svg('stop', { offset: '0', class: 'dyn-ring-a' }, grad);
+      svg('stop', { offset: '1', class: 'dyn-ring-b' }, grad);
+
+      // Bússola: faixa, marcas a cada 5°, números a cada 30° e pontos cardeais (norte em cima, fixo)
+      svg('circle', { class: 'dyn-band', cx: 0, cy: 0, r: 166, stroke: 'url(#dyn-ring)' }, s);
+      svg('circle', { class: 'dyn-rim', cx: 0, cy: 0, r: 188, stroke: 'url(#dyn-ring)' }, s);
+      svg('circle', { class: 'dyn-rim in', cx: 0, cy: 0, r: 144 }, s);
+      const CARD = { 0: 'N', 45: 'NE', 90: 'L', 135: 'SE', 180: 'S', 225: 'SO', 270: 'O', 315: 'NO' };
+      for (let a = 0; a < 360; a += 5) {
+        const major = a % 30 === 0;
+        const [x0, y0] = polar(0, 0, 186, a - 90);
+        const [x1, y1] = polar(0, 0, major ? 172 : a % 15 === 0 ? 177 : 180, a - 90);
+        svg('line', { class: 'dyn-tick' + (major ? ' major' : ''), x1: x0.toFixed(1), y1: y0.toFixed(1), x2: x1.toFixed(1), y2: y1.toFixed(1) }, s);
+        const label = CARD[a] || (major ? String(a) + '°' : null);
+        if (!label) continue;
+        const [lx, ly] = polar(0, 0, CARD[a] ? 156 : 159, a - 90);
+        const t = svg('text', { class: CARD[a] ? 'dyn-card-pt' + (a % 90 ? ' mid' : '') : 'dyn-deg', x: lx.toFixed(1), y: ly.toFixed(1),
+          transform: `rotate(${a > 90 && a < 270 ? a - 180 : a} ${lx.toFixed(1)} ${ly.toFixed(1)})` }, s);
+        t.textContent = label;
+      }
+      svg('path', { class: 'dyn-north', d: 'M 0 -199 L 9 -186 L -9 -186 Z' }, s);
+      // Rumo: arco do norte até ele e a seta na borda
+      this.headArc = svg('path', { class: 'dyn-head-arc' }, s);
+      this.headPtr = svg('g', { class: 'dyn-head-ptr' }, s);
+      svg('path', { d: 'M 0 -170 L 11 -194 L -11 -194 Z' }, this.headPtr);
+
+      // Horizonte artificial: céu e chão, linha, escada de 5 em 5° (números de 10 em 10), recortados no círculo
+      const inner = svg('g', { 'clip-path': 'url(#dyn-clip)' }, s);
+      this.hz = svg('g', { class: 'dyn-hz' }, inner);
+      svg('rect', { class: 'dyn-sky', x: -400, y: -800, width: 800, height: 800 }, this.hz);
+      svg('rect', { class: 'dyn-ground', x: -400, y: 0, width: 800, height: 800 }, this.hz);
+      svg('line', { class: 'dyn-hline', x1: -400, y1: 0, x2: 400, y2: 0 }, this.hz);
+      for (let p = -25; p <= 25; p += 5) {
+        if (p === 0) continue;
+        const y = -p * PX_PER_DEG;
+        const w = p % 10 === 0 ? 46 : 22;
+        const cls = p > 0 ? 'up' : 'down';
+        svg('line', { class: 'dyn-rung ' + cls, x1: -w, y1: y, x2: w, y2: y }, this.hz);
+        if (p % 10) continue;
+        const txt = (p > 0 ? '+' : '−') + Math.abs(p) + '°';
+        svg('text', { class: 'dyn-rung-t ' + cls, x: -w - 8, y, 'text-anchor': 'end' }, this.hz).textContent = txt;
+        svg('text', { class: 'dyn-rung-t ' + cls, x: w + 8, y, 'text-anchor': 'start' }, this.hz).textContent = txt;
+      }
+      // Escala de rolagem em cima, fixa, e o ponteiro que gira junto com o horizonte
+      for (const a of [-60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60]) {
+        const [x0, y0] = polar(0, 0, 134, a - 90);
+        const [x1, y1] = polar(0, 0, a % 30 === 0 ? 120 : 126, a - 90);
+        svg('line', { class: 'dyn-roll-tick', x1: x0.toFixed(1), y1: y0.toFixed(1), x2: x1.toFixed(1), y2: y1.toFixed(1) }, s);
+      }
+      this.rollPtr = svg('g', { class: 'dyn-roll-ptr' }, s);
+      svg('path', { d: 'M 0 -118 L 7 -106 L -7 -106 Z' }, this.rollPtr);
+      // Referência do carro, fixa no meio
+      svg('path', { class: 'dyn-ref', d: 'M -78 0 H -30 L -18 12 M 78 0 H 30 L 18 12' }, s);
+      svg('circle', { class: 'dyn-ref-dot', cx: 0, cy: 0, r: 4 }, s);
+      // Leituras com fundo próprio, legíveis por cima da escada
+      svg('rect', { class: 'dyn-hz-pill', x: -84, y: -96, width: 168, height: 30, rx: 15 }, s);
+      svg('rect', { class: 'dyn-hz-pill', x: -84, y: 92, width: 168, height: 30, rx: 15 }, s);
+      this.pitchTxt = svg('text', { class: 'dyn-hz-t', x: 0, y: -81 }, s);
+      this.rollTxt = svg('text', { class: 'dyn-hz-t roll', x: 0, y: 107 }, s);
+
+      // Bola da força G: anéis de 0,25 e 0,5 g, cruz, rastro e o ponto
+      const b = ui.dynBall;
+      b.innerHTML = '';
+      svg('circle', { class: 'dyn-ball-ring', cx: 0, cy: 0, r: 20 }, b);
+      svg('circle', { class: 'dyn-ball-ring', cx: 0, cy: 0, r: 40 }, b);
+      svg('line', { class: 'dyn-ball-ring', x1: -48, y1: 0, x2: 48, y2: 0 }, b);
+      svg('line', { class: 'dyn-ball-ring', x1: 0, y1: -48, x2: 0, y2: 48 }, b);
+      this.trailDots = [];
+      for (let i = 0; i < 12; i++) this.trailDots.push(svg('circle', { class: 'dyn-ball-trail', r: 3, cx: 0, cy: 0, opacity: 0 }, b));
+      this.ballDot = svg('circle', { class: 'dyn-ball-dot', r: 6, cx: 0, cy: 0 }, b);
+
+      ui.dynLevel.addEventListener('click', () => this.act('level'));
+      ui.dynForward.addEventListener('click', () => this.act('forward'));
+    },
+    act(kind) {
+      if (!onImuAction) return;
+      if (onImuAction(kind) === false) this.flash('Inicie a captura para calibrar o sensor');
+    },
+    flash(text) {
+      this.flashText = text;
+      this.flashUntil = Date.now() + 4000;
+      this.render(state || {});
+    },
+    render(s) {
+      const d = (s && s.derived) || {};
+      const speed = reading('speed');
+      const sensor = d.imuStage != null;
+      const fmtDeg = (v, dec) => (v == null ? '--' : num(Math.abs(v) < 0.05 ? 0 : v, dec) + '°');
+
+      // Câmbio e velocidade
+      const g = d.driveState == null ? '–' : DRIVE[d.driveState] || '–';
+      big(ui.dynGear, g);
+      ui.dynGear.dataset.state = g === 'R' ? 'warn' : g === 'D' ? 'on' : '';
+      ui.dynSpeed.textContent = num(speed);
+
+      // Estado: ESP32, sensor de movimento e bússola
+      const info = s.canInfo || null;
+      const parts = [];
+      if (s.canLink === 'connected') parts.push(['ok', 'ESP32 conectado']);
+      else if (s.canLink === 'connecting') parts.push(['warn', 'ESP32 conectando…']);
+      else if (s.canLink === 'lost') parts.push(['bad', 'ESP32 sem conexão']);
+      else if (s.canConfigured === false) parts.push(['', 'Sem ESP32']);
+      if (info && info.lsm && info.lsm !== 'ok') parts.push(['warn', 'Movimento: ' + info.lsm]);
+      else if (sensor && d.imuStage < 2) parts.push(['info', d.imuStage === 0 ? 'Calibrando: pare o carro' : 'Calibrando: arranque e freie']);
+      if (d.compassPct != null && !d.compassReady) parts.push(['info', 'Bússola ' + d.compassPct + '%']);
+      else if (info && info.mag === 'ausente' && d.headingSource !== 'gps') parts.push(['', 'Sem bússola']);
+      const key = JSON.stringify(parts);
+      if (this.statusKey !== key) {
+        this.statusKey = key;
+        ui.dynStatus.textContent = '';
+        parts.forEach(([st, t]) => { const e = el('span', 'dyn-chip'); if (st) e.dataset.state = st; e.textContent = t; ui.dynStatus.appendChild(e); });
+      }
+
+      // Inclinômetro: lateral com o lado mais baixo (E/D) e frontal com sinal (+ subida)
+      const roll = d.rollDeg;
+      ui.dynRoll.textContent = roll == null ? '--' : num(Math.abs(roll), 1) + '°' + (Math.abs(roll) < 0.5 ? '' : roll > 0 ? ' D' : ' E');
+      ui.dynPitch.textContent = d.pitchDeg == null ? '--' : (d.pitchDeg >= 0.05 ? '+' : '') + fmtDeg(d.pitchDeg, 1);
+      ui.dynRollMax.textContent = d.maxRollDeg == null ? '--' : num(d.maxRollDeg, 1) + '°';
+      ui.dynPitchMax.textContent = d.maxPitchDeg == null ? '--' : num(d.maxPitchDeg, 1) + '°';
+      ui.dynInclNote.textContent = !sensor ? 'sem sensor de movimento' : d.pitchDeg == null ? 'calibrando o sensor'
+        : d.slopePct == null ? '' : 'rua ' + signed(d.slopePct, 0) + '%';
+
+      // Força G
+      ui.dynLat.textContent = d.lateralG == null ? '--' : num(Math.abs(d.lateralG), 2) + ' g';
+      ui.dynLong.textContent = d.accelG == null ? '--' : signed(d.accelG, 2) + ' g';
+      this.ball(d.lateralG, d.accelG);
+
+      // Ambiente: altitude (≈ sem o acerto do GPS) com a tendência, e a pressão do BMP180
+      const hpa = reading('cabinPressure');
+      const arrow = d.altitudeTrend > 0 ? ' ↑' : d.altitudeTrend < 0 ? ' ↓' : '';
+      ui.dynAlt.textContent = d.altitudeM == null ? '--' : (d.altitudeGps ? '' : '≈ ') + num(d.altitudeM) + ' m' + arrow;
+      ui.dynHpa.textContent = hpa == null ? '--' : num(hpa) + ' hPa';
+      const cabin = reading('cabinTemp');
+      ui.dynAltNote.textContent = hpa == null ? 'sem sensor de pressão'
+        : (d.altitudeGps ? 'acertada pelo GPS' : 'pela pressão') + (cabin == null ? '' : ' · interna ' + num(cabin) + ' °C');
+
+      // Curva: lado pelo giro (andando) e o giro em °/s
+      const yaw = d.yawDps;
+      const turning = yaw != null && Math.abs(yaw) >= 2 && speed != null && speed >= 3;
+      ui.dynDir.textContent = yaw == null ? '--' : !turning ? 'Reta' : yaw > 0 ? '← Esquerda' : 'Direita →';
+      ui.dynYaw.textContent = yaw == null ? '--' : num(Math.abs(yaw), 1) + '°/s';
+
+      // Horizonte: gira ao contrário da rolagem e desce quando a frente sobe
+      const pitch = d.pitchDeg == null ? 0 : clamp(d.pitchDeg, -40, 40);
+      const rl = roll == null ? 0 : clamp(roll, -60, 60);
+      this.hz.style.transform = `rotate(${(-rl).toFixed(2)}deg) translateY(${(pitch * PX_PER_DEG).toFixed(1)}px)`;
+      this.rollPtr.style.transform = `rotate(${(-rl).toFixed(2)}deg)`;
+      this.hz.classList.toggle('off', d.pitchDeg == null);
+      this.pitchTxt.textContent = 'Inclinação ' + (d.pitchDeg == null ? '--' : (d.pitchDeg >= 0.05 ? '+' : '') + fmtDeg(d.pitchDeg, 1));
+      this.rollTxt.textContent = 'Rolagem ' + (roll == null ? '--' : (roll >= 0.05 ? '+' : '') + fmtDeg(roll, 1));
+
+      // Rumo: sem pular de 359° para 0° (gira pelo caminho mais curto)
+      const h = d.headingDeg;
+      ui.dynHead.dataset.state = h == null ? 'off' : '';
+      this.headPtr.classList.toggle('off', h == null);
+      if (h != null) {
+        this.headShown = this.headShown == null ? h : this.headShown + ((((h - this.headShown) % 360) + 540) % 360 - 180);
+        this.headPtr.style.transform = `rotate(${this.headShown.toFixed(1)}deg)`;
+        const hh = ((h % 360) + 360) % 360;
+        this.headArc.setAttribute('d', hh < 0.5 || hh > 359.5 ? '' : hh <= 180 ? arcD(0, 0, 188, -90, hh - 90) : arcD(0, 0, 188, -90, hh - 450));
+        ui.dynHeadTxt.textContent = cardinal(hh) + ' ' + num(hh) + '°';
+        ui.dynHeadSrc.textContent = d.headingSource === 'mag' ? 'bússola' : 'GPS';
+      } else {
+        this.headArc.setAttribute('d', '');
+        ui.dynHeadTxt.textContent = '--';
+        ui.dynHeadSrc.textContent = 'sem rumo';
+      }
+
+      // Botões: só no app, com o sensor; Zerar nível só parado
+      const act = d.imuAction && IMU_ACTIONS[d.imuAction];
+      ui.dynLevel.hidden = ui.dynForward.hidden = !onImuAction;
+      ui.dynLevel.disabled = !sensor || (speed != null && speed >= 1) || d.imuAction === 'LEVEL_PENDING';
+      ui.dynForward.disabled = !sensor || d.imuStage === 0;
+      ui.dynForward.setAttribute('aria-pressed', String(d.imuAction === 'FORWARD_ARMED' || d.imuAction === 'FORWARD_CAPTURING'));
+      ui.dynForward.querySelector('span').textContent = d.imuAction === 'FORWARD_ARMED' || d.imuAction === 'FORWARD_CAPTURING' ? 'Cancelar' : 'Calibrar frente';
+      const flash = this.flashUntil > Date.now() ? this.flashText : null;
+      ui.dynMsg.textContent = flash || (act ? act[1] : '');
+      if (act && !flash) ui.dynMsg.dataset.state = act[2]; else delete ui.dynMsg.dataset.state;
+    },
+    ball(lat, lon) {
+      if (lat == null || lon == null) { this.ballDot.setAttribute('opacity', '0'); return; }
+      const x = clamp(-lat * 80, -46, 46);
+      const y = clamp(-lon * 80, -46, 46);
+      this.trail.push([x, y]);
+      if (this.trail.length > this.trailDots.length) this.trail.shift();
+      this.trailDots.forEach((c, i) => {
+        const p = this.trail[this.trail.length - 1 - i];
+        c.setAttribute('opacity', p ? (0.5 * (1 - i / this.trailDots.length)).toFixed(2) : '0');
+        if (p) { c.setAttribute('cx', p[0].toFixed(1)); c.setAttribute('cy', p[1].toFixed(1)); }
+      });
+      this.ballDot.setAttribute('opacity', '1');
+      this.ballDot.setAttribute('cx', x.toFixed(1));
+      this.ballDot.setAttribute('cy', y.toFixed(1));
+    },
+  };
+  /** Pontos cardeais e colaterais (N, NE, L, SE, S, SO, O, NO). */
+  const cardinal = (deg) => ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'][Math.round(deg / 45) % 8];
+  /** Botões Zerar nível e Calibrar frente: o app liga (Dash.setImuAction); no painel web ficam escondidos. */
+  let onImuAction = null;
 
   /* ================================================================ Montagem e controle */
   function mount(hostEl) {
@@ -1014,7 +1261,7 @@ window.Dash = (function () {
     if (theme && theme.destroy) theme.destroy();
     theme = THEMES[look];
     root.dataset.look = look;
-    root.innerHTML = theme.markup() + '<div class="cl-alert" data-ui="alert" role="status" hidden></div>';
+    root.innerHTML = theme.markup() + dyn.markup() + '<div class="cl-alert" data-ui="alert" role="status" hidden></div>';
     for (const k in ui) delete ui[k];
     root.querySelectorAll('[data-ui]').forEach((e) => { ui[e.dataset.ui] = e; });
     ui.fields = [...root.querySelectorAll('.cl-field')];
@@ -1050,6 +1297,7 @@ window.Dash = (function () {
     applyTint();
 
     theme.build();
+    dyn.build();
     applyScheme();
     applyPage();
     paint();
@@ -1100,6 +1348,7 @@ window.Dash = (function () {
       ui['tab_' + id].hidden = !pageShown(id);
     });
     ui.autoBtn.setAttribute('aria-pressed', String(autoPage));
+    root.dataset.page = page;
     LAYOUT[page].forEach((key, i) => {
       const node = ui.fields[i];
       if (!node) return;
@@ -1129,7 +1378,8 @@ window.Dash = (function () {
     const now = nowOf(state);
     if (speed !== null && speed < 1) {
       if (stoppedSince === null) stoppedSince = now;
-      if (autoPage && page !== 'trip' && now - stoppedSince > STOP_TO_TRIP_MS) { page = 'trip'; applyPage(); }
+      // Na Dinâmica fica: é parado que se zera o nível
+      if (autoPage && page !== 'trip' && userPage !== 'motion' && now - stoppedSince > STOP_TO_TRIP_MS) { page = 'trip'; applyPage(); }
     } else if (speed !== null && speed > 5) {
       stoppedSince = null;
       if (autoPage && page !== userPage) { page = userPage; applyPage(); }
@@ -1142,8 +1392,9 @@ window.Dash = (function () {
     const speed = reading('speed');
     const top = ((state && state.alerts) || []).find((a) => a.level !== 'INFO');
     return {
-      rpm, speed, gear: Math.round(d.estimatedGear) || null, recommended: d.recommendedGear == null ? null : Math.round(d.recommendedGear),
-      shift: !!(d.shiftUp && d.recommendedGear), redline: rpm != null && rpm >= dashCfg().rpmRedline,
+      // Câmbio pelo sentido de movimento (P parado, D andando, R de ré), não pela marcha adivinhada
+      rpm, speed, gear: d.driveState == null ? null : DRIVE[d.driveState] || null,
+      redline: rpm != null && rpm >= dashCfg().rpmRedline,
       alert: top || null, critical: !!(top && top.level === 'CRITICAL'),
     };
   }
@@ -1153,16 +1404,13 @@ window.Dash = (function () {
     const s = state;
     const d = s.derived || {};
     const c = ctxNow();
-    if (!motionSeen && d.imuStage != null) {
-      motionSeen = true;
-      if (ui.tab_motion) ui.tab_motion.hidden = false;
-    }
+    if (page === 'motion') dyn.render(s);
 
     // Marcha (Minimal e HUD) e velocidade (Minimal)
     if (ui.gearNum) {
-      big(ui.gearNum, c.gear ? String(c.gear) : c.rpm != null && (c.speed || 0) < 3 ? 'N' : '–');
-      ui.gearSub.textContent = c.shift ? '▲ ' + c.recommended + 'ª' : look === 'minimal' ? 'marcha' : '';
-      ui.gear.dataset.state = c.shift ? 'shift' : '';
+      big(ui.gearNum, c.gear || '–');
+      ui.gearSub.textContent = look === 'minimal' ? 'câmbio' : '';
+      ui.gear.dataset.state = c.gear === 'R' ? 'reverse' : '';
     }
     if (ui.speedNum && look === 'minimal') big(ui.speedNum, num(c.speed));
 
@@ -1298,6 +1546,7 @@ window.Dash = (function () {
 
   return {
     mount, setMeta, update, setLook, setMode, setPage, setAutoPage,
+    setImuAction(fn) { onImuAction = typeof fn === 'function' ? fn : null; if (root && state) render(); },
     get look() { return look; }, get mode() { return mode; }, get page() { return page; }, get autoPage() { return autoPage; },
   };
 })();
