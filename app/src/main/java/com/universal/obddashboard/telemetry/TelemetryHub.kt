@@ -34,6 +34,13 @@ data class GpsFix(
     val verticalAccuracyM: Float? = null,
 )
 
+/**
+ * Bússola do próprio celular (sensor de rotação do Android): rumo de um eixo do aparelho que está quase na
+ * horizontal ([axis]: 0 = lado direito, 1 = topo, 2 = traseira) e se o sistema confia na leitura. O rumo do carro sai
+ * disso somado à diferença aprendida com o GPS (o celular fica no suporte em qualquer ângulo).
+ */
+data class PhoneHeading(val azimuthDeg: Double, val axis: Int, val reliable: Boolean, val timestamp: Long)
+
 data class DerivedMetrics(
     val fuelLph: Double? = null,
     val instantKmPerL: Double? = null,
@@ -108,6 +115,7 @@ data class DashboardState(
     val readings: Map<String, Reading> = emptyMap(),
     val derived: DerivedMetrics = DerivedMetrics(),
     val gps: GpsFix? = null,
+    val phoneHeading: PhoneHeading? = null,
     val alerts: List<ActiveAlert> = emptyList(),
     val confirmedDtcs: List<String> = emptyList(),
     val pendingDtcs: List<String> = emptyList(),

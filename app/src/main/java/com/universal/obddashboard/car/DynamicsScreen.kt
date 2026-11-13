@@ -67,7 +67,7 @@ class DynamicsScreen(carContext: CarContext) : Screen(carContext) {
 
         val headingItem = tile(
             "Rumo",
-            d.headingDeg?.let { "${Compass.cardinal(it)} ${fmt(it, 0)}° • " + if (d.headingSource == Compass.SOURCE_MAG) "bússola" else "GPS" } ?: "--",
+            d.headingDeg?.let { "${Compass.cardinal(it)} ${fmt(it, 0)}° • " + when (d.headingSource) { Compass.SOURCE_MAG -> "bússola"; Compass.SOURCE_PHONE -> "celular"; Compass.SOURCE_BOTH -> "bússolas"; else -> "GPS" } } ?: "--",
             R.drawable.ic_compass,
             CarColor.DEFAULT,
         )
