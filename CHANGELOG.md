@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.42] - 2026-11-13
+
 ### Adicionado
 - **Bússola do celular:** o sensor de rotação do próprio celular vira bússola de reserva para o rumo com o carro parado. O celular fica no suporte em qualquer ângulo: o app aprende a diferença para a frente do carro andando em reta com o GPS e reaprende se o celular for girado (parado ou andando). Com o magnetômetro do ESP32 também lendo e os dois concordando (até 20°), o rumo é a média das duas, com mais peso para a do ESP32; discordando, vale a do ESP32; se uma falha, a outra assume. A origem aparece embaixo do rumo (GPS, bússola, celular ou bússola + celular), também no painel web e no Android Auto.
 
