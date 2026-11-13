@@ -1598,7 +1598,8 @@ function iniciar() {
   // ------------------------------------------------------------ caixa de proteção (caixa.py): base e tampa
   const CX = X.caixa;
   const matBase = std(0x4b5661, 0.62);
-  const matTampa = std(0x6f7d89, 0.58, 0, { transparent: true });
+  // a tampa é impressa em PETG transparente: fica transparente em todos os modos, também na vista explodida
+  const matTampa = std(0x6f7d89, 0.58, 0, { transparent: true, opacity: 0.26, depthWrite: false });
   if (CX) {
     camadas.caixa = new THREE.Group();
     camadas.tampa = new THREE.Group();
@@ -1636,7 +1637,7 @@ function iniciar() {
       return m;
     };
     for (const p of CX.base) poe(peca(p, matBase), 'caixa', p.n || 'Caixa');
-    for (const p of CX.tampa) poe(peca(p, matTampa), 'tampa', p.n || 'Tampa');
+    for (const p of CX.tampa) poe(peca(p, matTampa), 'tampa', p.n || 'Tampa').castShadow = false;
   }
   const chaoPlaca = chao.position.y;
   // sem caixa; dentro (tampa transparente); fora (vista explodida: a placa e a tampa sobem)
@@ -1655,12 +1656,6 @@ function iniciar() {
     anim.caixa.alvoTampa = modo === 'fora' ? EXPLODE.tampa : modo === 'sem' ? EXPLODE.tampa + 50 : 0;
     anim.caixa.ativa = true;
     pedir();
-    const vidro = modo === 'dentro';
-    matTampa.opacity = vidro ? 0.26 : 1;
-    matTampa.depthWrite = !vidro;
-    camadas.tampa.traverse((o) => {
-      if (o.isMesh) o.castShadow = !vidro;
-    });
     chao.position.y = modo === 'sem' ? chaoPlaca : Math.min(chaoPlaca, CX.externa.z0);
     for (const b of document.querySelectorAll('[data-caixa]')) {
       const ativo = b.dataset.caixa === modo;
