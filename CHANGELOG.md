@@ -6,6 +6,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.43] - 2026-11-13
+
+### Corrigido
+- **Desvio do giroscópio do LSM6DS3:** parado, cada chip marca alguns °/s de giro (a folha de dados aceita até ±10 °/s; o módulo testado na bancada marcou cerca de 1,8, −3,0 e −2,3 °/s). Com mais de 3 °/s no total, o app nunca via o carro "parado e quieto", ficava preso em "Calibrando" e o Zerar nível não terminava; em reta, ainda mostraria curva falsa. Agora o desvio de cada eixo é medido em toda parada quieta (velocidade zero e aceleração estável), acompanha a temperatura e é descontado de todas as leituras. O giro só aparece depois da primeira medição.
+
 ## [0.9.42] - 2026-11-13
 
 ### Adicionado
