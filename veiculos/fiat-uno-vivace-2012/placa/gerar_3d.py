@@ -390,12 +390,12 @@ def lsm_jumper(a, b, dx, dz):
     return [(ax, ay, top + 0.3), (ax + dx, ay, top + dz), (bx_ + dx, by_, top + dz), (bx_, by_, top + 0.3)]
 
 
-LSM_JUMPERS = [('CS no 3V3 (modo I2C)', 'CS', '3V3', 1.9, 0.55), ('SA0 no GND (endereço 0x6A)', 'SA0', 'GND', 2.6, 0.95)]
+LSM_JUMPERS = [('CS no 3V3 (modo I2C)', 'CS', '3V3', 0.9, 0.45), ('SA0 no GND (endereço 0x6A)', 'SA0', 'GND', 1.6, 1.4)]   # rente aos pinos, o segundo por cima dos resistores
 box('lsm6ds3', '#1b1b1b', min(p[0] for p in lx) - P / 2, lx[0][1] - P / 2, T + MALE_H, 4 * P, P, HOUSING_H)
 m = LSM_MOD
 box('lsm6ds3', '#6a1b9a', m['x0'], m['y0'], m['z0'], m['l'], m['w'], 1.6)
-box('lsm6ds3', '#212121', m['x0'] + 5.4, m['y0'] + 7.7, m['z0'] + 1.6, 2.5, 3.0, 0.86)   # LSM6DS3 (LGA de 2,5 x 3 mm)
-box('lsm6ds3', '#212121', m['x0'] + 8.8, m['y0'] + 13.0, m['z0'] + 1.6, 3.0, 1.7, 1.1)   # regulador
+box('lsm6ds3', '#212121', m['x0'] + 5.65, m['y0'] + 7.4, m['z0'] + 1.6, 2.5, 3.0, 0.86)   # LSM6DS3 (LGA de 2,5 x 3 mm)
+box('lsm6ds3', '#212121', m['x0'] + 3.7, m['y0'] + 0.3, m['z0'] + 1.6, 2.8, 2.9, 1.05)   # regulador SOT-23-5, ao lado do VIN
 box('lsm6ds3', '#111111', m['x0'] + 0.03, m['y0'] + m['w'] / 2 - 3.5 * P, m['z0'] - MALE_H, P, 7 * P, MALE_H)
 box('lsm6ds3', '#1b1b1b', m['x0'] + 0.03, m['y0'] + m['w'] / 2 - 3.5 * P, LSM_BOT, P, 7 * P, HOUSING_H)
 for n in LSM_PINS7:
