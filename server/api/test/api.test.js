@@ -271,6 +271,12 @@ describe('API', () => {
       assert.deepEqual(res.json(), { received: 3, stored: 1, rejected: 2 });
     });
 
+    test('até 200 métricas por amostra (a Dinâmica soma campos), mais que isso é recusado', async () => {
+      const many = (n) => Object.fromEntries(Array.from({ length: n }, (_, i) => ['m' + i, i]));
+      assert.equal((await send(app, dev.deviceToken, [sample(60, { metrics: many(200) })])).statusCode, 200);
+      assert.equal((await send(app, dev.deviceToken, [sample(61, { metrics: many(201) })])).statusCode, 400);
+    });
+
     test('pacote grande demais é recusado', async () => {
       const samples = Array.from({ length: 501 }, (_, i) => sample(i + 100));
       assert.equal((await send(app, dev.deviceToken, samples)).statusCode, 400);

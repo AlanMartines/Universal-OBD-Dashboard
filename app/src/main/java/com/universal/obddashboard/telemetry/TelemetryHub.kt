@@ -29,6 +29,9 @@ data class GpsFix(
     val accuracyM: Float,
     val bearing: Float?,
     val timestamp: Long,
+    /** Altitude acima do nível do mar (m) e a precisão vertical, quando o GPS informa. */
+    val altitudeM: Double? = null,
+    val verticalAccuracyM: Float? = null,
 )
 
 data class DerivedMetrics(
@@ -60,6 +63,28 @@ data class DerivedMetrics(
     val maxBrakeG: Double? = null,
     val maxAccelG: Double? = null,
     val maxLateralG: Double? = null,
+    /** Inclinação frontal (°, positiva subindo) e lateral (°, positiva com o lado direito mais baixo). */
+    val pitchDeg: Double? = null,
+    val rollDeg: Double? = null,
+    /** Giro do carro (°/s): positivo virando à esquerda. */
+    val yawDps: Double? = null,
+    /** Maiores inclinações (em módulo) da captura, em graus. */
+    val maxPitchDeg: Double? = null,
+    val maxRollDeg: Double? = null,
+    /** Sentido: 0 parado (P), 1 andando para a frente (D), 2 de ré (R); null sem velocidade. */
+    val driveState: Int? = null,
+    /** Ajuste à mão do sensor de movimento em andamento ou recém-terminado (ImuMotion.Action), ou null. */
+    val imuAction: String? = null,
+    /** Rumo (0° = norte) e a fonte: "gps" ou "mag" (magnetômetro do ESP32). */
+    val headingDeg: Double? = null,
+    val headingSource: String? = null,
+    /** Quanto da volta a bússola já aprendeu (%); null sem magnetômetro. */
+    val compassPct: Int? = null,
+    val compassReady: Boolean = false,
+    /** Altitude (m) pela pressão do ESP32, acertada pelo GPS; tendência +1 subindo, −1 descendo. */
+    val altitudeM: Double? = null,
+    val altitudeTrend: Int? = null,
+    val altitudeGps: Boolean = false,
     val tripCost: Double? = null,
     /** Consumo instantâneo suavizado (L/h): o que interessa com o carro parado e o motor ligado. */
     val instantLph: Double? = null,
@@ -162,4 +187,13 @@ object TelemetryHub {
     }
 
     fun takeFuelOverride(): FuelOverride? = fuelOverride.getAndSet(null)
+
+    /** Ajuste do sensor de movimento pedido na tela (Zerar nível, Calibrar frente), consumido pelo serviço. */
+    enum class ImuRequest { LEVEL, FORWARD }
+
+    private val imuRequest = AtomicReference<ImuRequest?>(null)
+
+    fun requestImu(r: ImuRequest) = imuRequest.set(r)
+
+    fun takeImuRequest(): ImuRequest? = imuRequest.getAndSet(null)
 }

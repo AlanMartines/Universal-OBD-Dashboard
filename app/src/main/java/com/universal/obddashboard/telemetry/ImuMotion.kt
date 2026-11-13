@@ -1,5 +1,6 @@
 package com.universal.obddashboard.telemetry
 
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.exp
@@ -9,25 +10,43 @@ import kotlin.math.tan
 /**
  * Movimento do carro pelo acelerômetro e giroscópio do ESP32 (LSM6DS3, linha `# lsm6ds3 ...`).
  *
- * O módulo pode estar montado em qualquer posição: a orientação é aprendida sozinha, sem botão.
+ * O módulo pode estar montado em qualquer posição: a orientação é aprendida sozinha.
  * - **Cima:** média da gravidade com o carro parado (velocidade 0, sem rotação). Ao longo de várias
  *   paradas, rampas para um lado e para o outro se compensam.
  * - **Frente:** direção em que o sensor acusa aceleração quando a velocidade do OBD sobe ou desce.
  * - **Remontagem:** parado, se a gravidade ficar longe do "cima" aprendido por [RESET_S], recomeça.
  *
+ * Dois ajustes à mão (aba Dinâmica), que passam a valer no lugar do aprendizado automático:
+ * - **Zerar nível** ([requestLevel]): parado num piso plano, a gravidade de agora vira o "cima". A frente fica.
+ * - **Calibrar frente** ([armForward]): na próxima arrancada em linha reta (de 5 a 20 km/h), a direção da
+ *   aceleração vira a frente.
+ *
  * Saídas (g = gravidade): aceleração para a frente (negativa é frenagem), lateral (positiva é para a
- * esquerda, numa curva à esquerda), inclinação da rua (%, positiva é subida), impactos e máximas da viagem.
- * A inclinação vem do acelerômetro na direção da frente menos a aceleração medida pelo OBD.
+ * esquerda, numa curva à esquerda), inclinação da rua (%, positiva é subida), inclinação frontal e lateral
+ * em graus, giro (°/s, positivo à esquerda), sentido (parado, para a frente ou de ré), impactos e máximas.
+ * A inclinação frontal vem do acelerômetro na direção da frente menos a aceleração medida pelo OBD; a lateral,
+ * do acelerômetro de lado menos a força da curva (velocidade × giro).
  */
 class ImuMotion(calibration: Calibration? = null) {
 
-    /** Orientação aprendida, nos eixos do módulo. Os pesos dizem quanto já foi visto. */
-    data class Calibration(val up: List<Double>, val upWeightS: Double, val forward: List<Double>?, val forwardWeight: Double) {
+    /**
+     * Orientação aprendida, nos eixos do módulo. Os pesos dizem quanto já foi visto. [upLocked] e [forwardLocked]:
+     * definidos à mão (Zerar nível, Calibrar frente); o aprendizado automático não mexe mais neles.
+     */
+    data class Calibration(
+        val up: List<Double>,
+        val upWeightS: Double,
+        val forward: List<Double>?,
+        val forwardWeight: Double,
+        val upLocked: Boolean = false,
+        val forwardLocked: Boolean = false,
+    ) {
         fun encode(): String = buildList {
             add(up.joinToString(",") { "%.5f".format(java.util.Locale.ROOT, it) })
             add("%.2f".format(java.util.Locale.ROOT, upWeightS))
             add(forward?.joinToString(",") { "%.5f".format(java.util.Locale.ROOT, it) } ?: "")
             add("%.4f".format(java.util.Locale.ROOT, forwardWeight))
+            add((if (upLocked) "U" else "") + (if (forwardLocked) "F" else ""))
         }.joinToString(";")
 
         companion object {
@@ -36,29 +55,39 @@ class ImuMotion(calibration: Calibration? = null) {
                 val up = p[0].split(",").map { it.toDouble() }
                 val fwd = p[2].takeIf { it.isNotBlank() }?.split(",")?.map { it.toDouble() }
                 require(up.size == 3 && (fwd == null || fwd.size == 3))
-                Calibration(up, p[1].toDouble(), fwd, p[3].toDouble())
+                val flags = p.getOrNull(4).orEmpty()
+                Calibration(up, p[1].toDouble(), fwd, p[3].toDouble(), 'U' in flags, 'F' in flags)
             }.getOrNull()
         }
     }
+
+    /** Ajuste à mão em andamento ou recém-terminado (mostrado na tela). */
+    enum class Action { LEVEL_PENDING, LEVEL_DONE, LEVEL_FAILED, FORWARD_ARMED, FORWARD_CAPTURING, FORWARD_DONE }
 
     private var upAcc = DoubleArray(3)
     private var upW = 0.0
     private var fwdAcc = DoubleArray(3)
     private var fwdW = 0.0
+    private var upLocked = false
+    private var fwdLocked = false
 
     init {
         calibration?.let {
             upW = it.upWeightS
             upAcc = it.up.toDoubleArray().times(upW)
+            upLocked = it.upLocked
             if (it.forward != null) {
                 fwdW = it.forwardWeight
                 fwdAcc = it.forward.toDoubleArray().times(fwdW)
+                fwdLocked = it.forwardLocked
             }
         }
     }
 
     val calibration: Calibration?
-        get() = if (upW <= 0) null else Calibration(unit(upAcc).toList(), upW, if (fwdW > 0) unit(fwdAcc).toList() else null, fwdW)
+        get() = if (upW <= 0) null else Calibration(
+            unit(upAcc).toList(), upW, if (fwdW > 0) unit(fwdAcc).toList() else null, fwdW, upLocked, fwdLocked && fwdW > 0,
+        )
 
     /** 0 aprendendo o "cima" (pare o carro), 1 aprendendo a frente (ande), 2 pronto. */
     val stage: Int get() = when {
@@ -67,28 +96,83 @@ class ImuMotion(calibration: Calibration? = null) {
         else -> 2
     }
 
+    /** Muda quando a orientação é trocada à mão: hora de salvar. */
+    var manualChanges = 0; private set
+
     var accelG: Double? = null; private set
     var lateralG: Double? = null; private set
     var slopePct: Double? = null; private set
+    /** Inclinação frontal (°): positiva com a frente mais alta (subida). */
+    var pitchDeg: Double? = null; private set
+    /** Inclinação lateral (°): positiva com o lado direito mais baixo, negativa com o esquerdo. */
+    var rollDeg: Double? = null; private set
+    /** Giro em torno do eixo de cima do carro (°/s): positivo virando para a esquerda. */
+    var yawDps: Double? = null; private set
     var impactG: Double? = null; private set
     var bumps = 0; private set
     var maxBrakeG = 0.0; private set
     var maxAccelG = 0.0; private set
     var maxLateralG = 0.0; private set
+    /** Maiores inclinações (em módulo) vistas com a orientação pronta, em graus. */
+    var maxPitchDeg = 0.0; private set
+    var maxRollDeg = 0.0; private set
+
+    /** Sentido: [DIR_STOPPED], [DIR_FORWARD] ou [DIR_REVERSE]; null sem velocidade do OBD. */
+    var direction: Int? = null; private set
+    /** Sentido decidido na arrancada; vale até a próxima parada. */
+    private var dirLatched: Int? = null
+
+    private var action: Action? = null
+    private var actionAt = 0L
+    /** Ajuste à mão para mostrar: os de resultado somem depois de [ACTION_SHOW_MS]. */
+    fun action(now: Long): Action? = action?.takeIf {
+        it == Action.LEVEL_PENDING || it == Action.FORWARD_ARMED || it == Action.FORWARD_CAPTURING || now - actionAt < ACTION_SHOW_MS
+    }
 
     private var slopeSin: Double? = null
+    private var rollSin: Double? = null
     private var smAccel: Double? = null
     private var smLat: Double? = null
+    private var smYaw: Double? = null
     private var lastBumpAt = Long.MIN_VALUE / 2
     private var offS = 0.0
     // Amostras de "parado" esperam STILL_HOLD_MS antes de contar: o OBD demora a acusar a arrancada,
     // e o começo dela não pode entrar como gravidade.
     private val pending = ArrayDeque<Pair<Long, DoubleArray>>()
 
+    // Zerar nível: soma da gravidade parado, até LEVEL_S
+    private var levelAcc = DoubleArray(3)
+    private var levelS = 0.0
+    private var levelSince = 0L
+    // Calibrar frente: soma da arrancada em andamento
+    private var capAcc = DoubleArray(3)
+    private var capW = 0.0
+
     // Aceleração pelo OBD: inclinação da reta de velocidade nos últimos segundos (km/h inteiros são ruidosos)
     private val speeds = ArrayDeque<Pair<Long, Double>>()
     private var speedKmh: Double? = null
     private var dvdtG: Double? = null
+
+    /** Parado num piso plano: a gravidade dos próximos [LEVEL_S] segundos vira o "cima". */
+    fun requestLevel(now: Long) {
+        levelAcc = DoubleArray(3)
+        levelS = 0.0
+        levelSince = now
+        action = Action.LEVEL_PENDING
+        actionAt = now
+    }
+
+    /** A próxima arrancada em linha reta define a frente. Chamar de novo com ela armada cancela. */
+    fun armForward(now: Long) {
+        if (action == Action.FORWARD_ARMED || action == Action.FORWARD_CAPTURING) {
+            action = null
+            return
+        }
+        capAcc = DoubleArray(3)
+        capW = 0.0
+        action = Action.FORWARD_ARMED
+        actionAt = now
+    }
 
     /** Nova leitura de velocidade do OBD (km/h), com a hora dela. */
     fun onSpeed(t: Long, kmh: Double) {
@@ -97,6 +181,12 @@ class ImuMotion(calibration: Calibration? = null) {
         while (speeds.size > 2 && t - speeds.first().first > SPEED_WINDOW_MS) speeds.removeFirst()
         // Acima de 1,2 g não é carro de rua: salto de leitura (reconexão, valor perdido); ignora
         dvdtG = if (speeds.size >= 3 && t - speeds.first().first >= 800) (slope(speeds) / 3.6 / G).takeIf { abs(it) <= 1.2 } else null
+        if (kmh < STOP_KMH) {
+            dirLatched = null
+            direction = DIR_STOPPED
+        } else if (direction == null || direction == DIR_STOPPED) {
+            direction = DIR_FORWARD   // até a arrancada dizer o contrário
+        }
     }
 
     /** Uma linha do sensor: aceleração (g), rotação (°/s) e o maior desvio da gravidade no intervalo (g). */
@@ -109,10 +199,10 @@ class ImuMotion(calibration: Calibration? = null) {
         impactG = peakG
 
         // Parado e quieto: aprende o "cima" (ou percebe que o módulo mudou de posição)
-        val still = v != null && v < 0.5 && rot < STILL_DPS && abs(norm - 1) < 0.06
+        val still = v != null && v < STOP_KMH && rot < STILL_DPS && abs(norm - 1) < 0.06
         if (still) {
             val au = a.times(1 / norm)
-            if (upW >= UP_READY_S && dot(au, unit(upAcc)) < RESET_COS) {
+            if (upW >= UP_READY_S && dot(au, unit(upAcc)) < RESET_COS && action != Action.LEVEL_PENDING) {
                 offS += dt
                 if (offS >= RESET_S) reset()
             } else {
@@ -121,25 +211,36 @@ class ImuMotion(calibration: Calibration? = null) {
             pending.addLast(now to au.times(dt))
             while (pending.isNotEmpty() && now - pending.first().first >= STILL_HOLD_MS) {
                 val w = pending.removeFirst().second
-                upAcc = upAcc.plus(w)
-                upW += len(w)
+                if (!upLocked) {
+                    upAcc = upAcc.plus(w)
+                    upW += len(w)
+                }
+                if (action == Action.LEVEL_PENDING) {
+                    levelAcc = levelAcc.plus(w)
+                    levelS += len(w)
+                }
             }
             if (upW > UP_MAX_S) { upAcc = upAcc.times(UP_MAX_S / upW); upW = UP_MAX_S }
         } else {
             pending.clear()
         }
+        stepLevel(now, v)
         if (upW < UP_READY_S) return clearOutputs()
         val up = unit(upAcc)
         val horiz = a.minus(up.times(dot(a, up)))
+        val yaw = dot(gyroDps, up)
+        val ky = 1 - exp(-dt / YAW_TAU_S)
+        smYaw = smYaw?.let { it + (yaw - it) * ky } ?: yaw
+        yawDps = smYaw
 
-        // Andando em linha reta com a velocidade mudando: aprende a frente
+        // Andando em linha reta com a velocidade mudando: aprende a frente (de ré não, que inverteria)
         val dv = dvdtG
-        val yaw = abs(dot(gyroDps, up))
-        if (v != null && v > 10 && dv != null && abs(dv) > 0.04 && yaw < 6) {
+        if (!fwdLocked && direction != DIR_REVERSE && v != null && v > 10 && dv != null && abs(dv) > 0.04 && abs(yaw) < 6) {
             fwdAcc = fwdAcc.plus(horiz.times(dv * dt))
             fwdW += dv * dv * dt
             if (fwdW > FWD_MAX) { fwdAcc = fwdAcc.times(FWD_MAX / fwdW); fwdW = FWD_MAX }
         }
+        stepForward(now, v, dv, horiz, yaw, dt)
         if (fwdW < FWD_READY) return clearOutputs()
         val f0 = fwdAcc.minus(up.times(dot(fwdAcc, up)))
         if (len(f0) < 1e-6) return clearOutputs()
@@ -147,28 +248,51 @@ class ImuMotion(calibration: Calibration? = null) {
         val left = cross(up, fwd)
 
         val along = dot(a, fwd)
+        val lat = dot(a, left)
+        decideDirection(v, dv, along)
+        // A velocidade do OBD não tem sinal: de ré, a aceleração e a curva vão ao contrário.
+        // Na arrancada, até saber o sentido, a rampa e a inclinação lateral ficam como estavam parado.
+        val moving = v != null && v >= STOP_KMH
+        val known = !moving || dirLatched != null || (v ?: 0.0) > DIR_DECIDE_MAX_KMH
+        val sgn = if (direction == DIR_REVERSE) -1.0 else 1.0
         val k = 1 - exp(-dt / SLOPE_TAU_S)
         // Parado não há aceleração: o que sobra na frente é a rampa. Andando, desconta a aceleração do OBD.
         val sinNow = when {
-            v != null && v < 0.5 -> along
-            dv != null -> along - dv
+            !moving && v != null -> along
+            known && dv != null -> along - sgn * dv
             else -> null
         }
         if (sinNow != null) {
             val x = sinNow.coerceIn(-0.5, 0.5)
             slopeSin = slopeSin?.let { it + (x - it) * k } ?: x
         }
+        // De lado, parado é só a inclinação; andando, desconta a força da curva (velocidade × giro)
+        val rollNow = when {
+            !moving && v != null -> lat
+            known && v != null -> lat - sgn * (v / 3.6) * (yaw * PI / 180) / G
+            else -> null
+        }
+        if (rollNow != null) {
+            val x = rollNow.coerceIn(-0.5, 0.5)
+            rollSin = rollSin?.let { it + (x - it) * k } ?: x
+        }
         val s = slopeSin?.coerceIn(-0.45, 0.45)
         slopePct = s?.let { tan(asin(it)) * 100 }
+        pitchDeg = s?.let { Math.toDegrees(asin(it)) }
+        val r = rollSin?.coerceIn(-0.45, 0.45)
+        // rollSin > 0: o lado esquerdo do carro aponta para cima, ou seja, o direito está mais baixo
+        rollDeg = r?.let { Math.toDegrees(asin(it)) }
 
         val kg = 1 - exp(-dt / G_TAU_S)
         val acc = along - (s ?: 0.0)
         smAccel = smAccel?.let { it + (acc - it) * kg } ?: acc
-        val lat = dot(a, left)
-        smLat = smLat?.let { it + (lat - it) * kg } ?: lat
+        val latK = lat - (r ?: 0.0)
+        smLat = smLat?.let { it + (latK - it) * kg } ?: latK
         accelG = smAccel
         lateralG = smLat
 
+        pitchDeg?.let { maxPitchDeg = maxOf(maxPitchDeg, abs(it)) }
+        rollDeg?.let { maxRollDeg = maxOf(maxRollDeg, abs(it)) }
         if (v != null && v > 5) {
             maxAccelG = maxOf(maxAccelG, smAccel ?: 0.0)
             maxBrakeG = maxOf(maxBrakeG, -(smAccel ?: 0.0))
@@ -180,16 +304,99 @@ class ImuMotion(calibration: Calibration? = null) {
         }
     }
 
+    /**
+     * Ré: na arrancada (velocidade do OBD subindo), o sensor acusa aceleração para trás. Para a frente, para a frente.
+     * Decidido, vale até parar; enquanto não dá para saber, fica "para a frente" sem travar.
+     */
+    private fun decideDirection(v: Double?, dv: Double?, along: Double) {
+        if (v == null || v < STOP_KMH) return
+        dirLatched?.let { direction = it; return }
+        if (v > DIR_DECIDE_MAX_KMH || dv == null || dv < DIR_MIN_G) return
+        // Aceleração na direção da frente, descontada a rampa de quando estava parado
+        val acc = along - (slopeSin ?: 0.0)
+        when {
+            acc < -DIR_MIN_G -> { dirLatched = DIR_REVERSE; direction = DIR_REVERSE }
+            acc > DIR_MIN_G -> { dirLatched = DIR_FORWARD; direction = DIR_FORWARD }
+        }
+    }
+
+    private fun stepLevel(now: Long, v: Double?) {
+        if (action != Action.LEVEL_PENDING) return
+        if ((v != null && v >= STOP_KMH) || now - levelSince > LEVEL_TIMEOUT_MS) {
+            action = Action.LEVEL_FAILED
+            actionAt = now
+            return
+        }
+        if (levelS < LEVEL_S) return
+        upAcc = unit(levelAcc).times(UP_MAX_S)
+        upW = UP_MAX_S
+        upLocked = true
+        slopeSin = null
+        rollSin = null
+        offS = 0.0
+        action = Action.LEVEL_DONE
+        actionAt = now
+        manualChanges++
+    }
+
+    private fun stepForward(now: Long, v: Double?, dv: Double?, horiz: DoubleArray, yaw: Double, dt: Double) {
+        if (action != Action.FORWARD_ARMED && action != Action.FORWARD_CAPTURING) return
+        if (v == null) return
+        if (v < FWD_CAL_FROM_KMH) {
+            // Parado ou quase: espera a arrancada (uma tentativa que não chegou a 20 km/h recomeça)
+            if (action == Action.FORWARD_CAPTURING) action = Action.FORWARD_ARMED
+            capAcc = DoubleArray(3)
+            capW = 0.0
+            return
+        }
+        if (v <= FWD_CAL_TO_KMH) {
+            if (abs(yaw) >= 6 || (dv != null && dv < 0)) {
+                // Curva ou freada no meio: não serve; tenta na próxima arrancada
+                capAcc = DoubleArray(3)
+                capW = -1.0
+                action = Action.FORWARD_ARMED
+                return
+            }
+            if (capW < 0) return
+            action = Action.FORWARD_CAPTURING
+            if (dv != null && dv > 0.02) {
+                capAcc = capAcc.plus(horiz.times(dv * dt))
+                capW += dv * dv * dt
+            }
+            return
+        }
+        // Passou de 20 km/h: fecha a tentativa
+        if (action == Action.FORWARD_CAPTURING && capW >= FWD_CAL_MIN && len(capAcc) > 1e-9) {
+            fwdAcc = unit(capAcc).times(FWD_MAX)
+            fwdW = FWD_MAX
+            fwdLocked = true
+            dirLatched = DIR_FORWARD
+            direction = DIR_FORWARD
+            action = Action.FORWARD_DONE
+            actionAt = now
+            manualChanges++
+        } else if (action == Action.FORWARD_CAPTURING) {
+            action = Action.FORWARD_ARMED
+        }
+        capAcc = DoubleArray(3)
+        capW = 0.0
+    }
+
     private fun clearOutputs() {
         accelG = null
         lateralG = null
         slopePct = null
+        pitchDeg = null
+        rollDeg = null
     }
 
     private fun reset() {
         upAcc = DoubleArray(3); upW = 0.0
         fwdAcc = DoubleArray(3); fwdW = 0.0
-        slopeSin = null; smAccel = null; smLat = null; offS = 0.0
+        upLocked = false; fwdLocked = false
+        slopeSin = null; rollSin = null; smAccel = null; smLat = null; smYaw = null; offS = 0.0
+        yawDps = null
+        dirLatched = null
         pending.clear()
         clearOutputs()
     }
@@ -206,9 +413,26 @@ class ImuMotion(calibration: Calibration? = null) {
         const val RESET_S = 10.0
         const val SLOPE_TAU_S = 2.5
         const val G_TAU_S = 0.4
+        const val YAW_TAU_S = 0.4
         const val BUMP_G = 0.4          // desvio da gravidade que conta como buraco ou impacto
         const val BUMP_GAP_MS = 1000L
         const val SPEED_WINDOW_MS = 1500L
+        const val STOP_KMH = 0.5
+
+        const val DIR_STOPPED = 0
+        const val DIR_FORWARD = 1
+        const val DIR_REVERSE = 2
+        /** Aceleração mínima (g) para decidir o sentido na arrancada, e até que velocidade ainda decide. */
+        const val DIR_MIN_G = 0.03
+        const val DIR_DECIDE_MAX_KMH = 25.0
+
+        const val LEVEL_S = 3.0
+        const val LEVEL_TIMEOUT_MS = 20_000L
+        const val FWD_CAL_FROM_KMH = 5.0
+        const val FWD_CAL_TO_KMH = 20.0
+        /** Peso mínimo da arrancada: cerca de 0,05 g por 2 s. */
+        const val FWD_CAL_MIN = 0.004
+        const val ACTION_SHOW_MS = 6000L
 
         private fun dot(a: DoubleArray, b: DoubleArray) = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
         private fun len(a: DoubleArray) = sqrt(dot(a, a))

@@ -11,7 +11,7 @@ Faça isto com a placa desligada do carro.
 1. Na Arduino IDE, instale o pacote **esp32**, da Espressif (*Ferramentas → Placa → Gerenciador de placas*).
 2. Abra `esp32-can-listen.ino` e escolha a placa **ESP32 Dev Module**.
 3. Grave na placa. Se a IDE ficar parada em `Connecting...`, segure o botão BOOT até a gravação começar.
-4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.4` e `# listen-only 50 kbps`.
+4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.5` e `# listen-only 50 kbps`.
 
 Se faltar memória ao compilar, escolha *Ferramentas → Partition Scheme → Huge APP*.
 
@@ -59,7 +59,34 @@ O firmware procura o sensor em 0x6A e em 0x6B, lê a 50 Hz e, a cada 200 ms, man
 
 Fica em ±4 g e ±250 °/s, a 104 Hz. Ao iniciar aparece `# lsm6ds3 ok em 0x6A (id 0x69)`; sem o sensor, uma vez `# lsm6ds3 ausente`. Um id diferente aparece em `# lsm6ds3 id desconhecido` (por exemplo, um BMI160 está em outro endereço e não é lido). No descanso, o sensor também desliga.
 
-Prenda o módulo firme no carro: solto, ele mede a vibração dele mesmo. Ele pode ficar em qualquer posição: o app aprende sozinho onde é "cima" (com o carro parado) e onde é a frente (nas arrancadas e frenagens, comparando com a velocidade do OBD). Se o módulo mudar de posição, o app percebe com o carro parado e aprende de novo. Com isso, mostra a aceleração e a frenagem, a força nas curvas, a inclinação da rua e os buracos na tela Movimento, no histórico e no painel web.
+Prenda o módulo firme no carro: solto, ele mede a vibração dele mesmo. Ele pode ficar em qualquer posição: o app aprende sozinho onde é "cima" (com o carro parado) e onde é a frente (nas arrancadas e frenagens, comparando com a velocidade do OBD). Se o módulo mudar de posição, o app percebe com o carro parado e aprende de novo. Com isso, mostra na tela Dinâmica, no histórico e no painel web: a aceleração e a frenagem, a força nas curvas, a inclinação frontal e lateral (horizonte artificial), o giro nas curvas, os buracos e o câmbio P/D/R (a ré sai do sentido da aceleração na arrancada).
+
+Na tela Dinâmica há dois ajustes à mão, que passam a valer no lugar do aprendizado automático (ficam no app; nada vai ao ESP32):
+
+- **Zerar nível:** com o carro parado num piso plano, a gravidade dos próximos 3 s vira o "cima". A frente fica como estava.
+- **Calibrar frente:** arma a calibração; na próxima arrancada em linha reta, de 5 a 20 km/h, a direção da aceleração vira a frente. Uma curva ou freada no meio descarta a tentativa e espera a próxima. Tocar de novo cancela.
+
+## Magnetômetro (opcional, bússola)
+
+Placa GY-273, no mesmo I2C (SDA no D25, SCL no D26). Ela sai de fábrica com um de três chips, e o firmware acha sozinho qual é: QMC5883L (0x0D), QMC5883P (0x2C) ou HMC5883L (0x1E). A placa tem regulador:
+
+| GY-273 | Liga em |
+|---|---|
+| VCC | 3V3 (ou 5 V) |
+| GND | GND |
+| SDA | D25 |
+| SCL | D26 |
+| DRDY | sem ligação |
+
+A cada 200 ms sai a média do campo magnético, em microtesla, nos eixos impressos no módulo:
+
+```
+# mag x=12.3 y=-4.5 z=30.1
+```
+
+Ao iniciar aparece `# mag ok qmc5883l em 0x0D` (ou o chip achado); sem o módulo, uma vez `# mag ausente`. No descanso, ele também desliga.
+
+O app calibra a bússola sozinho, pelo rumo do GPS: andando em linha reta, guarda a leitura em cada faixa de 10° do rumo, acha o "ferro" do carro e monta uma tabela de desvio (que já inclui a declinação magnética). Não precisa alinhar o módulo com o carro. Ela fica pronta depois de rodar nas quatro direções (o card de estado mostra o progresso); andando, o rumo vem do GPS, e a bússola vale parado, devagar ou sem sinal. Prenda o módulo firme, longe de fios de força, do alto-falante e de ímãs. Se ele mudar de posição, a bússola percebe (as leituras deixam de bater com as guardadas) e recomeça.
 
 ## LEDs de estado
 

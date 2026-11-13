@@ -40,6 +40,22 @@ class AppBridge(private val activity: MainActivity) {
     fun stopCapture() = ObdForegroundService.stop(activity)
 
     /**
+     * Aba Dinâmica: "level" (Zerar nível) ou "forward" (Calibrar frente). Só mexe na orientação guardada no app;
+     * nada vai ao ESP32 nem ao carro. Sem captura em andamento não há sensor lendo: devolve false.
+     */
+    @JavascriptInterface
+    fun imuCalibrate(kind: String): Boolean {
+        val r = when (kind) {
+            "level" -> TelemetryHub.ImuRequest.LEVEL
+            "forward" -> TelemetryHub.ImuRequest.FORWARD
+            else -> return false
+        }
+        if (!ObdForegroundService.isRunning) return false
+        TelemetryHub.requestImu(r)
+        return true
+    }
+
+    /**
      * Estado atual, pedido pela tela ao terminar de carregar: o envio automático só acontece quando o
      * estado muda, e o primeiro pode chegar antes de a página estar pronta (com a captura parada, nada
      * mais muda e o topo ficava só com "Parado").

@@ -224,7 +224,6 @@ a:not(.btn) { color: var(--accent); text-underline-offset: 2px; }
 .gear {
   position: absolute; top: 8px; right: 10px; font-weight: 700; font-size: 0.85rem; color: var(--muted);
 }
-.gear.up { color: var(--yellow); }
 
 .speed-card { display: flex; flex-direction: column; justify-content: center; }
 .big { font-size: 3rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }

@@ -46,6 +46,7 @@ object AppSettings {
     private const val KEY_TIMED_RUNS_PREFIX = "timed_runs_"
     private const val KEY_ATMOSPHERIC_KPA = "atmospheric_kpa"
     private const val KEY_IMU_CALIBRATION = "imu_calibration"
+    private const val KEY_COMPASS_CALIBRATION = "compass_calibration"
     private const val KEY_CAN_ADAPTER = "can_adapter_names"
 
     /** Chave do ajuste no veículo selecionado (ver [Vehicles]). */
@@ -83,6 +84,14 @@ object AppSettings {
 
     fun setImuCalibration(context: Context, cal: ImuMotion.Calibration) {
         prefs(context).edit { putString(KEY_IMU_CALIBRATION, cal.encode()) }
+    }
+
+    /** Tabela da bússola (magnetômetro do ESP32 contra o rumo do GPS); também vai no backup. */
+    fun compassCalibration(context: Context): com.universal.obddashboard.telemetry.Compass.Calibration? =
+        com.universal.obddashboard.telemetry.Compass.Calibration.decode(prefs(context).getString(KEY_COMPASS_CALIBRATION, null))
+
+    fun setCompassCalibration(context: Context, cal: com.universal.obddashboard.telemetry.Compass.Calibration) {
+        prefs(context).edit { putString(KEY_COMPASS_CALIBRATION, cal.encode()) }
     }
 
     fun atmosphericKpa(context: Context): Double? =

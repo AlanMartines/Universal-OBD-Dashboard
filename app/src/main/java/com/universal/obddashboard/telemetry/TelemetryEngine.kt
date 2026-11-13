@@ -31,6 +31,8 @@ class TelemetryEngine(
     speedCorrectionPct: Double = 0.0,
     /** Orientação aprendida do sensor de movimento do ESP32 (LSM6DS3), salva entre as capturas. */
     imuCalibration: ImuMotion.Calibration? = null,
+    /** Tabela da bússola (magnetômetro do ESP32 contra o rumo do GPS), salva entre as capturas. */
+    compassCalibration: Compass.Calibration? = null,
 ) {
     private val roles = profile.profile.roles
     private val fuelCalc = profile.profile.fuel?.let { FuelCalculator(it) }
@@ -43,6 +45,14 @@ class TelemetryEngine(
     private val imu = ImuMotion(imuCalibration)
     private var lastImuAt = 0L
     private var lastImuSaveAt = 0L
+    private var savedManual = 0
+    private val compass = Compass(compassCalibration)
+    private var lastMagAt = 0L
+    private var lastGpsAt = 0L
+    private var savedCompass = 0
+    private var lastCompassSaveAt = 0L
+    private val altimeter = Altimeter()
+    private var lastPressureAt = 0L
     private val ecoMid = profile.profile.fuel?.ecoMidLPer100km ?: TripStats.DEFAULT_ECO_MID
     /** Computador de bordo da viagem; numa viagem retomada, refeito pelas amostras gravadas ([restoreStats]). */
     var stats = TripStats(ecoMid); private set
@@ -61,7 +71,15 @@ class TelemetryEngine(
         val atmosphericKpa: Double? = null,
         /** Orientação do sensor de movimento para salvar (no máximo a cada 30 s), ou null. */
         val imuCalibration: ImuMotion.Calibration? = null,
+        /** Tabela da bússola para salvar, ou null. */
+        val compassCalibration: Compass.Calibration? = null,
     )
+
+    /** Ajuste à mão pedido na tela (Zerar nível, Calibrar frente). */
+    fun imuRequest(r: TelemetryHub.ImuRequest, now: Long) = when (r) {
+        TelemetryHub.ImuRequest.LEVEL -> imu.requestLevel(now)
+        TelemetryHub.ImuRequest.FORWARD -> imu.armForward(now)
+    }
 
     fun compute(state: DashboardState, trip: TripAccumulator?, now: Long, dtS: Double): Result {
         val v = { id: String? -> state.value(id, now) }
@@ -132,8 +150,35 @@ class TelemetryEngine(
                 r(Slcan.IMU_PEAK),
             )
         }
-        val imuSave = imu.calibration?.takeIf { now - lastImuSaveAt >= IMU_SAVE_MS }?.also { lastImuSaveAt = now }
+        // Ajuste à mão salva na hora; o aprendizado automático, no máximo a cada 30 s
+        val manual = imu.manualChanges != savedManual
+        val imuSave = imu.calibration?.takeIf { manual || now - lastImuSaveAt >= IMU_SAVE_MS }?.also { lastImuSaveAt = now; savedManual = imu.manualChanges }
         val seenImu = lastImuAt != 0L
+        // Rumo: GPS andando; magnetômetro do ESP32 parado ou sem sinal (calibrado pelo próprio GPS)
+        val gps = state.gps
+        if (gps != null && gps.timestamp != lastGpsAt) {
+            lastGpsAt = gps.timestamp
+            compass.onGps(gps.timestamp, gps.bearing, gps.speedKmh, gps.accuracyM)
+            altimeter.onGps(gps.altitudeM, gps.verticalAccuracyM)
+        }
+        val mx = state.readings[Slcan.MAG_X]
+        val magFresh = mx != null && now - mx.timestamp < IMU_STALE_MS
+        if (mx != null && magFresh && mx.timestamp != lastMagAt) {
+            lastMagAt = mx.timestamp
+            val r = { id: String -> state.readings[id]?.value ?: 0.0 }
+            compass.onMag(mx.timestamp, doubleArrayOf(mx.value, r(Slcan.MAG_Y), r(Slcan.MAG_Z)), imu.yawDps.takeIf { imuFresh })
+        }
+        compass.update(now, speed)
+        val compassSave = compass.calibration.takeIf { compass.changes != savedCompass && now - lastCompassSaveAt >= IMU_SAVE_MS }
+            ?.also { savedCompass = compass.changes; lastCompassSaveAt = now }
+
+        // Altitude pela pressão do ESP32
+        val pressure = state.readings[Slcan.CABIN_PRESSURE]
+        if (pressure != null && pressure.timestamp != lastPressureAt) {
+            lastPressureAt = pressure.timestamp
+            altimeter.onPressure(pressure.timestamp, pressure.value)
+        }
+        val pressureFresh = pressure != null && now - pressure.timestamp < DashboardState.STALE_AFTER_MS
 
         val derived = DerivedMetrics(
             fuelLph = lph,
@@ -156,6 +201,21 @@ class TelemetryEngine(
             maxBrakeG = imu.maxBrakeG.takeIf { seenImu },
             maxAccelG = imu.maxAccelG.takeIf { seenImu },
             maxLateralG = imu.maxLateralG.takeIf { seenImu },
+            pitchDeg = imu.pitchDeg.takeIf { imuFresh },
+            rollDeg = imu.rollDeg.takeIf { imuFresh },
+            yawDps = imu.yawDps.takeIf { imuFresh && imu.stage >= 1 },
+            maxPitchDeg = imu.maxPitchDeg.takeIf { seenImu && imu.stage == 2 },
+            maxRollDeg = imu.maxRollDeg.takeIf { seenImu && imu.stage == 2 },
+            // Sem velocidade nova há tanto tempo quanto uma leitura velha, sem sentido
+            driveState = imu.direction.takeIf { speed != null },
+            imuAction = imu.action(now)?.name,
+            headingDeg = compass.headingDeg,
+            headingSource = compass.source,
+            compassPct = compass.progressPct.takeIf { magFresh },
+            compassReady = compass.ready,
+            altitudeM = altimeter.altitudeM.takeIf { pressureFresh },
+            altitudeTrend = altimeter.trend.takeIf { pressureFresh },
+            altitudeGps = altimeter.calibrated,
             tripCost = fuelPricePerL?.let { it * fuelUsed },
             instantLph = sLph,
             ecoBand = ecoBand,
@@ -183,7 +243,7 @@ class TelemetryEngine(
             val value = vars.resolve(id)
             if (value.isNaN()) "--" else formatValue(value, profile.outputs[id]?.decimals ?: 1)
         }
-        return Result(derived, alerts, raised, timedRuns, estimatedLoad.atmosphericKpa, imuSave)
+        return Result(derived, alerts, raised, timedRuns, estimatedLoad.atmosphericKpa, imuSave, compassSave)
     }
 
     companion object {

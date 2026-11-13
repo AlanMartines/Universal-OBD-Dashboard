@@ -112,6 +112,14 @@ window.ObdSim = (function () {
     const shiftUp = !!est && est < rec && tps < 60 && v.rpm > 2400;
 
     const volts = (v.rpm > 600 ? 14.15 : 12.55) + noise(0.04);
+
+    // Dinâmica: curva suave de um lado para o outro, rumo girando com ela, subida leve e altitude acompanhando
+    const tt = Date.now() / 1000;
+    const lat = 0.3 * Math.sin(tt / 5);
+    const yaw = v.speed > 3 ? lat * 9.81 / Math.max(v.speed / 3.6, 1) * 180 / Math.PI : 0;
+    v.heading = ((v.heading == null ? 40 : v.heading) + yaw * dt + 360) % 360;
+    const pitch = 3.4 + 1.2 * Math.sin(tt / 9);
+    v.alt = (v.alt == null ? 712 : v.alt) + v.speed / 3.6 * dt * Math.sin(pitch * Math.PI / 180);
     const mil = sc === 'mil';
     const readings = {
       rpm: v.rpm, speed: Math.round(v.speed), throttle: tps, map: Math.round(map), coolant_temp: Math.round(v.coolant),
@@ -119,7 +127,7 @@ window.ObdSim = (function () {
       engine_load: clamp(map * 0.95, 0, 100), lambda_b1s1_v: clamp(lambda, 0, 1.2), lambda_b1s1_trim: 0,
       stft_b1: stft, ltft_b1: v.ltft, mil_on: mil ? 1 : 0, dtc_count: mil ? 1 : 0,
       // escuta CAN e sensor do ESP32: parcial do painel, temperatura interna e pressão
-      trip_km: 1234.5 + v.tripKm, cabin_temp: 27.4, cabin_pressure: 1009.6,
+      trip_km: 1234.5 + v.tripKm, cabin_temp: 27.4, cabin_pressure: 1013.25 * Math.pow(1 - v.alt / 44330, 5.255),
     };
 
     const alerts = [];
@@ -131,7 +139,7 @@ window.ObdSim = (function () {
 
     return {
       running: true, diagRecording: true, profileId: meta.id, vehicleName: meta.vehicleName,
-      canLink: 'connected', canInfo: { firmware: '1.4', bitrateKbps: 50, bmp: 'ok', lsm: 'ausente', frames: 48210, lost: 0, busErrors: 0, framesPerSec: 312, statsAt: Date.now(), appFrames: 48190, resting: false, error: null, restarts: 0 },
+      canLink: 'connected', canInfo: { firmware: '1.4', bitrateKbps: 50, bmp: 'ok', lsm: 'ok', mag: 'ok', magChip: 'qmc5883l', frames: 48210, lost: 0, busErrors: 0, framesPerSec: 312, statsAt: Date.now(), appFrames: 48190, resting: false, error: null, restarts: 0 },
       connection: 'STREAMING', statusMessage: 'Capturando • ' + meta.ecuModel, power: 'ACTIVE',
       readings,
       derived: {
@@ -140,10 +148,14 @@ window.ObdSim = (function () {
         fuelRemainingL: v.fuelL, recommendedGear: rec, estimatedGear: est, shiftUp,
         // sensor de movimento do ESP32 (LSM6DS3), já calibrado
         imuStage: 2, accelG: accelerating ? 0.17 + noise(0.02) : fuelCut ? -0.11 + noise(0.02) : noise(0.02),
-        lateralG: 0.12 * Math.sin(Date.now() / 4000), slopePct: 3 + noise(0.5), impactG: 0.1 + Math.abs(noise(0.05)),
+        lateralG: lat + noise(0.01), slopePct: Math.tan(pitch * Math.PI / 180) * 100, impactG: 0.1 + Math.abs(noise(0.05)),
         bumps: 4, maxBrakeG: 0.52, maxAccelG: 0.31, maxLateralG: 0.38,
+        pitchDeg: pitch, rollDeg: -4 * Math.sin(tt / 7), yawDps: yaw, maxPitchDeg: 6.5, maxRollDeg: 7.2,
+        driveState: v.speed < 0.5 ? 0 : 1, imuAction: null,
+        headingDeg: v.heading, headingSource: v.speed >= 12 ? 'gps' : 'mag', compassPct: 100, compassReady: true,
+        altitudeM: v.alt, altitudeTrend: pitch > 2 && v.speed > 20 ? 1 : 0, altitudeGps: true,
       },
-      gps: { lat: -20.4697, lon: -54.6201, speedKmh: v.speed * 0.97, accuracyM: 4, ageMs: 300 },
+      gps: { lat: -20.4697, lon: -54.6201, speedKmh: v.speed * 0.97, accuracyM: 4, bearing: v.heading, altitudeM: v.alt, ageMs: 300 },
       alerts, confirmedDtcs: mil ? ['P0133'] : [], pendingDtcs: [],
       tripId: 1, tripStartedAt: t0, tripDistanceKm: v.tripKm, totalKm: 1846.2 + v.tripKm, adapterVersion: 'ELM327 v1.5', disabledPids: [],
     };

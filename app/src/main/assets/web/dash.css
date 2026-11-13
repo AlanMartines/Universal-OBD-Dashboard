@@ -165,7 +165,6 @@
 .seg.on { fill: var(--c-accent); }
 .seg.on.amber { fill: var(--c-warn); }
 .seg.on.red { fill: var(--c-bad); }
-.cl-rpm[data-state="shift"] .seg.on { fill: var(--c-ok); }
 .cl-rpm[data-state="redline"] .seg.on { fill: var(--c-bad); animation: cl-flash .25s steps(2, start) infinite; }
 .rz { fill: var(--c-bad); opacity: .55; }
 .cl-rpm-scale { position: relative; height: 1.3em; margin-top: .3em; font-family: var(--f-num); font-weight: 500; font-size: clamp(9px, 3cqmin, 20px); color: var(--c-muted); }
@@ -181,7 +180,6 @@
 .cl-gear b { font-family: var(--f-num); font-weight: 700; font-size: clamp(40px, 30cqmin, 240px); color: var(--c-accent); }
 .cl-speed b { font-family: var(--f-num); font-weight: 700; font-size: clamp(48px, 36cqmin, 290px); letter-spacing: -.02em; }
 .cl-gear small, .cl-speed small { font-size: clamp(10px, 3cqmin, 20px); color: var(--c-muted); letter-spacing: .16em; text-transform: uppercase; margin-top: 1.4cqmin; }
-.cl-gear[data-state="shift"] b, .cl-gear[data-state="shift"] small { color: var(--c-ok); }
 .cl-divider { align-self: stretch; width: 1px; margin-block: 6cqmin; background: var(--c-line); }
 @container dash (orientation: portrait) {
   .cl-gear b { font-size: clamp(40px, 26cqw, 200px); }
@@ -314,7 +312,6 @@
 .hud-gear b { font-family: var(--f-num); font-weight: 700; font-size: clamp(20px, 9cqmin, 64px); color: var(--c-accent); text-shadow: 0 0 8px var(--c-glow); }
 .hud-gear small { font-size: clamp(9px, 2.4cqmin, 14px); color: var(--c-ok); font-weight: 600; }
 .hud-gear small:empty { display: none; }
-.hud-gear[data-state="shift"] b { color: var(--c-ok); }
 .hud-lights { gap: 1.4cqmin; justify-content: flex-end; }
 .hud-lights-r { justify-content: flex-start; }
 @container dash (orientation: portrait) {
@@ -377,7 +374,6 @@
 .sp-shift i.on.g { background: var(--c-ok); }
 .sp-shift i.on.y { background: var(--c-warn); }
 .sp-shift i.on.r { background: var(--c-bad); }
-.sp-shift[data-state="shift"] i.on { background: var(--c-ok); }
 .sp-shift[data-state="redline"] i.on { background: var(--c-bad); animation: cl-flash .25s steps(2, start) infinite; }
 .sp-lights { justify-content: flex-start; }
 .sp-cells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.2cqmin 2.6cqmin; }
@@ -524,3 +520,142 @@
   .cluster[data-look="minimal"] .cl-center { flex-wrap: wrap; align-content: center; row-gap: 2cqmin; }
   .cluster[data-look="minimal"] .cl-eco { position: static; transform: none; flex-basis: 100%; justify-content: center; }
 }
+
+/* Câmbio de ré (P/D/R) nos temas */
+.cl-gear[data-state="reverse"] b, .hud-gear[data-state="reverse"] b { color: var(--c-warn); }
+
+/* =====================================================================================
+   Tela Dinâmica: cobre o tema (menos o rodapé com as abas), com as cores dele.
+   Paisagem: inclinômetro e força G | horizonte dentro da bússola | ambiente e curva; botões embaixo.
+   Retrato: câmbio e estado, mostrador, cartões dois a dois, botões.
+   ===================================================================================== */
+.cluster:not([data-page="motion"]) > .dyn { display: none; }
+.cluster[data-look][data-page="motion"] {
+  grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "dyn" "foot";
+  row-gap: 1.4cqmin; padding: 2cqmin 3cqmin 1.6cqmin;
+}
+.cluster[data-look][data-page="motion"] > :not(.dyn):not(.cl-foot):not(.cl-alert) { display: none !important; }
+.cluster[data-page="motion"] .cl-alert { top: 3cqh; }
+
+.dyn {
+  --dial: min(76cqh, 44cqw);
+  --dyn-head: var(--c-orange, var(--c-warn));
+  grid-area: dyn; min-height: 0; position: relative;
+  display: grid; column-gap: 2.6cqmin; row-gap: 1.6cqmin;
+  grid-template-columns: minmax(0, 1fr) var(--dial) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-areas: "gear dial status" "incl dial amb" "g dial turn" "btnl dial btnr";
+}
+.dyn-gear { grid-area: gear; display: flex; align-items: baseline; gap: 1.4cqmin; justify-content: flex-end; min-width: 0; }
+.dyn-gear > b { font-family: var(--f-num); font-weight: 700; font-size: clamp(30px, 13cqmin, 110px); line-height: .85; color: var(--c-text); }
+.dyn-gear > b[data-state="on"] { color: var(--c-text); text-shadow: 0 0 14px var(--c-glow); }
+.dyn-gear > b[data-state="warn"] { color: var(--c-warn); }
+.dyn-gear > b[data-empty] { color: var(--c-muted); }
+.dyn-gear span { font-size: clamp(10px, 2.8cqmin, 18px); color: var(--c-muted); white-space: nowrap; }
+.dyn-gear span b { font-family: var(--f-num); color: var(--c-text); font-size: 1.5em; }
+.dyn-status { grid-area: status; display: flex; flex-wrap: wrap; gap: .4em; justify-content: flex-end; align-content: flex-start; font-size: clamp(9px, 2.3cqmin, 15px); }
+.dyn-chip { border: 1px solid var(--c-line); border-radius: 2px; padding: .2em .55em; color: var(--c-muted); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.dyn-chip[data-state="ok"] { color: var(--c-ok); border-color: color-mix(in srgb, var(--c-ok) 45%, transparent); }
+.dyn-chip[data-state="warn"] { color: var(--c-warn); border-color: color-mix(in srgb, var(--c-warn) 45%, transparent); }
+.dyn-chip[data-state="bad"] { color: var(--c-bad); border-color: color-mix(in srgb, var(--c-bad) 45%, transparent); }
+.dyn-chip[data-state="info"] { color: var(--c-accent); border-color: color-mix(in srgb, var(--c-accent) 45%, transparent); }
+
+.dyn-card {
+  min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: .8cqmin;
+  border: 1px solid var(--c-line); border-radius: 6px; padding: 1.6cqmin 2.2cqmin;
+  background: color-mix(in srgb, var(--c-accent) 4%, var(--c-bg));
+}
+.dyn-card h3 { margin: 0 0 .4cqmin; font-family: var(--f-label); font-weight: 600; font-size: clamp(11px, 3.2cqmin, 22px); color: var(--c-accent); letter-spacing: .1em; text-transform: uppercase; }
+.dyn-incl { grid-area: incl; } .dyn-g { grid-area: g; } .dyn-amb { grid-area: amb; } .dyn-turn { grid-area: turn; }
+.dyn-amb h3, .dyn-turn h3 { text-align: right; }
+.dyn-row { display: flex; align-items: baseline; gap: .6em; min-width: 0; }
+.dyn-k { font-size: clamp(10px, 2.7cqmin, 18px); color: var(--c-muted); text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; min-width: 4.6em; }
+.dyn-v { font-family: var(--f-num); font-weight: 700; font-size: clamp(15px, 5.4cqmin, 40px); color: var(--c-text); white-space: nowrap; line-height: 1; }
+.dyn-peak { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.05; color: var(--c-muted); }
+.dyn-peak small { font-size: clamp(8px, 1.9cqmin, 12px); text-transform: uppercase; letter-spacing: .1em; }
+.dyn-peak i { font-style: normal; font-family: var(--f-num); font-size: clamp(10px, 2.8cqmin, 18px); color: var(--c-accent); }
+.dyn-note { margin: 0; font-size: clamp(9px, 2.2cqmin, 14px); color: var(--c-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.2em; }
+.dyn-gbox { display: flex; align-items: center; gap: 1.4cqmin; min-height: 0; }
+.dyn-gbox > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .8cqmin; }
+.dyn-ball { width: clamp(56px, 22cqmin, 170px); height: auto; flex: none; }
+.dyn-ball-ring { fill: none; stroke: var(--c-line); stroke-width: 1.2; }
+.dyn-ball-trail { fill: var(--c-accent); }
+.dyn-ball-dot { fill: var(--c-accent); filter: drop-shadow(0 0 4px var(--c-glow)); }
+
+.dyn-dial { grid-area: dial; position: relative; align-self: center; justify-self: center; width: var(--dial); height: var(--dial); }
+.dyn-dial svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.dyn-head { position: absolute; top: 2%; right: -2%; transform: translateX(40%); display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
+.dyn-head b { font-family: var(--f-num); font-weight: 700; font-size: clamp(14px, 5cqmin, 38px); color: var(--dyn-head); white-space: nowrap; }
+.dyn-head small { font-size: clamp(8px, 2cqmin, 13px); color: var(--c-muted); text-transform: uppercase; letter-spacing: .12em; margin-top: .3em; }
+.dyn-head[data-state="off"] b { color: var(--c-muted); }
+
+.dyn-ring-a { stop-color: var(--c-accent); }
+.dyn-ring-b { stop-color: color-mix(in srgb, var(--c-accent) 35%, var(--dyn-head)); }
+.dyn-band { fill: none; stroke-width: 40; opacity: .14; }
+.dyn-rim { fill: none; stroke-width: 3; }
+.dyn-rim.in { stroke: var(--c-line); stroke-width: 2; }
+.dyn-tick { stroke: var(--c-muted); stroke-width: 1.2; }
+.dyn-tick.major { stroke: var(--c-text); stroke-width: 2.6; }
+.dyn-card-pt { fill: var(--c-text); font-family: var(--f-num); font-weight: 700; font-size: 22px; text-anchor: middle; dominant-baseline: central; }
+.dyn-card-pt.mid { fill: var(--c-muted); font-size: 15px; }
+.dyn-deg { fill: var(--c-muted); font-family: var(--f-label); font-size: 11px; text-anchor: middle; dominant-baseline: central; }
+.dyn-north { fill: var(--c-accent); }
+.dyn-head-arc { fill: none; stroke: var(--dyn-head); stroke-width: 4; stroke-linecap: round; }
+.dyn-head-ptr { fill: var(--dyn-head); filter: drop-shadow(0 0 4px var(--dyn-head)); transition: transform .5s ease-out; }
+.dyn-head-ptr.off { opacity: 0; }
+
+.dyn-sky { fill: color-mix(in srgb, var(--c-accent) 20%, var(--c-bg)); }
+.dyn-ground { fill: color-mix(in srgb, var(--c-ok) 9%, var(--c-bg)); }
+.dyn-hline { stroke: var(--c-ok); stroke-width: 3; }
+.dyn-rung { stroke-width: 2; }
+.dyn-rung.up { stroke: var(--c-accent); }
+.dyn-rung.down { stroke: var(--c-ok); }
+.dyn-rung-t { font-family: var(--f-num); font-size: 13px; dominant-baseline: central; }
+.dyn-rung-t.up { fill: var(--c-accent); }
+.dyn-rung-t.down { fill: var(--c-ok); }
+.dyn-hz, .dyn-roll-ptr { transition: transform .35s linear; }
+.dyn-hz.off { opacity: .35; }
+.dyn-roll-tick { stroke: var(--c-text); stroke-width: 2; }
+.dyn-roll-ptr { fill: var(--c-ok); }
+.dyn-ref { fill: none; stroke: var(--dyn-head); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.dyn-ref-dot { fill: var(--dyn-head); }
+.dyn-hz-t { fill: var(--c-text); font-family: var(--f-label); font-weight: 600; font-size: 17px; text-anchor: middle; dominant-baseline: central; }
+.dyn-hz-pill { fill: color-mix(in srgb, var(--c-bg) 78%, transparent); stroke: var(--c-line); stroke-width: 1; }
+.dyn-hz-t.roll { fill: var(--c-ok); }
+
+.dyn-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .7em; min-width: 0;
+  font: inherit; font-family: var(--f-label); font-weight: 600; font-size: clamp(11px, 3.4cqmin, 22px); letter-spacing: .06em;
+  color: var(--c-accent); background: none; border: 1.5px solid var(--c-accent); border-radius: 6px; padding: .55em 1em; cursor: pointer;
+}
+.dyn-btn svg { width: 1.4em; height: 1.4em; flex: none; }
+.dyn-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dyn-btn:disabled { color: var(--c-muted); border-color: var(--c-line); cursor: default; }
+.dyn-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--c-accent) 16%, transparent); }
+.dyn-btn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.dyn-btn-l { grid-area: btnl; } .dyn-btn-r { grid-area: btnr; }
+.dyn-msg { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); margin: 0; padding: .3em .8em; border-radius: 3px;
+  font-size: clamp(10px, 2.6cqmin, 16px); white-space: nowrap; background: var(--c-bg); color: var(--c-text); }
+.dyn-msg:empty { display: none; }
+.dyn-msg[data-state="ok"] { color: var(--c-ok); }
+.dyn-msg[data-state="warn"] { color: var(--c-warn); }
+.dyn-msg[data-state="info"] { color: var(--c-accent); }
+
+@container dash (orientation: portrait) {
+  .dyn {
+    --dial: min(84cqw, 44cqh);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-areas: "gear status" "dial dial" "incl amb" "g turn" "btnl btnr";
+  }
+  .dyn-gear { justify-content: flex-start; }
+  .dyn-head { right: 0; transform: none; }
+  .dyn-card { justify-content: flex-start; }
+  .dyn-v { font-size: clamp(14px, 6.4cqw, 34px); }
+  .dyn-k { min-width: 0; font-size: clamp(9px, 2.8cqw, 15px); }
+  .dyn-row { flex-wrap: wrap; column-gap: .5em; row-gap: .1em; }
+  .dyn-gbox { flex-direction: column; align-items: stretch; }
+  .dyn-ball { width: clamp(48px, 20cqw, 110px); align-self: center; }
+  .dyn-msg { bottom: auto; top: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .dyn-hz, .dyn-roll-ptr, .dyn-head-ptr { transition: none; } }

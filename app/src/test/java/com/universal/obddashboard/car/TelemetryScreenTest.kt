@@ -40,7 +40,33 @@ class TelemetryScreenTest {
         val t = grid()
         assertEquals(listOf("RPM", "Velocidade", "Motor", "Consumo", "Bateria", "Alertas"), items(t).map { it.title.toString() })
         assertEquals("--", items(t)[0].text.toString())
-        assertEquals("Iniciar", t.actionStrip!!.actions.single().title.toString())
+        // Dinâmica só com ícone (a barra aceita um botão com texto) e Iniciar
+        val actions = t.actionStrip!!.actions
+        assertEquals(2, actions.size)
+        assertEquals(null, actions[0].title)
+        assertEquals("Iniciar", actions[1].title.toString())
+    }
+
+    @Test fun dynamicsScreenHasSixFixedTiles() {
+        val now = System.currentTimeMillis()
+        TelemetryHub.update {
+            it.copy(
+                connection = ConnectionStatus.STREAMING,
+                derived = it.derived.copy(
+                    driveState = 2, imuStage = 2, pitchDeg = 4.5, rollDeg = -3.0, headingDeg = 47.0, headingSource = "mag",
+                    lateralG = 0.25, accelG = -0.1, yawDps = -8.0, altitudeM = 712.0, altitudeTrend = -1, altitudeGps = true,
+                ),
+            )
+        }
+        TelemetryHub.mergeValues(mapOf("speed" to 6.0, "cabin_pressure" to 932.0), now)
+        val t = DynamicsScreen(carContext).onGetTemplate() as GridTemplate
+        val byTitle = items(t).associate { it.title.toString() to it.text.toString() }
+        assertEquals(listOf("Câmbio", "Inclinação", "Rumo", "Força G", "Curva", "Altitude"), byTitle.keys.toList())
+        assertTrue(byTitle["Câmbio"]!!.startsWith("R • 6 km/h"))
+        assertEquals("+4,5° • lateral 3,0° E", byTitle["Inclinação"])
+        assertEquals("NE 47° • bússola", byTitle["Rumo"])
+        assertTrue(byTitle["Curva"]!!.startsWith("Direita"))
+        assertEquals("712 m ↓ • 932 hPa", byTitle["Altitude"])
     }
 
     @Test fun streamingValuesAndColors() {

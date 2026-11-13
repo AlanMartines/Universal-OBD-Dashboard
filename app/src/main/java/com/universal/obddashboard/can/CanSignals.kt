@@ -82,6 +82,20 @@ object Slcan {
         if (v.take(3).any { abs(it) > 4.5 } || v.subList(3, 6).any { abs(it) > 300 } || v[6] !in 0.0..8.0) return null
         return listOf(IMU_AX, IMU_AY, IMU_AZ, IMU_GX, IMU_GY, IMU_GZ, IMU_PEAK).zip(v).toMap()
     }
+
+    /** Magnetômetro do ESP32 (QMC5883L, QMC5883P ou HMC5883L): campo magnético em µT, nos eixos impressos no módulo. */
+    const val MAG_X = "mag_x"
+    const val MAG_Y = "mag_y"
+    const val MAG_Z = "mag_z"
+    private val MAG = Regex("^# mag x=$NUM y=$NUM z=$NUM$")
+
+    /** `# mag x=12.3 y=-4.5 z=30.1`; o campo da Terra tem 25 a 65 µT, fora de ±800 µT é leitura quebrada. */
+    fun parseMag(line: String): Map<String, Double>? {
+        val m = MAG.matchEntire(line.trim()) ?: return null
+        val v = m.groupValues.drop(1).map { it.toDouble() }
+        if (v.any { abs(it) > 800 }) return null
+        return listOf(MAG_X, MAG_Y, MAG_Z).zip(v).toMap()
+    }
 }
 
 /** Converte quadros em leituras com os sinais do perfil. Valor fora de min/max é descartado. */
