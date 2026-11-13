@@ -462,11 +462,14 @@ for n in g.MAG_PINS:
     tube('gy273', BMP_WIRE[n], mag_cable(n), 0.55)
 
 # ---------------------------------------------------------------- LED tricolor (opcional) na tampa da caixa
-# Conector de 5 pinos macho na linha 1 (colunas 8 a 12): comum, sem ligação, vermelho, verde e azul. O LED de 5 mm fica
-# num furo da tampa, perto do conector, preso por dentro (a aba encosta na tampa); fios com conector fêmea em cada pino
-# e um resistor de 220 a 330 Ω em cada cor, soldado na perna do LED e coberto com termorretrátil.
-LED_C = (xy(10, 1)[0], 2.8)
-LED_Z = caixa.TOPO_Z - 1.0                  # aba do LED, por dentro da tampa
+# Conector de 5 pinos macho na linha 1 (colunas 8 a 12): comum, sem ligação, vermelho, verde e azul. A tampa é
+# transparente e fechada (sem furos): o LED de 5 mm fica inteiro dentro da caixa, à direita do conector, encaixado de
+# baixo para cima num suporte da tampa, com o domo encostado nela. Fios com conector fêmea em cada pino e um resistor
+# de 220 a 330 Ω em cada cor, soldado na perna do LED e coberto com termorretrátil.
+LED_ALT = 8.6                               # LED de 5 mm: da aba ao alto do domo
+LED_C = (36.5, 2.3)
+LED_Z = caixa.TOPO_Z - 0.2 - LED_ALT        # aba do LED; o domo fica 0,2 mm abaixo da tampa
+LED_TOPO = LED_Z + LED_ALT - 2.5            # começo do domo
 LED_ORDEM = ['R', 'COM', 'G', 'B']          # pernas do LED de 4 pernas; a do comum é a mais comprida
 lhx = [xy(*cr)[0] for cr in g.LED_HEADER]
 _, lhy = xy(*g.LED_HEADER[0])
@@ -476,10 +479,14 @@ for x in lhx:
 
 
 def led_fio(n):
+    """Sobe do conector, desce na frente dele e corre por baixo do LED (o fio mais à esquerda mais baixo, sem cruzar)."""
     x, y = xy(*g.LED_PINS[n])
     lx = LED_C[0] + (LED_ORDEM.index(n) - 1.5) * 1.27
     z0 = T + MALE_H + HOUSING_H
-    return [(x, y, z0), (x, y, z0 + 1.2 + LED_ORDEM.index(n) * 0.5), (lx, LED_C[1], LED_Z - 3.2), (lx, LED_C[1], LED_Z)]
+    zl = 4.0 + sorted(g.LED_PINS, key=lambda m: g.LED_PINS[m][0]).index(n) * 1.0
+    yf = 3.3
+    return [(x, y, z0), (x, y, z0 + 0.8), (x, yf, z0 + 0.4), (x, yf, zl + 1.0), (x + 0.8, yf, zl), (lx - 0.8, yf, zl),
+            (lx, yf - 0.6, zl + 0.4), (lx, LED_C[1], LED_Z - 4.0), (lx, LED_C[1], LED_Z - 3.2), (lx, LED_C[1], LED_Z)]
 
 
 for n in g.LED_PINS:
@@ -487,11 +494,11 @@ for n in g.LED_PINS:
     box('led', '#1b1b1b', x - P / 2, y - P / 2, T + MALE_H, P, P, HOUSING_H)
     tube('led', g.LED_COL[n], led_fio(n), 0.45)
     if n != 'COM':   # resistor no termorretrátil, logo abaixo do LED
-        a, b = led_fio(n)[2], led_fio(n)[3]
+        a, b = led_fio(n)[-2], led_fio(n)[-1]
         cyl('led', '#212121', a, b, 0.9)
 cyl('led', '#eef3f6', (LED_C[0], LED_C[1], LED_Z), (LED_C[0], LED_C[1], LED_Z + 1.0), 2.9)                      # aba
-cyl('led', '#eef3f6', (LED_C[0], LED_C[1], LED_Z + 1.0), (LED_C[0], LED_C[1], caixa.TOPO_Z + 5.1), 2.5)       # corpo
-ball('led', '#eef3f6', (LED_C[0], LED_C[1], caixa.TOPO_Z + 5.1), 2.5)
+cyl('led', '#eef3f6', (LED_C[0], LED_C[1], LED_Z + 1.0), (LED_C[0], LED_C[1], LED_TOPO), 2.5)                  # corpo
+ball('led', '#eef3f6', (LED_C[0], LED_C[1], LED_TOPO), 2.5)
 
 # ---------------------------------------------------------------- ELM327 e cabo Y (acessórios, soltos atrás da placa)
 # Só para mostrar o kit: não estão ligados. Medidas aproximadas pelas fotos do vendedor (as fotos não vão ao repositório).
@@ -634,7 +641,7 @@ DET = {
                    'pinos': [{'n': n, 'p': rr(bmp_mod_pin(n))} for n in BMP_MOD_PINS],
                    'cabo': [{'n': n, 'cor': BMP_WIRE[n], 'cor_nome': BMP_WIRE_INFO[n][0], 'funcao': BMP_WIRE_INFO[n][1],
                              'pts': [rr(p) for p in bmp_cable(n)]} for n in BMP_WIRE]},
-    'led': {'c': rr(LED_C), 'z': LED_Z, 'topo': caixa.TOPO_Z + 5.1, 'ordem': LED_ORDEM,
+    'led': {'c': rr(LED_C), 'z': LED_Z, 'topo': LED_TOPO, 'ordem': LED_ORDEM,
             'conector': [{'n': n, 'p': rr(xy(*cr)), 'esp': g.LED_ESP[n]} for n, cr in g.LED_PINS.items()],
             'pinos': [rr(xy(*cr)) for cr in g.LED_HEADER],
             'fios': [{'n': n, 'cor': g.LED_COL[n], 'pts': [rr(p) for p in led_fio(n)], 'resistor': n != 'COM'} for n in g.LED_PINS]},
@@ -651,10 +658,8 @@ CAIXA_REF = {
     'obd_y': OBD_BOCA[1], 'obd_z': OBD_Z, 'obd_r': OBD_CAPA_R,
     'apoios': [(LSM_MOD, 5.0, 'LSM6DS3'), (MAG_APOIO, 0.0, 'GY-273'), (BMP_MOD, 5.0, 'BMP180')],   # módulo, onde o apoio começa (x), nome
     'fusivel': (fcx, fcy, T + FUSE_H),
-    # furos da tampa: o LED azul do ESP32 (na placa dele, perto do USB) e o LED tricolor opcional
-    # LED azul (D2) do ESP32: logo antes do módulo WROOM, do lado do 3V3, a ~22 mm da ponta do USB (conferido na placa, 11/11/2026)
-    'furos_tampa': [(x0 + g.ESP_L - 22.3, (xy(2, 2)[1] + xy(2, 12)[1]) / 2 - 4.3, 1.5, 'Tampa: furo de 3 mm para ver o LED azul do ESP32'),
-                    (LED_C[0], LED_C[1], 2.55, 'Tampa: furo de 5 mm do LED tricolor')],
+    # tampa fechada e transparente: sem furos; o LED tricolor encaixa num suporte por dentro dela
+    'led_suporte': (LED_C[0], LED_C[1]),
 }
 CAIXA = caixa.montar(CAIXA_REF)
 DET['caixa'] = {'base': CAIXA['base'], 'tampa': CAIXA['tampa'], 'medidas': CAIXA['medidas'],

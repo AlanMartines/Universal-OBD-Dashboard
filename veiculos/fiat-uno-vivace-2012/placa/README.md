@@ -39,7 +39,7 @@ Para ver como a placa fica montada, com as alturas, há duas opções. As posiç
 
 Caixa para impressora 3D, em duas peças (base e tampa), gerada pelo [`caixa.py`](caixa.py) junto com o modelo 3D. Serve para as duas versões da placa (TJA1050 e SN65HVD230). As cotas estão em [`caixa.svg`](caixa.svg).
 
-- **Para imprimir:** [`caixa-base.stl`](caixa-base.stl) e [`caixa-tampa.stl`](caixa-tampa.stl), já deitados na posição de impressão (a tampa vem virada, com a face de fora na mesa). Não precisa de suporte. Use **PETG ou ASA**: o PLA amolece dentro do carro parado ao sol. Sugestão: bico de 0,4 mm, camada de 0,2 mm, 3 perímetros, 20 % de preenchimento. Cada STL junta peças sobrepostas, e o fatiador (PrusaSlicer, Cura, Bambu Studio, OrcaSlicer) une os volumes sozinho.
+- **Para imprimir:** [`caixa-base.stl`](caixa-base.stl) e [`caixa-tampa.stl`](caixa-tampa.stl), já deitados na posição de impressão (a tampa vem virada, com a face de fora na mesa). Não precisa de suporte. Use **PETG ou ASA**: o PLA amolece dentro do carro parado ao sol. Sugestão: bico de 0,4 mm, camada de 0,2 mm, 3 perímetros, 20 % de preenchimento. A tampa vai em **PETG transparente** (ou natural): com 100 % de preenchimento e a face de fora na mesa lisa ela fica mais clara. Cada STL junta peças sobrepostas, e o fatiador (PrusaSlicer, Cura, Bambu Studio, OrcaSlicer) une os volumes sozinho.
 - **Para modificar:** [`caixa.scad`](caixa.scad) abre no OpenSCAD (F5). A variável `mostrar` escolhe a caixa montada, só a base, só a tampa (virada para imprimir) ou explodida. Os números são gerados: para mudar as medidas, ajuste o começo do `caixa.py` e rode o `gerar_placa.py` de novo.
 
 | Medida | Valor |
@@ -52,7 +52,7 @@ Caixa para impressora 3D, em duas peças (base e tampa), gerada pelo [`caixa.py`
 | Abas para prender no carro | uma de cada lado, rente ao fundo, com 18,5 mm para fora: **furo de 4,5 mm** para parafuso M4 (89 mm entre os furos) e, mais na ponta, **fenda de 5,4 × 2,2 mm** para abraçadeira de nylon (tipo Hellermann) de até 5 mm de largura (104,2 mm entre as fendas). Dá para usar parafuso, abraçadeira ou os dois. Com as abas, a base mede 112 × 99,5 mm na mesa da impressora |
 | Abertura do USB (parede direita) | 13 × 9 mm, para o cabo de gravar ou recuperar o firmware sem abrir a caixa. Do lado de fora até o conector do ESP32 são uns 21 mm: o plugue precisa entrar isso |
 | Abertura do cabo OBD | 6,6 mm de largura, para o cabo de 6 mm; uma lingueta da tampa desce até a capa e a prende |
-| Furos na tampa | 3 mm em cima do LED azul do ESP32 (para ver o estado sem abrir) e 5 mm para o LED tricolor, perto do conector dele |
+| Tampa | Fechada, sem furos: imprima em material transparente (PETG transparente ou natural) para ver os LEDs sem abrir. Por dentro, um suporte de 5,2 mm segura o LED tricolor |
 
 Como montar:
 
@@ -62,7 +62,7 @@ Como montar:
 4. **BMP180:** fica à direita da placa, mais embaixo, no outro apoio do fundo, preso do mesmo jeito; o cabo faz o mesmo caminho. A pressão sai igual à de fora. A temperatura, porém, é a de dentro da caixa, com o calor do RT8272 e do ESP32: tende a ficar alguns graus acima da do carro.
 5. **Cabo OBD:** a capa passa pela abertura de baixo da parede direita. Os fios entram na caixa e vão às ilhas da linha 24.
 6. **Tampa:** encaixe (a aba interna centraliza) e aperte os 4 parafusos. Para trocar o fusível, é só tirar a tampa: ele fica logo embaixo.
-7. **LED tricolor (opcional):** empurre o LED de 5 mm por dentro no furo de 5 mm da tampa, até a aba encostar; ele fica com o domo para fora. Os fios vão ao conector da linha 1. Sem o LED, o furo de 3 mm já mostra o LED azul do ESP32.
+7. **LED tricolor (opcional):** encaixe o LED de 5 mm de baixo para cima no suporte por dentro da tampa, até a aba encostar; o domo fica encostado na tampa, sem sair dela. Os fios descem na frente do conector da linha 1 e passam por baixo do LED. Sem o LED, a tampa transparente já mostra o LED azul do ESP32.
 
 > As alturas dos componentes são estimadas (veja [Modelo 3D](#modelo-3d)). Antes de imprimir, monte a placa e confira com o paquímetro que nada passe de **18 mm acima da face de cima da placa** (o ESP32 nas barras fêmea chega a uns 15,3 mm: barra de 8,3 + plástico dos pinos dele de 2,5 + placa de 1,5 + módulo WROOM de 3,0, medidos em 10/11/2026). Abaixo da placa, nada pode passar de 5 mm (os pinos das barras fêmea saem 3,2 mm).
 

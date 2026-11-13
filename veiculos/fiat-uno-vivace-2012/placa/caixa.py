@@ -33,6 +33,8 @@ TORRE_R = 4.0
 TORRE_DIAG = 2.5             # centro a 2,5 mm do canto de fora, nas duas direções
 GUIA_R = 1.3                 # furo-guia (M3 autoatarraxante ou M3 comum rosqueando o plástico)
 GUIA_FUNDO = 12.0            # profundidade do furo-guia
+LED_SUPORTE_R = 2.6          # encaixe do LED de 5 mm (5,2 mm: entra justo, a aba de 5,8 mm fica embaixo)
+LED_SUPORTE_H = 5.0
 PASSA_R = 1.7                # furo de passagem na tampa (3,4 mm)
 
 # Abas para prender no carro (parafuso M4 ou abraçadeira de até 4 mm)
@@ -187,7 +189,7 @@ def montar(ref):
         base.append(bx(L['x0'] + ini, L['y0'], PISO_Z, L['x0'] + L['l'], L['y0'] + L['w'], L['z0'], f'Apoio do {nome} (fita dupla-face)'))
 
     # Tampa: chapa, orelhas dos parafusos, aba interna que centraliza e linguetas que fecham as aberturas dos cabos
-    tampa += chapa_furada(o['x0'], o['y0'], o['x1'], o['y1'], TOPO_Z, o['z1'], ref.get('furos_tampa', []), 'Tampa')
+    tampa += chapa_furada(o['x0'], o['y0'], o['x1'], o['y1'], TOPO_Z, o['z1'], [], 'Tampa')   # fechada (imprimir transparente)
     for cx_, cy_ in torres():
         tampa.append(anel(cx_, cy_, TOPO_Z, o['z1'], PASSA_R, TORRE_R, 'Tampa: furo do parafuso M3 (3,4 mm)'))
     aba_esp, aba_h = 1.2, 2.0
@@ -201,6 +203,10 @@ def montar(ref):
     for chave, nome, fundo in (('obd', 'Tampa: lingueta do cabo OBD', ref['obd_z'] + ref['obd_r'] + 0.3),):
         c, w, _, _ = ABERT[chave]
         tampa.append(bx(INT['x1'], c - w / 2 + 0.2, fundo, o['x1'], c + w / 2 - 0.2, TOPO_Z, nome))
+    # suporte do LED tricolor: anel que segura o corpo de 5 mm, com o domo encostado na tampa (a aba fica embaixo)
+    if 'led_suporte' in ref:
+        lx, ly = ref['led_suporte']
+        tampa.append(anel(lx, ly, TOPO_Z - LED_SUPORTE_H, TOPO_Z, LED_SUPORTE_R, LED_SUPORTE_R + 1.0, 'Tampa: suporte do LED tricolor (encaixe de 5 mm)'))
     # batentes: dois cantos de cima da placa, o canto de baixo à direita e a tampa do fusível
     for x, y, r in ((2.0, 2.0, BATENTE_R), (W - 2.0, 2.0, BATENTE_R), (W - 1.2, H - 1.2, 1.2)):
         tampa.append(cil(x, y, T + FOLGA, TOPO_Z, r, 'Tampa: batente da placa'))
