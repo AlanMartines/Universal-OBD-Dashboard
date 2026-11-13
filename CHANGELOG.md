@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.41] - 2026-11-13
+
 ### Adicionado
 - **Tela Dinâmica (app, painel web e Android Auto):** a antiga tela Movimento vira Dinâmica e ocupa a tela toda (as abas continuam embaixo), sempre visível, com as cores do tema escolhido. Traz o horizonte artificial (inclinação frontal e lateral) dentro de uma bússola, o câmbio, o inclinômetro com os picos, a força G com rastro, o ambiente (altitude e pressão) e a curva (lado e giro em °/s). No painel web aparece ao vivo e na reprodução das viagens; no Android Auto, como uma segunda tela de números (o modelo do Android Auto não permite desenho livre).
 - **Câmbio P/D/R no lugar da marcha estimada:** P parado, D andando e R de ré, em todos os temas e no Android Auto. A ré sai do sentido da aceleração na arrancada (precisa do LSM6DS3 calibrado). Saem a marcha estimada (1ª a 5ª) e o aviso de troca de marcha (▲ 4ª) da tela, também na aba Detalhes; as luzes de troca do tema Pista seguem só pelo RPM.

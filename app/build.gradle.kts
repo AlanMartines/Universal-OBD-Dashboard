@@ -16,8 +16,8 @@ android {
         applicationId = "br.com.eletroinfotecnologia.universalobd"
         minSdk = 26
         targetSdk = 36
-        versionCode = 63
-        versionName = "0.9.40"
+        versionCode = 64
+        versionName = "0.9.41"
     }
 
     signingConfigs {
