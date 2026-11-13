@@ -24,7 +24,7 @@
   function forDash(d) {
     var o = {};
     Object.keys(d).forEach(function (k) { o[k] = d[k]; });
-    if (typeof d.headingSource === 'number') o.headingSource = d.headingSource === 2 ? 'mag' : 'gps';
+    if (typeof d.headingSource === 'number') o.headingSource = ({ 1: 'gps', 2: 'mag', 3: 'phone', 4: 'both' })[d.headingSource] || null;
     if (typeof d.altitudeGps === 'number') o.altitudeGps = d.altitudeGps === 1;
     if (typeof d.compassReady === 'number') o.compassReady = d.compassReady === 1;
     return o;

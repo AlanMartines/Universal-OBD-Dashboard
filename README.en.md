@@ -22,7 +22,7 @@ The six dashboard themes in night mode, on each bottom tab (simulator data):
 
 ## Features
 
-- **Dashboards:** six themes (Minimal, Capsule, HUD, Track, Classic, Horizon) with day/night modes, landscape full screen and four pages: road, engine, trip and **Dynamics** (gear P/D/R, tilt, g-force, compass with artificial horizon, turn rate and altitude, from the ESP32 board's IMU and magnetometer cross-checked with the phone's GPS).
+- **Dashboards:** six themes (Minimal, Capsule, HUD, Track, Classic, Horizon) with day/night modes, landscape full screen and four pages: road, engine, trip and **Dynamics** (gear P/D/R, tilt, g-force, compass with artificial horizon, turn rate and altitude, from the ESP32 board's IMU and magnetometer cross-checked with the phone's GPS; when parked, heading comes from the ESP32 magnetometer, the phone's own compass, or both averaged when they agree).
 - **Background capture:** a foreground service keeps reading with the screen off. Capture starts automatically when the adapter or the car's head unit connects and resumes after short disconnections.
 - **Trip black box:** a local Room/SQLite database with trips, 2-second telemetry samples, trouble codes and freeze frames, plus CSV/GPX export.
 - **Fuel log:** real consumption between full tanks, cost per km and monthly spend, and when ethanol pays off in this car. Consumption calibration comes from your own fill-ups.

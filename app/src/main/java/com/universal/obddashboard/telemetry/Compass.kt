@@ -9,9 +9,15 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * Rumo do carro (0° = norte, 90° = leste), de duas fontes:
+ * Rumo do carro (0° = norte, 90° = leste), por ordem de preferência:
  * - **GPS:** andando acima de [GPS_MIN_KMH] com boa precisão, o rumo do GPS é o melhor que há.
  * - **Magnetômetro do ESP32** (QMC5883L/QMC5883P/HMC5883L, linha `# mag ...`): parado, devagar ou sem sinal.
+ * - **Bússola do celular** ([onPhone]): com o magnetômetro do ESP32 também lendo e os dois concordando (até
+ *   [FUSE_MAX_DIFF_DEG]), o rumo é a média ponderada das duas ([SOURCE_BOTH]); discordando, vale a do ESP32, que é
+ *   calibrada direção por direção. Sozinha, assume quando o ESP32 não tem magnetômetro. O celular fica no suporte em
+ *   qualquer ângulo, então a diferença entre o rumo dele e o do carro é aprendida andando em reta com o GPS. Se o
+ *   celular for girado (troca de eixo, discordância com o GPS ou o rumo dele muda com o carro parado), reaprende.
+ * - Parado, sem nenhuma bússola: o último rumo do GPS por [GPS_HOLD_MS] (o carro parado não vira).
  *
  * Dentro do carro o campo magnético é torto (lata, motor, fiação), e o norte magnético não é o geográfico.
  * Por isso a bússola se calibra sozinha pelo GPS, sem pedir nada e sem depender de como o módulo foi preso:
@@ -57,7 +63,7 @@ class Compass(calibration: Calibration? = null) {
 
     val calibration: Calibration get() = Calibration(bins.toList())
 
-    /** Rumo (°) e de onde veio: [SOURCE_GPS] ou [SOURCE_MAG]; null sem nenhum dos dois. */
+    /** Rumo (°) e de onde veio: [SOURCE_GPS], [SOURCE_MAG], [SOURCE_PHONE] ou [SOURCE_BOTH]; null sem nenhum. */
     var headingDeg: Double? = null; private set
     var source: String? = null; private set
     /** Quanto da volta a bússola já viu (0 a 100%); não precisa chegar a 100, basta [ready]. */
@@ -73,6 +79,18 @@ class Compass(calibration: Calibration? = null) {
     private var cachedFit: Fit? = null
     private var fitDirty = true
     private var disagreeS = 0.0
+
+    // Bússola do celular: rumo do eixo escolhido e a diferença aprendida para a frente do carro
+    private var phoneAz: Double? = null
+    private var phoneAt = 0L
+    private var phoneReliable = false
+    private var phoneAxis: Int? = null
+    private var phoneOffset: Double? = null
+    private var phoneLearnedS = 0.0
+    private var phoneDisagreeS = 0.0
+    private var phoneStopRef: Double? = null
+    /** A bússola do celular já sabe onde é a frente do carro. */
+    val phoneReady: Boolean get() = phoneOffset != null && phoneLearnedS >= PHONE_LEARN_S
 
     /** Plano do campo no módulo (base u1, u2), centro do círculo nele e desvio por faixa. */
     private class Fit(val u1: DoubleArray, val u2: DoubleArray, val cx: Double, val cy: Double, val radius: Double, val dev: DoubleArray, val ok: BooleanArray)
@@ -137,16 +155,67 @@ class Compass(calibration: Calibration? = null) {
         magHeading = magHeading?.let { norm(it + wrap(now - it) * k) } ?: now
     }
 
+    /**
+     * Uma leitura da bússola do celular: rumo (°) do eixo [axis] do aparelho, se o sistema confia nela, e o giro do
+     * carro (°/s, do giroscópio do ESP32), se houver.
+     */
+    fun onPhone(t: Long, azimuthDeg: Double, axis: Int, reliable: Boolean, yawDps: Double?) {
+        val dt = if (phoneAt == 0L) 0.2 else ((t - phoneAt) / 1000.0).coerceIn(0.0, 2.0)
+        phoneAt = t
+        phoneAz = norm(azimuthDeg)
+        phoneReliable = reliable
+        if (axis != phoneAxis) { resetPhone(); phoneAxis = axis }
+        if (!reliable) return
+        val gpsFresh = gpsGood && t - gpsAt <= GPS_FRESH_MS
+        val turn = yawDps?.let { abs(it) } ?: gpsTurnDps
+        if (!gpsFresh || turn == null || turn >= LEARN_MAX_DPS) return
+        val delta = wrap(gpsBearing!! - phoneAz!!)
+        val off = phoneOffset
+        if (off != null && phoneReady && abs(wrap(delta - off)) > PHONE_DISAGREE_DEG) {
+            // Discorda do GPS por muito tempo: o celular mudou de posição no suporte
+            phoneDisagreeS += dt
+            if (phoneDisagreeS > PHONE_DISAGREE_S) resetPhone()
+            return
+        }
+        phoneDisagreeS = maxOf(0.0, phoneDisagreeS - dt)
+        phoneOffset = if (off == null) delta else norm(off + wrap(delta - off) * (1 - exp(-dt / PHONE_TAU_S)))
+        phoneLearnedS += dt
+    }
+
+    private fun resetPhone() {
+        phoneOffset = null
+        phoneLearnedS = 0.0
+        phoneDisagreeS = 0.0
+        phoneStopRef = null
+    }
+
     private fun binOf(bearing: Double) = (bearing / BIN_DEG).toInt().coerceIn(0, BINS - 1)
 
-    /** Escolhe o rumo de agora: GPS bom; senão a bússola; parado, o último do GPS por até [GPS_HOLD_MS]. */
+    /**
+     * Escolhe o rumo de agora: GPS bom; senão as bússolas (as duas juntas quando concordam, ou a que estiver lendo);
+     * parado, o último do GPS por até [GPS_HOLD_MS].
+     */
     fun update(now: Long, speedKmh: Double?) {
         val gpsFresh = gpsGood && now - gpsAt <= GPS_FRESH_MS
         val mag = magHeading?.takeIf { now - magAt <= MAG_FRESH_MS }
-        val stoppedHold = gpsBearing != null && now - gpsAt <= GPS_HOLD_MS && (speedKmh ?: 0.0) < 1
+        val stopped = (speedKmh ?: 0.0) < 1
+        // Parado o carro não vira: se o rumo do celular muda, foi o celular que girou no suporte
+        val az = phoneAz?.takeIf { now - phoneAt <= PHONE_FRESH_MS }
+        if (stopped && az != null && phoneReady) {
+            val ref = phoneStopRef ?: az.also { phoneStopRef = it }
+            if (abs(wrap(az - ref)) > PHONE_MOVED_DEG) resetPhone()
+        } else if (!stopped) {
+            phoneStopRef = null
+        }
+        val phone = az?.takeIf { phoneReady && phoneReliable }?.let { norm(it + phoneOffset!!) }
+        val stoppedHold = gpsBearing != null && now - gpsAt <= GPS_HOLD_MS && stopped
         when {
             gpsFresh -> { headingDeg = gpsBearing; source = SOURCE_GPS }
+            mag != null && phone != null && abs(wrap(phone - mag)) <= FUSE_MAX_DIFF_DEG -> {
+                headingDeg = norm(mag + wrap(phone - mag) * PHONE_WEIGHT); source = SOURCE_BOTH
+            }
             mag != null -> { headingDeg = mag; source = SOURCE_MAG }
+            phone != null -> { headingDeg = phone; source = SOURCE_PHONE }
             stoppedHold -> { headingDeg = gpsBearing; source = SOURCE_GPS }
             else -> { headingDeg = null; source = null }
         }
@@ -257,6 +326,12 @@ class Compass(calibration: Calibration? = null) {
     companion object {
         const val SOURCE_GPS = "gps"
         const val SOURCE_MAG = "mag"
+        const val SOURCE_PHONE = "phone"
+        /** As duas bússolas juntas (magnetômetro do ESP32 e celular). */
+        const val SOURCE_BOTH = "both"
+        /** Juntas só se concordam até aqui; o peso do celular na média (o ESP32 é calibrado direção por direção). */
+        const val FUSE_MAX_DIFF_DEG = 20.0
+        const val PHONE_WEIGHT = 0.35
         const val BIN_DEG = 10.0
         const val BINS = 36
         const val BIN_MIN_N = 5
@@ -273,6 +348,15 @@ class Compass(calibration: Calibration? = null) {
         /** Leitura a mais de metade do raio da média da faixa, por [DISAGREE_S] andando reto: o módulo mudou. */
         const val DISAGREE_FRAC = 0.5
         const val DISAGREE_S = 30.0
+        /** Celular: segundos andando em reta com GPS até confiar na diferença aprendida, e quão rápido ela se ajusta. */
+        const val PHONE_LEARN_S = 8.0
+        const val PHONE_TAU_S = 5.0
+        /** Celular discordando do GPS mais que isso, por [PHONE_DISAGREE_S] em reta: mudou de posição, reaprende. */
+        const val PHONE_DISAGREE_DEG = 25.0
+        const val PHONE_DISAGREE_S = 10.0
+        /** Parado, o rumo do celular mudou mais que isso: ele girou no suporte. */
+        const val PHONE_MOVED_DEG = 20.0
+        const val PHONE_FRESH_MS = 3000L
 
         /** Pontos cardeais e colaterais em português (N, NE, L, SE, S, SO, O, NO). */
         fun cardinal(deg: Double): String = listOf("N", "NE", "L", "SE", "S", "SO", "O", "NO")[Math.floorMod(Math.round(norm(deg) / 45.0).toInt(), 8)]

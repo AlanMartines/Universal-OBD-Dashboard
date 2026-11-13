@@ -1003,7 +1003,7 @@ window.Dash = (function () {
         (peak ? `<span class="dyn-peak"><small>pico</small><i data-ui="${peak}">--</i></span>` : '') + '</div>';
       return `
         <div class="dyn" data-ui="dyn">
-          <div class="dyn-gear"><b data-ui="dynGear">–</b><span><b data-ui="dynSpeed">--</b> km/h</span></div>
+          <div class="dyn-gear"><b data-ui="dynGear">--</b><span><b data-ui="dynSpeed">--</b> km/h</span></div>
           <div class="dyn-status" data-ui="dynStatus"></div>
           <section class="dyn-card dyn-incl"><h3>Inclinômetro</h3>${row('Lateral', 'dynRoll', 'dynRollMax')}${row('Frontal', 'dynPitch', 'dynPitchMax')}
             <p class="dyn-note" data-ui="dynInclNote"></p></section>
@@ -1120,7 +1120,7 @@ window.Dash = (function () {
       const fmtDeg = (v, dec) => (v == null ? '--' : num(Math.abs(v) < 0.05 ? 0 : v, dec) + '°');
 
       // Câmbio e velocidade
-      const g = d.driveState == null ? '–' : DRIVE[d.driveState] || '–';
+      const g = d.driveState == null ? '--' : DRIVE[d.driveState] || '--';
       big(ui.dynGear, g);
       ui.dynGear.dataset.state = g === 'R' ? 'warn' : g === 'D' ? 'on' : '';
       ui.dynSpeed.textContent = num(speed);
@@ -1135,7 +1135,7 @@ window.Dash = (function () {
       if (info && info.lsm && info.lsm !== 'ok') parts.push(['warn', 'Movimento: ' + info.lsm]);
       else if (sensor && d.imuStage < 2) parts.push(['info', d.imuStage === 0 ? 'Calibrando: pare o carro' : 'Calibrando: arranque e freie']);
       if (d.compassPct != null && !d.compassReady) parts.push(['info', 'Bússola ' + d.compassPct + '%']);
-      else if (info && info.mag === 'ausente' && d.headingSource !== 'gps') parts.push(['', 'Sem bússola']);
+      else if (info && info.mag === 'ausente' && d.headingSource == null) parts.push(['', 'Sem bússola']);
       const key = JSON.stringify(parts);
       if (this.statusKey !== key) {
         this.statusKey = key;
@@ -1191,7 +1191,7 @@ window.Dash = (function () {
         const hh = ((h % 360) + 360) % 360;
         this.headArc.setAttribute('d', hh < 0.5 || hh > 359.5 ? '' : hh <= 180 ? arcD(0, 0, 188, -90, hh - 90) : arcD(0, 0, 188, -90, hh - 450));
         ui.dynHeadTxt.textContent = cardinal(hh) + ' ' + num(hh) + '°';
-        ui.dynHeadSrc.textContent = d.headingSource === 'mag' ? 'bússola' : 'GPS';
+        ui.dynHeadSrc.textContent = HEAD_SRC[d.headingSource] || 'GPS';
       } else {
         this.headArc.setAttribute('d', '');
         ui.dynHeadTxt.textContent = '--';
@@ -1210,7 +1210,13 @@ window.Dash = (function () {
       if (act && !flash) ui.dynMsg.dataset.state = act[2]; else delete ui.dynMsg.dataset.state;
     },
     ball(lat, lon) {
-      if (lat == null || lon == null) { this.ballDot.setAttribute('opacity', '0'); return; }
+      if (lat == null || lon == null) {
+        // Sem leitura: some a bolinha e o rastro (nada de valor velho na tela)
+        this.ballDot.setAttribute('opacity', '0');
+        this.trail.length = 0;
+        this.trailDots.forEach((c) => c.setAttribute('opacity', '0'));
+        return;
+      }
       const x = clamp(-lat * 80, -46, 46);
       const y = clamp(-lon * 80, -46, 46);
       this.trail.push([x, y]);
@@ -1225,6 +1231,8 @@ window.Dash = (function () {
       this.ballDot.setAttribute('cy', y.toFixed(1));
     },
   };
+  /** De onde veio o rumo: GPS andando, magnetômetro do ESP32, bússola do celular ou as duas bússolas juntas. */
+  const HEAD_SRC = { gps: 'GPS', mag: 'bússola', phone: 'celular', both: 'bússola + celular' };
   /** Pontos cardeais e colaterais (N, NE, L, SE, S, SO, O, NO). */
   const cardinal = (deg) => ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'][Math.round(deg / 45) % 8];
   /** Botões Zerar nível e Calibrar frente: o app liga (Dash.setImuAction); no painel web ficam escondidos. */

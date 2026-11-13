@@ -48,6 +48,7 @@ class TelemetryEngine(
     private var savedManual = 0
     private val compass = Compass(compassCalibration)
     private var lastMagAt = 0L
+    private var lastPhoneAt = 0L
     private var lastGpsAt = 0L
     private var savedCompass = 0
     private var lastCompassSaveAt = 0L
@@ -167,6 +168,12 @@ class TelemetryEngine(
             lastMagAt = mx.timestamp
             val r = { id: String -> state.readings[id]?.value ?: 0.0 }
             compass.onMag(mx.timestamp, doubleArrayOf(mx.value, r(Slcan.MAG_Y), r(Slcan.MAG_Z)), imu.yawDps.takeIf { imuFresh })
+        }
+        // Bússola do celular: reserva parado, quando o ESP32 não tem magnetômetro
+        val ph = state.phoneHeading
+        if (ph != null && ph.timestamp != lastPhoneAt) {
+            lastPhoneAt = ph.timestamp
+            compass.onPhone(ph.timestamp, ph.azimuthDeg, ph.axis, ph.reliable, imu.yawDps.takeIf { imuFresh })
         }
         compass.update(now, speed)
         val compassSave = compass.calibration.takeIf { compass.changes != savedCompass && now - lastCompassSaveAt >= IMU_SAVE_MS }

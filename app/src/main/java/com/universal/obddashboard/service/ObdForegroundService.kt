@@ -13,6 +13,7 @@ import android.content.IntentFilter
 import android.os.BatteryManager
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.hardware.SensorManager
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
@@ -130,6 +131,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     private var wakeLock: PowerManager.WakeLock? = null
     private var fused: FusedLocationProviderClient? = null
     private var locationCallback: LocationCallback? = null
+    /** Bússola do celular: liga junto com o GPS em alta precisão (captura ativa). */
+    private var phoneCompass: PhoneCompassSensor? = null
     private var locationAllowed = false
 
     /** Tempo parado até perguntar se encerra (null = nunca), do ajuste do usuário. */
@@ -784,7 +787,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         "derived.driveState" to d.driveState?.toDouble(),
         "derived.headingDeg" to d.headingDeg,
         // 1 = GPS, 2 = magnetômetro
-        "derived.headingSource" to when (d.headingSource) { "gps" -> 1.0; "mag" -> 2.0; else -> null },
+        "derived.headingSource" to when (d.headingSource) { "gps" -> 1.0; "mag" -> 2.0; "phone" -> 3.0; "both" -> 4.0; else -> null },
         "derived.compassPct" to d.compassPct?.toDouble(),
         "derived.compassReady" to (if (d.compassPct != null) (if (d.compassReady) 1.0 else 0.0) else null),
         "derived.altitudeM" to d.altitudeM,
@@ -1178,11 +1181,26 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         }
         // Reutilizar o mesmo callback substitui a requisição anterior.
         client.requestLocationUpdates(request, callback, Looper.getMainLooper())
+        if (highAccuracy) startPhoneCompass() else stopPhoneCompass()
     }
 
     private fun stopLocationUpdates() {
         locationCallback?.let { fused?.removeLocationUpdates(it) }
         locationCallback = null
+        stopPhoneCompass()
+    }
+
+    private fun startPhoneCompass() {
+        if (phoneCompass != null) return
+        val sm = getSystemService(SensorManager::class.java) ?: return
+        val sensor = PhoneCompassSensor(sm) { h -> TelemetryHub.update { it.copy(phoneHeading = h) } }
+        if (sensor.start()) phoneCompass = sensor
+    }
+
+    private fun stopPhoneCompass() {
+        phoneCompass?.stop()
+        phoneCompass = null
+        TelemetryHub.update { it.copy(phoneHeading = null) }
     }
 
     private fun setStatus(status: ConnectionStatus, message: String) {
