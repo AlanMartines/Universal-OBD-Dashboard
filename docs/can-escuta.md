@@ -10,7 +10,7 @@ O projeto só faz **consulta** ao carro. A escuta só é usada com um controlado
 
 ![Pinagem da tomada OBD2 pela norma SAE J1962 e os pinos de cada protocolo](img/pinagem-obd2.svg)
 
-A norma só fixa os pinos coloridos; os outros (1, 3, 8, 9, 11, 12 e 13) cada fabricante usa como quiser, então confira no manual do seu carro antes de ligar qualquer coisa neles.
+A norma só fixa os pinos coloridos; os outros (1, 3, 8, 9, 11, 12 e 13) cada fabricante usa como quiser, então confira no manual do seu carro antes de ligar qualquer coisa neles. A tomada pode estar instalada de cabeça para baixo: com a parte larga embaixo, o pino 1 fica embaixo, à direita. Os desenhos de pinagem saem do [`gerar_pinagem.py`](img/gerar_pinagem.py).
 
 Com o carro desligado e nada conectado, meça a tensão dos pinos 6 e 14 em relação ao pino 5, o terra de sinal:
 
