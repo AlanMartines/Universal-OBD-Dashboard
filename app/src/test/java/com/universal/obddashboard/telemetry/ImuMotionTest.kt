@@ -26,14 +26,16 @@ class ImuMotionTest {
     private var speed = 0.0
     /** Desvio do giroscópio do módulo (°/s, eixos do módulo): zero nos testes antigos. */
     private var bias = DoubleArray(3)
+    /** Intervalo da velocidade do OBD: 250 ms nos testes antigos; o ELM real manda mais ou menos 1 vez por segundo. */
+    private var speedEveryMs = 250L
 
-    /** Anda [s] segundos com a velocidade mudando [kmhPerS], com a força nos eixos do carro; velocidade a cada 250 ms, sensor a cada 200 ms. */
+    /** Anda [s] segundos com a velocidade mudando [kmhPerS], com a força nos eixos do carro; velocidade a cada [speedEveryMs], sensor a cada 200 ms. */
     private fun ImuMotion.drive(s: Double, kmhPerS: Double, f: Double, l: Double, u: Double, peak: Double = 0.02, yawDps: Double = 0.0) {
         val end = t + (s * 1000).toLong()
         while (t < end) {
             t += 50
             speed = (speed + kmhPerS * 0.05).coerceAtLeast(0.0)
-            if (t % 250 == 0L) onSpeed(t, Math.round(speed).toDouble())   // OBD em km/h inteiros
+            if (t % speedEveryMs == 0L) onSpeed(t, Math.round(speed).toDouble())   // OBD em km/h inteiros
             if (t % 200 == 0L) update(t, 0.2, sensor(f, l, u), DoubleArray(3) { up[it] * yawDps + bias[it] }, peak)
         }
     }
@@ -287,5 +289,54 @@ class ImuMotionTest {
         // Apertar de novo cancela
         m.armForward(t)
         assertNull(m.action(t))
+    }
+
+    @Test fun learnsForwardAndFollowsTheSlopeWithTheElmSpeedRate() {
+        // Gravação de 14/11/2026: com a velocidade a cada ~1 s, a aceleração do OBD não saía e a frente levou 13 min
+        speedEveryMs = 1000L
+        val m = learned()
+        assertEquals("aprende a frente nas primeiras arrancadas", 2, m.stage)
+        // Andando a 40 km/h, a rua passa de plana para subida de 4°: a inclinação acompanha (não fica congelada)
+        val acc = 8.0 / 3.6 / ImuMotion.G
+        m.drive(5.0, 8.0, acc, 0.0, 1.0)
+        m.drive(8.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(0.0, m.pitchDeg!!, 0.5)
+        val s4 = Math.sin(Math.toRadians(4.0))
+        m.drive(8.0, 0.0, s4, 0.0, Math.cos(Math.toRadians(4.0)))
+        assertEquals(4.0, m.pitchDeg!!, 0.6)
+    }
+
+    @Test fun forwardButtonWorksWithTheElmSpeedRate() {
+        speedEveryMs = 1000L
+        val m = ImuMotion()
+        m.drive(5.0, 0.0, 0.0, 0.0, 1.0)
+        m.armForward(t)
+        val a = 5.0 / 3.6 / ImuMotion.G
+        m.drive(6.0, 5.0, a, 0.0, 1.0)   // 0 a 30 km/h em linha reta
+        assertEquals(ImuMotion.Action.FORWARD_DONE, m.action(t))
+        assertEquals(2, m.stage)
+    }
+
+    @Test fun reverseThenGentleForwardStaysForward() {
+        // Gravação de 14/11/2026: rézinha, parada e saída para a frente bem suave, com a velocidade estabilizando
+        // logo; a aceleração do OBD (média de ~2 s) atrasada contra o sensor do instante marcava ré até a próxima parada
+        speedEveryMs = 1000L
+        val m = learned()
+        speed = 0.0
+        m.drive(3.0, 0.0, 0.0, 0.0, 1.0)
+        val a = 3.0 / 3.6 / ImuMotion.G
+        m.drive(2.5, 3.0, -a, 0.0, 1.0)
+        assertEquals(ImuMotion.DIR_REVERSE, m.direction)
+        m.drive(2.5, -3.0, a, 0.0, 1.0)
+        m.drive(2.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(ImuMotion.DIR_STOPPED, m.direction)
+        // Para a frente: 2 s de 2 km/h/s, depois velocidade constante
+        val g = 2.0 / 3.6 / ImuMotion.G
+        m.drive(2.0, 2.0, g, 0.0, 1.0)
+        m.drive(3.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(ImuMotion.DIR_FORWARD, m.direction)
+        // Passados os primeiros segundos não decide mais: uma leitura estranha não vira ré
+        m.drive(2.0, 1.0, -0.1, 0.0, 1.0)
+        assertEquals(ImuMotion.DIR_FORWARD, m.direction)
     }
 }

@@ -6,6 +6,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Dinâmica com a velocidade do ELM:** a aceleração pela velocidade do OBD só era calculada com leituras a cada 0,75 s ou menos, mas o ELM manda mais ou menos 1 por segundo. Com isso, a frente do sensor demorava muitos minutos para ser aprendida (inclinômetro em "calibrando o sensor"), o Calibrar frente não terminava e, andando, a inclinação frontal ficava parada no último valor. A janela agora aceita esse ritmo.
+- **Ré marcada andando para a frente:** o sentido só é decidido no começo da arrancada (até 10 km/h, nos primeiros 6 s), com duas leituras seguidas concordando e comparando o sensor com a velocidade no mesmo intervalo. Antes, uma saída suave depois de uma ré podia ficar marcada como ré até a próxima parada.
+
 ## [0.9.46] - 2026-11-14
 
 ### Adicionado

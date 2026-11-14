@@ -152,6 +152,12 @@ class ImuMotion(calibration: Calibration? = null) {
     var direction: Int? = null; private set
     /** Sentido decidido na arrancada; vale até a próxima parada. */
     private var dirLatched: Int? = null
+    /** Hora em que o carro saiu da parada (velocidade do OBD), para decidir o sentido só no começo da arrancada. */
+    private var launchAt: Long? = null
+    /** Leituras seguidas que concordam com o sentido (positivas para a frente, negativas de ré). */
+    private var dirVotes = 0
+    /** Aceleração na direção da frente (g) com a hora, para comparar com a velocidade do OBD na mesma janela. */
+    private val alongHist = ArrayDeque<Pair<Long, Double>>()
 
     private var action: Action? = null
     private var actionAt = 0L
@@ -217,14 +223,19 @@ class ImuMotion(calibration: Calibration? = null) {
     fun onSpeed(t: Long, kmh: Double) {
         speedKmh = kmh
         speeds.addLast(t to kmh)
-        while (speeds.size > 2 && t - speeds.first().first > SPEED_WINDOW_MS) speeds.removeFirst()
+        // Pelo menos 3 leituras cobrindo SPEED_WINDOW_MS: o ELM manda a velocidade mais ou menos 1 vez por segundo
+        while (speeds.size > 3 && t - speeds.elementAt(1).first >= SPEED_WINDOW_MS) speeds.removeFirst()
+        val span = t - speeds.first().first
         // Acima de 1,2 g não é carro de rua: salto de leitura (reconexão, valor perdido); ignora
-        dvdtG = if (speeds.size >= 3 && t - speeds.first().first >= 800) (slope(speeds) / 3.6 / G).takeIf { abs(it) <= 1.2 } else null
+        dvdtG = if (speeds.size >= 3 && span in 800..SPEED_MAX_SPAN_MS) (slope(speeds) / 3.6 / G).takeIf { abs(it) <= 1.2 } else null
         if (kmh < STOP_KMH) {
             dirLatched = null
+            launchAt = null
+            dirVotes = 0
             direction = DIR_STOPPED
         } else if (direction == null || direction == DIR_STOPPED) {
             direction = DIR_FORWARD   // até a arrancada dizer o contrário
+            launchAt = t
         }
     }
 
@@ -296,7 +307,9 @@ class ImuMotion(calibration: Calibration? = null) {
 
         val along = dot(a, fwd)
         val lat = dot(a, left)
-        decideDirection(v, dv, along)
+        alongHist.addLast(now to along)
+        while (alongHist.isNotEmpty() && now - alongHist.first().first > SPEED_MAX_SPAN_MS + 1000) alongHist.removeFirst()
+        decideDirection(now, v, dv)
         // A velocidade do OBD não tem sinal: de ré, a aceleração e a curva vão ao contrário.
         // Na arrancada, até saber o sentido, a rampa e a inclinação lateral ficam como estavam parado.
         val moving = v != null && v >= STOP_KMH
@@ -353,17 +366,35 @@ class ImuMotion(calibration: Calibration? = null) {
 
     /**
      * Ré: na arrancada (velocidade do OBD subindo), o sensor acusa aceleração para trás. Para a frente, para a frente.
-     * Decidido, vale até parar; enquanto não dá para saber, fica "para a frente" sem travar.
+     * Só no começo da arrancada (até [DIR_DECIDE_MAX_KMH] e [DIR_DECIDE_MS]) e com [DIR_VOTES] leituras seguidas
+     * concordando; passado isso sem decidir, é para a frente. Decidido, vale até parar.
      */
-    private fun decideDirection(v: Double?, dv: Double?, along: Double) {
+    private fun decideDirection(now: Long, v: Double?, dv: Double?) {
         if (v == null || v < STOP_KMH) return
         dirLatched?.let { direction = it; return }
-        if (v > DIR_DECIDE_MAX_KMH || dv == null || dv < DIR_MIN_G) return
-        // Aceleração na direção da frente, descontada a rampa de quando estava parado
-        val acc = along - (slopeSin ?: 0.0)
+        val since = launchAt
+        if (v > DIR_DECIDE_MAX_KMH || (since != null && now - since > DIR_DECIDE_MS)) {
+            dirLatched = DIR_FORWARD
+            direction = DIR_FORWARD
+            return
+        }
+        if (dv == null || dv < DIR_MIN_G) return
+        // O dv é a média das leituras de velocidade (uns 2 s para trás): compara com a média do sensor no mesmo
+        // intervalo, descontada a rampa de quando estava parado
+        val from = speeds.first().first
+        val to = speeds.last().first
+        val inWindow = alongHist.filter { it.first in from..to }
+        if (inWindow.size < 3) return
+        val acc = inWindow.sumOf { it.second } / inWindow.size - (slopeSin ?: 0.0)
+        val vote = when {
+            acc < -DIR_MIN_G -> -1
+            acc > DIR_MIN_G -> 1
+            else -> 0
+        }
+        dirVotes = if (vote == 0) 0 else if (dirVotes * vote > 0) dirVotes + vote else vote
         when {
-            acc < -DIR_MIN_G -> { dirLatched = DIR_REVERSE; direction = DIR_REVERSE }
-            acc > DIR_MIN_G -> { dirLatched = DIR_FORWARD; direction = DIR_FORWARD }
+            dirVotes <= -DIR_VOTES -> { dirLatched = DIR_REVERSE; direction = DIR_REVERSE }
+            dirVotes >= DIR_VOTES -> { dirLatched = DIR_FORWARD; direction = DIR_FORWARD }
         }
     }
 
@@ -468,6 +499,9 @@ class ImuMotion(calibration: Calibration? = null) {
         slopeSin = null; rollSin = null; smAccel = null; smLat = null; smYaw = null; offS = 0.0
         yawDps = null
         dirLatched = null
+        launchAt = null
+        dirVotes = 0
+        alongHist.clear()
         pending.clear()
         clearOutputs()
     }
@@ -493,15 +527,21 @@ class ImuMotion(calibration: Calibration? = null) {
         const val YAW_TAU_S = 0.4
         const val BUMP_G = 0.4          // desvio da gravidade que conta como buraco ou impacto
         const val BUMP_GAP_MS = 1000L
+        /** Velocidade do OBD: a aceleração sai da reta das leituras que cobrem esta janela (no mínimo 3)... */
         const val SPEED_WINDOW_MS = 1500L
+        /** ...desde que não passem disto (leitura atrasada ou perdida). */
+        const val SPEED_MAX_SPAN_MS = 4000L
         const val STOP_KMH = 0.5
 
         const val DIR_STOPPED = 0
         const val DIR_FORWARD = 1
         const val DIR_REVERSE = 2
-        /** Aceleração mínima (g) para decidir o sentido na arrancada, e até que velocidade ainda decide. */
+        /** Aceleração mínima (g) para decidir o sentido na arrancada, até que velocidade e por quanto tempo ainda decide. */
         const val DIR_MIN_G = 0.03
-        const val DIR_DECIDE_MAX_KMH = 25.0
+        const val DIR_DECIDE_MAX_KMH = 10.0
+        const val DIR_DECIDE_MS = 6000L
+        /** Leituras seguidas do sensor (5 por segundo) que precisam concordar. */
+        const val DIR_VOTES = 2
 
         const val LEVEL_S = 3.0
         const val LEVEL_TIMEOUT_MS = 20_000L
