@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Calibração dos sensores (Ajustes):** card novo que mostra o que o app mediu e aprendeu dos sensores: desvio do giroscópio nesta partida, posição do módulo (qual eixo aponta para cima e para a frente, e se foi zerado à mão), quanto da volta a bússola do ESP32 já calibrou e o ângulo do celular no suporte. Tem um ajuste fino em graus (inclinação frontal, lateral e rumo das bússolas), somado por cima do aprendizado e válido na hora, sem mexer no código quando um módulo vem diferente do outro. Também tem botões para recomeçar cada aprendizado (nível e frente, bússola do ESP32, celular) ao trocar o módulo de lugar. O rumo do GPS não recebe o ajuste. O desvio do giroscópio não tem campo à mão, porque muda a cada vez que o ESP32 liga. Os valores vão ao painel web, num bloco abaixo dos mostradores, ao vivo e na simulação de viagem, e o ajuste fino vai no backup. Nada é enviado ao ESP32 nem ao carro.
+
 ## [0.9.43] - 2026-11-13
 
 ### Corrigido

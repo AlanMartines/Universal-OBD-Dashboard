@@ -285,6 +285,7 @@ function onTelemetry(s) {
   lastDtcKey = dtcKey;
   renderFaultsNow(conf, pend, s);
   renderAlarmStatus(s);
+  renderSensorCal(s);
 
   renderMonitors(s.readiness);
 

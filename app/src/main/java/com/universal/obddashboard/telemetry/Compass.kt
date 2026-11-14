@@ -27,6 +27,9 @@ import kotlin.math.sqrt
  * 3. uma tabela de desvio por faixa (rumo do GPS menos o da bússola) junta a declinação magnética, a posição
  *    do módulo e o resto da distorção.
  * Precisa de faixas nas quatro direções. Se o módulo for mexido, a bússola passa a discordar do GPS e recomeça.
+ *
+ * Ajuste fino ([headingTrimDeg], Ajustes → Calibração dos sensores): graus somados ao rumo das bússolas. O do GPS não
+ * muda, porque é o de referência.
  */
 class Compass(calibration: Calibration? = null) {
 
@@ -38,6 +41,10 @@ class Compass(calibration: Calibration? = null) {
             if (b == null) "" else (b.mag.toList() + listOf(b.sin, b.cos, b.n.toDouble()))
                 .joinToString(",") { "%.4f".format(java.util.Locale.ROOT, it) }
         }
+
+        /** Quanto da volta já foi visto (0 a 100%) e se a bússola já dá rumo, para mostrar em Ajustes. */
+        val progressPct: Int get() = bins.count { it != null && it.n >= BIN_MIN_N } * 100 / BINS
+        val ready: Boolean get() = Compass(this).ready
 
         companion object {
             fun decode(text: String?): Calibration? = runCatching {
@@ -91,6 +98,11 @@ class Compass(calibration: Calibration? = null) {
     private var phoneStopRef: Double? = null
     /** A bússola do celular já sabe onde é a frente do carro. */
     val phoneReady: Boolean get() = phoneOffset != null && phoneLearnedS >= PHONE_LEARN_S
+    /** Ângulo do celular no suporte em relação à frente do carro (°), depois de aprendido. */
+    val phoneMountDeg: Double? get() = phoneOffset?.takeIf { phoneReady }
+
+    /** Ajuste fino em graus, somado ao rumo das bússolas (positivo gira para a direita, sentido horário). */
+    var headingTrimDeg = 0.0
 
     /** Plano do campo no módulo (base u1, u2), centro do círculo nele e desvio por faixa. */
     private class Fit(val u1: DoubleArray, val u2: DoubleArray, val cx: Double, val cy: Double, val radius: Double, val dev: DoubleArray, val ok: BooleanArray)
@@ -182,6 +194,9 @@ class Compass(calibration: Calibration? = null) {
         phoneLearnedS += dt
     }
 
+    /** Reaprende onde o celular está no suporte (Ajustes → Calibração dos sensores). */
+    fun forgetPhone() = resetPhone()
+
     private fun resetPhone() {
         phoneOffset = null
         phoneLearnedS = 0.0
@@ -212,10 +227,10 @@ class Compass(calibration: Calibration? = null) {
         when {
             gpsFresh -> { headingDeg = gpsBearing; source = SOURCE_GPS }
             mag != null && phone != null && abs(wrap(phone - mag)) <= FUSE_MAX_DIFF_DEG -> {
-                headingDeg = norm(mag + wrap(phone - mag) * PHONE_WEIGHT); source = SOURCE_BOTH
+                headingDeg = norm(mag + wrap(phone - mag) * PHONE_WEIGHT + headingTrimDeg); source = SOURCE_BOTH
             }
-            mag != null -> { headingDeg = mag; source = SOURCE_MAG }
-            phone != null -> { headingDeg = phone; source = SOURCE_PHONE }
+            mag != null -> { headingDeg = norm(mag + headingTrimDeg); source = SOURCE_MAG }
+            phone != null -> { headingDeg = norm(phone + headingTrimDeg); source = SOURCE_PHONE }
             stoppedHold -> { headingDeg = gpsBearing; source = SOURCE_GPS }
             else -> { headingDeg = null; source = null }
         }

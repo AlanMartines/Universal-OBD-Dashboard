@@ -19,7 +19,9 @@
     'imuStage', 'accelG', 'lateralG', 'slopePct', 'impactG', 'bumps', 'maxBrakeG', 'maxAccelG', 'maxLateralG',
     // tela Dinâmica
     'pitchDeg', 'rollDeg', 'yawDps', 'maxPitchDeg', 'maxRollDeg', 'driveState', 'headingDeg', 'headingSource', 'compassPct',
-    'compassReady', 'altitudeM', 'altitudeTrend', 'altitudeGps'];
+    'compassReady', 'altitudeM', 'altitudeTrend', 'altitudeGps',
+    // calibração dos sensores (bloco abaixo dos mostradores)
+    'gyroBiasX', 'gyroBiasY', 'gyroBiasZ', 'phoneMountDeg', 'trimPitchDeg', 'trimRollDeg', 'trimHeadingDeg'];
   /** O app manda só números: a fonte do rumo vem como 1 (GPS) ou 2 (bússola), e os sim/não como 1 ou 0. */
   function forDash(d) {
     var o = {};
@@ -72,8 +74,35 @@
   var replay = null;
   function isFresh() { return replay ? replay.ready : lastTs > 0 && Date.now() - lastTs <= STALE_MS; }
 
+  /* Calibração dos sensores: só texto, pelos números que o app mandou. */
+  var calEls = {
+    gyro: document.getElementById('sc-gyro'), phone: document.getElementById('sc-phone'),
+    compass: document.getElementById('sc-compass'), trim: document.getElementById('sc-trim'),
+  };
+  function num(v, dec) { return v.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+  function signed(v, dec) {
+    var r = Math.abs(v) < Math.pow(10, -dec) / 2 ? 0 : v;
+    return (r > 0 ? '+' : r < 0 ? '−' : '') + num(Math.abs(r), dec);
+  }
+  function setText(el, text) { if (el && el.textContent !== text) el.textContent = text; }
+  function renderCalibration(d, fresh) {
+    var isNum = function (v) { return typeof v === 'number' && Number.isFinite(v); };
+    setText(calEls.gyro, fresh && isNum(d.gyroBiasX)
+      ? 'X ' + signed(d.gyroBiasX, 1) + ' · Y ' + signed(d.gyroBiasY || 0, 1) + ' · Z ' + signed(d.gyroBiasZ || 0, 1) + ' °/s'
+      : 'medido parado no começo de cada captura');
+    setText(calEls.phone, fresh && isNum(d.phoneMountDeg) ? num(d.phoneMountDeg, 0) + '° em relação à frente' : 'aprendido andando em reta com GPS');
+    var pct = fresh && isNum(d.compassPct) ? d.compassPct : null;
+    setText(calEls.compass, pct == null || pct === 0 ? 'sem leitura' : (d.compassReady === 1 ? 'pronta · ' : 'aprendendo · ') + pct + '% da volta');
+    var parts = [];
+    if (fresh && isNum(d.trimPitchDeg)) parts.push('frontal ' + signed(d.trimPitchDeg, 1) + '°');
+    if (fresh && isNum(d.trimRollDeg)) parts.push('lateral ' + signed(d.trimRollDeg, 1) + '°');
+    if (fresh && isNum(d.trimHeadingDeg)) parts.push('rumo ' + signed(d.trimHeadingDeg, 0) + '°');
+    setText(calEls.trim, !fresh ? '--' : parts.length ? parts.join(' · ') : 'nenhum');
+  }
+
   function push() {
     var fresh = isFresh();
+    renderCalibration(derived, fresh);
     window.Dash.update({
       running: fresh,
       connection: fresh ? 'STREAMING' : 'STOPPED',

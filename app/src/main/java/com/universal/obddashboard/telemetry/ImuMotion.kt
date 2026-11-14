@@ -2,8 +2,10 @@ package com.universal.obddashboard.telemetry
 
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.acos
 import kotlin.math.asin
 import kotlin.math.exp
+import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.tan
 
@@ -15,6 +17,9 @@ import kotlin.math.tan
  *   paradas, rampas para um lado e para o outro se compensam.
  * - **Frente:** direção em que o sensor acusa aceleração quando a velocidade do OBD sobe ou desce.
  * - **Remontagem:** parado, se a gravidade ficar longe do "cima" aprendido por [RESET_S], recomeça.
+ *
+ * Ajuste fino (Ajustes → Calibração dos sensores): [pitchTrimDeg] e [rollTrimDeg] somam graus à inclinação frontal e
+ * lateral, por cima do que foi aprendido (a aceleração e a força lateral acompanham).
  *
  * Dois ajustes à mão (aba Dinâmica), que passam a valer no lugar do aprendizado automático:
  * - **Zerar nível** ([requestLevel]): parado num piso plano, a gravidade de agora vira o "cima". A frente fica.
@@ -49,6 +54,15 @@ class ImuMotion(calibration: Calibration? = null) {
             add((if (upLocked) "U" else "") + (if (forwardLocked) "F" else ""))
         }.joinToString(";")
 
+        /** Como o módulo está preso, para mostrar em Ajustes. */
+        fun mount(): Mount {
+            val u = up.toDoubleArray()
+            val (upAxis, upOff) = nearestAxis(u)
+            val f = forward?.toDoubleArray()?.let { f -> unit(f.minus(unit(u).times(dot(f, unit(u))))) }?.takeIf { len(it) > 0.5 }
+            val fwd = f?.let { nearestAxis(it) }
+            return Mount(upAxis, upOff, upLocked, fwd?.first, fwd?.second, forwardLocked)
+        }
+
         companion object {
             fun decode(text: String?): Calibration? = runCatching {
                 val p = text!!.split(";")
@@ -60,6 +74,19 @@ class ImuMotion(calibration: Calibration? = null) {
             }.getOrNull()
         }
     }
+
+    /**
+     * Posição do módulo: o eixo dele que aponta para cima e o que aponta para a frente do carro ("+X", "−Z"...), cada um
+     * com quantos graus fica fora do eixo exato. Travado: definido à mão (Zerar nível, Calibrar frente).
+     */
+    data class Mount(
+        val upAxis: String,
+        val upOffDeg: Double,
+        val upLocked: Boolean,
+        val forwardAxis: String?,
+        val forwardOffDeg: Double?,
+        val forwardLocked: Boolean,
+    )
 
     /** Ajuste à mão em andamento ou recém-terminado (mostrado na tela). */
     enum class Action { LEVEL_PENDING, LEVEL_DONE, LEVEL_FAILED, FORWARD_ARMED, FORWARD_CAPTURING, FORWARD_DONE }
@@ -98,6 +125,10 @@ class ImuMotion(calibration: Calibration? = null) {
 
     /** Muda quando a orientação é trocada à mão: hora de salvar. */
     var manualChanges = 0; private set
+
+    /** Ajuste fino em graus, somado à inclinação frontal (positivo levanta a frente) e à lateral. */
+    var pitchTrimDeg = 0.0
+    var rollTrimDeg = 0.0
 
     var accelG: Double? = null; private set
     var lateralG: Double? = null; private set
@@ -292,10 +323,10 @@ class ImuMotion(calibration: Calibration? = null) {
             val x = rollNow.coerceIn(-0.5, 0.5)
             rollSin = rollSin?.let { it + (x - it) * k } ?: x
         }
-        val s = slopeSin?.coerceIn(-0.45, 0.45)
+        val s = slopeSin?.let { trimmed(it, pitchTrimDeg) }
         slopePct = s?.let { tan(asin(it)) * 100 }
         pitchDeg = s?.let { Math.toDegrees(asin(it)) }
-        val r = rollSin?.coerceIn(-0.45, 0.45)
+        val r = rollSin?.let { trimmed(it, rollTrimDeg) }
         // rollSin > 0: o lado esquerdo do carro aponta para cima, ou seja, o direito está mais baixo
         rollDeg = r?.let { Math.toDegrees(asin(it)) }
 
@@ -406,6 +437,23 @@ class ImuMotion(calibration: Calibration? = null) {
         rollDeg = null
     }
 
+    /** Seno da inclinação com o ajuste fino somado ao ângulo. */
+    private fun trimmed(sinA: Double, trimDeg: Double): Double {
+        val x = sinA.coerceIn(-0.45, 0.45)
+        if (trimDeg == 0.0) return x
+        return sin(asin(x) + Math.toRadians(trimDeg)).coerceIn(-0.45, 0.45)
+    }
+
+    /**
+     * Esquece o nível e a frente (Ajustes → Calibração dos sensores, ao trocar o módulo de lugar): volta a aprender do
+     * zero. O desvio do giroscópio fica, porque é do chip e não da posição.
+     */
+    fun forget() {
+        reset()
+        maxPitchDeg = 0.0
+        maxRollDeg = 0.0
+    }
+
     /** Média do giro cru parado: as primeiras paradas acertam rápido; depois, acompanha devagar a temperatura. */
     private fun learnBias(raw: DoubleArray, dt: Double) {
         biasW += dt
@@ -462,6 +510,15 @@ class ImuMotion(calibration: Calibration? = null) {
         /** Peso mínimo da arrancada: cerca de 0,05 g por 2 s. */
         const val FWD_CAL_MIN = 0.004
         const val ACTION_SHOW_MS = 6000L
+
+        /** Eixo do módulo mais perto do vetor ("+X", "−Y"...) e quantos graus o vetor fica fora dele. */
+        fun nearestAxis(v: DoubleArray): Pair<String, Double> {
+            val l = len(v)
+            val i = (0..2).maxBy { abs(v[it]) }
+            val name = (if (v[i] >= 0) "+" else "−") + "XYZ"[i]
+            val off = if (l < 1e-12) 0.0 else Math.toDegrees(acos((abs(v[i]) / l).coerceAtMost(1.0)))
+            return name to off
+        }
 
         private fun dot(a: DoubleArray, b: DoubleArray) = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
         private fun len(a: DoubleArray) = sqrt(dot(a, a))

@@ -264,6 +264,10 @@ a:not(.btn) { color: var(--accent); text-underline-offset: 2px; }
 .esp-card { margin-bottom: 12px; }
 .esp-card .kv { font-size: 0.85rem; }
 .esp-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+/* Calibração dos sensores: nome à esquerda, valor à direita; quebra para baixo se não couber */
+.sc-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.sc-row span { color: var(--muted); }
+.sc-row b { font-weight: 600; text-align: right; margin-left: auto; }
 .kv { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); margin-top: 4px; }
 .list .actions { display: flex; gap: 8px; margin-top: 8px; }
 .btn-small { min-height: 34px; padding: 6px 12px; font-size: 0.8rem; }
@@ -452,3 +456,6 @@ input[readonly] { opacity: .7; }
 
 /* Manutenção: subtítulo dentro do formulário */
 .form .label.sub { margin-top: 4px; }
+
+/* Calibração dos sensores: respiro antes dos subtítulos do card */
+#sensor-card > .label:not(:first-child) { margin-top: 10px; }

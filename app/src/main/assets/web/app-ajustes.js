@@ -122,6 +122,7 @@ function loadSettings() {
   loadSpeedSuggestion();
   loadAlarms();
   loadTimers();
+  loadSensorCal();
 }
 
 /* ---------------------------------------------------------------- Sugestão, alarmes e tempos */
@@ -253,6 +254,90 @@ $('dash-save').addEventListener('click', () => {
   dashboardChanged(bridge.setDashboardSettings(Number($('dash-rpm-max').value), redline, Number($('dash-speed-max').value), Number($('dash-correction').value)), 'Salvo.');
 });
 $('dash-reset').addEventListener('click', () => dashboardChanged(bridge.resetDashboardSettings(), 'Voltou aos valores do perfil.'));
+
+/* ---------------------------------------------------------------- Calibração dos sensores */
+let sensorCal = null;
+let sensorCalAt = 0;
+const scRows = {};
+const degSigned = (v, d = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v), d) + '°';
+const dpsSigned = (v) => (v > 0.05 ? '+' : v < -0.05 ? '−' : '') + fmt(Math.abs(v) < 0.05 ? 0 : Math.abs(v), 1);
+
+/** Uma linha "nome: valor"; criada uma vez e depois só o texto muda. */
+function scRow(key, name) {
+  if (scRows[key]) return scRows[key];
+  const row = document.createElement('div');
+  row.className = 'sc-row';
+  const n = document.createElement('span');
+  n.textContent = name;
+  const v = document.createElement('b');
+  row.append(n, v);
+  $('sc-values').appendChild(row);
+  scRows[key] = v;
+  return v;
+}
+const scSet = (key, name, text) => { const el = scRow(key, name); if (el.textContent !== text) el.textContent = text; };
+
+function loadSensorCal() {
+  sensorCal = parse(bridge.getSensorCalibration(), null);
+  sensorCalAt = Date.now();
+  if (!sensorCal) return;
+  const t = sensorCal.trims || {};
+  const lim = sensorCal.limits || { tiltDeg: 15, headingDeg: 45 };
+  dashOptions('sc-pitch', dashRange(-lim.tiltDeg, lim.tiltDeg, 0.5), (v) => (v === 0 ? 'Sem ajuste' : degSigned(v)), Math.round((t.pitchDeg || 0) * 2) / 2);
+  dashOptions('sc-roll', dashRange(-lim.tiltDeg, lim.tiltDeg, 0.5), (v) => (v === 0 ? 'Sem ajuste' : degSigned(v)), Math.round((t.rollDeg || 0) * 2) / 2);
+  dashOptions('sc-heading', dashRange(-lim.headingDeg, lim.headingDeg, 1), (v) => (v === 0 ? 'Sem ajuste' : degSigned(v, 0)), Math.round(t.headingDeg || 0));
+  renderSensorCal(lastState);
+}
+
+/** Valores ao vivo (desvio do giroscópio, celular, bússola) vêm do estado; os guardados, a cada 5 s durante a captura. */
+function renderSensorCal(s) {
+  if (!sensorCal) return;
+  if (s && s.running && Date.now() - sensorCalAt > 5000) { sensorCal = parse(bridge.getSensorCalibration(), sensorCal); sensorCalAt = Date.now(); }
+  const d = (s && s.derived) || {};
+  scSet('gyro', 'Desvio do giroscópio', d.gyroBiasX != null
+    ? `X ${dpsSigned(d.gyroBiasX)} · Y ${dpsSigned(d.gyroBiasY)} · Z ${dpsSigned(d.gyroBiasZ)} °/s`
+    : 'medido parado no começo de cada captura');
+  const m = sensorCal.imu;
+  const off = (deg) => (deg >= 1 ? ` (${fmt(deg, 0)}° fora)` : '');
+  scSet('up', 'Cima do módulo', m ? `eixo ${m.upAxis}${off(m.upOffDeg)}${m.upLocked ? ' · zerado à mão' : ''}` : 'ainda não aprendido (pare o carro)');
+  scSet('fwd', 'Frente do módulo', m && m.forwardAxis
+    ? `eixo ${m.forwardAxis}${off(m.forwardOffDeg)}${m.forwardLocked ? ' · calibrada à mão' : ''}`
+    : 'ainda não aprendida (ande e freie em reta)');
+  const c = sensorCal.compass;
+  const pct = d.compassPct != null ? d.compassPct : c ? c.pct : null;
+  const ready = d.compassPct != null ? !!d.compassReady : !!(c && c.ready);
+  scSet('mag', 'Bússola do ESP32', pct == null || pct === 0 ? 'sem calibração (aprende andando com GPS)' : ready ? `pronta · ${pct}% da volta` : `aprendendo · ${pct}% da volta`);
+  scSet('phone', 'Celular no suporte', d.phoneMountDeg != null
+    ? `${fmt(d.phoneMountDeg, 0)}° em relação à frente`
+    : (s && s.running ? 'aprendendo (ande em reta com GPS)' : 'aprendido a cada captura'));
+  const t = sensorCal.trims || {};
+  const parts = [];
+  if (t.pitchDeg) parts.push('frontal ' + degSigned(t.pitchDeg));
+  if (t.rollDeg) parts.push('lateral ' + degSigned(t.rollDeg));
+  if (t.headingDeg) parts.push('rumo ' + degSigned(t.headingDeg, 0));
+  scSet('trim', 'Ajuste em uso', parts.length ? parts.join(' · ') : 'nenhum');
+}
+
+function sensorCalDone(res, message) {
+  $('sc-result').textContent = res === 'ok' ? message : res;
+  $('sc-result').style.color = res === 'ok' ? '' : 'var(--danger, #e5484d)';
+  okOrToast(res, message);
+  if (res === 'ok') loadSensorCal();
+}
+$('sc-save').addEventListener('click', () => sensorCalDone(
+  bridge.setSensorTrims(Number($('sc-pitch').value), Number($('sc-roll').value), Number($('sc-heading').value)), 'Ajuste fino salvo.'));
+$('sc-zero').addEventListener('click', () => sensorCalDone(bridge.setSensorTrims(0, 0, 0), 'Ajuste fino zerado.'));
+$('sc-forget-imu').addEventListener('click', () => {
+  if (!confirm('Esquecer o nível e a frente do sensor de movimento? O app aprende de novo: pare o carro alguns segundos e depois ande, acelerando e freando em reta. Se quiser, refaça Zerar nível e Calibrar frente na aba Dinâmica.')) return;
+  sensorCalDone(bridge.forgetSensorCalibration('imu'), 'Nível e frente esquecidos.');
+});
+$('sc-forget-compass').addEventListener('click', () => {
+  if (!confirm('Zerar a bússola do ESP32? Ela aprende de novo andando com GPS, com curvas para todos os lados.')) return;
+  sensorCalDone(bridge.forgetSensorCalibration('compass'), 'Bússola zerada.');
+});
+$('sc-forget-phone').addEventListener('click', () => {
+  sensorCalDone(bridge.forgetSensorCalibration('phone'), 'O celular será reaprendido andando em reta com GPS.');
+});
 
 /* ---------------------------------------------------------------- Sobre */
 const appInfo = parse(bridge.getAppInfo(), {});

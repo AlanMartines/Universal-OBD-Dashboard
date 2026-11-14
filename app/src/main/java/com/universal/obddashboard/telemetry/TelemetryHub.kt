@@ -88,6 +88,16 @@ data class DerivedMetrics(
     /** Quanto da volta a bússola já aprendeu (%); null sem magnetômetro. */
     val compassPct: Int? = null,
     val compassReady: Boolean = false,
+    /** Desvio do giroscópio medido nesta partida (°/s, eixos do módulo); null antes de medir. */
+    val gyroBiasX: Double? = null,
+    val gyroBiasY: Double? = null,
+    val gyroBiasZ: Double? = null,
+    /** Ângulo do celular no suporte em relação à frente do carro (°), aprendido com o GPS. */
+    val phoneMountDeg: Double? = null,
+    /** Ajuste fino à mão em uso (°), null quando zero (Ajustes → Calibração dos sensores). */
+    val trimPitchDeg: Double? = null,
+    val trimRollDeg: Double? = null,
+    val trimHeadingDeg: Double? = null,
     /** Altitude (m) pela pressão do ESP32, acertada pelo GPS; tendência +1 subindo, −1 descendo. */
     val altitudeM: Double? = null,
     val altitudeTrend: Int? = null,
@@ -196,12 +206,17 @@ object TelemetryHub {
 
     fun takeFuelOverride(): FuelOverride? = fuelOverride.getAndSet(null)
 
-    /** Ajuste do sensor de movimento pedido na tela (Zerar nível, Calibrar frente), consumido pelo serviço. */
-    enum class ImuRequest { LEVEL, FORWARD }
+    /**
+     * Pedido da tela para os sensores do ESP32, consumido pelo serviço durante a captura:
+     * - aba Dinâmica: [LEVEL] (Zerar nível), [FORWARD] (Calibrar frente);
+     * - Ajustes → Calibração dos sensores: [FORGET_IMU] (esquecer nível e frente), [FORGET_COMPASS] (zerar a bússola do
+     *   ESP32), [FORGET_PHONE] (reaprender o celular no suporte), [TRIMS] (ajuste fino mudou, reler).
+     */
+    enum class ImuRequest { LEVEL, FORWARD, FORGET_IMU, FORGET_COMPASS, FORGET_PHONE, TRIMS }
 
-    private val imuRequest = AtomicReference<ImuRequest?>(null)
+    private val imuRequests = java.util.concurrent.ConcurrentLinkedQueue<ImuRequest>()
 
-    fun requestImu(r: ImuRequest) = imuRequest.set(r)
+    fun requestImu(r: ImuRequest) { imuRequests.add(r) }
 
-    fun takeImuRequest(): ImuRequest? = imuRequest.getAndSet(null)
+    fun takeImuRequest(): ImuRequest? = imuRequests.poll()
 }

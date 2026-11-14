@@ -33,6 +33,8 @@ class TelemetryEngine(
     imuCalibration: ImuMotion.Calibration? = null,
     /** Tabela da bússola (magnetômetro do ESP32 contra o rumo do GPS), salva entre as capturas. */
     compassCalibration: Compass.Calibration? = null,
+    /** Ajuste fino à mão (Ajustes → Calibração dos sensores). */
+    trims: SensorTrims = SensorTrims(),
 ) {
     private val roles = profile.profile.roles
     private val fuelCalc = profile.profile.fuel?.let { FuelCalculator(it) }
@@ -53,6 +55,16 @@ class TelemetryEngine(
     private var savedCompass = 0
     private var lastCompassSaveAt = 0L
     private val altimeter = Altimeter()
+
+    init { setTrims(trims) }
+
+    /** Ajuste fino mudou em Ajustes: vale na hora, sem reiniciar a captura. */
+    fun setTrims(t: SensorTrims) {
+        imu.pitchTrimDeg = t.pitchDeg
+        imu.rollTrimDeg = t.rollDeg
+        compass.headingTrimDeg = t.headingDeg
+    }
+
     private var lastPressureAt = 0L
     private val ecoMid = profile.profile.fuel?.ecoMidLPer100km ?: TripStats.DEFAULT_ECO_MID
     /** Computador de bordo da viagem; numa viagem retomada, refeito pelas amostras gravadas ([restoreStats]). */
@@ -76,10 +88,14 @@ class TelemetryEngine(
         val compassCalibration: Compass.Calibration? = null,
     )
 
-    /** Ajuste à mão pedido na tela (Zerar nível, Calibrar frente). */
+    /** Ajuste à mão pedido na tela (Zerar nível, Calibrar frente, esquecer calibrações). [TRIMS] vem por [setTrims]. */
     fun imuRequest(r: TelemetryHub.ImuRequest, now: Long) = when (r) {
         TelemetryHub.ImuRequest.LEVEL -> imu.requestLevel(now)
         TelemetryHub.ImuRequest.FORWARD -> imu.armForward(now)
+        TelemetryHub.ImuRequest.FORGET_IMU -> imu.forget()
+        TelemetryHub.ImuRequest.FORGET_COMPASS -> compass.reset()
+        TelemetryHub.ImuRequest.FORGET_PHONE -> compass.forgetPhone()
+        TelemetryHub.ImuRequest.TRIMS -> Unit
     }
 
     fun compute(state: DashboardState, trip: TripAccumulator?, now: Long, dtS: Double): Result {
@@ -220,6 +236,13 @@ class TelemetryEngine(
             headingSource = compass.source,
             compassPct = compass.progressPct.takeIf { magFresh },
             compassReady = compass.ready,
+            gyroBiasX = imu.gyroBiasDps?.get(0)?.takeIf { imuFresh },
+            gyroBiasY = imu.gyroBiasDps?.get(1)?.takeIf { imuFresh },
+            gyroBiasZ = imu.gyroBiasDps?.get(2)?.takeIf { imuFresh },
+            phoneMountDeg = compass.phoneMountDeg,
+            trimPitchDeg = imu.pitchTrimDeg.takeIf { it != 0.0 },
+            trimRollDeg = imu.rollTrimDeg.takeIf { it != 0.0 },
+            trimHeadingDeg = compass.headingTrimDeg.takeIf { it != 0.0 },
             altitudeM = altimeter.altitudeM.takeIf { pressureFresh },
             altitudeTrend = altimeter.trend.takeIf { pressureFresh },
             altitudeGps = altimeter.calibrated,

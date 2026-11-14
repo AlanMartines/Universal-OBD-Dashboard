@@ -19,6 +19,7 @@ import com.universal.obddashboard.obd.DashboardOverride
 import com.universal.obddashboard.obd.ProfileParser
 import com.universal.obddashboard.obd.UserAlarm
 import com.universal.obddashboard.telemetry.PerformanceTimers
+import com.universal.obddashboard.telemetry.SensorTrims
 import com.universal.obddashboard.telemetry.TelemetryHub
 import com.universal.obddashboard.orNull
 import com.universal.obddashboard.service.ObdForegroundService
@@ -53,6 +54,63 @@ class AppBridge(private val activity: MainActivity) {
         if (!ObdForegroundService.isRunning) return false
         TelemetryHub.requestImu(r)
         return true
+    }
+
+    /**
+     * Ajustes → Calibração dos sensores: o que está guardado (posição do módulo, bússola do ESP32) e o ajuste fino. Os
+     * valores medidos na captura (desvio do giroscópio, ângulo do celular) chegam pelo estado, em `derived`.
+     */
+    @JavascriptInterface
+    fun getSensorCalibration(): String {
+        val o = JSONObject().put("running", ObdForegroundService.isRunning)
+        val t = AppSettings.sensorTrims(activity)
+        o.put("trims", JSONObject().put("pitchDeg", t.pitchDeg).put("rollDeg", t.rollDeg).put("headingDeg", t.headingDeg))
+        o.put("limits", JSONObject().put("tiltDeg", SensorTrims.MAX_TILT_DEG).put("headingDeg", SensorTrims.MAX_HEADING_DEG))
+        o.put(
+            "imu",
+            AppSettings.imuCalibration(activity)?.mount()?.let { m ->
+                JSONObject().put("upAxis", m.upAxis).put("upOffDeg", m.upOffDeg).put("upLocked", m.upLocked)
+                    .put("forwardAxis", m.forwardAxis ?: JSONObject.NULL).put("forwardOffDeg", m.forwardOffDeg ?: JSONObject.NULL)
+                    .put("forwardLocked", m.forwardLocked)
+            } ?: JSONObject.NULL,
+        )
+        o.put(
+            "compass",
+            AppSettings.compassCalibration(activity)?.let { c -> JSONObject().put("pct", c.progressPct).put("ready", c.ready) } ?: JSONObject.NULL,
+        )
+        return o.toString()
+    }
+
+    /** Ajuste fino em graus; vale na hora, inclusive com a captura em andamento. Nada vai ao ESP32. */
+    @JavascriptInterface
+    fun setSensorTrims(pitchDeg: Double, rollDeg: Double, headingDeg: Double): String {
+        val t = SensorTrims(pitchDeg, rollDeg, headingDeg)
+        t.problem()?.let { return it }
+        AppSettings.setSensorTrims(activity, t)
+        if (ObdForegroundService.isRunning) TelemetryHub.requestImu(TelemetryHub.ImuRequest.TRIMS)
+        return "ok"
+    }
+
+    /**
+     * Esquece uma calibração aprendida: "imu" (nível e frente do módulo), "compass" (bússola do ESP32) ou "phone"
+     * (celular no suporte, que só existe durante a captura). Com a captura em andamento, o serviço apaga e recomeça.
+     */
+    @JavascriptInterface
+    fun forgetSensorCalibration(kind: String): String {
+        val r = when (kind) {
+            "imu" -> TelemetryHub.ImuRequest.FORGET_IMU
+            "compass" -> TelemetryHub.ImuRequest.FORGET_COMPASS
+            "phone" -> TelemetryHub.ImuRequest.FORGET_PHONE
+            else -> return "Opção inválida."
+        }
+        if (ObdForegroundService.isRunning) {
+            TelemetryHub.requestImu(r)
+        } else when (r) {
+            TelemetryHub.ImuRequest.FORGET_IMU -> AppSettings.clearImuCalibration(activity)
+            TelemetryHub.ImuRequest.FORGET_COMPASS -> AppSettings.clearCompassCalibration(activity)
+            else -> Unit   // o celular é aprendido de novo a cada captura
+        }
+        return "ok"
     }
 
     /**

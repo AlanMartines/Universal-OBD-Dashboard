@@ -499,6 +499,35 @@
         <div id="can-result" class="list small"></div>
       </div>
 
+      <div class="card form" id="sensor-card">
+        <span class="label">Calibração dos sensores</span>
+        <p class="muted small">O app aprende sozinho a posição do sensor de movimento e da bússola do ESP32 e onde o celular está no suporte. Cada módulo tem suas diferenças, por isso nada disso fica fixo no código. Aqui você vê os valores e, se precisar, corrige à mão. Nada é enviado ao ESP32 nem ao carro.</p>
+        <div id="sc-values" class="list small"></div>
+        <span class="label">Ajuste fino</span>
+        <p class="muted small">Somado por cima do que foi aprendido. Use se, num piso plano, a inclinação não marcar zero, ou se a bússola puxar sempre para um lado. Vale na hora, inclusive durante a captura.</p>
+        <label>Inclinação frontal (positivo levanta a frente)
+          <select id="sc-pitch"></select>
+        </label>
+        <label>Inclinação lateral (positivo baixa o lado direito)
+          <select id="sc-roll"></select>
+        </label>
+        <label>Rumo das bússolas (positivo gira para a direita)
+          <select id="sc-heading"></select>
+        </label>
+        <div class="row">
+          <button id="sc-save" class="btn btn-primary">Salvar ajuste</button>
+          <button id="sc-zero" class="btn">Zerar ajuste</button>
+        </div>
+        <span class="label">Recomeçar o aprendizado</span>
+        <p class="muted small">Use ao trocar o módulo de lugar ou por outro. O desvio do giroscópio não tem botão: ele muda a cada vez que o ESP32 liga e é medido de novo, sozinho, nos primeiros segundos parado.</p>
+        <div class="row">
+          <button id="sc-forget-imu" class="btn btn-small">Esquecer nível e frente</button>
+          <button id="sc-forget-compass" class="btn btn-small">Zerar bússola do ESP32</button>
+          <button id="sc-forget-phone" class="btn btn-small">Reaprender o celular</button>
+        </div>
+        <p id="sc-result" class="small"></p>
+      </div>
+
       <div class="card form">
         <span class="label">Gravação de diagnóstico</span>
         <label class="check"><input id="diag-enabled" type="checkbox">

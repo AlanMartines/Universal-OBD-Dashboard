@@ -69,3 +69,48 @@
     height: calc(100dvh - 14rem);
   }
 }
+
+/* Calibração dos sensores: valores medidos pelo app, abaixo dos mostradores. */
+.sensor-cal {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--app-radius);
+  background: var(--bs-tertiary-bg);
+}
+
+.sensor-cal summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sensor-cal-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.sensor-cal-list dt {
+  font-weight: 400;
+  color: var(--bs-secondary-color);
+}
+
+.sensor-cal-list dd {
+  margin: 0;
+}
+
+#vehicle-root:fullscreen .sensor-cal {
+  display: none;
+}
+
+@media (max-width: 575.98px) {
+  .sensor-cal-list {
+    grid-template-columns: 1fr;
+    gap: 0 0;
+  }
+
+  .sensor-cal-list dd {
+    margin-bottom: 0.4rem;
+  }
+}

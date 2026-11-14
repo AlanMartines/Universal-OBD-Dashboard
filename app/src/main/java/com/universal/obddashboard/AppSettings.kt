@@ -48,6 +48,7 @@ object AppSettings {
     private const val KEY_IMU_CALIBRATION = "imu_calibration"
     private const val KEY_COMPASS_CALIBRATION = "compass_calibration"
     private const val KEY_CAN_ADAPTER = "can_adapter_names"
+    private const val KEY_SENSOR_TRIMS = "sensor_trims"
 
     /** Chave do ajuste no veículo selecionado (ver [Vehicles]). */
     private fun sk(context: Context, key: String) = Vehicles.scopedKey(key, vid(context))
@@ -93,6 +94,17 @@ object AppSettings {
     fun setCompassCalibration(context: Context, cal: com.universal.obddashboard.telemetry.Compass.Calibration) {
         prefs(context).edit { putString(KEY_COMPASS_CALIBRATION, cal.encode()) }
     }
+
+    fun clearImuCalibration(context: Context) = prefs(context).edit { remove(KEY_IMU_CALIBRATION) }
+
+    fun clearCompassCalibration(context: Context) = prefs(context).edit { remove(KEY_COMPASS_CALIBRATION) }
+
+    /** Ajuste fino à mão dos sensores do ESP32; do módulo, como as calibrações acima, e também vai no backup. */
+    fun sensorTrims(context: Context): com.universal.obddashboard.telemetry.SensorTrims =
+        com.universal.obddashboard.telemetry.SensorTrims.decode(prefs(context).getString(KEY_SENSOR_TRIMS, null))
+
+    fun setSensorTrims(context: Context, t: com.universal.obddashboard.telemetry.SensorTrims) =
+        prefs(context).edit { putString(KEY_SENSOR_TRIMS, t.encode()) }
 
     fun atmosphericKpa(context: Context): Double? =
         prefs(context).getFloat(KEY_ATMOSPHERIC_KPA, Float.NaN).toDouble().takeUnless { it.isNaN() }
