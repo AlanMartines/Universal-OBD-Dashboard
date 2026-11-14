@@ -268,6 +268,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             speedCorrectionPct = AppSettings.dashboard(this, loaded).speedCorrectionPct,
             imuCalibration = AppSettings.imuCalibration(this),
             compassCalibration = AppSettings.compassCalibration(this),
+            trims = AppSettings.sensorTrims(this),
         )
         // Viagem retomada: o computador de bordo continua de onde parou, refeito pelas amostras gravadas.
         if (resumeId != null) runCatching { engine?.restoreStats(dao.telemetryForTrip(tripId)) }
@@ -501,9 +502,23 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 }
             }
 
-            TelemetryHub.takeImuRequest()?.let { r ->
+            while (true) {
+                val r = TelemetryHub.takeImuRequest() ?: break
                 eng.imuRequest(r, now)
-                recorder?.event("imu_request") { put("kind", r.name) }
+                when (r) {
+                    TelemetryHub.ImuRequest.TRIMS -> eng.setTrims(AppSettings.sensorTrims(this))
+                    TelemetryHub.ImuRequest.FORGET_IMU -> AppSettings.clearImuCalibration(this)
+                    TelemetryHub.ImuRequest.FORGET_COMPASS -> AppSettings.clearCompassCalibration(this)
+                    else -> Unit
+                }
+                recorder?.event("imu_request") {
+                    put("kind", r.name)
+                    if (r == TelemetryHub.ImuRequest.TRIMS) AppSettings.sensorTrims(this@ObdForegroundService).let { t ->
+                        put("pitch_deg", t.pitchDeg)
+                        put("roll_deg", t.rollDeg)
+                        put("heading_deg", t.headingDeg)
+                    }
+                }
             }
 
             val result = eng.compute(state, trip, now, dtS)
@@ -790,6 +805,13 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         "derived.headingSource" to when (d.headingSource) { "gps" -> 1.0; "mag" -> 2.0; "phone" -> 3.0; "both" -> 4.0; else -> null },
         "derived.compassPct" to d.compassPct?.toDouble(),
         "derived.compassReady" to (if (d.compassPct != null) (if (d.compassReady) 1.0 else 0.0) else null),
+        "derived.gyroBiasX" to d.gyroBiasX,
+        "derived.gyroBiasY" to d.gyroBiasY,
+        "derived.gyroBiasZ" to d.gyroBiasZ,
+        "derived.phoneMountDeg" to d.phoneMountDeg,
+        "derived.trimPitchDeg" to d.trimPitchDeg,
+        "derived.trimRollDeg" to d.trimRollDeg,
+        "derived.trimHeadingDeg" to d.trimHeadingDeg,
         "derived.altitudeM" to d.altitudeM,
         "derived.altitudeTrend" to d.altitudeTrend?.toDouble(),
         "derived.altitudeGps" to (if (d.altitudeM != null) (if (d.altitudeGps) 1.0 else 0.0) else null),
@@ -843,6 +865,10 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                     d.estimatedGear?.let { put("estimated_gear", it) }
                     put("shift_up", d.shiftUp)
                     num("trip_km", s.tripDistanceKm)
+                    d.gyroBiasX?.let { num("gyro_bias_x", it) }
+                    d.gyroBiasY?.let { num("gyro_bias_y", it) }
+                    d.gyroBiasZ?.let { num("gyro_bias_z", it) }
+                    d.phoneMountDeg?.let { num("phone_mount_deg", it) }
                 }
                 if (snapshotCount++ % PHONE_STATS_EVERY == 0) putJsonObject("phone") { phoneStats(this) }
                 s.gps?.takeIf { now - it.timestamp < 5000 }?.let { g ->

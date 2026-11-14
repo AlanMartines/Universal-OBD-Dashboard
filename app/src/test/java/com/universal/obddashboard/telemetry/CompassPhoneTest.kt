@@ -49,6 +49,31 @@ class CompassPhoneTest {
         assertEquals(120.0, c.headingDeg!!, 1.0)
     }
 
+    @Test fun fineTrimTurnsTheCompassesButNotTheGps() {
+        val c = Compass()
+        c.headingTrimDeg = 5.0
+        c.drive(120.0, 12.0)
+        // GPS é a referência: o ajuste não mexe nele
+        assertEquals(Compass.SOURCE_GPS, c.source)
+        assertEquals(120.0, c.headingDeg!!, 0.1)
+        assertEquals(Compass.norm(mount), c.phoneMountDeg!!, 1.0)
+        t += Compass.GPS_HOLD_MS + 1000
+        c.parked(120.0)
+        assertEquals(Compass.SOURCE_PHONE, c.source)
+        assertEquals(125.0, c.headingDeg!!, 1.0)
+    }
+
+    @Test fun forgetPhoneRelearnsTheMount() {
+        val c = Compass()
+        c.drive(120.0, 12.0)
+        assertTrue(c.phoneReady)
+        c.forgetPhone()
+        assertNull(c.phoneMountDeg)
+        t += Compass.GPS_HOLD_MS + 1000
+        c.parked(120.0)
+        assertNull(c.headingDeg)
+    }
+
     @Test fun needsSomeStraightDrivingBeforeTrustingThePhone() {
         val c = Compass()
         c.drive(120.0, 3.0)

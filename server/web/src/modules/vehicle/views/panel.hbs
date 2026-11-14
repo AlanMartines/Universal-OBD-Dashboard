@@ -28,6 +28,16 @@
   </div>
   {{/if}}
   <div id="dash-host" class="cluster-host" aria-label="Painel de instrumentos"></div>
+  <details class="sensor-cal" id="sensor-cal">
+    <summary>Calibração dos sensores</summary>
+    <dl class="sensor-cal-list">
+      <dt>Desvio do giroscópio</dt><dd id="sc-gyro">--</dd>
+      <dt>Celular no suporte</dt><dd id="sc-phone">--</dd>
+      <dt>Bússola do ESP32</dt><dd id="sc-compass">--</dd>
+      <dt>Ajuste fino</dt><dd id="sc-trim">--</dd>
+    </dl>
+    <p class="small text-body-secondary mb-0">Medido e aprendido pelo app; o ajuste fino é feito no app, em Ajustes → Calibração dos sensores.</p>
+  </details>
 </div>
 {{else}}
 <div class="card">

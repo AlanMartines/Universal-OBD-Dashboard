@@ -137,6 +137,59 @@ class ImuMotionTest {
         assertNull(ImuMotion.Calibration.decode("lixo"))
     }
 
+    @Test fun fineTrimShiftsTheTiltAndZeroUndoesIt() {
+        val m = learned()
+        speed = 0.0
+        m.drive(5.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(0.0, m.pitchDeg!!, 0.3)
+        // Ajuste fino: +2° na frente e −1,5° de lado, por cima do aprendido
+        m.pitchTrimDeg = 2.0
+        m.rollTrimDeg = -1.5
+        m.drive(1.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(2.0, m.pitchDeg!!, 0.3)
+        assertEquals(-1.5, m.rollDeg!!, 0.3)
+        assertEquals(Math.tan(Math.toRadians(2.0)) * 100, m.slopePct!!, 0.6)
+        // A calibração aprendida não muda com o ajuste
+        assertEquals(2, m.stage)
+        m.pitchTrimDeg = 0.0
+        m.rollTrimDeg = 0.0
+        m.drive(1.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(0.0, m.pitchDeg!!, 0.3)
+        assertEquals(0.0, m.rollDeg!!, 0.3)
+    }
+
+    @Test fun forgetStartsOverButKeepsTheGyroBias() {
+        bias = doubleArrayOf(0.4, -0.1, -1.2)
+        val m = learned()
+        assertNotNull(m.calibration)
+        m.forget()
+        assertNull(m.calibration)
+        assertEquals(0, m.stage)
+        assertNull(m.pitchDeg)
+        // O desvio é do chip, não da posição: continua valendo
+        assertEquals(-1.2, m.gyroBiasDps!![2], 0.05)
+        // Parado de novo, aprende o cima outra vez
+        speed = 0.0
+        m.drive(5.0, 0.0, 0.0, 0.0, 1.0)
+        assertEquals(1, m.stage)
+    }
+
+    @Test fun mountShowsTheModuleAxisThatPointsUpAndForward() {
+        // Módulo de pé, de lado: o eixo X aponta para baixo, uns 15° fora do prumo (como no teste da mesa)
+        val tilt = Math.toRadians(15.0)
+        val cal = ImuMotion.Calibration(listOf(-Math.cos(tilt), Math.sin(tilt), 0.0), 600.0, listOf(0.0, 0.0, 1.0), 30.0, upLocked = true)
+        val m = cal.mount()
+        assertEquals("−X", m.upAxis)
+        assertEquals(15.0, m.upOffDeg, 0.1)
+        assertTrue(m.upLocked)
+        assertEquals("+Z", m.forwardAxis)
+        assertEquals(0.0, m.forwardOffDeg!!, 0.1)
+        // Sem frente aprendida
+        val noFwd = ImuMotion.Calibration(listOf(0.0, 0.0, 1.0), 10.0, null, 0.0).mount()
+        assertEquals("+Z", noFwd.upAxis)
+        assertNull(noFwd.forwardAxis)
+    }
+
     @Test fun lateralTiltParkedAndDriving() {
         val m = learned()
         // Parado com o lado direito 5° mais baixo: o eixo da esquerda aponta um pouco para cima
