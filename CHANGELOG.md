@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.46] - 2026-11-14
+
 ### Adicionado
 - **Apagar todas as gravações de diagnóstico:** botão abaixo da lista, em Ajustes → Gravação de diagnóstico, que apaga todos os arquivos de uma vez (antes era um por um). Pergunta antes, mostrando quantos arquivos e quantos MB, e mantém o que estiver gravando.
 
