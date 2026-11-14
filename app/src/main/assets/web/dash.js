@@ -1021,6 +1021,16 @@ window.Dash = (function () {
           <p class="dyn-msg" data-ui="dynMsg" role="status"></p>
         </div>`;
     },
+    /** Letras do anel de pé: com o anel girado [h]°, cada uma vira para baixo ou para cima conforme a metade da tela. */
+    orientLabels(h) {
+      const top = Math.round(h) % 360;
+      if (this.cardTop === top) return;
+      this.cardTop = top;
+      for (const { t, a, at } of this.cardLabels) {
+        const sa = (((a - h) % 360) + 360) % 360;   // ângulo na tela
+        t.setAttribute('transform', `rotate(${sa > 90 && sa < 270 ? a - 180 : a} ${at})`);
+      }
+    },
     build() {
       this.headShown = null;
       this.trail = [];
@@ -1033,26 +1043,32 @@ window.Dash = (function () {
       svg('stop', { offset: '0', class: 'dyn-ring-a' }, grad);
       svg('stop', { offset: '1', class: 'dyn-ring-b' }, grad);
 
-      // Bússola: faixa, marcas a cada 5°, números a cada 30° e pontos cardeais (norte em cima, fixo)
+      // Bússola: faixa, marcas a cada 5°, números a cada 30° e pontos cardeais. O anel gira com o rumo e a seta fica
+      // fixa em cima (a frente do carro); as letras se viram para continuar de pé.
       svg('circle', { class: 'dyn-band', cx: 0, cy: 0, r: 166, stroke: 'url(#dyn-ring)' }, s);
       svg('circle', { class: 'dyn-rim', cx: 0, cy: 0, r: 188, stroke: 'url(#dyn-ring)' }, s);
       svg('circle', { class: 'dyn-rim in', cx: 0, cy: 0, r: 144 }, s);
+      this.card = svg('g', { class: 'dyn-compass' }, s);
+      this.cardLabels = [];
+      this.cardTop = null;
+      const ring = this.card;
       const CARD = { 0: 'N', 45: 'NE', 90: 'L', 135: 'SE', 180: 'S', 225: 'SO', 270: 'O', 315: 'NO' };
       for (let a = 0; a < 360; a += 5) {
         const major = a % 30 === 0;
         const [x0, y0] = polar(0, 0, 186, a - 90);
         const [x1, y1] = polar(0, 0, major ? 172 : a % 15 === 0 ? 177 : 180, a - 90);
-        svg('line', { class: 'dyn-tick' + (major ? ' major' : ''), x1: x0.toFixed(1), y1: y0.toFixed(1), x2: x1.toFixed(1), y2: y1.toFixed(1) }, s);
+        svg('line', { class: 'dyn-tick' + (major ? ' major' : ''), x1: x0.toFixed(1), y1: y0.toFixed(1), x2: x1.toFixed(1), y2: y1.toFixed(1) }, ring);
         const label = CARD[a] || (major ? String(a) + '°' : null);
         if (!label) continue;
         const [lx, ly] = polar(0, 0, CARD[a] ? 156 : 159, a - 90);
-        const t = svg('text', { class: CARD[a] ? 'dyn-card-pt' + (a % 90 ? ' mid' : '') : 'dyn-deg', x: lx.toFixed(1), y: ly.toFixed(1),
-          transform: `rotate(${a > 90 && a < 270 ? a - 180 : a} ${lx.toFixed(1)} ${ly.toFixed(1)})` }, s);
+        const t = svg('text', { class: CARD[a] ? 'dyn-card-pt' + (a % 90 ? ' mid' : '') : 'dyn-deg', x: lx.toFixed(1), y: ly.toFixed(1) }, ring);
         t.textContent = label;
+        this.cardLabels.push({ t, a, at: `${lx.toFixed(1)} ${ly.toFixed(1)}` });
       }
-      svg('path', { class: 'dyn-north', d: 'M 0 -199 L 9 -186 L -9 -186 Z' }, s);
-      // Rumo: arco do norte até ele e a seta na borda
-      this.headArc = svg('path', { class: 'dyn-head-arc' }, s);
+      this.orientLabels(0);
+      svg('path', { class: 'dyn-north', d: 'M 0 -199 L 9 -186 L -9 -186 Z' }, ring);
+      // Rumo: arco do norte (que gira com o anel) até a seta, fixa em cima
+      this.headArc = svg('path', { class: 'dyn-head-arc' }, ring);
       this.headPtr = svg('g', { class: 'dyn-head-ptr' }, s);
       svg('path', { d: 'M 0 -170 L 11 -194 L -11 -194 Z' }, this.headPtr);
 
@@ -1187,8 +1203,9 @@ window.Dash = (function () {
       this.headPtr.classList.toggle('off', h == null);
       if (h != null) {
         this.headShown = this.headShown == null ? h : this.headShown + ((((h - this.headShown) % 360) + 540) % 360 - 180);
-        this.headPtr.style.transform = `rotate(${this.headShown.toFixed(1)}deg)`;
+        this.card.style.transform = `rotate(${(-this.headShown).toFixed(1)}deg)`;
         const hh = ((h % 360) + 360) % 360;
+        this.orientLabels(hh);
         this.headArc.setAttribute('d', hh < 0.5 || hh > 359.5 ? '' : hh <= 180 ? arcD(0, 0, 188, -90, hh - 90) : arcD(0, 0, 188, -90, hh - 450));
         ui.dynHeadTxt.textContent = cardinal(hh) + ' ' + num(hh) + '°';
         ui.dynHeadSrc.textContent = HEAD_SRC[d.headingSource] || 'GPS';

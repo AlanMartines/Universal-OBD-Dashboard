@@ -601,7 +601,8 @@
 .dyn-deg { fill: var(--c-muted); font-family: var(--f-label); font-size: 11px; text-anchor: middle; dominant-baseline: central; }
 .dyn-north { fill: var(--c-accent); }
 .dyn-head-arc { fill: none; stroke: var(--dyn-head); stroke-width: 4; stroke-linecap: round; }
-.dyn-head-ptr { fill: var(--dyn-head); filter: drop-shadow(0 0 4px var(--dyn-head)); transition: transform .5s ease-out; }
+.dyn-head-ptr { fill: var(--dyn-head); filter: drop-shadow(0 0 4px var(--dyn-head)); }
+.dyn-compass { transition: transform .5s ease-out; }
 .dyn-head-ptr.off { opacity: 0; }
 
 .dyn-sky { fill: color-mix(in srgb, var(--c-accent) 20%, var(--c-bg)); }
@@ -658,4 +659,4 @@
   .dyn-ball { width: clamp(48px, 20cqw, 110px); align-self: center; }
   .dyn-msg { bottom: auto; top: 0; }
 }
-@media (prefers-reduced-motion: reduce) { .dyn-hz, .dyn-roll-ptr, .dyn-head-ptr { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .dyn-hz, .dyn-roll-ptr, .dyn-compass { transition: none; } }
