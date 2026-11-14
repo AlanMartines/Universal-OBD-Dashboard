@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.47] - 2026-11-14
+
 ### Alterado
 - **Bússola da Dinâmica:** a seta do rumo fica fixa em cima (a frente do carro) e o anel com N, S, L, O e os graus é que gira, com as letras sempre de pé. Vale no app e no painel web; cores e configurações não mudam.
 
