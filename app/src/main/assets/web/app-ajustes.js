@@ -327,6 +327,8 @@ function sensorCalDone(res, message) {
 $('sc-save').addEventListener('click', () => sensorCalDone(
   bridge.setSensorTrims(Number($('sc-pitch').value), Number($('sc-roll').value), Number($('sc-heading').value)), 'Ajuste fino salvo.'));
 $('sc-zero').addEventListener('click', () => sensorCalDone(bridge.setSensorTrims(0, 0, 0), 'Ajuste fino zerado.'));
+$('sc-help-open').addEventListener('click', () => { $('sc-help').hidden = false; });
+$('sc-help-close').addEventListener('click', () => { $('sc-help').hidden = true; });
 $('sc-forget-imu').addEventListener('click', () => {
   if (!confirm('Esquecer o nível e a frente do sensor de movimento? O app aprende de novo: pare o carro alguns segundos e depois ande, acelerando e freando em reta. Se quiser, refaça Zerar nível e Calibrar frente na aba Dinâmica.')) return;
   sensorCalDone(bridge.forgetSensorCalibration('imu'), 'Nível e frente esquecidos.');

@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Ajuda do ajuste fino:** botão ⓘ ao lado de Salvar ajuste e Zerar ajuste, em Ajustes → Calibração dos sensores. Ele abre uma janela que ensina a nivelar no estacionamento (zerar numa vaga, parar de ré na mesma vaga e usar a metade do valor lido, com o sinal trocado), com uma tabela de exemplos e quando mexer, ou não, no rumo das bússolas.
+
 ## [0.9.44] - 2026-11-13
 
 ### Adicionado

@@ -459,3 +459,12 @@ input[readonly] { opacity: .7; }
 
 /* Calibração dos sensores: respiro antes dos subtítulos do card */
 #sensor-card > .label:not(:first-child) { margin-top: 10px; }
+
+/* Ajuda do ajuste fino: tabela de exemplos */
+.sc-help-body h2 { margin-top: 14px; }
+.sc-help-body ol { padding-left: 20px; }
+.sc-help-table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.sc-help-table th, .sc-help-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+.sc-help-table th { color: var(--muted); font-weight: 600; }
+.sc-help-table td:last-child { font-weight: 600; }
+.sc-help-btn { min-width: 48px; font-size: 1.2rem; line-height: 1; padding-left: 0; padding-right: 0; align-self: stretch; }

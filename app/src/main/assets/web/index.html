@@ -517,6 +517,7 @@
         <div class="row">
           <button id="sc-save" class="btn btn-primary">Salvar ajuste</button>
           <button id="sc-zero" class="btn">Zerar ajuste</button>
+          <button id="sc-help-open" class="btn sc-help-btn" aria-label="Como fazer o ajuste fino" title="Como fazer">ⓘ</button>
         </div>
         <span class="label">Recomeçar o aprendizado</span>
         <p class="muted small">Use ao trocar o módulo de lugar ou por outro. O desvio do giroscópio não tem botão: ele muda a cada vez que o ESP32 liga e é medido de novo, sozinho, nos primeiros segundos parado.</p>
@@ -624,6 +625,40 @@
       </div>
     </section>
   </main>
+
+  <div id="sc-help" class="ai-panel" hidden role="dialog" aria-label="Como fazer o ajuste fino">
+    <div class="console-bar">
+      <b>Ajuste fino: como fazer</b>
+      <span class="small muted"></span>
+      <button id="sc-help-close" class="btn btn-small" aria-label="Fechar">✕</button>
+    </div>
+    <div class="ai-body sc-help-body">
+      <h2>1. Nivelar no estacionamento</h2>
+      <p class="small">Quase nenhum piso é plano de verdade: estacionamentos têm caimento para a água escoar. Medindo nos dois sentidos, a inclinação do piso sai da conta.</p>
+      <ol class="small">
+        <li>Pare numa vaga e espere uns 5 segundos, sem ninguém se mexendo no carro (o motor pode ficar ligado).</li>
+        <li>Na aba <b>Dinâmica</b>, toque em <b>Zerar nível</b>.</li>
+        <li>Dê a volta e pare <b>de ré na mesma vaga</b>, o mais perto possível da mesma posição.</li>
+        <li>Espere uns 5 segundos e leia na Dinâmica a inclinação <b>frontal</b> e a <b>lateral</b> (se quiser, tire um print).</li>
+      </ol>
+      <h2>2. A conta</h2>
+      <p class="small">Para cada uma, use o valor da <b>segunda posição</b> (de ré): <b>divida por dois e inverta o sinal</b>. Escolha o resultado aqui no card e toque em <b>Salvar ajuste</b>.</p>
+      <table class="sc-help-table small">
+        <thead><tr><th>De ré, a Dinâmica mostra</th><th>Ajuste a escolher</th></tr></thead>
+        <tbody>
+          <tr><td>−2,0°</td><td>+1,0°</td></tr>
+          <tr><td>−1,0°</td><td>+0,5°</td></tr>
+          <tr><td>+1,0°</td><td>−0,5°</td></tr>
+          <tr><td>+3,0°</td><td>−1,5°</td></tr>
+          <tr><td>entre −0,5° e +0,5°</td><td>sem ajuste</td></tr>
+        </tbody>
+      </table>
+      <p class="small">Vale para a frontal e para a lateral, cada uma no seu campo. A lista vai de 0,5 em 0,5°: arredonde para o mais próximo (+0,6° vira +0,5°).</p>
+      <p class="small"><b>Para conferir:</b> com o ajuste salvo, a Dinâmica deve marcar o mesmo valor nas duas posições, só com o sinal trocado (de frente +1°, de ré −1°).</p>
+      <h2>3. Rumo das bússolas</h2>
+      <p class="small">Normalmente fica <b>sem ajuste</b>: as bússolas se acertam sozinhas pelo GPS. Só use se, parado, o rumo marcar <b>sempre</b> a mesma diferença do que o GPS marcava andando em reta logo antes, em várias direções. O ajuste é essa diferença com o sinal trocado (parado marca sempre 5° a mais: −5°). Se a diferença muda de direção para direção ou fica abaixo de uns 3°, deixe sem ajuste.</p>
+    </div>
+  </div>
 
   <div id="about-panel" class="ai-panel" hidden role="dialog" aria-label="Sobre o app">
     <div class="console-bar">
