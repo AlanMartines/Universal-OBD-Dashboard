@@ -122,6 +122,15 @@ class DiagnosticsBridge(private val activity: MainActivity) {
         "Falha ao exportar: ${e.message}"
     }
 
+    /** Ajustes → Gravação de diagnóstico: apaga todas de uma vez, menos a que estiver gravando. */
+    @JavascriptInterface
+    fun deleteAllDiagnostics(): String = try {
+        val r = DiagnosticFiles.deleteAll(activity)
+        JSONObject().put("deleted", r.deleted).put("bytes", r.bytes).put("kept", r.kept).toString()
+    } catch (e: Exception) {
+        JSONObject().put("error", e.message ?: "erro").toString()
+    }
+
     @JavascriptInterface
     fun deleteDiagnostic(name: String): String = try {
         DiagnosticFiles.delete(activity, name)

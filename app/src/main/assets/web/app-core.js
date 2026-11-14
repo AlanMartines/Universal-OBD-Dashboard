@@ -47,7 +47,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   getBondedDevices: () => JSON.stringify({ permission: true, devices: [
     { name: 'OBDII', address: '00:1D:A5:68:98:8B' }, { name: 'Multimídia do carro', address: 'A4:5E:60:11:22:33' },
     { name: 'Fone Bluetooth', address: '5C:F3:70:AA:BB:CC' }] }),
-  exportDiagnostic: () => 'Exportação disponível só no app', deleteDiagnostic: () => 'ok',
+  exportDiagnostic: () => 'Exportação disponível só no app', deleteDiagnostic: () => 'ok', deleteAllDiagnostics: () => '{"deleted":0,"bytes":0,"kept":0}',
   consoleStart: () => 'Console disponível só no app', consoleIdentify: () => 'Console disponível só no app', consoleStop() {},
   getAiSettings: () => JSON.stringify({ enabled: false, provider: 'OPENAI', baseUrl: 'https://api.openai.com/v1/', model: '', consents: [], ready: false, keyMasked: null, online: true,
     providers: [{ id: 'OPENAI', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1/', modelHint: 'gpt-4o-mini' }, { id: 'CUSTOM', label: 'Personalizado', baseUrl: '', modelHint: '' }] }),

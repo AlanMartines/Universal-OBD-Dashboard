@@ -6,6 +6,12 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Apagar todas as gravações de diagnóstico:** botão abaixo da lista, em Ajustes → Gravação de diagnóstico, que apaga todos os arquivos de uma vez (antes era um por um). Pergunta antes, mostrando quantos arquivos e quantos MB, e mantém o que estiver gravando.
+
+### Alterado
+- **Histórico:** o botão passa a se chamar "Apagar todo o histórico deste veículo", deixando claro que apaga tudo, mas só do veículo em uso.
+
 ## [0.9.45] - 2026-11-14
 
 ### Adicionado

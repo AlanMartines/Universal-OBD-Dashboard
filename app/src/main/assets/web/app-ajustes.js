@@ -352,12 +352,16 @@ $('about-close').addEventListener('click', () => { $('about-panel').hidden = tru
 /* ---------------------------------------------------------------- Diagnóstico */
 const mb = (bytes) => fmt(bytes / 1048576, bytes < 10485760 ? 1 : 0) + ' MB';
 
+let diagFiles = [];
+
 function renderDiagnostics() {
   const d = parse(bridge.getDiagnostics(), { enabled: false, files: [] });
   $('diag-enabled').checked = !!d.enabled;
   $('script-entry').hidden = !d.enabled;
   const box = $('diag-files');
   box.innerHTML = d.files.length ? '' : '<p class="muted small">Nenhum arquivo gravado.</p>';
+  diagFiles = d.files;
+  $('diag-clear-row').hidden = !d.files.some((f) => !f.active);
   d.files.forEach((f) => {
     const el = document.createElement('div');
     el.className = 'item';
@@ -378,6 +382,19 @@ function renderDiagnostics() {
   });
 }
 
+$('diag-clear').addEventListener('click', () => {
+  const gone = diagFiles.filter((f) => !f.active);
+  if (!gone.length) return;
+  const size = mb(gone.reduce((sum, f) => sum + f.size, 0));
+  const keep = diagFiles.length - gone.length ? '\n\nA gravação em andamento será mantida.' : '';
+  if (!confirm(`Apagar ${gone.length === 1 ? 'a gravação' : `as ${gone.length} gravações`} de diagnóstico (${size})? Isso não pode ser desfeito.${keep}`)) return;
+  const r = parse(bridge.deleteAllDiagnostics(), { error: 'erro' });
+  if (r.error) { alert(r.error); renderDiagnostics(); return; }
+  let text = r.deleted === 1 ? `1 gravação apagada (${mb(r.bytes)}).` : `${r.deleted} gravações apagadas (${mb(r.bytes)}).`;
+  if (r.kept) text += r.kept === 1 ? ' 1 em uso foi mantida.' : ` ${r.kept} em uso foram mantidas.`;
+  toast(text);
+  renderDiagnostics();
+});
 $('diag-enabled').addEventListener('change', (e) => { bridge.setDiagnosticRecording(e.target.checked); $('script-entry').hidden = !e.target.checked; });
 $('diag-files').addEventListener('click', (e) => {
   const exp = e.target.closest('[data-diag-export]');

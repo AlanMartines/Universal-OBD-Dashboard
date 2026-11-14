@@ -38,6 +38,25 @@ object DiagnosticFiles {
         if (!resolve(context, name).delete()) throw DiagnosticFileException("Não foi possível apagar $name")
     }
 
+    /**
+     * Apaga todas as gravações, menos a que estiver gravando (captura ou escuta do console). Devolve quantos arquivos
+     * e quantos bytes saíram, e quantos ficaram por estarem em uso ou não poderem ser apagados.
+     */
+    fun deleteAll(context: Context): DeleteAllResult {
+        var count = 0
+        var bytes = 0L
+        var kept = 0
+        list(context).forEach { e ->
+            if (e.active) { kept++; return@forEach }
+            val f = resolve(context, e.name)
+            val size = f.length()
+            if (f.delete()) { count++; bytes += size } else kept++
+        }
+        return DeleteAllResult(count, bytes, kept)
+    }
+
+    data class DeleteAllResult(val deleted: Int, val bytes: Long, val kept: Int)
+
     /** Últimas [maxLines] linhas do arquivo, para rever uma gravação do console na própria tela. */
     fun tail(context: Context, name: String, maxLines: Int): List<String> {
         val buf = ArrayDeque<String>()
