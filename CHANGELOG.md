@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.49] - 2026-11-15
+
 ### Adicionado
 - **GPS sem os serviços do Google:** em celulares sem o Google Play Services (como LineageOS sem GApps), o app usa o GPS do próprio Android. Com o Google, continua usando o dele; se o pedido ao Google falhar, passa para o nativo, e se o Google ficar 30 s sem mandar posição andando, o nativo liga junto até ele voltar. No Android 14+, a altitude acima do nível do mar é calculada pelo próprio Android quando a posição não a traz. A gravação de diagnóstico registra a fonte usada (`gps_source`).
 
