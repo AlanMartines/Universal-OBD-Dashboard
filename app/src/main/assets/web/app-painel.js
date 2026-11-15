@@ -83,6 +83,8 @@ const CAN_PILL = {
 /** Tempo para o ESP32 conectar depois de iniciar antes de perguntar se segue só com o OBD. Ele acorda junto
  * com a rede (~2 s) e o app tenta de novo em 5 s e 10 s: 30 s cobre duas tentativas que falharem (14/11: 13,7 s). */
 const CAN_WARN_AFTER_MS = 30000;
+/** Sem resposta, o aviso fecha sozinho depois deste tempo e a captura segue só com o OBD. */
+const CAN_DIALOG_AUTO_S = 15;
 /** Só pergunta no começo da captura: depois disso, o ESP32 cair é o fim natural da viagem (carro desligado). */
 const CAN_WARN_WINDOW_MS = 60000;
 let canWarnedFor = null;

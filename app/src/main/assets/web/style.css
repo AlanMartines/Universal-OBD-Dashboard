@@ -108,6 +108,13 @@ h2 { font-size: 0.95rem; margin: 18px 0 8px; color: var(--muted); font-weight: 6
 .app-dialog::backdrop { background: rgba(0, 0, 0, .55); }
 .app-dialog h3 { margin: 0 0 8px; font-size: 1.05rem; }
 .app-dialog p { margin: 0 0 10px; line-height: 1.45; }
+#can-dialog { position: relative; overflow: hidden; }
+.dialog-count { margin: 10px 0 0 !important; text-align: right; }
+.dialog-bar {
+  position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; transform-origin: left;
+  background: var(--accent); opacity: .7;
+}
+.app-dialog[open] .dialog-bar { animation: toast-time var(--dialog-ms, 15000ms) linear forwards; }
 .dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 14px; }
 
 .btn {

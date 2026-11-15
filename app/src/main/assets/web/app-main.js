@@ -41,6 +41,19 @@ $('toggle').addEventListener('click', () => {
   if (lastState && lastState.running) bridge.stopCapture(); else bridge.startCapture();
 });
 $('can-dialog-go').addEventListener('click', () => $('can-dialog').close());
+// Sem resposta, o aviso fecha sozinho e a captura segue só com o OBD (o app continua tentando o ESP32)
+let canDialogTimer = null;
+function canDialogTick(left) {
+  $('can-dialog-count').textContent = `Continua só com o OBD em ${left} s`;
+  if (left <= 0) { $('can-dialog').close(); return; }
+  canDialogTimer = setTimeout(() => canDialogTick(left - 1), 1000);
+}
+new MutationObserver(() => {
+  clearTimeout(canDialogTimer);
+  if (!$('can-dialog').open) return;
+  $('can-dialog').style.setProperty('--dialog-ms', CAN_DIALOG_AUTO_S * 1000 + 'ms');
+  canDialogTick(CAN_DIALOG_AUTO_S);
+}).observe($('can-dialog'), { attributes: true, attributeFilter: ['open'] });
 $('can-dialog-stop').addEventListener('click', () => {
   $('can-dialog').close();
   if (lastState && lastState.running) bridge.stopCapture();

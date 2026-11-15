@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Aviso do ESP32 sem conexão com contagem:** uma barra vai diminuindo embaixo do aviso e o texto mostra "Continua só com o OBD em N s". Sem resposta em 15 s, o aviso fecha sozinho e a captura segue só com o OBD (o app continua tentando o ESP32). Se o ESP32 conectar antes, o aviso fecha na hora, como já fazia.
+
 ## [0.9.48] - 2026-11-15
 
 ### Corrigido
