@@ -726,7 +726,7 @@ def schematic():
 def battery_divider_schematic(s, line, dot):
     """Quadro à parte, embaixo à esquerda: 12 V com fusível → R5 → junção (D34) → R6 → GND, C1 junto do R6."""
     x0, y0 = 4, 77
-    s.add(f'<rect x="{x0 - 2}" y="{y0 - 2}" width="58" height="31" rx="1.5" fill="#fffaf3" stroke="{BAT}" stroke-width="0.35" stroke-dasharray="1 0.6"/>')
+    s.add(f'<rect x="{x0 - 2}" y="{y0 - 2}" width="58" height="33" rx="1.5" fill="#fffaf3" stroke="{BAT}" stroke-width="0.35" stroke-dasharray="1 0.6"/>')
     s.text(x0 + 27, y0 + 1.6, 'Bateria no ESP32 (divisor, firmware 1.6)', 1.8, BAT, weight='bold')
     xr = x0 + 10
     s.text(xr, y0 + 5.4, '12 V com fusível (IN+ do RT8272)', 1.5, PUR, anchor='start')
@@ -739,7 +739,9 @@ def battery_divider_schematic(s, line, dot):
     s.text(x0 + 41, y0 + 15.6, 'D34 do ESP32', 1.6, BAT, anchor='start', weight='bold')
     s.add(f'<rect x="{xr - 1.2}" y="{y0 + 17}" width="2.4" height="5" fill="#fff" stroke="#8d6e63" stroke-width="0.4"/>')
     s.text(xr - 2, y0 + 20.2, 'R6 20 kΩ', 1.6, '#5d4037', anchor='end')
-    line([(xr, y0 + 22), (xr, y0 + 25), (xr + 10, y0 + 25)], BLK)
+    # Fio de baixo: R6 e C1 juntos no GND (o mesmo GND do ESP32, do RT8272 e dos pinos 4 e 5 do OBD)
+    xg = xr + 18
+    line([(xr, y0 + 22), (xr, y0 + 25), (xg, y0 + 25), (xg, y0 + 26.5)], BLK)
     # C1 em paralelo com o R6
     xc = xr + 10
     line([(xr, y0 + 15), (xc, y0 + 15)], BAT)
@@ -747,9 +749,14 @@ def battery_divider_schematic(s, line, dot):
     line([(xc, y0 + 15), (xc, y0 + 19)], BAT)
     s.add(f'<path d="M{xc - 1.6},{y0 + 19} L{xc + 1.6},{y0 + 19} M{xc - 1.6},{y0 + 20} L{xc + 1.6},{y0 + 20}" stroke="#a0522d" stroke-width="0.5"/>')
     line([(xc, y0 + 20), (xc, y0 + 25)], BLK)
+    dot(xc, y0 + 25, BLK)
     s.text(xc + 2, y0 + 20.2, 'C1 100 nF', 1.6, '#5d4037', anchor='start')
-    s.text(xc + 12, y0 + 25.6, 'GND', 1.6, BLK, anchor='start')
-    s.text(x0 + 27, y0 + 28, '12 V → 2,00 V no pino · até 18,6 V · consumo ≈ 0,1 mA', 1.4, '#5d4037')
+    # Símbolo de terra (três traços) na ponta do fio
+    for k, half in enumerate((2.2, 1.4, 0.6)):
+        yy = y0 + 26.5 + k * 0.8
+        s.add(f'<path d="M{xg - half},{yy} L{xg + half},{yy}" stroke="{BLK}" stroke-width="0.5"/>')
+    s.text(xg + 3, y0 + 27.9, 'GND (pinos 4 e 5 do OBD)', 1.5, BLK, anchor='start', weight='bold')
+    s.text(x0 + 27, y0 + 30.4, '12 V → 2,00 V no pino · até 18,6 V · consumo ≈ 0,1 mA', 1.4, '#5d4037')
 
 
 def sn65_schematic(s, line, dot, buck, esp, sn):

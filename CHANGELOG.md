@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Esquema do divisor da bateria:** o fio de baixo do R6 e do C1 agora termina num símbolo de terra, com "GND (pinos 4 e 5 do OBD)"; antes o GND aparecia solto, sem mostrar a ligação.
+
 ## [0.9.52] - 2026-11-15
 
 ### Adicionado

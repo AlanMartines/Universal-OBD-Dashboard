@@ -1,5 +1,21 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "fixed",
+    "title": "Corrigido",
+    "items": [
+     {
+      "title": "Esquema do divisor da bateria",
+      "text": "o fio de baixo do R6 e do C1 agora termina num símbolo de terra, com \"GND (pinos 4 e 5 do OBD)\"; antes o GND aparecia solto, sem mostrar a ligação."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.52",
   "date": "2026-11-15",
   "sections": [
