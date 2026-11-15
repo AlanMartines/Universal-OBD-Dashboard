@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.52] - 2026-11-15
+
 ### Adicionado
 - **Saúde do carro (pré-diagnóstico, fase 1):** em Manutenção, um card por subsistema (central, arrefecimento, elétrica, admissão e marcha lenta), só com o que o app já lê. Cada checagem junta medidas no regime certo (aquecimento depois da partida a frio, temperatura na estrada, ventoinha, carga acima de 1.500 rpm, bateria em repouso e na partida pelo divisor, vácuo e oscilação da rotação em marcha lenta quente, desvio do MAP com o motor parado). Um sinal só vira aviso depois de 3 das últimas 5 viagens; superaquecimento e queda forte na partida valem na primeira vez. "Enviar resumo ao mecânico" manda o texto por qualquer app; "Recomeçar" zera depois de um conserto. Vai ao painel: aba Saúde ("Pré-diagnóstico do app") e o grupo "Saúde do carro (app)" ao vivo.
 - **A/C, luzes e desembaçador pela escuta CAN (Uno Vivace):** bits já recebidos e mapeados (0x281 b2 bit 6, 0x380 b0 bit 3, 0x180 b2 bit 4) passam a ser lidos; o pré-diagnóstico usa para não confundir carga elétrica e A/C com defeito.
