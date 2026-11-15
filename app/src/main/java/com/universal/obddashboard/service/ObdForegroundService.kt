@@ -17,6 +17,7 @@ import android.hardware.SensorManager
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import android.location.Location
 import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
@@ -25,12 +26,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import com.universal.obddashboard.AppSettings
 import com.universal.obddashboard.can.TankAnchor
 import com.universal.obddashboard.can.CanListenLink
@@ -129,8 +124,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     @Volatile private var trip: TripAccumulator? = null
 
     private var wakeLock: PowerManager.WakeLock? = null
-    private var fused: FusedLocationProviderClient? = null
-    private var locationCallback: LocationCallback? = null
+    private var location: LocationSource? = null
     /** Bússola do celular: liga junto com o GPS em alta precisão (captura ativa). */
     private var phoneCompass: PhoneCompassSensor? = null
     private var locationAllowed = false
@@ -1167,52 +1161,50 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         wakeLock = null
     }
 
-    @SuppressLint("MissingPermission")
     private fun startLocationUpdates(highAccuracy: Boolean) {
         if (!locationAllowed || !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) return
-        val client = fused ?: LocationServices.getFusedLocationProviderClient(this).also { fused = it }
-        val callback = locationCallback ?: object : LocationCallback() {
-            override fun onLocationResult(result: LocationResult) {
-                val loc = result.lastLocation ?: return
-                val fix = GpsFix(
-                    latitude = loc.latitude,
-                    longitude = loc.longitude,
-                    speedKmh = if (loc.hasSpeed()) loc.speed * 3.6 else null,
-                    accuracyM = loc.accuracy,
-                    bearing = if (loc.hasBearing()) loc.bearing else null,
-                    timestamp = System.currentTimeMillis(),
-                    altitudeM = when {
-                        Build.VERSION.SDK_INT >= 34 && loc.hasMslAltitude() -> loc.mslAltitudeMeters
-                        // Antes do Android 14 só há a altura sobre o elipsoide: no Brasil, uns 5 a 20 m acima do mar
-                        loc.hasAltitude() -> loc.altitude
-                        else -> null
-                    },
-                    verticalAccuracyM = if (loc.hasVerticalAccuracy()) loc.verticalAccuracyMeters else null,
-                )
-                lastGpsFixMono = SystemClock.elapsedRealtime()
-                if (gpsLostSince != null) {
-                    gpsLostSince = null
-                    recorder?.event("gps_ok") {}
+        val source = location ?: LocationSource(
+            this,
+            onLocation = ::onLocation,
+            onSourceChange = { src, reason ->
+                recorder?.event("gps_source") {
+                    put("source", src)
+                    put("reason", reason)
                 }
-                trip?.onGpsFix(fix)
-                TelemetryHub.update { it.copy(gps = fix) }
-            }
-        }.also { locationCallback = it }
-
-        val request = if (highAccuracy) {
-            // 2 s basta para o trajeto (a velocidade instantânea vem da ECU) e poupa bateria.
-            LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 2000L).setMinUpdateIntervalMillis(1000L).build()
-        } else {
-            LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 10_000L).build()
-        }
-        // Reutilizar o mesmo callback substitui a requisição anterior.
-        client.requestLocationUpdates(request, callback, Looper.getMainLooper())
+            },
+        ).also { location = it }
+        source.start(highAccuracy)
         if (highAccuracy) startPhoneCompass() else stopPhoneCompass()
     }
 
+    private fun onLocation(loc: Location) {
+        val fix = GpsFix(
+            latitude = loc.latitude,
+            longitude = loc.longitude,
+            speedKmh = if (loc.hasSpeed()) loc.speed * 3.6 else null,
+            accuracyM = loc.accuracy,
+            bearing = if (loc.hasBearing()) loc.bearing else null,
+            timestamp = System.currentTimeMillis(),
+            altitudeM = when {
+                Build.VERSION.SDK_INT >= 34 && loc.hasMslAltitude() -> loc.mslAltitudeMeters
+                // Antes do Android 14 só há a altura sobre o elipsoide: no Brasil, uns 5 a 20 m acima do mar
+                loc.hasAltitude() -> loc.altitude
+                else -> null
+            },
+            verticalAccuracyM = if (loc.hasVerticalAccuracy()) loc.verticalAccuracyMeters else null,
+        )
+        lastGpsFixMono = SystemClock.elapsedRealtime()
+        if (gpsLostSince != null) {
+            gpsLostSince = null
+            recorder?.event("gps_ok") {}
+        }
+        trip?.onGpsFix(fix)
+        TelemetryHub.update { it.copy(gps = fix) }
+    }
+
     private fun stopLocationUpdates() {
-        locationCallback?.let { fused?.removeLocationUpdates(it) }
-        locationCallback = null
+        location?.stop()
+        location = null
         stopPhoneCompass()
     }
 
