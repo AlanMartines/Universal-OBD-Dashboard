@@ -40,7 +40,7 @@ Os seis temas do painel no modo noite, em cada aba do rodapé (dados do simulado
  │  BluetoothSerialManager ──► CommandQueue (EDF, 1 comando em voo) ──► TelemetryHub (StateFlow)   │
  │        SPP/RFCOMM             alta 100 ms │ média 1,5 s │ sentinela 10 s        │               │
  │                                                                                 ▼               │
- │  FusedLocationProvider ─────────────────────────────────────────────► TelemetryEngine (250 ms) │
+ │  GPS (Google ou nativo) ────────────────────────────────────────────► TelemetryEngine (250 ms) │
  │                                                    consumo · marcha · alertas · energia         │
  │                                                                                 │               │
  │                                                     Room: trips · telemetry_log (2 s) · DTCs    │
