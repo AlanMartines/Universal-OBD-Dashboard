@@ -11,7 +11,7 @@ Faça isto com a placa desligada do carro.
 1. Na Arduino IDE, instale o pacote **esp32**, da Espressif (*Ferramentas → Placa → Gerenciador de placas*).
 2. Abra `esp32-can-listen.ino` e escolha a placa **ESP32 Dev Module**.
 3. Grave na placa. Se a IDE ficar parada em `Connecting...`, segure o botão BOOT até a gravação começar.
-4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.5` e `# listen-only 50 kbps`.
+4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.6` e `# listen-only 50 kbps`.
 
 Se faltar memória ao compilar, escolha *Ferramentas → Partition Scheme → Huge APP*.
 
@@ -87,6 +87,31 @@ A cada 200 ms sai a média do campo magnético, em microtesla, nos eixos impress
 Ao iniciar aparece `# mag ok qmc5883l em 0x0D` (ou o chip achado); sem o módulo, uma vez `# mag ausente`. No descanso, ele também desliga.
 
 O app calibra a bússola sozinho, pelo rumo do GPS: andando em linha reta, guarda a leitura em cada faixa de 10° do rumo, acha o "ferro" do carro e monta uma tabela de desvio (que já inclui a declinação magnética). Não precisa alinhar o módulo com o carro. Ela fica pronta depois de rodar nas quatro direções (o card de estado mostra o progresso); andando, o rumo vem do GPS, e a bússola vale parado, devagar ou sem sinal. Prenda o módulo firme, longe de fios de força, do alto-falante e de ímãs. Se ele mudar de posição, a bússola percebe (as leituras deixam de bater com as guardadas) e recomeça.
+
+## Tensão da bateria (opcional, divisor na placa)
+
+Mede a bateria pelo próprio ESP32, sem depender da rede do carro: a tensão em repouso (antes da partida), a queda na partida e a carga do alternador andando. São três peças na placa, embaixo do RT8272 ([montagem](../../veiculos/fiat-uno-vivace-2012/placa/README.md#divisor-da-bateria)):
+
+| Peça | Liga entre |
+|---|---|
+| R5 100 kΩ (marrom, preto, amarelo, ouro) | 12 V depois do fusível (IN+ do RT8272) e o D34 |
+| R6 22 kΩ (vermelho, vermelho, laranja, ouro) | D34 e GND |
+| C1 100 nF (cerâmico, "104") | D34 e GND |
+
+O D34 só lê (não tem saída) e é do ADC1, o único conversor que funciona com o Bluetooth ligado. 12 V viram 2,16 V no pino; o limite de leitura, cerca de 3,1 V, corresponde a 17 V na bateria. O divisor consome cerca de 0,1 mA, desprezível mesmo com o carro parado.
+
+O firmware lê a 100 Hz e, a cada segundo, manda:
+
+```
+# bateria v=12.63 min=12.41 repouso=12.58 menor=9.87
+```
+
+- **v:** média do último segundo.
+- **min:** menor valor do último segundo.
+- **repouso:** a tensão lida assim que o ESP32 liga (a rede acordou: porta, chave), antes da partida.
+- **menor:** o menor valor desde que o ESP32 ligou; depois de dar a partida, é a queda da partida.
+
+Sem o divisor, aparece uma vez `# bateria ausente`. Se o multímetro discordar, ajuste `BAT_AJUSTE` (o app também compara com a tensão da rede do carro e mostra a diferença).
 
 ## LEDs de estado
 

@@ -1003,17 +1003,26 @@ function iniciar() {
     }
   }
 
-  // ------------------------------------------------------------ resistores de 1 kΩ (corpo em "osso", faixas marrom, preto, vermelho, ouro)
+  // ------------------------------------------------------------ resistores (corpo em "osso"; faixas do valor: 1 kΩ marrom,
+  // preto, vermelho, ouro; 100 kΩ marrom, preto, amarelo, ouro; 22 kΩ vermelho, vermelho, laranja, ouro)
   {
-    const texR = textura(4, 24, (ctx) => {
-      ctx.fillStyle = '#d9b98b';
-      ctx.fillRect(0, 0, 4, 24);
-      [['#6d4c41', 6.2], ['#111111', 9.0], ['#c62828', 11.8], ['#c9a227', 17.4]].forEach(([c, v]) => {
-        ctx.fillStyle = c;
-        ctx.fillRect(0, v, 4, 1.7);
-      });
-    }, 20);
-    const matR = std(0xffffff, 0.55, 0, { map: texR });
+    const FAIXAS_1K = ['#6d4c41', '#111111', '#c62828', '#c9a227'];
+    const materiais = new Map();
+    const matDe = (faixas) => {
+      const chave = faixas.join();
+      if (!materiais.has(chave)) {
+        const tex = textura(4, 24, (ctx) => {
+          ctx.fillStyle = '#d9b98b';
+          ctx.fillRect(0, 0, 4, 24);
+          [6.2, 9.0, 11.8, 17.4].forEach((v, i) => {
+            ctx.fillStyle = faixas[i];
+            ctx.fillRect(0, v, 4, 1.7);
+          });
+        }, 20);
+        materiais.set(chave, std(0xffffff, 0.55, 0, { map: tex }));
+      }
+      return materiais.get(chave);
+    };
     const perfil = [[0.001, 0], [0.75, 0.05], [1.12, 0.6], [1.15, 1.3], [0.98, 2.0], [0.98, 4.2], [1.15, 4.9], [1.12, 5.6], [0.75, 6.15], [0.001, 6.2]]
       .map(([r, h]) => new THREE.Vector2(r, h));
     const geoR = new THREE.LatheGeometry(perfil, 28);
@@ -1025,7 +1034,7 @@ function iniciar() {
       const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
       const zc = A.T + 1.25;
       const a = W(mx - ux * 3.1, my - uy * 3.1, zc), b = W(mx + ux * 3.1, my + uy * 3.1, zc);
-      const corpo = new THREE.Mesh(geoR, matR);
+      const corpo = new THREE.Mesh(geoR, matDe(r.faixas || FAIXAS_1K));
       corpo.position.copy(a);
       corpo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
       g.add(corpo);
@@ -1035,6 +1044,29 @@ function iniciar() {
         g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'centripetal'), 24, 0.28, 8), M.estanho));
       }
       poe(g, 'placa', r.n);
+    }
+  }
+
+  // ------------------------------------------------------------ capacitor cerâmico de disco (100 nF, "104"), em pé
+  {
+    const matC = std(0xef8f2f, 0.5);
+    for (const c of X.capacitores || []) {
+      const g = new THREE.Group();
+      const [x1, y1] = c.a, [x2, y2] = c.b;
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      const zc = A.T + 4.6;
+      const disco = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 2.2, 28), matC);
+      disco.position.copy(W(mx, my, zc));
+      disco.rotation.set(0, 0, 0);
+      // disco de pé, com a face voltada para fora da linha das pernas
+      const ang = Math.atan2(y2 - y1, x2 - x1);
+      disco.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), W(mx - Math.sin(ang), my + Math.cos(ang), zc).sub(W(mx, my, zc)).normalize());
+      g.add(disco);
+      for (const [hx, hy] of [[x1, y1], [x2, y2]]) {
+        const pts = [W(hx, hy, -0.9), W(hx, hy, A.T + 2.4), W((hx + mx) / 2, (hy + my) / 2, zc - 1.2)];
+        g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'centripetal'), 16, 0.25, 8), M.estanho));
+      }
+      poe(g, 'placa', c.n);
     }
   }
 

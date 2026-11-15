@@ -6,6 +6,17 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Fontes cruzadas (Sensores → Fontes cruzadas):** o app cruza o carro, o ESP32 e o celular para perder menos dados:
+  - **Percurso sem buracos:** sem GPS (túnel, garagem), a posição continua pela velocidade do carro e pelo rumo (bússola e giro). Quando o GPS volta, o trecho estimado é acertado de uma vez. Os pontos ficam marcados (`derived.positionEstimated`).
+  - **Fator da velocidade pelo GPS:** em retas firmes acima de 30 km/h, o app compara a velocidade do carro com a do GPS e aprende o fator (pronto depois de 5 km; vale na distância sem GPS e no percurso estimado). Pega calibragem e troca de pneus. Ajustes → Calibração dos sensores mostra o valor e tem o botão para reaprender.
+  - **Motor ligado por votação:** rotação, tensão (rede do carro, ELM327 ou ESP32) e vibração parado (limites tirados das gravações de 14/11: desligado 0,02 a 0,03 g, marcha lenta 0,04 a 0,09 g). Com a central sem responder e a rede CAN dormindo, a votação ainda evita encerrar a viagem com o motor ligado.
+  - **Celular como reserva do ESP32:** acelerômetro, giroscópio e barômetro do celular aprendem em paralelo (calibração própria) e assumem o movimento, a inclinação, a força G e a altitude se o ESP32 cair. A tela Dinâmica avisa "Movimento pelo celular".
+  - **Inclinação conferida pela altitude:** a cada 200 m, a subida medida na pressão é comparada com a inclinação do sensor; diferença média acima de 1,5° pede para refazer Zerar nível e Calibrar frente.
+  - **Temperatura de fora estimada:** pela admissão, na partida a frio ou andando acima de 60 km/h por 3 min.
+  - Tudo vai ao painel web, ao vivo e no histórico (grupo "Fontes cruzadas").
+- **Tensão da bateria pelo ESP32 (firmware 1.6):** divisor na placa (R5 100 kΩ, R6 22 kΩ e C1 100 nF no D34, embaixo do RT8272), com desenho, esquema, modelo 3D e montagem. A linha `# bateria v= min= repouso= menor=` dá a tensão em repouso (antes da partida), a queda na partida e a carga do alternador, mesmo com a rede do carro dormindo; o app compara com a tensão da rede.
+
 ### Corrigido
 - **Manutenção:** o card "Novo item de manutenção" ficava colado nos cartões de resumo de cima.
 

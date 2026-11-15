@@ -310,6 +310,15 @@ function renderSensorCal(s) {
   scSet('phone', 'Celular no suporte', d.phoneMountDeg != null
     ? `${fmt(d.phoneMountDeg, 0)}° em relação à frente`
     : (s && s.running ? 'aprendendo (ande em reta com GPS)' : 'aprendido a cada captura'));
+  const sp = sensorCal.speed;
+  scSet('speed', 'Fator da velocidade (GPS)', d.speedFactor != null
+    ? `${fmt(d.speedFactor, 3)} · ${fmt(d.speedFactorKm, 0)} km conferidos`
+    : sp && sp.factor != null ? `${fmt(sp.factor, 3)} · ${fmt(sp.km, 0)} km conferidos`
+      : `aprendendo · ${fmt((d.speedFactorKm || (sp && sp.km) || 0), 1)} de 5 km (retas acima de 30 km/h com GPS)`);
+  const pm = sensorCal.phoneImu;
+  scSet('phoneImu', 'Movimento do celular (reserva)', pm
+    ? `cima no eixo ${pm.upAxis}` + (pm.forwardAxis ? `, frente no ${pm.forwardAxis}` : ' (frente ainda não aprendida)')
+    : 'ainda não aprendido (vale se o ESP32 cair)');
   const t = sensorCal.trims || {};
   const parts = [];
   if (t.pitchDeg) parts.push('frontal ' + degSigned(t.pitchDeg));
@@ -336,6 +345,10 @@ $('sc-forget-imu').addEventListener('click', () => {
 $('sc-forget-compass').addEventListener('click', () => {
   if (!confirm('Zerar a bússola do ESP32? Ela aprende de novo andando com GPS, com curvas para todos os lados.')) return;
   sensorCalDone(bridge.forgetSensorCalibration('compass'), 'Bússola zerada.');
+});
+$('sc-forget-speed').addEventListener('click', () => {
+  if (!confirm('Reaprender o fator da velocidade? Até conferir 5 km de novo (retas acima de 30 km/h com GPS), vale o fator do perfil.')) return;
+  sensorCalDone(bridge.forgetSensorCalibration('speed'), 'O fator da velocidade será reaprendido.');
 });
 $('sc-forget-phone').addEventListener('click', () => {
   sensorCalDone(bridge.forgetSensorCalibration('phone'), 'O celular será reaprendido andando em reta com GPS.');

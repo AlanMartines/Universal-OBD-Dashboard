@@ -1148,7 +1148,8 @@ window.Dash = (function () {
       else if (s.canLink === 'connecting') parts.push(['warn', 'ESP32 conectando…']);
       else if (s.canLink === 'lost') parts.push(['bad', 'ESP32 sem conexão']);
       else if (s.canConfigured === false) parts.push(['', 'Sem ESP32']);
-      if (info && info.lsm && info.lsm !== 'ok') parts.push(['warn', 'Movimento: ' + info.lsm]);
+      if (d.imuSource === 'celular') parts.push(['warn', 'Movimento pelo celular']);
+      else if (info && info.lsm && info.lsm !== 'ok') parts.push(['warn', 'Movimento: ' + info.lsm]);
       else if (sensor && d.imuStage < 2) parts.push(['info', d.imuStage === 0 ? 'Calibrando: pare o carro' : 'Calibrando: arranque e freie']);
       if (d.compassPct != null && !d.compassReady) parts.push(['info', 'Bússola ' + d.compassPct + '%']);
       else if (info && info.mag === 'ausente' && d.headingSource == null) parts.push(['', 'Sem bússola']);

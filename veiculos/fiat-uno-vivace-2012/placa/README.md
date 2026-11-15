@@ -68,7 +68,7 @@ Como montar:
 
 ## Montagem prevista
 
-- **ESP32:** em barras de pinos fêmea, nas linhas 2 e 12, colunas 2 a 16. A antena fica para fora da borda esquerda, longe dos fios. Pinos usados: D21 (6,2), 3V3 (16,2), GND (15,12) e VIN (16,12).
+- **ESP32:** em barras de pinos fêmea, nas linhas 2 e 12, colunas 2 a 16. A antena fica para fora da borda esquerda, longe dos fios. Pinos usados: D21 (6,2), 3V3 (16,2), GND (15,12), VIN (16,12) e, com o divisor da bateria, D34 (5,12).
 - **Resistores de 1 kΩ, embaixo do ESP32:**
   - R1 vai do D21 ao RX do TJA1050, pelo fio J1;
   - R2 e R3, em série, vão do D21 ao GND. É o divisor que leva os 5 V do RX a 3,3 V;
@@ -94,6 +94,30 @@ Como montar:
 - **Placa perfurada:** 5 × 7 cm com 18 × 24 furos, o tamanho padrão mais comum. Uma de 4 × 6 cm não serve, porque as barras do ESP32 precisam de 15 colunas.
 
 Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio J3 ainda fora da placa.
+
+### Divisor da bateria
+
+Opcional, a partir do firmware 1.6: o ESP32 passa a medir a bateria sozinho, mesmo com a rede do carro dormindo. Mostra a tensão em repouso (antes da partida), a queda na partida e a carga do alternador, e o app compara com a tensão que a rede do carro informa.
+
+| Peça | Furos | Liga |
+|---|---|---|
+| R5 100 kΩ, 1/4 W (marrom, preto, amarelo, ouro) | (4,22) – (4,18), em pé na coluna 4 | 12 V com fusível → junção |
+| R6 22 kΩ, 1/4 W (vermelho, vermelho, laranja, ouro) | (5,18) – (9,18), deitado na linha 18 | junção → GND (coluna 9) |
+| C1 100 nF, cerâmico de disco ("104") | (5,19) – (7,19), pernas a 5,08 mm | junção → GND |
+
+Por baixo, em fio estanhado:
+
+| Ligação | Furos |
+|---|---|
+| 12 V com fusível → R5 | (4,23) – (4,22): sai da trilha de 12 V da linha 23 |
+| Junção → D34 | (4,18) – (5,18) e (5,12) → (5,19): do pino D34 do ESP32 até o R6 e o C1 |
+| C1 → GND | (7,19) → (9,19): chega à trilha de GND da coluna 9 |
+
+Tudo fica **embaixo do RT8272**, que encaixa por cima nas barras fêmea: monte o divisor antes de encaixar o módulo. O C1 fica em pé (uns 6 mm) e o RT8272, nas barras, começa a uns 9,8 mm da placa: sobra espaço. O R6 passa entre a barra do RT8272 (coluna 8, linhas 14 a 16) e o fim do J3 (10,17), sem encostar.
+
+**Como funciona:** 12 V na bateria viram 2,16 V no D34 (12 × 22 ÷ 122). O pino lê até cerca de 3,1 V, o que corresponde a 17 V: folga para o alternador (14,5 V) e para picos. Mesmo um pico de 40 V passa só 0,4 mA pelo R5, que os diodos de proteção do ESP32 aguentam. O divisor consome cerca de 0,1 mA, sem efeito na bateria com o carro parado. O D34 só lê (não tem saída) e é do ADC1, o conversor que funciona com o Bluetooth ligado.
+
+**Conferir:** com a placa no carro e o ESP32 fora das barras, o D34 (5,12) deve marcar cerca de 18 % da tensão da bateria (2,2 V com 12,4 V). Com o firmware 1.6, aparece `# bateria v=12.63 …` a cada segundo ([firmware](../../../firmware/esp32-can-listen/README.md#tensão-da-bateria-opcional-divisor-na-placa)).
 
 ## Ilhas, trilhas, resistores e fios
 
@@ -125,6 +149,7 @@ Antes de ligar o ESP32, regule o RT8272 em **5,0 V** com o fio J3 ainda fora da 
 | RX | (11,21) → (17,21) → (17,17). Fim do J1 em (17,17) |
 | 12 V do OBD → fusível | (11,24) → (9,24) |
 | 12 V com fusível → IN+ | (1,24) → (1,23) → (8,23) → (8,16) |
+| Divisor da bateria | (4,23) – (4,22) · (4,18) – (5,18) · (5,12) → (5,19) · (7,19) → (9,19) |
 | OUT+ → começo do J3 | (1,21) → (2,21) → (2,13) |
 | CANH (fim do J2) | (18,17) → (18,23) → (16,23) → (16,24) |
 | CAN-L | (17,24) → (18,24) |
@@ -144,6 +169,9 @@ As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 
 | R2 | (6,4) – (6,8) | D21 → R3 (divisor) |
 | R3 | (7,8) – (11,8) | R2 → GND (divisor) |
 | R4 | (16,3) – (16,7) | 3V3 → J2 → pino CANH |
+| R5 100 kΩ | (4,22) – (4,18) | 12 V com fusível → junção do D34 ([divisor da bateria](#divisor-da-bateria)) |
+| R6 22 kΩ | (5,18) – (9,18) | junção do D34 → GND |
+| C1 100 nF | (5,19) – (7,19) | junção do D34 → GND (filtro) |
 
 **Fios isolados (por cima da placa; J1 e J2 embaixo do ESP32)**
 
@@ -160,7 +188,7 @@ As trilhas de 12 V (coluna 8) e de GND (coluna 9) correm lado a lado nas linhas 
 | F1 | pino D25 (9,12) → entre as ilhas, por cima do GND da linha 13 → (12,17) | SDA do BMP180 |
 | F2 | pino D26 (10,12) → entre as ilhas, por cima do GND da linha 13 → (13,17) | SCL do BMP180 |
 
-**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (9,24), (11,24), (2,13), (16,12), (11,21), (16,24), (17,24), (12,17), (13,17), (15,17), (12,16), (13,16) ou (15,16). Entre (16,24) e (17,24) também não pode haver continuidade. Sem o fusível no suporte, (9,24) e (1,24) não têm continuidade entre si; com ele, têm. Regule o RT8272 em 5,0 V antes de encaixar, ou com o ESP32 fora das barras e o J3 ainda fora da placa. Depois de soldar o J3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
+**Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (9,24), (11,24), (2,13), (16,12), (11,21), (16,24), (17,24), (12,17), (13,17), (15,17), (12,16), (13,16) ou (15,16). Entre (16,24) e (17,24) também não pode haver continuidade. Com o divisor da bateria, (1,24) e (5,12) não dão continuidade com o GND, mas o multímetro na escala de resistência marca cerca de 122 kΩ entre (1,24) e o GND e cerca de 22 kΩ entre (5,12) e o GND. Sem o fusível no suporte, (9,24) e (1,24) não têm continuidade entre si; com ele, têm. Regule o RT8272 em 5,0 V antes de encaixar, ou com o ESP32 fora das barras e o J3 ainda fora da placa. Depois de soldar o J3 e encaixar o ESP32, o D21 deve ficar em até 3,4 V.
 
 ## Versão alternativa com o SN65HVD230
 

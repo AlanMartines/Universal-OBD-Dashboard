@@ -182,6 +182,31 @@ LED_COL = {'COM': '#616161', 'R': '#e53935', 'G': '#43a047', 'B': '#1e88e5'}
 LED_ESP = {'COM': 'D18', 'R': 'TX2', 'G': 'RX2', 'B': 'D4'}
 TRACKS += [(f'LED {n} ({LED_ESP[n]})', LED_COL[n], [(c, r), (c, r + 1)]) for n, (c, r) in LED_PINS.items()]
 ESP_USED.update({LED_ESP[n]: LED_COL[n] for n in LED_PINS})
+# Divisor da tensão da bateria (firmware 1.6): mede a bateria pelo ESP32, mesmo com a rede do carro dormindo.
+# 12 V com fusível → R5 (100 kΩ) → junção → R6 (22 kΩ) → GND; a junção vai ao D34 (entrada só de leitura, ADC1: funciona
+# com o Bluetooth ligado). 12 V viram 2,16 V no pino; o limite de leitura (3,1 V) corresponde a 17 V. C1 (100 nF, "104")
+# da junção ao GND filtra o ruído. Tudo embaixo do RT8272, que fica encaixado nas barras fêmea por cima.
+# Consumo do divisor: 12,6 V ÷ 122 kΩ ≈ 0,1 mA, desprezível mesmo com o carro parado.
+BAT = '#8d6e63'
+RES += [
+    ('R5', (4, 22), (4, 18), '12 V com fusível → junção do D34 (divisor da bateria)'),
+    ('R6', (5, 18), (9, 18), 'junção do D34 → GND (divisor da bateria)'),
+]
+RES_VALOR = {   # valor e faixas de cada resistor; os outros são de 1 kΩ (marrom, preto, vermelho, ouro)
+    'R5': ('100 kΩ', ['#6d4c41', '#212121', '#f9a825', '#c9a227']),   # marrom, preto, amarelo, ouro
+    'R6': ('22 kΩ', ['#d32f2f', '#d32f2f', '#ef6c00', '#c9a227']),    # vermelho, vermelho, laranja, ouro
+}
+LABEL_RIGHT = {'R5'}   # nome à direita (à esquerda fica o OUT− do RT8272)
+R_1K = ('1 kΩ', ['#6d4c41', '#212121', '#d32f2f', '#c9a227'])
+# Capacitor cerâmico de 100 nF ("104"), pernas a 5,08 mm (2 furos)
+CAPS = [('C1', (5, 19), (7, 19), '100 nF: junção do D34 → GND (filtro do divisor)')]
+TRACKS += [
+    ('Bateria: 12 V → R5', PUR, [(4, 23), (4, 22)]),
+    ('Bateria: junção → D34', BAT, [(4, 18), (5, 18)]),
+    ('Bateria: junção → D34', BAT, [(5, 12), (5, 19)]),
+    ('GND do C1', BLK, [(7, 19), (9, 19)]),
+]
+ESP_USED['D34'] = BAT
 TRANS_COL = {'VCC': RED, 'TX': RED, 'RX': YEL, 'GND': BLK, '3V3': ORG, 'CTX': ORG, 'CRX': YEL, 'CANH': BLU, 'CANL': BLU}
 # RT8272 (HW-108): 21 x 21 mm, fileiras a cerca de 17,8 mm (7 furos), medido em 07/11/2026.
 # Soldado na placa por barra de pinos, com a bobina embaixo à direita: EN, IN-, IN+ na coluna 8 (linhas 14 a 16);
@@ -251,7 +276,7 @@ def resistor(s, a, b, name, show_label=True):
     L, D = 6.2, 2.3
     w, h = (L, D) if horiz else (D, L)
     s.add(f'<rect x="{mx - w / 2:.2f}" y="{my - h / 2:.2f}" width="{w}" height="{h}" rx="1.0" fill="#e8d3a9" stroke="#8d6e63" stroke-width="0.2"/>')
-    for i, col in enumerate(['#6d4c41', '#212121', '#d32f2f', '#c9a227']):   # marrom, preto, vermelho, ouro = 1 kΩ
+    for i, col in enumerate(RES_VALOR.get(name, R_1K)[1]):
         off = -1.9 + i * 1.1 + (0.6 if i == 3 else 0)
         if horiz:
             s.add(f'<rect x="{mx + off - 0.3:.2f}" y="{my - h / 2:.2f}" width="0.6" height="{h}" fill="{col}"/>')
@@ -260,8 +285,21 @@ def resistor(s, a, b, name, show_label=True):
     if show_label:
         if horiz:
             s.text(mx, my - 1.7, name, 1.4, '#3e2723', weight='bold', bg=True)
+        elif name in LABEL_RIGHT:
+            s.text(mx + 2.2, my + 0.5, name, 1.4, '#3e2723', anchor='start', weight='bold', bg=True)
         else:
             s.text(mx - 2.2, my + 0.5, name, 1.4, '#3e2723', anchor='end', weight='bold', bg=True)
+
+
+def capacitor(s, a, b, name, show_label=True):
+    """Cerâmico de disco (laranja, "104") em pé, pernas nos furos a e b."""
+    (x1, y1), (x2, y2) = hp(*a), hp(*b)
+    s.add(f'<line x1="{x1:.2f}" y1="{y1:.2f}" x2="{x2:.2f}" y2="{y2:.2f}" stroke="#9e9e9e" stroke-width="0.5" stroke-linecap="round"/>')
+    mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+    s.add(f'<ellipse cx="{mx:.2f}" cy="{my:.2f}" rx="2.4" ry="1.1" fill="#ef8f2f" stroke="#a0522d" stroke-width="0.2"/>')
+    s.text(mx, my + 0.4, '104', 0.9, '#3e2723', weight='bold')
+    if show_label:
+        s.text(mx, my + 2.6, name, 1.4, '#3e2723', weight='bold', bg=True)
 
 
 def pad_mark(s, c, r, color, label=None, where='below', X=lambda x: x, size=1.15):
@@ -487,6 +525,8 @@ def view_top(stage, scale):
         header_footprint(s)
         for n, a, b, _ in RES:
             resistor(s, a, b, n)
+        for n, a, b, _ in CAPS:
+            capacitor(s, a, b, n)
         for name, col, pts, _ in JUMPERS:
             jumper(s, pts, col, name)
         for name, (c, r) in TRANS_PINS.items():
@@ -508,7 +548,7 @@ def view_top(stage, scale):
             x, y = hp(c, r)
             s.add(f'<rect x="{x - 1.2:.2f}" y="{y - 1.2:.2f}" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="{x - 0.4:.2f}" y="{y - 0.4:.2f}" width="0.8" height="0.8" fill="#d4af37"/>')
             s.text(x + (1.8 if c == 1 else -1.8), y + 0.45, name, 1.0, BUCK_COL[name], anchor='start' if c == 1 else 'end', weight='bold', bg=True)
-        s.text(MX + 3.5 * P, hp(1, 19)[1], 'barras fêmea do RT8272', 1.15, '#0d47a1', bg=True)
+        s.text(MX + 2.8 * P, hp(1, 14.5)[1], 'barras fêmea do RT8272', 1.15, '#0d47a1', bg=True)
         bmp_header(s, labels=True)
         led_header(s, labels=True)
         fuse_footprint(s)
@@ -521,6 +561,8 @@ def view_top(stage, scale):
         header_footprint(s)
         for n, a, b, _ in RES:
             resistor(s, a, b, n, show_label=False)
+        for n, a, b, _ in CAPS:
+            capacitor(s, a, b, n, show_label=False)
         for name, col, pts, _ in JUMPERS:
             jumper(s, pts, col, name)
         buck_art(s)
@@ -555,7 +597,7 @@ def view_bottom(scale):
         s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="{FUSE_DRILL / 2 + 0.15:.2f}" fill="#fff" stroke="{PUR}" stroke-width="0.3"/><circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.6" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')
     # furos com perna de componente ou pino
     legs = set()
-    for _, a, b, _ in RES:
+    for _, a, b, _ in RES + CAPS:
         legs |= {a, b}
     for row in (2, 12):
         legs |= {(c, row) for c in range(2, 17)}
@@ -575,14 +617,14 @@ def view_bottom(scale):
     # nomes das trilhas
     labels = {'GND': (9, 19.5, BLK), '5 V': (13, 18, RED), 'RX': (14, 21, YEL), 'CAN-L': (17.5, 25.2, BLU), 'CANH': (18, 18.5, BLU), '12 V com fusível': (7.2, 20.5, PUR),
               'OUT+': (2, 18, RED), 'fusível': (FUSE_C[0], FUSE_C[1] + 1.3, PUR), '12 V': (10, 25.2, RED),
-              'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG), 'BMP180': (13.5, 17.9, CYA)}
+              'D21': (6.5, 1.0, YEL), '3V3': (16.5, 1.0, ORG), 'BMP180': (13.5, 17.9, CYA), 'D34': (5.9, 14.5, BAT)}
     if SN_PINS:
         labels.pop('RX')
         labels.update({'CANH': (18, 19.5, BLU), 'CAN-L': (18.6, 25.2, BLU), '3V3 ': (17, 15.5, ORG), 'CRX': (15.6, 21.6, YEL)})
     for t, (c, r, col) in labels.items():
         x, y = MX + (c - 1) * P, MY + (r - 1) * P
         s.text(X(x), y + 0.5, t, 1.25, col, weight='bold', bg=True)
-    for n, a, b, _ in RES:
+    for n, a, b, _ in RES + CAPS:
         (x1, y1), (x2, y2) = hp(*a), hp(*b)
         s.text(X((x1 + x2) / 2), (y1 + y2) / 2 + 0.5, n, 1.2, '#616161', bg=True)
     s.text(W / 2, hp(1, 7)[1], 'barras do ESP32 nas linhas 2 e 12', 1.2, '#757575', bg=True)
@@ -676,8 +718,38 @@ def schematic():
     s.text(136.5, 105.5, 'DRDY sem ligação', 1.4, '#1565c0')
     s.text(136.5, 42, 'nos cabos, longe do calor', 1.5, '#5d4037')
     s.text(136.5, 76.5, 'CS no 3V3 e SA0 no GND, no módulo', 1.4, '#6a1b9a')
+    battery_divider_schematic(s, line, dot)
     s.text(75, 1, 'Esquema de ligação (fora de escala)', 2.0, '#5d4037', weight='bold')
     return s.svg()
+
+
+def battery_divider_schematic(s, line, dot):
+    """Quadro à parte, embaixo à esquerda: 12 V com fusível → R5 → junção (D34) → R6 → GND, C1 junto do R6."""
+    x0, y0 = 4, 77
+    s.add(f'<rect x="{x0 - 2}" y="{y0 - 2}" width="58" height="31" rx="1.5" fill="#fffaf3" stroke="{BAT}" stroke-width="0.35" stroke-dasharray="1 0.6"/>')
+    s.text(x0 + 27, y0 + 1.6, 'Bateria no ESP32 (divisor, firmware 1.6)', 1.8, BAT, weight='bold')
+    xr = x0 + 10
+    s.text(xr, y0 + 5.4, '12 V com fusível (IN+ do RT8272)', 1.5, PUR, anchor='start')
+    line([(xr, y0 + 6.5), (xr, y0 + 8)], PUR)
+    s.add(f'<rect x="{xr - 1.2}" y="{y0 + 8}" width="2.4" height="5" fill="#fff" stroke="#8d6e63" stroke-width="0.4"/>')
+    s.text(xr - 2, y0 + 11.2, 'R5 100 kΩ', 1.6, '#5d4037', anchor='end')
+    line([(xr, y0 + 13), (xr, y0 + 17)], BAT)
+    dot(xr, y0 + 15, BAT)
+    line([(xr, y0 + 15), (x0 + 40, y0 + 15)], BAT)
+    s.text(x0 + 41, y0 + 15.6, 'D34 do ESP32', 1.6, BAT, anchor='start', weight='bold')
+    s.add(f'<rect x="{xr - 1.2}" y="{y0 + 17}" width="2.4" height="5" fill="#fff" stroke="#8d6e63" stroke-width="0.4"/>')
+    s.text(xr - 2, y0 + 20.2, 'R6 22 kΩ', 1.6, '#5d4037', anchor='end')
+    line([(xr, y0 + 22), (xr, y0 + 25), (xr + 10, y0 + 25)], BLK)
+    # C1 em paralelo com o R6
+    xc = xr + 10
+    line([(xr, y0 + 15), (xc, y0 + 15)], BAT)
+    dot(xc, y0 + 15, BAT)
+    line([(xc, y0 + 15), (xc, y0 + 19)], BAT)
+    s.add(f'<path d="M{xc - 1.6},{y0 + 19} L{xc + 1.6},{y0 + 19} M{xc - 1.6},{y0 + 20} L{xc + 1.6},{y0 + 20}" stroke="#a0522d" stroke-width="0.5"/>')
+    line([(xc, y0 + 20), (xc, y0 + 25)], BLK)
+    s.text(xc + 2, y0 + 20.2, 'C1 100 nF', 1.6, '#5d4037', anchor='start')
+    s.text(xc + 12, y0 + 25.6, 'GND', 1.6, BLK, anchor='start')
+    s.text(x0 + 27, y0 + 28, '12 V → 2,16 V no pino · até 17 V · consumo ≈ 0,1 mA', 1.4, '#5d4037')
 
 
 def sn65_schematic(s, line, dot, buck, esp, sn):

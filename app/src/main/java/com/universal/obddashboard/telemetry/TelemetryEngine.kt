@@ -35,6 +35,12 @@ class TelemetryEngine(
     compassCalibration: Compass.Calibration? = null,
     /** Ajuste fino à mão (Ajustes → Calibração dos sensores). */
     trims: SensorTrims = SensorTrims(),
+    /** Orientação aprendida do celular no suporte (reserva do sensor de movimento do ESP32). */
+    phoneImuCalibration: ImuMotion.Calibration? = null,
+    /** Fator da velocidade do carro aprendido pelo GPS (deste veículo). */
+    speedCalibration: SpeedCalibrator.State? = null,
+    /** Fator do perfil (velocidade da ECU → distância), até o aprendido ficar pronto. */
+    private val profileSpeedFactor: Double = 1.0,
 ) {
     private val roles = profile.profile.roles
     private val fuelCalc = profile.profile.fuel?.let { FuelCalculator(it) }
@@ -55,6 +61,23 @@ class TelemetryEngine(
     private var savedCompass = 0
     private var lastCompassSaveAt = 0L
     private val altimeter = Altimeter()
+    // Fontes cruzadas: reservas do celular, percurso estimado, fator da velocidade, motor, inclinação e ambiente
+    private val phoneImu = ImuMotion(phoneImuCalibration)
+    private var lastPhoneImuAt = 0L
+    private var lastPhoneImuSaveAt = 0L
+    private var savedPhoneManual = 0
+    private val phoneAltimeter = Altimeter()
+    private var lastPhonePressureAt = 0L
+    private val dead = DeadReckoning()
+    private var lastDeadGpsAt = 0L
+    val speedCalibrator = SpeedCalibrator(speedCalibration)
+    private var savedSpeedCal = 0
+    private var lastSpeedCalSaveAt = 0L
+    private val slopeCheck = SlopeCheck()
+    private val ambient = AmbientEstimate()
+    private val battery = BatteryWatch()
+    private val vibration = ArrayDeque<Pair<Long, Double>>()
+    private var lastPeakAt = 0L
 
     init { setTrims(trims) }
 
@@ -62,6 +85,8 @@ class TelemetryEngine(
     fun setTrims(t: SensorTrims) {
         imu.pitchTrimDeg = t.pitchDeg
         imu.rollTrimDeg = t.rollDeg
+        phoneImu.pitchTrimDeg = t.pitchDeg
+        phoneImu.rollTrimDeg = t.rollDeg
         compass.headingTrimDeg = t.headingDeg
     }
 
@@ -86,16 +111,23 @@ class TelemetryEngine(
         val imuCalibration: ImuMotion.Calibration? = null,
         /** Tabela da bússola para salvar, ou null. */
         val compassCalibration: Compass.Calibration? = null,
+        /** Orientação do celular no suporte para salvar, ou null. */
+        val phoneImuCalibration: ImuMotion.Calibration? = null,
+        /** Somas do fator da velocidade para salvar, ou null. */
+        val speedCalibration: SpeedCalibrator.State? = null,
+        /** GPS voltou depois de um trecho estimado: acertar os pontos gravados nele. */
+        val positionCorrection: DeadReckoning.Correction? = null,
     )
 
     /** Ajuste à mão pedido na tela (Zerar nível, Calibrar frente, esquecer calibrações). [TRIMS] vem por [setTrims]. */
     fun imuRequest(r: TelemetryHub.ImuRequest, now: Long) = when (r) {
-        TelemetryHub.ImuRequest.LEVEL -> imu.requestLevel(now)
-        TelemetryHub.ImuRequest.FORWARD -> imu.armForward(now)
-        TelemetryHub.ImuRequest.FORGET_IMU -> imu.forget()
+        TelemetryHub.ImuRequest.LEVEL -> { imu.requestLevel(now); phoneImu.requestLevel(now) }
+        TelemetryHub.ImuRequest.FORWARD -> { imu.armForward(now); phoneImu.armForward(now) }
+        TelemetryHub.ImuRequest.FORGET_IMU -> { imu.forget(); phoneImu.forget() }
         TelemetryHub.ImuRequest.FORGET_COMPASS -> compass.reset()
         TelemetryHub.ImuRequest.FORGET_PHONE -> compass.forgetPhone()
         TelemetryHub.ImuRequest.TRIMS -> Unit
+        TelemetryHub.ImuRequest.FORGET_SPEED -> speedCalibrator.reset()
     }
 
     fun compute(state: DashboardState, trip: TripAccumulator?, now: Long, dtS: Double): Result {
@@ -148,6 +180,7 @@ class TelemetryEngine(
         val timedRuns = if (speedReading != null && speedReading.timestamp != lastSpeedAt) {
             lastSpeedAt = speedReading.timestamp
             imu.onSpeed(speedReading.timestamp, speedReading.value)
+            phoneImu.onSpeed(speedReading.timestamp, speedReading.value)
             timers.onSpeed(speedReading.timestamp, speedReading.value * speedFactor)
         } else {
             emptyList()
@@ -167,29 +200,51 @@ class TelemetryEngine(
                 r(Slcan.IMU_PEAK),
             )
         }
+        // Reserva: acelerômetro e giroscópio do celular, aprendidos em paralelo (calibração própria)
+        val pax = state.readings[PhoneSensors.AX]
+        val phoneImuFresh = pax != null && now - pax.timestamp < IMU_STALE_MS
+        if (pax != null && phoneImuFresh && pax.timestamp != lastPhoneImuAt) {
+            val dt = if (lastPhoneImuAt == 0L) 0.2 else ((pax.timestamp - lastPhoneImuAt) / 1000.0).coerceAtMost(1.0)
+            lastPhoneImuAt = pax.timestamp
+            val r = { id: String -> state.readings[id]?.value ?: 0.0 }
+            phoneImu.update(
+                pax.timestamp, dt,
+                doubleArrayOf(pax.value, r(PhoneSensors.AY), r(PhoneSensors.AZ)),
+                doubleArrayOf(r(PhoneSensors.GX), r(PhoneSensors.GY), r(PhoneSensors.GZ)),
+                r(PhoneSensors.PEAK),
+            )
+        }
+        // O que vale na tela: o ESP32 (preso no carro); sem ele, o celular
+        val usePhone = !imuFresh && phoneImuFresh
+        val motion = if (usePhone) phoneImu else imu
+        val motionFresh = imuFresh || phoneImuFresh
+        val phoneManual = phoneImu.manualChanges != savedPhoneManual
+        val phoneImuSave = phoneImu.calibration?.takeIf { phoneManual || now - lastPhoneImuSaveAt >= IMU_SAVE_MS }
+            ?.also { lastPhoneImuSaveAt = now; savedPhoneManual = phoneImu.manualChanges }
         // Ajuste à mão salva na hora; o aprendizado automático, no máximo a cada 30 s
         val manual = imu.manualChanges != savedManual
         val imuSave = imu.calibration?.takeIf { manual || now - lastImuSaveAt >= IMU_SAVE_MS }?.also { lastImuSaveAt = now; savedManual = imu.manualChanges }
-        val seenImu = lastImuAt != 0L
+        val seenImu = lastImuAt != 0L || lastPhoneImuAt != 0L
         // Rumo: GPS andando; magnetômetro do ESP32 parado ou sem sinal (calibrado pelo próprio GPS)
         val gps = state.gps
         if (gps != null && gps.timestamp != lastGpsAt) {
             lastGpsAt = gps.timestamp
             compass.onGps(gps.timestamp, gps.bearing, gps.speedKmh, gps.accuracyM)
             altimeter.onGps(gps.altitudeM, gps.verticalAccuracyM)
+            phoneAltimeter.onGps(gps.altitudeM, gps.verticalAccuracyM)
         }
         val mx = state.readings[Slcan.MAG_X]
         val magFresh = mx != null && now - mx.timestamp < IMU_STALE_MS
         if (mx != null && magFresh && mx.timestamp != lastMagAt) {
             lastMagAt = mx.timestamp
             val r = { id: String -> state.readings[id]?.value ?: 0.0 }
-            compass.onMag(mx.timestamp, doubleArrayOf(mx.value, r(Slcan.MAG_Y), r(Slcan.MAG_Z)), imu.yawDps.takeIf { imuFresh })
+            compass.onMag(mx.timestamp, doubleArrayOf(mx.value, r(Slcan.MAG_Y), r(Slcan.MAG_Z)), motion.yawDps.takeIf { motionFresh })
         }
         // Bússola do celular: reserva parado, quando o ESP32 não tem magnetômetro
         val ph = state.phoneHeading
         if (ph != null && ph.timestamp != lastPhoneAt) {
             lastPhoneAt = ph.timestamp
-            compass.onPhone(ph.timestamp, ph.azimuthDeg, ph.axis, ph.reliable, imu.yawDps.takeIf { imuFresh })
+            compass.onPhone(ph.timestamp, ph.azimuthDeg, ph.axis, ph.reliable, motion.yawDps.takeIf { motionFresh })
         }
         compass.update(now, speed)
         val compassSave = compass.calibration.takeIf { compass.changes != savedCompass && now - lastCompassSaveAt >= IMU_SAVE_MS }
@@ -202,6 +257,62 @@ class TelemetryEngine(
             altimeter.onPressure(pressure.timestamp, pressure.value)
         }
         val pressureFresh = pressure != null && now - pressure.timestamp < DashboardState.STALE_AFTER_MS
+        // Reserva: barômetro do celular (outra altitude, acertada pelo GPS do mesmo jeito)
+        val phonePressure = state.readings[PhoneSensors.PRESSURE]
+        if (phonePressure != null && phonePressure.timestamp != lastPhonePressureAt) {
+            lastPhonePressureAt = phonePressure.timestamp
+            phoneAltimeter.onPressure(phonePressure.timestamp, phonePressure.value)
+        }
+        val phonePressureFresh = phonePressure != null && now - phonePressure.timestamp < DashboardState.STALE_AFTER_MS
+        val alt = when {
+            pressureFresh -> altimeter
+            phonePressureFresh -> phoneAltimeter
+            else -> null
+        }
+
+        // Fator da velocidade aprendido pelo GPS; vale na distância sem GPS e no percurso estimado
+        val gpsNow = state.gps
+        speedCalibrator.update(
+            now, dtS, speed, speedReading?.timestamp, gpsNow?.speedKmh, gpsNow?.accuracyM, gpsNow?.timestamp,
+            motion.yawDps.takeIf { motionFresh && motion.stage >= 1 },
+        )
+        val factor = speedCalibrator.factor ?: profileSpeedFactor
+        trip?.obdSpeedFactor = factor
+        val speedCalSave = speedCalibrator.state.takeIf { speedCalibrator.changes != savedSpeedCal && now - lastSpeedCalSaveAt >= IMU_SAVE_MS }
+            ?.also { savedSpeedCal = speedCalibrator.changes; lastSpeedCalSaveAt = now }
+
+        // Percurso sem buracos: sem GPS, anda pela velocidade e pelo rumo da bússola e do giro
+        var correction: DeadReckoning.Correction? = null
+        if (gpsNow != null && gpsNow.timestamp != lastDeadGpsAt) {
+            lastDeadGpsAt = gpsNow.timestamp
+            correction = dead.onGps(gpsNow)
+        }
+        val estimate = dead.tick(
+            now, dtS, speed?.times(factor),
+            compass.headingDeg.takeIf { compass.source != Compass.SOURCE_GPS },
+            motion.yawDps.takeIf { motionFresh && motion.stage >= 1 },
+        )
+
+        // Motor ligado: RPM, tensão (qualquer fonte) ou vibração parado
+        val peak = state.readings[Slcan.IMU_PEAK]
+        if (peak != null && peak.timestamp != lastPeakAt && imuFresh) {
+            lastPeakAt = peak.timestamp
+            if ((speed ?: gpsNow?.speedKmh ?: 0.0) < 1.0) vibration.addLast(peak.timestamp to peak.value) else vibration.clear()
+        }
+        while (vibration.isNotEmpty() && now - vibration.first().first > VIBRATION_WINDOW_MS) vibration.removeFirst()
+        val vibrationG = vibration.takeIf { it.size >= 5 }?.map { it.second }?.sorted()?.let { it[it.size / 2] }
+        val rpmAny = rpm ?: state.value(PhoneSensors.CAN_RPM, now)
+        val espVolts = state.value(Slcan.ESP_BATT_V, now)
+        val carVolts = state.value(PhoneSensors.CAN_VOLTAGE, now) ?: v(roles.batteryVolts)
+        val engine = EngineVote.decide(rpmAny, listOfNotNull(carVolts, v(roles.batteryVolts), espVolts), vibrationG)
+
+        // Inclinação conferida pela subida medida na pressão
+        slopeCheck.update(dtS, speed?.times(factor) ?: gpsNow?.takeIf { now - it.timestamp < 3000 }?.speedKmh,
+            alt?.altitudeM, motion.slopePct.takeIf { motionFresh && motion.stage == 2 })
+        // Temperatura de fora pela admissão
+        ambient.update(dtS, v(roles.intakeTemp), v(roles.coolantTemp) ?: state.value(PhoneSensors.CAN_COOLANT, now), speed)
+        // Bateria pelo ESP32, conferida com a da rede
+        battery.update(espVolts, state.value(Slcan.ESP_BATT_REST, now), state.value(Slcan.ESP_BATT_LOWEST, now), carVolts, engine.on)
 
         val derived = DerivedMetrics(
             fuelLph = lph,
@@ -215,23 +326,23 @@ class TelemetryEngine(
             estimatedLoadPct = loadPct,
             vacuumKpa = estimatedLoad.vacuumKpa,
             mapOffsetKpa = estimatedLoad.mapOffsetKpa,
-            imuStage = if (imuFresh) imu.stage else null,
-            accelG = imu.accelG.takeIf { imuFresh },
-            lateralG = imu.lateralG.takeIf { imuFresh },
-            slopePct = imu.slopePct.takeIf { imuFresh },
-            impactG = imu.impactG.takeIf { imuFresh },
-            bumps = imu.bumps,
-            maxBrakeG = imu.maxBrakeG.takeIf { seenImu },
-            maxAccelG = imu.maxAccelG.takeIf { seenImu },
-            maxLateralG = imu.maxLateralG.takeIf { seenImu },
-            pitchDeg = imu.pitchDeg.takeIf { imuFresh },
-            rollDeg = imu.rollDeg.takeIf { imuFresh },
-            yawDps = imu.yawDps.takeIf { imuFresh && imu.stage >= 1 },
-            maxPitchDeg = imu.maxPitchDeg.takeIf { seenImu && imu.stage == 2 },
-            maxRollDeg = imu.maxRollDeg.takeIf { seenImu && imu.stage == 2 },
+            imuStage = if (motionFresh) motion.stage else null,
+            accelG = motion.accelG.takeIf { motionFresh },
+            lateralG = motion.lateralG.takeIf { motionFresh },
+            slopePct = motion.slopePct.takeIf { motionFresh },
+            impactG = motion.impactG.takeIf { motionFresh },
+            bumps = motion.bumps,
+            maxBrakeG = motion.maxBrakeG.takeIf { seenImu },
+            maxAccelG = motion.maxAccelG.takeIf { seenImu },
+            maxLateralG = motion.maxLateralG.takeIf { seenImu },
+            pitchDeg = motion.pitchDeg.takeIf { motionFresh },
+            rollDeg = motion.rollDeg.takeIf { motionFresh },
+            yawDps = motion.yawDps.takeIf { motionFresh && motion.stage >= 1 },
+            maxPitchDeg = motion.maxPitchDeg.takeIf { seenImu && motion.stage == 2 },
+            maxRollDeg = motion.maxRollDeg.takeIf { seenImu && motion.stage == 2 },
             // Sem velocidade nova há tanto tempo quanto uma leitura velha, sem sentido
-            driveState = imu.direction.takeIf { speed != null },
-            imuAction = imu.action(now)?.name,
+            driveState = motion.direction.takeIf { speed != null },
+            imuAction = motion.action(now)?.name,
             headingDeg = compass.headingDeg,
             headingSource = compass.source,
             compassPct = compass.progressPct.takeIf { magFresh },
@@ -243,9 +354,9 @@ class TelemetryEngine(
             trimPitchDeg = imu.pitchTrimDeg.takeIf { it != 0.0 },
             trimRollDeg = imu.rollTrimDeg.takeIf { it != 0.0 },
             trimHeadingDeg = compass.headingTrimDeg.takeIf { it != 0.0 },
-            altitudeM = altimeter.altitudeM.takeIf { pressureFresh },
-            altitudeTrend = altimeter.trend.takeIf { pressureFresh },
-            altitudeGps = altimeter.calibrated,
+            altitudeM = alt?.altitudeM,
+            altitudeTrend = alt?.trend,
+            altitudeGps = alt?.calibrated ?: altimeter.calibrated,
             tripCost = fuelPricePerL?.let { it * fuelUsed },
             instantLph = sLph,
             ecoBand = ecoBand,
@@ -255,6 +366,25 @@ class TelemetryEngine(
             fuelCutKm = stats.fuelCutKm,
             avgMovingKmh = stats.avgMovingKmh,
             ecoPct = stats.ecoPct(),
+            imuSource = if (usePhone) SOURCE_PHONE else if (imuFresh) SOURCE_ESP32 else null,
+            pressureSource = if (pressureFresh) SOURCE_ESP32 else if (phonePressureFresh) SOURCE_PHONE else null,
+            positionEstimated = estimate != null,
+            estLatitude = estimate?.latitude,
+            estLongitude = estimate?.longitude,
+            estAccuracyM = estimate?.accuracyM?.toDouble(),
+            estDistanceM = estimate?.distanceM,
+            speedFactor = speedCalibrator.factor,
+            speedFactorKm = speedCalibrator.learnedKm,
+            engineOn = engine.on,
+            engineSource = engine.source,
+            slopeBaroPct = slopeCheck.baroSlopePct,
+            slopeDiffDeg = slopeCheck.differenceDeg,
+            slopeSuspicious = slopeCheck.suspicious,
+            ambientC = ambient.ambientC,
+            ambientSource = ambient.source,
+            battRestV = battery.restV,
+            battCrankV = battery.crankV,
+            battDiffV = battery.diffV,
         )
 
         val vars = VariableResolver { name ->
@@ -273,13 +403,16 @@ class TelemetryEngine(
             val value = vars.resolve(id)
             if (value.isNaN()) "--" else formatValue(value, profile.outputs[id]?.decimals ?: 1)
         }
-        return Result(derived, alerts, raised, timedRuns, estimatedLoad.atmosphericKpa, imuSave, compassSave)
+        return Result(derived, alerts, raised, timedRuns, estimatedLoad.atmosphericKpa, imuSave, compassSave, phoneImuSave, speedCalSave, correction)
     }
 
     companion object {
         /** Sem linha do sensor de movimento há tanto tempo, os valores somem da tela. */
         const val IMU_STALE_MS = 2000L
         const val IMU_SAVE_MS = 30_000L
+        const val VIBRATION_WINDOW_MS = 3000L
+        const val SOURCE_ESP32 = "esp32"
+        const val SOURCE_PHONE = "celular"
 
         fun formatValue(value: Double, decimals: Int): String =
             String.format(Locale.forLanguageTag("pt-BR"), "%.${decimals.coerceIn(0, 4)}f", value)
@@ -413,10 +546,12 @@ class TripAccumulator(
     val tripId: Long,
     val startTime: Long,
     val profileId: String,
-    /** Ver VehicleProfile.obdSpeedFactor: só afeta a distância integrada pela velocidade da ECU. */
-    private val obdSpeedFactor: Double = 1.0,
+    /** Ver VehicleProfile.obdSpeedFactor: só afeta a distância integrada pela velocidade da ECU. Trocado pelo aprendido. */
+    obdSpeedFactor: Double = 1.0,
     val vehicleId: String = "v1",
 ) {
+
+    @Volatile var obdSpeedFactor: Double = obdSpeedFactor
 
     var distanceKm = 0.0; private set
     var maxSpeedKmh = 0.0; private set

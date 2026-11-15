@@ -128,6 +128,10 @@
         <div class="kv" id="esp-kv"></div>
         <p id="esp-note" class="small muted" hidden></p>
       </div>
+      <div id="cross-card" class="card esp-card" hidden>
+        <div class="esp-head"><span class="label">Fontes cruzadas</span><span id="cross-pill" class="pill"></span></div>
+        <div id="cross-values" class="list small"></div>
+      </div>
       <div id="sensor-grid" class="sensor-grid"></div>
       <p id="disabled-pids" class="muted small"></p>
     </section>
@@ -525,6 +529,7 @@
           <button id="sc-forget-imu" class="btn btn-small">Esquecer nível e frente</button>
           <button id="sc-forget-compass" class="btn btn-small">Zerar bússola do ESP32</button>
           <button id="sc-forget-phone" class="btn btn-small">Reaprender o celular</button>
+          <button id="sc-forget-speed" class="btn btn-small">Reaprender o fator da velocidade</button>
         </div>
         <p id="sc-result" class="small"></p>
       </div>

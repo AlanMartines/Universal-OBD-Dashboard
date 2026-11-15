@@ -117,6 +117,8 @@ function renderEspCard(s) {
     'LSM6DS3: ' + (ESP_SENSOR[i.lsm] || '?'),
     // Bússola só a partir do firmware 1.5; antes disso a linha não existe
     i.mag ? 'Bússola' + (i.magChip ? ' (' + i.magChip.toUpperCase() + ')' : '') + ': ' + (ESP_SENSOR[i.mag] || '?') : null,
+    // Divisor da bateria só a partir do firmware 1.6
+    i.batt ? 'Bateria: ' + (ESP_SENSOR[i.batt] || '?') : null,
     i.restarts ? `reiniciou ${i.restarts}×` : null,
   ].filter(Boolean);
   const kv = $('esp-kv');
@@ -127,6 +129,58 @@ function renderEspCard(s) {
       : i.lost ? 'Quadros perdidos: o ESP32 não deu conta de tudo que passou na rede (fila cheia).' : '';
   $('esp-note').textContent = note;
   $('esp-note').hidden = !note;
+}
+
+/* Fontes cruzadas: de onde vem cada valor e as conferências entre o carro, o ESP32 e o celular. */
+const crossRows = {};
+function crossSet(key, name, text) {
+  let el = crossRows[key];
+  if (!el) {
+    const row = document.createElement('div');
+    row.className = 'sc-row';
+    const n = document.createElement('span');
+    n.textContent = name;
+    el = document.createElement('b');
+    row.append(n, el);
+    $('cross-values').appendChild(row);
+    crossRows[key] = el;
+  }
+  el.parentNode.hidden = text == null;
+  if (text != null && el.textContent !== text) el.textContent = text;
+}
+const SRC = { esp32: 'ESP32', celular: 'celular (reserva)' };
+const ENGINE_SRC = { rpm: 'pela rotação', tensao: 'pela tensão', vibracao: 'pela vibração' };
+function renderCrossCard(s) {
+  $('cross-card').hidden = !s.running;
+  if (!s.running) return;
+  const d = s.derived || {};
+  const r = s.readings || {};
+  const v = (id) => (typeof r[id] === 'number' ? r[id] : null);
+  const warn = d.slopeSuspicious || d.positionEstimated || d.imuSource === 'celular';
+  $('cross-pill').textContent = warn ? 'Atenção' : 'Tudo certo';
+  $('cross-pill').className = 'pill ' + (warn ? 'pill-warn' : 'pill-ok');
+  crossSet('pos', 'Posição', d.positionEstimated
+    ? `estimada sem GPS · ${fmt(d.estDistanceM || 0, 0)} m · ±${fmt(d.estAccuracyM || 0, 0)} m`
+    : s.gps ? 'GPS' : 'sem GPS');
+  crossSet('factor', 'Fator da velocidade (GPS)', d.speedFactor != null
+    ? `${fmt(d.speedFactor, 3)} · ${fmt(d.speedFactorKm, 0)} km conferidos`
+    : `aprendendo · ${fmt(d.speedFactorKm || 0, 1)} de 5 km (retas acima de 30 km/h)`);
+  crossSet('engine', 'Motor', d.engineOn == null ? 'sem fonte' : (d.engineOn ? 'ligado ' : 'desligado ') + (ENGINE_SRC[d.engineSource] || ''));
+  crossSet('imu', 'Movimento', d.imuSource ? SRC[d.imuSource] || d.imuSource : 'sem sensor');
+  crossSet('press', 'Pressão e altitude', d.pressureSource ? SRC[d.pressureSource] || d.pressureSource : 'sem sensor');
+  crossSet('slope', 'Inclinação conferida pela altitude', d.slopeDiffDeg != null
+    ? `diferença de ${fmt(Math.abs(d.slopeDiffDeg), 1)}°` + (d.slopeSuspicious ? ': refaça Zerar nível e Calibrar frente' : ' · ok')
+    : d.imuSource && d.pressureSource ? 'conferindo (precisa de uns 2 km andando)' : null);
+  crossSet('amb', 'Temperatura de fora (estimada)', d.ambientC != null
+    ? `${fmt(d.ambientC, 0)} °C · ${d.ambientSource === 'partida' ? 'pela admissão, na partida a frio' : 'pela admissão, andando'}`
+    : null);
+  const bv = v('esp_batt_v');
+  const parts = [];
+  if (bv != null) parts.push(`${fmt(bv, 2)} V agora`);
+  if (d.battRestV != null) parts.push(`repouso ${fmt(d.battRestV, 2)} V`);
+  if (d.battCrankV != null) parts.push(`partida ${fmt(d.battCrankV, 2)} V` + (d.battCrankV < 9.6 ? ' (fraca)' : ''));
+  if (d.battDiffV != null) parts.push(`${d.battDiffV >= 0 ? '+' : '−'}${fmt(Math.abs(d.battDiffV), 2)} V do carro`);
+  crossSet('batt', 'Bateria pelo ESP32', parts.length ? parts.join(' · ') : null);
 }
 
 function renderCanPill(s, status) {
@@ -194,6 +248,7 @@ function onTelemetry(s) {
   if (s.diagRecording && s.running) status.textContent += ' ● REC';
   renderCanPill(s, status);
   renderEspCard(s);
+  renderCrossCard(s);
   const toggle = $('toggle');
   const encerrando = s.running && s.power === 'SHUTTING_DOWN';
   toggle.textContent = encerrando ? 'Encerrando…' : s.running ? 'Encerrar' : 'Iniciar';

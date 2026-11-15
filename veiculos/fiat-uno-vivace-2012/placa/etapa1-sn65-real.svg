@@ -526,6 +526,14 @@
 <path d="M28.81,5.79 L28.81,8.33" fill="none" stroke="#43a047" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M31.35,5.79 L31.35,8.33" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <path d="M31.35,5.79 L31.35,8.33" fill="none" stroke="#1e88e5" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M11.03,61.67 L11.03,59.13" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M11.03,61.67 L11.03,59.13" fill="none" stroke="#7b1fa2" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M11.03,48.97 L13.57,48.97" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M11.03,48.97 L13.57,48.97" fill="none" stroke="#8d6e63" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M13.57,33.73 L13.57,36.27 L13.57,38.81 L13.57,41.35 L13.57,43.89 L13.57,46.43 L13.57,48.97 L13.57,51.51" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M13.57,33.73 L13.57,36.27 L13.57,38.81 L13.57,41.35 L13.57,43.89 L13.57,46.43 L13.57,48.97 L13.57,51.51" fill="none" stroke="#8d6e63" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M18.65,51.51 L21.19,51.51 L23.73,51.51" fill="none" stroke="#b0b7bd" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+<path d="M18.65,51.51 L21.19,51.51 L23.73,51.51" fill="none" stroke="#263238" stroke-width="0.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
 <rect x="4.65" y="7.03" width="38.16" height="2.6" rx="0.3" fill="#212121"/>
 <rect x="5.40" y="7.78" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
 <text x="5.95" y="6.53" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D23</text>
@@ -565,7 +573,7 @@
 <rect x="10.48" y="33.18" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
 <text x="11.03" y="36.33" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">VN</text>
 <rect x="13.02" y="33.18" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
-<text x="13.57" y="36.33" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D34</text>
+<text x="13.57" y="36.33" font-size="1.0" fill="#8d6e63" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">D34</text>
 <rect x="15.56" y="33.18" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
 <text x="16.11" y="36.33" font-size="1.0" fill="#9e9e9e" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">D35</text>
 <rect x="18.10" y="33.18" width="1.1" height="1.1" fill="#000" stroke="#666" stroke-width="0.12"/>
@@ -596,6 +604,27 @@
 <rect x="40.36" y="17.65" width="2.3" height="0.6" fill="#c9a227"/>
 <rect x="37.17" y="15.26" width="2.54" height="1.61" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="39.31" y="16.45" font-size="1.4" fill="#3e2723" text-anchor="end" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">R4</text>
+<line x1="11.03" y1="59.13" x2="11.03" y2="48.97" stroke="#9e9e9e" stroke-width="0.5" stroke-linecap="round"/>
+<rect x="9.88" y="50.95" width="2.3" height="6.2" rx="1.0" fill="#e8d3a9" stroke="#8d6e63" stroke-width="0.2"/>
+<rect x="9.88" y="51.85" width="2.3" height="0.6" fill="#6d4c41"/>
+<rect x="9.88" y="52.95" width="2.3" height="0.6" fill="#212121"/>
+<rect x="9.88" y="54.05" width="2.3" height="0.6" fill="#f9a825"/>
+<rect x="9.88" y="55.75" width="2.3" height="0.6" fill="#c9a227"/>
+<rect x="12.83" y="53.36" width="2.54" height="1.61" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="13.23" y="54.55" font-size="1.4" fill="#3e2723" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">R5</text>
+<line x1="13.57" y1="48.97" x2="23.73" y2="48.97" stroke="#9e9e9e" stroke-width="0.5" stroke-linecap="round"/>
+<rect x="15.55" y="47.82" width="6.2" height="2.3" rx="1.0" fill="#e8d3a9" stroke="#8d6e63" stroke-width="0.2"/>
+<rect x="16.45" y="47.82" width="0.6" height="2.3" fill="#d32f2f"/>
+<rect x="17.55" y="47.82" width="0.6" height="2.3" fill="#d32f2f"/>
+<rect x="18.65" y="47.82" width="0.6" height="2.3" fill="#ef6c00"/>
+<rect x="20.35" y="47.82" width="0.6" height="2.3" fill="#c9a227"/>
+<rect x="17.38" y="46.08" width="2.54" height="1.61" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="18.65" y="47.27" font-size="1.4" fill="#3e2723" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">R6</text>
+<line x1="13.57" y1="51.51" x2="18.65" y2="51.51" stroke="#9e9e9e" stroke-width="0.5" stroke-linecap="round"/>
+<ellipse cx="16.11" cy="51.51" rx="2.4" ry="1.1" fill="#ef8f2f" stroke="#a0522d" stroke-width="0.2"/>
+<text x="16.11" y="51.91" font-size="0.9" fill="#3e2723" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">104</text>
+<rect x="14.84" y="52.92" width="2.54" height="1.61" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="16.11" y="54.11" font-size="1.4" fill="#3e2723" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">C1</text>
 <path d="M18.65,10.87 L44.05,10.87 L44.05,56.59 L41.51,56.59 L41.51,59.13" fill="none" stroke="#37474f" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M18.65,10.87 L44.05,10.87 L44.05,56.59 L41.51,56.59 L41.51,59.13" fill="none" stroke="#f9a825" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
 <circle cx="18.65" cy="10.87" r="0.55" fill="#cfd8dc" stroke="#37474f" stroke-width="0.2"/>
@@ -652,8 +681,8 @@
 <rect x="2.21" y="55.39" width="2.4" height="2.4" rx="0.3" fill="#212121"/><rect x="3.01" y="56.19" width="0.8" height="0.8" fill="#d4af37"/>
 <rect x="4.81" y="56.19" width="3.28" height="1.15" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="5.21" y="57.04" font-size="1.0" fill="#d32f2f" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">OUT+</text>
-<rect x="4.06" y="50.53" width="16.49" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
-<text x="12.30" y="51.51" font-size="1.15" fill="#0d47a1" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">barras fêmea do RT8272</text>
+<rect x="2.28" y="39.10" width="16.49" height="1.32" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="10.52" y="40.08" font-size="1.15" fill="#0d47a1" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">barras fêmea do RT8272</text>
 <rect x="30.08" y="40.08" width="10.16" height="2.54" rx="0.3" fill="#212121"/>
 <rect x="30.95" y="40.95" width="0.8" height="0.8" fill="#d4af37"/>
 <rect x="33.49" y="40.95" width="0.8" height="0.8" fill="#d4af37"/>

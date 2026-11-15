@@ -21,7 +21,9 @@
     'pitchDeg', 'rollDeg', 'yawDps', 'maxPitchDeg', 'maxRollDeg', 'driveState', 'headingDeg', 'headingSource', 'compassPct',
     'compassReady', 'altitudeM', 'altitudeTrend', 'altitudeGps',
     // calibração dos sensores (bloco abaixo dos mostradores)
-    'gyroBiasX', 'gyroBiasY', 'gyroBiasZ', 'phoneMountDeg', 'trimPitchDeg', 'trimRollDeg', 'trimHeadingDeg'];
+    'gyroBiasX', 'gyroBiasY', 'gyroBiasZ', 'phoneMountDeg', 'trimPitchDeg', 'trimRollDeg', 'trimHeadingDeg',
+    // fontes cruzadas
+    'imuSource'];
   /** O app manda só números: a fonte do rumo vem como 1 (GPS) ou 2 (bússola), e os sim/não como 1 ou 0. */
   function forDash(d) {
     var o = {};
@@ -29,6 +31,7 @@
     if (typeof d.headingSource === 'number') o.headingSource = ({ 1: 'gps', 2: 'mag', 3: 'phone', 4: 'both' })[d.headingSource] || null;
     if (typeof d.altitudeGps === 'number') o.altitudeGps = d.altitudeGps === 1;
     if (typeof d.compassReady === 'number') o.compassReady = d.compassReady === 1;
+    if (typeof d.imuSource === 'number') o.imuSource = ({ 1: 'esp32', 2: 'celular' })[d.imuSource] || null;
     return o;
   }
   var DEFAULT_DASH = { rpmMax: 8000, rpmRedline: 6500, speedMax: 220, voltageMin: 11, voltageMax: 15 };
@@ -209,7 +212,7 @@
     // O rumo também não: de 350° para 10° passaria pelo sul.
     var STEPS = ['derived.estimatedGear', 'derived.recommendedGear', 'derived.shiftUp', 'derived.imuStage', 'derived.bumps', 'pc.ecoBand',
       'derived.driveState', 'derived.headingDeg', 'derived.headingSource', 'derived.compassPct', 'derived.compassReady',
-      'derived.altitudeTrend', 'derived.altitudeGps'];
+      'derived.altitudeTrend', 'derived.altitudeGps', 'derived.imuSource'];
     var TICK_MS = 100;
     var playBtn = document.getElementById('replay-play');
     var seek = document.getElementById('replay-seek');

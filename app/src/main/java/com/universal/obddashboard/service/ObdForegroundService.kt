@@ -68,7 +68,9 @@ import com.universal.obddashboard.telemetry.ActiveAlert
 import com.universal.obddashboard.telemetry.CapturePolicy
 import com.universal.obddashboard.telemetry.ConnectionStatus
 import com.universal.obddashboard.telemetry.DashboardState
+import com.universal.obddashboard.telemetry.DeadReckoning
 import com.universal.obddashboard.telemetry.DerivedMetrics
+import com.universal.obddashboard.telemetry.EngineVote
 import com.universal.obddashboard.telemetry.GpsFix
 import com.universal.obddashboard.telemetry.PowerState
 import com.universal.obddashboard.telemetry.TelemetryEngine
@@ -127,6 +129,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     private var location: LocationSource? = null
     /** Bússola do celular: liga junto com o GPS em alta precisão (captura ativa). */
     private var phoneCompass: PhoneCompassSensor? = null
+    private var phoneMotion: PhoneMotionSensor? = null
     private var locationAllowed = false
 
     /** Tempo parado até perguntar se encerra (null = nunca), do ajuste do usuário. */
@@ -263,6 +266,9 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             imuCalibration = AppSettings.imuCalibration(this),
             compassCalibration = AppSettings.compassCalibration(this),
             trims = AppSettings.sensorTrims(this),
+            phoneImuCalibration = AppSettings.phoneImuCalibration(this),
+            speedCalibration = AppSettings.speedCalibration(this, vehicleId),
+            profileSpeedFactor = loaded.profile.obdSpeedFactor,
         )
         // Viagem retomada: o computador de bordo continua de onde parou, refeito pelas amostras gravadas.
         if (resumeId != null) runCatching { engine?.restoreStats(dao.telemetryForTrip(tripId)) }
@@ -337,8 +343,10 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 recorder?.error("connection", e)
                 // Rede CAN ativa = ignição ligada: a central só parou de responder ao ELM327 (por exemplo,
                 // depois de desligar e religar a chave no posto). Reinicia a conexão em vez de encerrar.
-                if (!canBusAlive()) return REASON_IGNITION_OFF
-                recorder?.event("ecu_silent_can_alive") {}
+                // Sem a rede CAN, a votação do motor (tensão do ESP32, vibração) ainda pode dizer que ele está ligado
+                val engineOn = TelemetryHub.state.value.derived.engineOn == true
+                if (!canBusAlive() && !engineOn) return REASON_IGNITION_OFF
+                recorder?.event("ecu_silent_can_alive") { put("engine_vote", TelemetryHub.state.value.derived.engineSource ?: "") }
                 setStatus(ConnectionStatus.RECONNECTING, "Ignição ligada; reconectando à central…")
                 delay(ECU_RETRY_MS)
                 continue
@@ -503,6 +511,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                     TelemetryHub.ImuRequest.TRIMS -> eng.setTrims(AppSettings.sensorTrims(this))
                     TelemetryHub.ImuRequest.FORGET_IMU -> AppSettings.clearImuCalibration(this)
                     TelemetryHub.ImuRequest.FORGET_COMPASS -> AppSettings.clearCompassCalibration(this)
+                    TelemetryHub.ImuRequest.FORGET_SPEED -> AppSettings.clearSpeedCalibration(this, vehicleId)
                     else -> Unit
                 }
                 recorder?.event("imu_request") {
@@ -520,6 +529,9 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             result.atmosphericKpa?.let { AppSettings.setAtmosphericKpa(this, it) }
             result.imuCalibration?.let { AppSettings.setImuCalibration(this, it) }
             result.compassCalibration?.let { AppSettings.setCompassCalibration(this, it) }
+            result.phoneImuCalibration?.let { AppSettings.setPhoneImuCalibration(this, it) }
+            result.speedCalibration?.let { AppSettings.setSpeedCalibration(this, vehicleId, it) }
+            result.positionCorrection?.let { c -> trip?.tripId?.let { id -> correctEstimatedTrack(id, c) } }
             val gpsAlert = gpsLostAlert(loaded, state, now, mono)
             TelemetryHub.update {
                 it.copy(derived = result.derived, alerts = result.alerts + listOfNotNull(gpsAlert), tripDistanceKm = trip?.distanceKm ?: 0.0)
@@ -737,6 +749,9 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             if (value != null && value.isFinite()) extras.put(id, value)
         }
         val gps = s.gps?.takeIf { now - it.timestamp < 5000 }
+        // Sem GPS: a posição estimada (marcada em derived.positionEstimated; acertada quando o GPS voltar)
+        val d = s.derived
+        val est = gps == null && d.positionEstimated && d.estLatitude != null && d.estLongitude != null
         return TelemetryLogEntity(
             tripId = tripId,
             timestamp = now,
@@ -754,9 +769,9 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             ltftPct = s.value(r.ltft, now),
             lambdaV = s.value(r.lambdaVoltage, now),
             fuelLph = s.derived.fuelLph,
-            latitude = gps?.latitude,
-            longitude = gps?.longitude,
-            gpsAccuracyM = gps?.accuracyM,
+            latitude = gps?.latitude ?: d.estLatitude.takeIf { est },
+            longitude = gps?.longitude ?: d.estLongitude.takeIf { est },
+            gpsAccuracyM = gps?.accuracyM ?: d.estAccuracyM?.toFloat().takeIf { est },
             extraJson = if (extras.length() > 0) extras.toString() else null,
         )
     }
@@ -784,7 +799,42 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         "derived.maxLateralG" to d.maxLateralG,
         "derived.tripCost" to d.tripCost,
         "pc.ecoBand" to d.ecoBand?.toDouble(),
-    ) + dynamicsForRemote(d)
+    ) + dynamicsForRemote(d) + crossForRemote(d)
+
+    /** Fontes cruzadas: o painel web mostra de onde veio cada valor e as conferências. */
+    private fun crossForRemote(d: DerivedMetrics): Map<String, Double?> = mapOf(
+        // 1 = ESP32, 2 = celular
+        "derived.imuSource" to when (d.imuSource) { TelemetryEngine.SOURCE_ESP32 -> 1.0; TelemetryEngine.SOURCE_PHONE -> 2.0; else -> null },
+        "derived.pressureSource" to when (d.pressureSource) { TelemetryEngine.SOURCE_ESP32 -> 1.0; TelemetryEngine.SOURCE_PHONE -> 2.0; else -> null },
+        "derived.positionEstimated" to if (d.positionEstimated) 1.0 else null,
+        "derived.estDistanceM" to d.estDistanceM,
+        "derived.speedFactor" to d.speedFactor,
+        "derived.speedFactorKm" to d.speedFactorKm.takeIf { it > 0 },
+        "derived.engineOn" to d.engineOn?.let { if (it) 1.0 else 0.0 },
+        // 1 = RPM, 2 = tensão, 3 = vibração
+        "derived.engineSource" to when (d.engineSource) { EngineVote.SOURCE_RPM -> 1.0; EngineVote.SOURCE_VOLTS -> 2.0; EngineVote.SOURCE_VIBRATION -> 3.0; else -> null },
+        "derived.slopeBaroPct" to d.slopeBaroPct,
+        "derived.slopeDiffDeg" to d.slopeDiffDeg,
+        "derived.ambientC" to d.ambientC,
+        "derived.battRestV" to d.battRestV,
+        "derived.battCrankV" to d.battCrankV,
+        "derived.battDiffV" to d.battDiffV,
+    )
+
+    /** GPS voltou: espalha o erro da posição estimada pelos pontos gravados no trecho. */
+    private fun correctEstimatedTrack(tripId: Long, c: DeadReckoning.Correction) {
+        recorder?.event("position_corrected") {
+            put("from", c.fromMs)
+            put("to", c.toMs)
+            put("distance_m", c.distanceM)
+            val lat = TelemetryHub.state.value.gps?.latitude ?: 0.0
+            put("error_m", Math.hypot(c.dLat * 111_320.0, c.dLon * 111_320.0 * Math.cos(Math.toRadians(lat))))
+        }
+        scope.launch(Dispatchers.IO) {
+            runCatching { dao.correctEstimatedTrack(tripId, c.fromMs, c.toMs, (c.toMs - c.fromMs).toDouble(), c.dLat, c.dLon) }
+                .onFailure { Log.w(TAG, "Falha ao acertar o percurso estimado", it) }
+        }
+    }
 
     /** Aba Dinâmica: o painel web mostra a mesma tela, ao vivo e no histórico. */
     private fun dynamicsForRemote(d: DerivedMetrics): Map<String, Double?> = mapOf(
@@ -1208,7 +1258,20 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         stopPhoneCompass()
     }
 
+    private fun startPhoneMotion() {
+        if (phoneMotion != null) return
+        val sm = getSystemService(SensorManager::class.java) ?: return
+        val sensor = PhoneMotionSensor(sm) { values, t -> TelemetryHub.mergeValues(values, t) }
+        if (sensor.start()) phoneMotion = sensor
+    }
+
+    private fun stopPhoneMotion() {
+        phoneMotion?.stop()
+        phoneMotion = null
+    }
+
     private fun startPhoneCompass() {
+        startPhoneMotion()
         if (phoneCompass != null) return
         val sm = getSystemService(SensorManager::class.java) ?: return
         val sensor = PhoneCompassSensor(sm) { h -> TelemetryHub.update { it.copy(phoneHeading = h) } }
@@ -1216,6 +1279,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     }
 
     private fun stopPhoneCompass() {
+        stopPhoneMotion()
         phoneCompass?.stop()
         phoneCompass = null
         TelemetryHub.update { it.copy(phoneHeading = null) }

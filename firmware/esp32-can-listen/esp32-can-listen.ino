@@ -40,6 +40,12 @@
  * pelo rumo do GPS: não precisa alinhar o módulo com o carro, só prendê-lo firme e longe de fios de força e ímãs
  * (alto-falante). No descanso, o magnetômetro também desliga.
  *
+ * Tensão da bateria (opcional, firmware 1.6): divisor na placa, 12 V com fusível → R5 100 kΩ → D34 → R6 22 kΩ → GND,
+ * com C1 de 100 nF do D34 ao GND. Lido a 100 Hz; a cada BAT_MS sai a média do intervalo, o menor valor do intervalo,
+ * a tensão em repouso (lida assim que o ESP32 liga, antes da partida) e o menor valor desde que ligou (a partida):
+ *   # bateria v=12.63 min=12.41 repouso=12.58 menor=9.87
+ * Tudo em volts. Sem o divisor (pino abaixo de BAT_MIN_V), aparece uma vez "# bateria ausente" e nada mais.
+ *
  * LEDs de estado: o azul da própria placa (D2) e, opcional, um LED tricolor (RGB) externo com um resistor em
  * cada cor, no conector da placa: comum no D18, vermelho no TX2 (GPIO17), verde no RX2 (GPIO16) e azul no D4.
  * O D18 faz as vezes de 3V3 (anodo comum) ou de GND (catodo comum), conforme LED_ANODO_COMUM: a ligação é a
@@ -77,6 +83,14 @@ const int I2C_SCL = 26;
 const uint8_t BMP_ADDR = 0x77;
 const unsigned long AMB_MS = 5000;   // o app descarta leituras com mais de 10 s
 
+// Tensão da bateria (opcional): divisor R5 100 kΩ / R6 22 kΩ no D34 (ADC1, que funciona com o Bluetooth ligado).
+const int BAT_PIN = 34;
+const float BAT_DIVISOR = (100.0f + 22.0f) / 22.0f;   // 12 V viram 2,16 V no pino
+const float BAT_AJUSTE = 1.0f;                       // correção fina, se o multímetro discordar
+const float BAT_MIN_V = 4.0f;                        // abaixo disso não há divisor (o ESP32 nem ligaria)
+const unsigned long BAT_SAMPLE_MS = 10;
+const unsigned long BAT_MS = 1000;
+
 // LSM6DS3 (opcional), no mesmo I2C. Leitura a 50 Hz, uma linha a cada IMU_MS (média e pico do intervalo).
 const uint8_t LSM_ADDRS[] = {0x6A, 0x6B};  // SA0 no GND ou no 3V3
 const unsigned long IMU_SAMPLE_MS = 20;
@@ -102,6 +116,8 @@ const bool COR[][3] = {{false, false, true}, {false, true, false}, {false, true,
 
 BluetoothSerial bt;
 unsigned long lastAmb = 0;
+unsigned long lastBatSample = 0;
+unsigned long lastBat = 0;
 unsigned long lastImuSample = 0;
 unsigned long lastImu = 0;
 unsigned long lastMagSample = 0;
@@ -496,14 +512,53 @@ void sendFrame(const twai_message_t &m) {
   sendLine(line);
 }
 
+// ---------------------------------------------------------------- Tensão da bateria
+bool batOk = false;
+float batRest = 0, batLowest = 99, batMin = 99, batSum = 0;
+uint16_t batN = 0;
+
+float batRead() {
+  return analogReadMilliVolts(BAT_PIN) / 1000.0f * BAT_DIVISOR * BAT_AJUSTE;
+}
+
+void batBegin() {
+  analogSetPinAttenuation(BAT_PIN, ADC_11db);   // até ~3,1 V no pino (17 V na bateria)
+  float sum = 0;
+  for (int i = 0; i < 32; i++) sum += batRead();
+  batRest = sum / 32;
+  batOk = batRest >= BAT_MIN_V;
+  if (!batOk) sendLine("# bateria ausente");
+  batLowest = batRest;
+}
+
+void batSample() {
+  float v = batRead();
+  batSum += v;
+  batN++;
+  if (v < batMin) batMin = v;
+  if (v < batLowest) batLowest = v;
+}
+
+void sendBattery() {
+  if (!batN) return;
+  char line[80];
+  snprintf(line, sizeof(line), "# bateria v=%.2f min=%.2f repouso=%.2f menor=%.2f", batSum / batN, batMin, batRest, batLowest);
+  sendLine(line);
+  batSum = 0;
+  batN = 0;
+  batMin = 99;
+}
+
 void setup() {
   bool woke = restMark == REST_MAGIC;
   restMark = 0;
   Serial.begin(500000);
+  batBegin();   // primeiro de tudo: a tensão em repouso, antes de a partida puxar a bateria
   ledsInit();
   if (!bt.begin(BT_NAME)) Serial.println("# ERRO Bluetooth nao iniciou; seguindo so pela USB");
-  sendLine("# esp32-can-listen 1.5");
+  sendLine("# esp32-can-listen 1.6");
   if (woke) sendLine("# acordou: atividade na rede CAN");
+  if (!batOk) sendLine("# bateria ausente");   // de novo: a primeira saiu antes do Bluetooth
   Wire.begin(I2C_SDA, I2C_SCL, 100000);   // BMP180, LSM6DS3 e magnetômetro dividem o mesmo I2C
   bmpBegin();
   lsmBegin();
@@ -541,6 +596,15 @@ void loop() {
   if (magChip != MAG_NENHUM && now - lastMag >= MAG_MS) {
     lastMag = now;
     sendMag();
+  }
+
+  if (batOk && now - lastBatSample >= BAT_SAMPLE_MS) {
+    lastBatSample = now;
+    batSample();
+  }
+  if (batOk && now - lastBat >= BAT_MS) {
+    lastBat = now;
+    sendBattery();
   }
 
   if (bmpOk && now - lastAmb >= AMB_MS) {

@@ -87,8 +87,8 @@ for row in (2, 12):
     for c in range(2, 17):   # pinos da barra fêmea, por baixo da placa
         cyl('placa', GOLD, (xy(c, row)[0], y, -FEM_PINO), (xy(c, row)[0], y, 0), 0.2)
 
-BANDS = ['#6d4c41', '#212121', '#d32f2f', '#c9a227']   # 1 kΩ: marrom, preto, vermelho, ouro
 for name, a, b, _ in g.RES:
+    BANDS = g.RES_VALOR.get(name, g.R_1K)[1]
     (x1, y1), (x2, y2) = xy(*a), xy(*b)
     L = math.hypot(x2 - x1, y2 - y1)
     ux, uy = (x2 - x1) / L, (y2 - y1) / L
@@ -538,6 +538,14 @@ for pts in fitas():
         w = FITA['w'] / 2
         box('acessorios', '#333333', min(ax, bx_) - w, min(ay, by_) - w, AC_Z, abs(bx_ - ax) + 2 * w, abs(by_ - ay) + 2 * w, FITA['t'])
 
+CAP_H = 6.0   # cerâmico de disco em pé: pernas de 2 mm, disco de 5 mm de diâmetro e 2,5 mm de espessura
+for name, a, b, _ in g.CAPS:
+    (x1, y1), (x2, y2) = xy(*a), xy(*b)
+    mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+    for hx, hy in ((x1, y1), (x2, y2)):
+        cyl('placa', TIN, (hx, hy, T), (hx, hy, T + 2.2), 0.25)
+    box('placa', '#ef8f2f', mx - 2.5, my - 1.25, T + 2.0, 5.0, 2.5, 4.0)
+
 # ---------------------------------------------------------------- Lado de baixo: fio estanhado e solda
 for name, col, pts in g.TRACKS:
     tube('trilhas', col, [(*xy(c, r), BOT_Z) for c, r in pts], 0.38)
@@ -546,7 +554,7 @@ for name, col, a, b in g.LINKS:
 for name, col, pts, _ in g.BOTTOM_WIRES:   # fio isolado por baixo, por cima das trilhas
     tube('trilhas', col, [(*xy(c, r), -1.0) for c, r in pts], 0.45)
 legs = set()
-for _, a, b, _ in g.RES:
+for _, a, b, _ in g.RES + g.CAPS:
     legs |= {a, b}
 for row in (2, 12):
     legs |= {(c, row) for c in range(2, 17)}
@@ -613,7 +621,9 @@ DET = {
     'sn65': {'x0': round(sx0, 3), 'y0': round(sy0, 3), 'l': g.SN_MM[0], 'w': g.SN_MM[1],
              'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.SN_PINS.items()]} if g.SN_PINS else None,
     'rt': {'x0': round(bx0, 3), 'y0': round(by0, 3), 'lado': g.BUCK_MM, 'pinos': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.BUCK_PINS.items()]},
-    'resistores': [{'n': f'{name} 1 kΩ: {desc}', 'a': rr(xy(*a)), 'b': rr(xy(*b))} for name, a, b, desc in g.RES],
+    'resistores': [{'n': f'{name} {g.RES_VALOR.get(name, g.R_1K)[0]}: {desc}', 'a': rr(xy(*a)), 'b': rr(xy(*b)),
+                    'faixas': g.RES_VALOR.get(name, g.R_1K)[1]} for name, a, b, desc in g.RES],
+    'capacitores': [{'n': f'{name} {desc}', 'a': rr(xy(*a)), 'b': rr(xy(*b))} for name, a, b, desc in g.CAPS],
     'fusivel': {'c': rr((fcx, fcy)), 'w': fw, 'd': fd, 'h': FUSE_H, 'corpo': fb, 'pes': FUSE_FEET, 'tampa': FUSE_CAP,
                 'piso': FUSE_FLOOR, 'torre': FUSE_TOWER, 'vidro': FUSE_TUBE, 'abas': [{'x': tx, 'lado': ty} for tx, ty in FUSE_TABS],
                 'pinos': [rr(xy(*cr)) for cr in g.FUSE_PINS.values()]},

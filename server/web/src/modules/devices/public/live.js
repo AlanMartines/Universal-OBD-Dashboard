@@ -43,6 +43,21 @@
     'derived.bumps': ['Buracos e impactos', '', 0], 'derived.maxBrakeG': ['Frenagem máxima', 'g', 2],
     'derived.maxAccelG': ['Arrancada máxima', 'g', 2], 'derived.maxLateralG': ['Curva máxima', 'g', 2],
     'derived.imuStage': ['Calibração do movimento (0 a 2)', '', 0],
+    // Fontes cruzadas: de onde vem cada valor e as conferências entre o carro, o ESP32 e o celular
+    'derived.imuSource': ['Fonte do movimento (1 ESP32, 2 celular)', '', 0],
+    'derived.pressureSource': ['Fonte da pressão (1 ESP32, 2 celular)', '', 0],
+    'derived.positionEstimated': ['Posição estimada sem GPS', '', 0], 'derived.estDistanceM': ['Andado sem GPS', 'm', 0],
+    'derived.speedFactor': ['Fator da velocidade (GPS)', '', 3], 'derived.speedFactorKm': ['Fator conferido em', 'km', 0],
+    'derived.engineOn': ['Motor ligado (votação)', '', 0], 'derived.engineSource': ['Motor: fonte (1 rotação, 2 tensão, 3 vibração)', '', 0],
+    'derived.slopeBaroPct': ['Inclinação pela altitude', '%', 1], 'derived.slopeDiffDeg': ['Inclinação: sensor − altitude', '°', 1],
+    'derived.ambientC': ['Temperatura de fora (estimada)', '°C', 0],
+    esp_batt_v: ['Bateria (ESP32)', 'V', 2], esp_batt_min: ['Bateria, menor do segundo (ESP32)', 'V', 2],
+    esp_batt_rest: ['Bateria em repouso (ESP32)', 'V', 2], esp_batt_lowest: ['Bateria, menor desde que ligou (ESP32)', 'V', 2],
+    'derived.battRestV': ['Bateria em repouso', 'V', 2], 'derived.battCrankV': ['Bateria na partida', 'V', 2],
+    'derived.battDiffV': ['Bateria: ESP32 − carro', 'V', 2],
+    phone_ax: ['Aceleração X (celular)', 'g', 3], phone_ay: ['Aceleração Y (celular)', 'g', 3], phone_az: ['Aceleração Z (celular)', 'g', 3],
+    phone_gx: ['Rotação X (celular)', '°/s', 1], phone_gy: ['Rotação Y (celular)', '°/s', 1], phone_gz: ['Rotação Z (celular)', '°/s', 1],
+    phone_peak: ['Pico de impacto (celular)', 'g', 2], phone_pressure: ['Pressão do ar (celular)', 'hPa', 1],
   };
   var HIGHLIGHTS = ['speed', 'rpm', 'coolant_temp', 'battery_volts'];
   // Valores que só valem com o motor rodando: sem transmissão, a última leitura (em geral, motor já
@@ -50,7 +65,8 @@
   var MOMENTARY = ['speed', 'rpm', 'can_speed', 'can_rpm', 'map', 'maf', 'throttle', 'engine_load', 'timing_advance',
     'stft_b1', 'ltft_b1', 'lambda_v', 'can_fuel_lph', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.estimatedLoadPct',
     'derived.estimatedGear', 'derived.recommendedGear', 'derived.vacuumKpa',
-    'imu_ax', 'imu_ay', 'imu_az', 'imu_gx', 'imu_gy', 'imu_gz', 'imu_peak', 'derived.accelG', 'derived.lateralG', 'derived.impactG'];
+    'imu_ax', 'imu_ay', 'imu_az', 'imu_gx', 'imu_gy', 'imu_gz', 'imu_peak', 'derived.accelG', 'derived.lateralG', 'derived.impactG',
+    'phone_ax', 'phone_ay', 'phone_az', 'phone_gx', 'phone_gy', 'phone_gz', 'phone_peak'];
   function momentary(id) { return MOMENTARY.indexOf(id) >= 0 || /^lambda_/.test(id); }
   var shown = {};
   var isStale = false;
@@ -99,10 +115,13 @@
     ['Motor', ['derived.estimatedLoadPct', 'derived.vacuumKpa', 'derived.mapOffsetKpa', 'engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear', 'can_rpm', 'can_coolant_temp']],
     ['Combustível', ['fuel_level_pct', 'can_fuel_lph', 'derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
     ['Viagem', ['can_speed', 'trip_distance_km', 'derived.tripDistanceKm', 'trip_km', 'odometer_km']],
-    ['Elétrica', ['can_voltage']],
+    ['Elétrica', ['can_voltage', 'esp_batt_v', 'esp_batt_min', 'esp_batt_rest', 'esp_batt_lowest', 'derived.battRestV', 'derived.battCrankV', 'derived.battDiffV']],
     ['Movimento', ['derived.accelG', 'derived.lateralG', 'derived.slopePct', 'derived.impactG', 'derived.bumps', 'derived.maxBrakeG',
       'derived.maxAccelG', 'derived.maxLateralG', 'derived.imuStage', 'imu_ax', 'imu_ay', 'imu_az', 'imu_gx', 'imu_gy', 'imu_gz', 'imu_peak']],
-    ['Ambiente', ['cabin_temp', 'cabin_pressure', 'intake_temp']],
+    ['Ambiente', ['cabin_temp', 'cabin_pressure', 'intake_temp', 'derived.ambientC', 'phone_pressure']],
+    ['Fontes cruzadas', ['derived.positionEstimated', 'derived.estDistanceM', 'derived.speedFactor', 'derived.speedFactorKm', 'derived.engineOn',
+      'derived.engineSource', 'derived.imuSource', 'derived.pressureSource', 'derived.slopeBaroPct', 'derived.slopeDiffDeg',
+      'phone_ax', 'phone_ay', 'phone_az', 'phone_gx', 'phone_gy', 'phone_gz', 'phone_peak']],
     ['Outros', []],
   ];
 
