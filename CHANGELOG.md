@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Manutenção:** o card "Novo item de manutenção" ficava colado nos cartões de resumo de cima.
+
 ## [0.9.49] - 2026-11-15
 
 ### Adicionado

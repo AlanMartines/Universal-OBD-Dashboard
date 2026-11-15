@@ -249,6 +249,7 @@ a:not(.btn) { color: var(--accent); text-underline-offset: 2px; }
 .tile b { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
 .tile small { color: var(--muted); font-size: 0.75rem; }
 .tiles + .card { margin-top: 12px; }
+#tab-maint > .tiles { margin-bottom: 12px; }
 /* Cartõezinhos no fim de uma coluna: no celular em pé a coluna seguinte vem logo abaixo e precisa do mesmo respiro dos cards. */
 .col > .tiles:last-child { margin-bottom: 12px; }
 
