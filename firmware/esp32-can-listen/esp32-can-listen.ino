@@ -19,12 +19,12 @@
  * O primeiro bit dominante no RX (a rede acordando: chave, porta, alarme) acorda o ESP32, que
  * reinicia do zero e volta a escutar em cerca de 2 s. Nada é enviado à rede para acordá-la.
  *
- * Sensor opcional BMP180 (GY-68 / HW-596) no I2C, SDA em D25 e SCL em D26 (D21 e D22 são do CAN):
+ * Sensor BMP180 (recomendado; sem ele, o resto funciona igual) (GY-68 / HW-596) no I2C, SDA em D25 e SCL em D26 (D21 e D22 são do CAN):
  * temperatura e pressão do lugar onde o módulo está, a cada AMB_MS, numa linha de estado
  *   # bmp180 temp=24.3C pressao=1013.2hPa
  * Sem o sensor ligado, aparece uma vez "# bmp180 ausente" e o resto segue igual.
  *
- * Sensor opcional LSM6DS3 (acelerômetro e giroscópio, módulo de 13 x 18 mm) no mesmo I2C, endereço 0x6A
+ * Sensor LSM6DS3 (recomendado; sem ele, o app usa o celular) (acelerômetro e giroscópio, módulo de 13 x 18 mm) no mesmo I2C, endereço 0x6A
  * (SA0 no GND) ou 0x6B, com CS no 3V3. Lido a 50 Hz; a cada IMU_MS sai a média do intervalo e o maior
  * desvio da gravidade (buracos e impactos):
  *   # lsm6ds3 ax=0.012 ay=-0.034 az=0.998 gx=0.1 gy=-0.2 gz=0.0 pico=0.15
@@ -32,7 +32,7 @@
  * módulo: o app converte para frente, lado e cima do carro depois de calibrar com o carro parado.
  * Sem o sensor, aparece uma vez "# lsm6ds3 ausente". No descanso, o sensor também desliga.
  *
- * Magnetômetro opcional (bússola), no mesmo I2C: placa GY-273, que sai com um de três chips, achado sozinho
+ * Magnetômetro (recomendado; sem ele, o app usa a bússola do celular), no mesmo I2C: placa GY-273, que sai com um de três chips, achado sozinho
  * pelo endereço e pela identificação: QMC5883L (0x0D), QMC5883P (0x2C) ou HMC5883L (0x1E). A cada MAG_MS sai a
  * média do intervalo, em microtesla (µT), nos eixos impressos no módulo:
  *   # mag x=12.3 y=-4.5 z=30.1
@@ -40,7 +40,7 @@
  * pelo rumo do GPS: não precisa alinhar o módulo com o carro, só prendê-lo firme e longe de fios de força e ímãs
  * (alto-falante). No descanso, o magnetômetro também desliga.
  *
- * Tensão da bateria (opcional, firmware 1.6): divisor na placa, 12 V com fusível → R5 100 kΩ → D34 → R6 20 kΩ → GND,
+ * Tensão da bateria (recomendado, firmware 1.6): divisor na placa, 12 V com fusível → R5 100 kΩ → D34 → R6 20 kΩ → GND,
  * com C1 de 100 nF do D34 ao GND. Lido a 100 Hz; a cada BAT_MS sai a média do intervalo, o menor valor do intervalo,
  * a tensão em repouso (lida assim que o ESP32 liga, antes da partida) e o menor valor desde que ligou (a partida):
  *   # bateria v=12.63 min=12.41 repouso=12.58 menor=9.87
@@ -77,13 +77,13 @@ const unsigned long IDLE_MS = 120000;
 const uint32_t REST_MAGIC = 0x52455354;
 RTC_NOINIT_ATTR uint32_t restMark;
 
-// BMP180 (opcional): I2C fora dos pinos do CAN.
+// BMP180 (recomendado; ausente não trava nada): I2C fora dos pinos do CAN.
 const int I2C_SDA = 25;
 const int I2C_SCL = 26;
 const uint8_t BMP_ADDR = 0x77;
 const unsigned long AMB_MS = 5000;   // o app descarta leituras com mais de 10 s
 
-// Tensão da bateria (opcional): divisor R5 100 kΩ / R6 20 kΩ no D34 (ADC1, que funciona com o Bluetooth ligado).
+// Tensão da bateria (recomendado; ausente não trava nada): divisor R5 100 kΩ / R6 20 kΩ no D34 (ADC1, que funciona com o Bluetooth ligado).
 const int BAT_PIN = 34;
 const float BAT_DIVISOR = (100.0f + 20.0f) / 20.0f;   // 12 V viram 2,00 V no pino (com 22 kΩ no R6: (100 + 22) / 22)
 const float BAT_AJUSTE = 1.0f;                       // correção fina, se o multímetro discordar
@@ -91,12 +91,12 @@ const float BAT_MIN_V = 4.0f;                        // abaixo disso não há di
 const unsigned long BAT_SAMPLE_MS = 10;
 const unsigned long BAT_MS = 1000;
 
-// LSM6DS3 (opcional), no mesmo I2C. Leitura a 50 Hz, uma linha a cada IMU_MS (média e pico do intervalo).
+// LSM6DS3 (recomendado; ausente não trava nada), no mesmo I2C. Leitura a 50 Hz, uma linha a cada IMU_MS (média e pico do intervalo).
 const uint8_t LSM_ADDRS[] = {0x6A, 0x6B};  // SA0 no GND ou no 3V3
 const unsigned long IMU_SAMPLE_MS = 20;
 const unsigned long IMU_MS = 200;
 
-// Magnetômetro (opcional), no mesmo I2C. Leitura a 20 Hz, uma linha a cada MAG_MS (média do intervalo).
+// Magnetômetro (recomendado; ausente não trava nada), no mesmo I2C. Leitura a 20 Hz, uma linha a cada MAG_MS (média do intervalo).
 const unsigned long MAG_SAMPLE_MS = 50;
 const unsigned long MAG_MS = 200;
 

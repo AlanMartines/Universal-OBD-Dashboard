@@ -4,6 +4,20 @@ Escuta passiva da rede CAN com ESP32 clássico (DevKit de 30 pinos), a 50 kbit/s
 
 Só escuta: o TWAI fica em Listen-Only, sem fila de transmissão, e o TX do transceptor fica preso no nível recessivo.
 
+## Peças: essencial, recomendado e opcional
+
+O app funciona só com o ELM327. Cada peça recomendada acrescenta informação ou deixa os cálculos mais precisos, porque o app cruza as fontes (Sensores → Fontes cruzadas). Sem uma delas, tudo continua funcionando: o firmware avisa "ausente" e o app usa o que houver.
+
+| Nível | Peça | Sem ela |
+|---|---|---|
+| Essencial | ELM327 | O app não lê o carro. |
+| Recomendado | ESP32 com a escuta CAN | Fica só o ELM327, mais lento (linha K), e saem os sensores abaixo. |
+| Recomendado | LSM6DS3 (acelerômetro e giroscópio) | O movimento vem dos sensores do celular, menos precisos (o celular mexe no suporte); o percurso sem GPS perde as curvas entre uma leitura e outra. |
+| Recomendado | BMP180 (pressão e temperatura) | A altitude vem do barômetro do celular, se ele tiver; sem ele, somem a altitude, a conferência do MAP e a conferência da inclinação. |
+| Recomendado | GY-273 (bússola) | Parado ou sem GPS, o rumo vem só da bússola do celular; o percurso sem GPS fica menos certo. |
+| Recomendado | Divisor da bateria (R5, R6 e C1) | Sem a tensão em repouso e sem a queda na partida. |
+| Opcional | LED tricolor | Sem o aviso visual na tampa; o LED azul do ESP32 continua. |
+
 ## Gravar
 
 Faça isto com a placa desligada do carro.
@@ -17,7 +31,7 @@ Se faltar memória ao compilar, escolha *Ferramentas → Partition Scheme → Hu
 
 A velocidade é fixa em `TWAI_TIMING_CONFIG_50KBITS()`, a da rede do Uno Vivace. Em outro carro, ajuste esse valor e o aviso `# listen-only` logo abaixo.
 
-## Sensor BMP180 (opcional)
+## Sensor BMP180 (recomendado)
 
 Temperatura e pressão do lugar onde o módulo fica, no I2C. Serve o módulo GY-68 (com VCC e 3.3V) ou o HW-596 (VIN):
 
@@ -33,7 +47,7 @@ Na placa ilhada, o conector do cabo leva o VCC no 5 V: aí use o GY-68, que tem 
 
 Embaixo do painel, perto do OBD, a temperatura medida é a daquele canto, e o calor do ESP32 e do conversor também chega até o sensor. Para medir a temperatura da cabine, leve o sensor com um cabo de quatro fios para um lugar ventilado e longe do sol direto. A pressão serve como está: o interior do carro não é vedado, então ela acompanha a pressão do lado de fora e a altitude.
 
-## Sensor LSM6DS3 (opcional)
+## Sensor LSM6DS3 (recomendado)
 
 Acelerômetro e giroscópio de 6 eixos, no mesmo I2C do BMP180 (SDA no D25, SCL no D26). Serve o módulo de 13 × 18 mm que aceita LSM6DS3 ou BMI160 (o firmware lê o LSM6DS3 e o LSM6DS3TR-C). Ele tem regulador:
 
@@ -66,7 +80,7 @@ Na tela Dinâmica há dois ajustes à mão, que passam a valer no lugar do apren
 - **Zerar nível:** com o carro parado num piso plano, a gravidade dos próximos 3 s vira o "cima". A frente fica como estava.
 - **Calibrar frente:** arma a calibração; na próxima arrancada em linha reta, de 5 a 20 km/h, a direção da aceleração vira a frente. Uma curva ou freada no meio descarta a tentativa e espera a próxima. Tocar de novo cancela.
 
-## Magnetômetro (opcional, bússola)
+## Magnetômetro (recomendado, bússola)
 
 Placa GY-273, no mesmo I2C (SDA no D25, SCL no D26). Ela sai de fábrica com um de três chips, e o firmware acha sozinho qual é: QMC5883L (0x0D), QMC5883P (0x2C) ou HMC5883L (0x1E). A placa tem regulador:
 
@@ -88,7 +102,7 @@ Ao iniciar aparece `# mag ok qmc5883l em 0x0D` (ou o chip achado); sem o módulo
 
 O app calibra a bússola sozinho, pelo rumo do GPS: andando em linha reta, guarda a leitura em cada faixa de 10° do rumo, acha o "ferro" do carro e monta uma tabela de desvio (que já inclui a declinação magnética). Não precisa alinhar o módulo com o carro. Ela fica pronta depois de rodar nas quatro direções (o card de estado mostra o progresso); andando, o rumo vem do GPS, e a bússola vale parado, devagar ou sem sinal. Prenda o módulo firme, longe de fios de força, do alto-falante e de ímãs. Se ele mudar de posição, a bússola percebe (as leituras deixam de bater com as guardadas) e recomeça.
 
-## Tensão da bateria (opcional, divisor na placa)
+## Tensão da bateria (recomendado, divisor na placa)
 
 Mede a bateria pelo próprio ESP32, sem depender da rede do carro: a tensão em repouso (antes da partida), a queda na partida e a carga do alternador andando. São três peças na placa, embaixo do RT8272 ([montagem](../../veiculos/fiat-uno-vivace-2012/placa/README.md#divisor-da-bateria)):
 

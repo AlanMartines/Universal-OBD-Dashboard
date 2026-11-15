@@ -21,6 +21,22 @@
       <li><b>O celular faz as contas:</b> mostradores, consumo, dinâmica, fontes cruzadas, alertas e manutenção. Grava uma amostra a cada 2 s e manda ao servidor ao vivo e no histórico.</li>
       <li><b>O ESP32 dorme sozinho:</b> 2 min sem quadros na rede e ele entra em sono leve; acorda com a rede (chave, porta, alarme) e volta em cerca de 2 s.</li>
     </ul>
+    <h3 class="h6 fw-semibold mt-4">Peças: essencial, recomendado e opcional</h3>
+    <p class="mb-2">O app funciona só com o ELM327. Cada peça recomendada acrescenta informação ou deixa os cálculos mais precisos, porque o app cruza as fontes. Sem uma delas, tudo continua funcionando: o firmware avisa "ausente" e o app usa o que houver.</p>
+    <div class="table-responsive">
+      <table class="table table-sm align-top notas-table mb-0">
+        <thead><tr><th scope="col">Peça</th><th scope="col">Nível</th><th scope="col">Sem ela</th></tr></thead>
+        <tbody>
+          <tr><td>ELM327</td><td><span class="badge text-bg-danger">essencial</span></td><td>O app não lê o carro.</td></tr>
+          <tr><td>ESP32 com a escuta CAN</td><td><span class="badge text-bg-primary">recomendado</span></td><td>Fica só o ELM327, mais lento (linha K), e saem os sensores abaixo.</td></tr>
+          <tr><td>LSM6DS3 (acelerômetro e giroscópio)</td><td><span class="badge text-bg-primary">recomendado</span></td><td>Movimento pelos sensores do celular, menos precisos; o percurso sem GPS perde as curvas entre uma leitura e outra.</td></tr>
+          <tr><td>BMP180 (pressão e temperatura)</td><td><span class="badge text-bg-primary">recomendado</span></td><td>Altitude pelo barômetro do celular, se tiver; sem ele, somem a altitude e as conferências do MAP e da inclinação.</td></tr>
+          <tr><td>GY-273 (bússola)</td><td><span class="badge text-bg-primary">recomendado</span></td><td>Parado ou sem GPS, rumo só pela bússola do celular; percurso sem GPS menos certo.</td></tr>
+          <tr><td>Divisor da bateria</td><td><span class="badge text-bg-primary">recomendado</span></td><td>Sem a tensão em repouso e sem a queda na partida.</td></tr>
+          <tr><td>LED tricolor</td><td><span class="badge text-bg-secondary">opcional</span></td><td>Sem o aviso visual na tampa; o LED azul do ESP32 continua.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
@@ -32,7 +48,7 @@
       <li><span class="badge text-bg-warning">placa</span><span>Montar o divisor da bateria (R5 100 kΩ, R6 20 kΩ, C1 100 nF "104") embaixo do RT8272 e gravar o firmware 1.6 pelo cabo USB.</span></li>
       <li><span class="badge text-bg-warning">app</span><span>Refazer o Calibrar frente: arrancada em linha reta, de 5 a 20 km/h.</span></li>
       <li><span class="badge text-bg-warning">consumo</span><span>Segundo tanque cheio, com captura e ESP32, para confirmar o fator 0,66 do consumo da injeção pela rede CAN.</span></li>
-      <li><span class="badge text-bg-warning">sensor</span><span>Instalar o GY-273 (bússola) no carro; o firmware já procura sozinho.</span></li>
+      <li><span class="badge text-bg-warning">sensor</span><span>Instalar o GY-273 (bússola, recomendado) no carro; o firmware já procura sozinho.</span></li>
       <li><span class="badge text-bg-secondary">alternativa</span><span>Versão com SN65HVD230: tirar o R2 de 120 Ω do módulo antes de ligar no carro.</span></li>
     </ul>
     <h3 class="h6 fw-semibold">Desenvolvimento</h3>
@@ -70,6 +86,8 @@
       <li><span class="badge text-bg-success">0.9.48</span><span>Aviso do ESP32 sem conexão aos 30 s, com contagem e fechamento automático.</span></li>
       <li><span class="badge text-bg-success">0.9.49</span><span>GPS nativo quando o celular não tem os serviços do Google.</span></li>
       <li><span class="badge text-bg-success">0.9.50</span><span>Fontes cruzadas (percurso sem GPS, fator da velocidade pelo GPS, motor por votação, celular de reserva, inclinação pela altitude, temperatura de fora) e a bateria pelo divisor do ESP32 (firmware 1.6).</span></li>
+      <li><span class="badge text-bg-success">0.9.51</span><span>Notas do projeto no painel (só Super Admin) e o divisor da bateria com R6 de 20 kΩ.</span></li>
+      <li><span class="badge text-bg-success">próxima</span><span>Peças em três níveis (essencial, recomendado, opcional) na documentação e no app: o card Fontes cruzadas mostra o que falta e o que fica menos preciso.</span></li>
     </ul>
   </div>
 </section>

@@ -6,6 +6,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Peças em três níveis:** essencial (ELM327), recomendado (ESP32 com a escuta CAN, LSM6DS3, BMP180, GY-273 e o divisor da bateria) e opcional (LED tricolor), no firmware, na placa, na lista de compras e nas Notas do projeto. Sem uma peça recomendada tudo continua funcionando, com menos informação ou menos precisão.
+- **Fontes cruzadas mostra o que falta:** o card da aba Sensores lista as peças recomendadas ausentes e o que fica menos preciso sem cada uma (etiqueta "Menos preciso").
+
 ## [0.9.51] - 2026-11-15
 
 ### Adicionado

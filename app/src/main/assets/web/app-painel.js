@@ -156,9 +156,23 @@ function renderCrossCard(s) {
   const d = s.derived || {};
   const r = s.readings || {};
   const v = (id) => (typeof r[id] === 'number' ? r[id] : null);
+  // Peças recomendadas que faltam: tudo funciona, mas com menos informação ou menos precisão
+  const info = s.canInfo || {};
+  const off = (v) => v === 'ausente' || v === 'sem resposta';
+  const espOff = !s.canConfigured || s.canLink === 'lost';
+  const missing = {
+    esp: espOff ? 'só o ELM327 (mais lento); sem os sensores do ESP32' : null,
+    lsm: !espOff && off(info.lsm) ? 'movimento pelo celular, menos preciso' : null,
+    bmp: !espOff && off(info.bmp) ? (d.pressureSource ? 'altitude pelo barômetro do celular' : 'sem altitude e sem as conferências do MAP e da inclinação') : null,
+    mag: !espOff && off(info.mag) ? 'parado ou sem GPS, rumo só pela bússola do celular' : null,
+    batt: !espOff && info.firmware && (off(info.batt) || info.batt == null)
+      ? (info.batt == null ? 'grave o firmware 1.6 e monte o divisor para ver a bateria pelo ESP32' : 'sem tensão em repouso e sem a queda na partida')
+      : null,
+  };
+  const lacking = Object.values(missing).some((x) => x);
   const warn = d.slopeSuspicious || d.positionEstimated || d.imuSource === 'celular';
-  $('cross-pill').textContent = warn ? 'Atenção' : 'Tudo certo';
-  $('cross-pill').className = 'pill ' + (warn ? 'pill-warn' : 'pill-ok');
+  $('cross-pill').textContent = warn ? 'Atenção' : lacking ? 'Menos preciso' : 'Tudo certo';
+  $('cross-pill').className = 'pill ' + (warn || lacking ? 'pill-warn' : 'pill-ok');
   crossSet('pos', 'Posição', d.positionEstimated
     ? `estimada sem GPS · ${fmt(d.estDistanceM || 0, 0)} m · ±${fmt(d.estAccuracyM || 0, 0)} m`
     : s.gps ? 'GPS' : 'sem GPS');
@@ -181,6 +195,12 @@ function renderCrossCard(s) {
   if (d.battCrankV != null) parts.push(`partida ${fmt(d.battCrankV, 2)} V` + (d.battCrankV < 9.6 ? ' (fraca)' : ''));
   if (d.battDiffV != null) parts.push(`${d.battDiffV >= 0 ? '+' : '−'}${fmt(Math.abs(d.battDiffV), 2)} V do carro`);
   crossSet('batt', 'Bateria pelo ESP32', parts.length ? parts.join(' · ') : null);
+  // Recomendadas que faltam, com o que se perde
+  crossSet('miss-esp', 'Falta o ESP32 (recomendado)', missing.esp);
+  crossSet('miss-lsm', 'Falta o LSM6DS3 (recomendado)', missing.lsm);
+  crossSet('miss-bmp', 'Falta o BMP180 (recomendado)', missing.bmp);
+  crossSet('miss-mag', 'Falta o GY-273 (recomendado)', missing.mag);
+  crossSet('miss-batt', 'Divisor da bateria (recomendado)', missing.batt);
 }
 
 function renderCanPill(s, status) {
