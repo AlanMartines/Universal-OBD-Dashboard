@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.53] - 2026-11-15
+
 ### Corrigido
 - **App fechando ao iniciar a captura em Android abaixo do 14:** a conversão da altitude do GPS (só existe a partir do Android 14) era carregada em qualquer versão, e o app caía na primeira posição do GPS. Vinha desde a v0.9.49; agora essa parte só é carregada no Android 14 ou mais novo.
 - **Esquema do divisor da bateria:** o fio de baixo do R6 e do C1 agora termina num símbolo de terra, com "GND (pinos 4 e 5 do OBD)"; antes o GND aparecia solto, sem mostrar a ligação.
