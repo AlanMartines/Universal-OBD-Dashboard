@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.50] - 2026-11-15
+
 ### Adicionado
 - **Fontes cruzadas (Sensores → Fontes cruzadas):** o app cruza o carro, o ESP32 e o celular para perder menos dados:
   - **Percurso sem buracos:** sem GPS (túnel, garagem), a posição continua pela velocidade do carro e pelo rumo (bússola e giro). Quando o GPS volta, o trecho estimado é acertado de uma vez. Os pontos ficam marcados (`derived.positionEstimated`).
