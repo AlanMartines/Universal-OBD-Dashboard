@@ -5,7 +5,6 @@ import android.content.Context
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import android.location.altitude.AltitudeConverter
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -52,7 +51,6 @@ class LocationSource(
 ) {
     private val main = Handler(Looper.getMainLooper())
     private val altitudeWorker by lazy { Executors.newSingleThreadExecutor() }
-    private val altitudeConverter by lazy { if (Build.VERSION.SDK_INT >= 34) AltitudeConverter() else null }
     private val lm: LocationManager? = context.getSystemService(LocationManager::class.java)
 
     private var source: GpsSourcePolicy.Source? = null
@@ -177,15 +175,16 @@ class LocationSource(
 
     /** Sem altitude do nível do mar na posição, o Android 14+ calcula (lê um arquivo: fora da thread principal). */
     private fun deliver(loc: Location) {
-        val converter = altitudeConverter
-        if (Build.VERSION.SDK_INT < 34 || converter == null || !loc.hasAltitude() || loc.hasMslAltitude()) {
+        // Nada do Android 14 pode aparecer fora deste teste: em versões antigas, a classe não existe e o app fecha
+        // (v0.9.49 a 0.9.52: um campo do tipo AltitudeConverter derrubava o app na primeira posição).
+        if (Build.VERSION.SDK_INT < 34 || !loc.hasAltitude() || loc.hasMslAltitude()) {
             onLocation(loc)
             return
         }
         altitudeWorker.execute {
             try {
-                converter.addMslAltitudeToLocation(context, loc)
-            } catch (e: Exception) {
+                MslAltitude.add(context, loc)
+            } catch (e: Throwable) {
                 Log.d(TAG, "Altitude do nível do mar indisponível: ${e.message}")
             }
             main.post { if (running) onLocation(loc) }
@@ -196,4 +195,12 @@ class LocationSource(
         private const val TAG = "LocationSource"
         private const val WATCHDOG_MS = 5_000L
     }
+}
+
+/** Altitude acima do nível do mar pelo próprio Android 14+. Só é carregada (e a classe só é resolvida) nessa versão. */
+@androidx.annotation.RequiresApi(34)
+private object MslAltitude {
+    private val converter by lazy { android.location.altitude.AltitudeConverter() }
+
+    fun add(context: Context, loc: Location) = converter.addMslAltitudeToLocation(context, loc)
 }
