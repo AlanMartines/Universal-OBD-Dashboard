@@ -48,6 +48,7 @@ object AppSettings {
     private const val KEY_IMU_CALIBRATION = "imu_calibration"
     private const val KEY_PHONE_IMU_CALIBRATION = "phone_imu_calibration"
     private const val KEY_SPEED_CALIBRATION = "speed_calibration_"
+    private const val KEY_HEALTH = "health_"
     private const val KEY_COMPASS_CALIBRATION = "compass_calibration"
     private const val KEY_CAN_ADAPTER = "can_adapter_names"
     private const val KEY_SENSOR_TRIMS = "sensor_trims"
@@ -116,6 +117,16 @@ object AppSettings {
     }
 
     fun clearSpeedCalibration(context: Context, vehicleId: String) = prefs(context).edit { remove(KEY_SPEED_CALIBRATION + vehicleId) }
+
+    /** Pré-diagnóstico do veículo: últimas viagens de cada checagem e o último estado da central; vai no backup. */
+    fun health(context: Context, vehicleId: String): com.universal.obddashboard.telemetry.HealthHistory =
+        com.universal.obddashboard.telemetry.HealthHistory.decode(prefs(context).getString(KEY_HEALTH + vehicleId, null))
+
+    fun setHealth(context: Context, vehicleId: String, h: com.universal.obddashboard.telemetry.HealthHistory) {
+        prefs(context).edit { putString(KEY_HEALTH + vehicleId, h.encode()) }
+    }
+
+    fun clearHealth(context: Context, vehicleId: String) = prefs(context).edit { remove(KEY_HEALTH + vehicleId) }
 
     fun clearCompassCalibration(context: Context) = prefs(context).edit { remove(KEY_COMPASS_CALIBRATION) }
 

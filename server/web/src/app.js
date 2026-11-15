@@ -75,7 +75,6 @@ export function createHandlebars() {
 /** Item do menu destacado em cada página. */
 function activePageOf(url) {
   if (url.startsWith('/painel-veiculo')) return 'vehicle';
-  if (url.startsWith('/admin/notas')) return 'notas';
   if (url.startsWith('/admin')) return 'admin';
   if (url.startsWith('/meus-dados/sessoes')) return 'sessoes';
   if (url.startsWith('/meus-dados')) return 'conta';

@@ -58,7 +58,13 @@
     phone_ax: ['Aceleração X (celular)', 'g', 3], phone_ay: ['Aceleração Y (celular)', 'g', 3], phone_az: ['Aceleração Z (celular)', 'g', 3],
     phone_gx: ['Rotação X (celular)', '°/s', 1], phone_gy: ['Rotação Y (celular)', '°/s', 1], phone_gz: ['Rotação Z (celular)', '°/s', 1],
     phone_peak: ['Pico de impacto (celular)', 'g', 2], phone_pressure: ['Pressão do ar (celular)', 'hPa', 1],
+    // Saúde do carro: pré-diagnóstico do app por viagem (0 normal, 1 atenção, 2 verificar)
+    'health.central': ['Central (injeção)', '', 0], 'health.cooling': ['Arrefecimento', '', 0], 'health.electric': ['Elétrica', '', 0],
+    'health.intake': ['Admissão', '', 0], 'health.idle': ['Marcha lenta', '', 0],
+    can_ac: ['Ar-condicionado (painel)', '', 0], can_lights: ['Luzes acesas (painel)', '', 0], can_defog: ['Desembaçador (painel)', '', 0],
   };
+  var HEALTH_TEXT = ['Normal', 'Atenção', 'Verificar'];
+  var ON_OFF = ['can_ac', 'can_lights', 'can_defog'];
   var HIGHLIGHTS = ['speed', 'rpm', 'coolant_temp', 'battery_volts'];
   // Valores que só valem com o motor rodando: sem transmissão, a última leitura (em geral, motor já
   // desligado) mostraria zeros enganosos. Tanque, hodômetro, temperaturas e tensão continuam valendo parado.
@@ -115,10 +121,11 @@
     ['Motor', ['derived.estimatedLoadPct', 'derived.vacuumKpa', 'derived.mapOffsetKpa', 'engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear', 'can_rpm', 'can_coolant_temp']],
     ['Combustível', ['fuel_level_pct', 'can_fuel_lph', 'derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
     ['Viagem', ['can_speed', 'trip_distance_km', 'derived.tripDistanceKm', 'trip_km', 'odometer_km']],
-    ['Elétrica', ['can_voltage', 'esp_batt_v', 'esp_batt_min', 'esp_batt_rest', 'esp_batt_lowest', 'derived.battRestV', 'derived.battCrankV', 'derived.battDiffV']],
+    ['Elétrica', ['can_voltage', 'can_lights', 'can_defog', 'can_ac', 'esp_batt_v', 'esp_batt_min', 'esp_batt_rest', 'esp_batt_lowest', 'derived.battRestV', 'derived.battCrankV', 'derived.battDiffV']],
     ['Movimento', ['derived.accelG', 'derived.lateralG', 'derived.slopePct', 'derived.impactG', 'derived.bumps', 'derived.maxBrakeG',
       'derived.maxAccelG', 'derived.maxLateralG', 'derived.imuStage', 'imu_ax', 'imu_ay', 'imu_az', 'imu_gx', 'imu_gy', 'imu_gz', 'imu_peak']],
     ['Ambiente', ['cabin_temp', 'cabin_pressure', 'intake_temp', 'derived.ambientC', 'phone_pressure']],
+    ['Saúde do carro (app)', ['health.central', 'health.cooling', 'health.electric', 'health.intake', 'health.idle']],
     ['Fontes cruzadas', ['derived.positionEstimated', 'derived.estDistanceM', 'derived.speedFactor', 'derived.speedFactorKm', 'derived.engineOn',
       'derived.engineSource', 'derived.imuSource', 'derived.pressureSource', 'derived.slopeBaroPct', 'derived.slopeDiffDeg',
       'phone_ax', 'phone_ay', 'phone_az', 'phone_gx', 'phone_gy', 'phone_gz', 'phone_peak']],
@@ -206,6 +213,8 @@
   }
 
   function format(id, value) {
+    if (id.indexOf('health.') === 0) return HEALTH_TEXT[value] || '—';
+    if (ON_OFF.indexOf(id) >= 0) return value >= 0.5 ? 'ligado' : 'desligado';
     return value.toLocaleString('pt-BR', { maximumFractionDigits: info(id)[2] });
   }
 

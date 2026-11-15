@@ -10,6 +10,7 @@ import com.universal.obddashboard.maintenance.Maintenance
 import com.universal.obddashboard.maintenance.MaintenanceStore
 import com.universal.obddashboard.orNull
 import com.universal.obddashboard.remote.RemoteSync
+import com.universal.obddashboard.AppSettings
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -36,6 +37,50 @@ class MaintenanceBridge(private val activity: MainActivity) {
     private val ok = JSONObject().put("ok", true).toString()
 
     /** {totalKm, items:[{id, name, intervalKm, intervalMonths, notes, status:{...}, records:[...]}], presets:[...]} */
+    /**
+     * Saúde do carro (pré-diagnóstico): estado de cada subsistema e de cada checagem nas últimas viagens, e a central.
+     * Leve (preferências): resposta direta.
+     */
+    @JavascriptInterface
+    fun getHealth(): String {
+        val h = AppSettings.health(activity, vehicle())
+        val o = JSONObject()
+        o.put("subsystems", JSONArray().apply {
+            h.subsystems().forEach { sub ->
+                put(JSONObject().put("id", sub.id).put("level", sub.level.name).put("checks", JSONArray().apply {
+                    sub.checks.forEach { c ->
+                        put(JSONObject().put("id", c.id).put("level", c.level.name).put("flagged", c.flaggedRecent).put("recent", c.recent)
+                            .put("value", c.last?.value ?: JSONObject.NULL).put("lastFlagged", c.last?.flagged ?: false)
+                            .put("at", c.last?.at ?: JSONObject.NULL))
+                    }
+                }))
+            }
+        })
+        o.put("central", h.central?.let { c ->
+            JSONObject().put("at", c.at).put("mil", c.milOn).put("confirmed", JSONArray(c.confirmed)).put("pending", JSONArray(c.pending))
+                .put("incomplete", c.incomplete?.let { JSONArray(it) } ?: JSONObject.NULL)
+        } ?: JSONObject.NULL)
+        o.put("window", com.universal.obddashboard.telemetry.HealthHistory.REPEAT_WINDOW)
+        o.put("repeat", com.universal.obddashboard.telemetry.HealthHistory.REPEAT_MIN)
+        return o.toString()
+    }
+
+    /** Resumo da saúde do carro em texto, para mandar ao mecânico (WhatsApp, e-mail…). */
+    @JavascriptInterface
+    fun shareHealth(text: String) = activity.runOnUiThread {
+        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+            .putExtra(android.content.Intent.EXTRA_SUBJECT, "Saúde do carro")
+            .putExtra(android.content.Intent.EXTRA_TEXT, text)
+        activity.startActivity(android.content.Intent.createChooser(send, "Enviar resumo"))
+    }
+
+    /** Recomeça o pré-diagnóstico deste veículo (por exemplo, depois de um conserto). */
+    @JavascriptInterface
+    fun clearHealth(): String {
+        AppSettings.clearHealth(activity, vehicle())
+        return "ok"
+    }
+
     @JavascriptInterface
     fun getMaintenance(requestId: String) = activity.answerAsync(requestId) {
         activity.refreshTotalKm()

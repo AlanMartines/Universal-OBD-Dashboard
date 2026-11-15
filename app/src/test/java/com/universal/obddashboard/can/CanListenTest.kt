@@ -70,9 +70,14 @@ class CanListenTest {
         // Consumo da injeção (provável): b4 × 0,66 L/h
         assertEquals(6.6, engine["can_fuel_lph"]!!, 1e-9)
         assertTrue("quadro sem sinal mapeado", decode("t2C1800C83C0000000000").isEmpty())
-        assertTrue("acima de 100% é descartado", decode("t38080000000000C8FF00").isEmpty())
+        assertNull("acima de 100% é descartado", decode("t38080000000000C8FF00")["fuel_level_pct"])
+        // A/C (0x281 b2 bit 6), luzes (0x380 b0 bit 3) e desembaçador (0x180 b2 bit 4): confirmados no mapeamento
+        assertEquals(0.0, engine["can_ac"]!!, 1e-9)
+        assertEquals(1.0, decode("t2818030140750A082504")["can_ac"]!!, 1e-9)
+        assertEquals(1.0, decode("t3808080000000027FF00")["can_lights"]!!, 1e-9)
+        assertEquals(1.0, decode("t18080000100000000000")["can_defog"]!!, 1e-9)
         // O painel manda o nível zerado nos últimos segundos antes de a ignição desligar
-        assertTrue("0% é descartado", decode("t38080000100000000B00").isEmpty())
+        assertNull("0% é descartado", decode("t38080000100000000B00")["fuel_level_pct"])
         // Sinais da escuta viram saídas do perfil: aparecem em Sensores e servem para alarmes
         assertEquals("can", uno.outputs.getValue("fuel_level_pct").lane)
         assertEquals("odometer_km", uno.profile.roles.odometer)

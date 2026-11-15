@@ -283,7 +283,10 @@
       { "id": "can_rpm", "name": "Rotação (painel)", "frame": "281", "start": 5, "length": 2, "formula": "((B*256)+A)/8", "unit": "RPM", "decimals": 0, "min": 0, "max": 8000 },
       { "id": "can_coolant_temp", "name": "Temperatura do motor (painel)", "frame": "281", "start": 3, "length": 1, "formula": "A-40", "unit": "°C", "decimals": 0, "min": -40, "max": 150 },
       { "id": "can_voltage", "name": "Tensão da bateria (painel)", "frame": "3E0", "start": 1, "length": 1, "formula": "A*0.16", "unit": "V", "decimals": 1, "min": 0, "max": 20 },
-      { "id": "can_fuel_lph", "name": "Consumo da injeção (painel)", "frame": "281", "start": 4, "length": 1, "formula": "A*0.66", "unit": "L/h", "decimals": 1, "min": 0, "max": 40 }
+      { "id": "can_fuel_lph", "name": "Consumo da injeção (painel)", "frame": "281", "start": 4, "length": 1, "formula": "A*0.66", "unit": "L/h", "decimals": 1, "min": 0, "max": 40 },
+      {"id": "can_ac", "name": "Ar-condicionado ligado (painel)", "frame": "281", "start": 2, "length": 1, "formula": "(A >> 6) & 1", "unit": "", "decimals": 0, "min": 0, "max": 1},
+      {"id": "can_lights", "name": "Luzes acesas (painel)", "frame": "380", "start": 0, "length": 1, "formula": "(A >> 3) & 1", "unit": "", "decimals": 0, "min": 0, "max": 1},
+      {"id": "can_defog", "name": "Desembaçador ligado (painel)", "frame": "180", "start": 2, "length": 1, "formula": "(A >> 4) & 1", "unit": "", "decimals": 0, "min": 0, "max": 1}
     ]
   },
 

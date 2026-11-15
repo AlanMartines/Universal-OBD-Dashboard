@@ -217,6 +217,17 @@
   </div>
 
   <div class="tab-pane fade" id="pane-health" role="tabpanel" aria-labelledby="tab-health" tabindex="0">
+  {{#if appHealth.length}}
+  <section class="stat-panel mb-3" aria-labelledby="app-health-title">
+    <h2 class="h6 mb-1" id="app-health-title"><i class="fa-solid fa-stethoscope me-1" aria-hidden="true"></i>Pré-diagnóstico do app</h2>
+    <p class="small text-body-secondary mb-2">Checagens feitas por viagem no celular (aquecimento, ventoinha, carga do alternador, vácuo em marcha lenta, oscilação da rotação). Um sinal só vira aviso depois de se repetir em 3 das últimas 5 viagens. Detalhes no app, em Manutenção → Saúde do carro.</p>
+    <ul class="list-unstyled health-findings mb-0">
+      {{#each appHealth}}
+      <li class="health-finding"><span class="badge health-badge health-{{level}}">{{#if (eq level "ok")}}<i class="fa-solid fa-circle-check" aria-hidden="true"></i> Normal{{/if}}{{#if (eq level "warn")}}<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Atenção{{/if}}{{#if (eq level "bad")}}<i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> Verificar{{/if}}</span> <strong>{{topic}}</strong></li>
+      {{/each}}
+    </ul>
+  </section>
+  {{/if}}
   {{#if health.days}}
   <section class="stat-panel mb-3" aria-labelledby="health-title">
     <h2 class="h6 mb-1" id="health-title"><i class="fa-solid fa-heart-pulse me-1" aria-hidden="true"></i>Como o carro está</h2>

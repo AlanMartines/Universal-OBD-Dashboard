@@ -85,7 +85,97 @@ function mtFillSelect() {
   if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
 }
 
+/* ---------------------------------------------------------------- Saúde do carro (pré-diagnóstico) */
+const HL_LEVEL = { NO_DATA: ['Sem dados', 'pill'], OK: ['Normal', 'pill pill-ok'], WATCH: ['Atenção', 'pill pill-warn'], ALERT: ['Verificar', 'pill pill-bad'] };
+const HL_SUB = { central: 'Central (injeção)', cooling: 'Arrefecimento', electric: 'Elétrica', intake: 'Admissão', idle: 'Marcha lenta' };
+/** Texto de cada checagem: o valor da última viagem e, fora do normal, o que olhar. */
+const HL_CHECK = {
+  warmup: (v, f) => (f ? `Demorou ${fmt(v, 0)} min para chegar a 80 °C: a válvula termostática pode estar presa aberta (ou o dia estava muito frio).` : `Chegou a 80 °C em ${fmt(v, 0)} min depois da partida a frio.`),
+  road_cool: (v, f) => (f ? 'Esfriou abaixo de 75 °C na estrada com o motor já quente: a válvula termostática pode estar presa aberta.' : 'Manteve a temperatura na estrada.'),
+  overheat: (v, f) => (f ? `Chegou a ${fmt(v, 0)} °C e passou um tempo acima da 2ª velocidade da ventoinha: confira o nível do líquido, a ventoinha e a termostática.` : `Máxima de ${fmt(v, 0)} °C.`),
+  charging: (v, f) => (f ? `${fmt(v, 2)} V acima de 1.500 rpm: ${v < 13.5 ? 'o alternador pode não estar carregando bem' : 'acima do normal, verifique o regulador do alternador'} (o normal é 13,5 a 14,7 V).` : `${fmt(v, 2)} V acima de 1.500 rpm.`),
+  rest_v: (v, f) => (f ? `${fmt(v, 2)} V em repouso, antes da partida: bateria descarregada ou fraca.` : `${fmt(v, 2)} V em repouso.`),
+  crank_v: (v, f) => (f ? `Caiu a ${fmt(v, 2)} V na partida: bateria fraca ou motor de partida puxando demais.` : `${fmt(v, 2)} V na partida.`),
+  idle_vacuum: (v, f) => (f ? `MAP em marcha lenta a ${fmt(v * 100, 0)}% da pressão do ar: vácuo fraco. Vale olhar entrada de ar falso, mangueiras, cânister e compressão.` : `MAP em marcha lenta a ${fmt(v * 100, 0)}% da pressão do ar (normal até 42%).`),
+  map_offset: (v, f) => (f ? `O sensor MAP marca ${fmt(Math.abs(v), 1)} kPa ${v > 0 ? 'acima' : 'abaixo'} da pressão do ar com o motor parado: sensor desregulado ou mangueira obstruída.` : `Sensor MAP a ${fmt(v, 1)} kPa da pressão do ar com o motor parado.`),
+  idle_rpm: (v, f) => (f ? `A rotação oscila ±${fmt(v, 0)} rpm em marcha lenta quente: corpo de borboleta sujo, ar falso ou vela/cabo.` : `Rotação estável em marcha lenta (±${fmt(v, 0)} rpm).`),
+};
+const HL_EMPTY = {
+  warmup: 'Ainda sem partida a frio.', road_cool: 'Ainda sem trecho de estrada com o motor quente.', overheat: 'Ainda sem motor aquecido.',
+  charging: 'Ainda sem trecho acima de 1.500 rpm.', rest_v: 'Tensão em repouso: precisa do divisor da bateria no ESP32.', crank_v: 'Queda na partida: precisa do divisor da bateria no ESP32.',
+  idle_vacuum: 'Ainda sem marcha lenta quente (parado, sem A/C).', map_offset: 'Ainda sem leitura com a chave ligada e o motor parado.', idle_rpm: 'Ainda sem marcha lenta quente.',
+};
+let hlData = null;
+
+function hlCentralLines(c) {
+  if (!c) return ['Ainda sem leitura da central.'];
+  const out = [];
+  if (c.mil) out.push('Luz de injeção acesa.');
+  if (c.confirmed.length) out.push('Códigos confirmados: ' + c.confirmed.join(', ') + ' (veja a aba Falhas).');
+  if (c.pending.length) out.push('Códigos pendentes: ' + c.pending.join(', ') + '.');
+  if (!out.length) out.push('Sem luz de injeção e sem códigos.');
+  if (c.incomplete && c.incomplete.length) out.push('Testes da própria central ainda não concluídos: ' + c.incomplete.join(', ') + ' (normal depois de desligar a bateria ou apagar códigos).');
+  return out;
+}
+
+function renderHealth() {
+  hlData = parse(bridge.getHealth(), null);
+  const list = $('hl-list');
+  list.textContent = '';
+  if (!hlData) return;
+  const order = ['NO_DATA', 'OK', 'WATCH', 'ALERT'];
+  const worst = hlData.subsystems.reduce((w, s) => (order.indexOf(s.level) > order.indexOf(w) ? s.level : w), 'NO_DATA');
+  $('hl-pill').textContent = HL_LEVEL[worst][0];
+  $('hl-pill').className = HL_LEVEL[worst][1];
+  for (const sub of hlData.subsystems) {
+    const box = document.createElement('div');
+    box.className = 'health-sub';
+    const head = document.createElement('div');
+    head.className = 'esp-head';
+    const name = document.createElement('b');
+    name.textContent = HL_SUB[sub.id] || sub.id;
+    const pill = document.createElement('span');
+    pill.className = HL_LEVEL[sub.level][1];
+    pill.textContent = HL_LEVEL[sub.level][0];
+    head.append(name, pill);
+    const ul = document.createElement('ul');
+    const lines = sub.id === 'central'
+      ? hlCentralLines(hlData.central).map((t) => [t, sub.level !== 'OK'])
+      : sub.checks.map((c) => {
+        if (c.value == null) return [HL_EMPTY[c.id] || 'Sem dados.', false];
+        const txt = HL_CHECK[c.id] ? HL_CHECK[c.id](c.value, c.lastFlagged) : String(c.value);
+        const rep = c.flagged ? ` Fora do normal em ${c.flagged} das últimas ${c.recent} viagens.` : '';
+        return [txt + rep, c.level === 'WATCH' || c.level === 'ALERT'];
+      });
+    for (const [t, flag] of lines) {
+      const li = document.createElement('li');
+      li.textContent = t;
+      if (flag) li.className = 'flag';
+      ul.appendChild(li);
+    }
+    box.append(head, ul);
+    list.appendChild(box);
+  }
+}
+
+$('hl-share').addEventListener('click', () => {
+  if (!hlData) return;
+  const lines = ['Saúde do carro (pré-diagnóstico do app; sugere verificar, não é diagnóstico)', ''];
+  for (const sub of hlData.subsystems) {
+    lines.push(`${HL_SUB[sub.id] || sub.id}: ${HL_LEVEL[sub.level][0]}`);
+    if (sub.id === 'central') hlCentralLines(hlData.central).forEach((t) => lines.push('- ' + t));
+    else sub.checks.filter((c) => c.value != null).forEach((c) => lines.push('- ' + HL_CHECK[c.id](c.value, c.lastFlagged)));
+  }
+  bridge.shareHealth(lines.join('\n'));
+});
+$('hl-reset').addEventListener('click', () => {
+  if (!confirm('Recomeçar o pré-diagnóstico? O histórico das checagens é apagado e o app volta a observar do zero (bom depois de um conserto).')) return;
+  okOrToast(bridge.clearHealth(), 'Pré-diagnóstico recomeçado.');
+  renderHealth();
+});
+
 async function loadMaintenance() {
+  renderHealth();
   const seq = ++mtSeq;
   const json = await nativeAsync((id) => bridge.getMaintenance(id)).catch((e) => { toast(e.message, true); return null; });
   if (seq !== mtSeq) return;

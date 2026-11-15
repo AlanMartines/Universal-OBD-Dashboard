@@ -72,6 +72,7 @@ import com.universal.obddashboard.telemetry.DeadReckoning
 import com.universal.obddashboard.telemetry.DerivedMetrics
 import com.universal.obddashboard.telemetry.EngineVote
 import com.universal.obddashboard.telemetry.GpsFix
+import com.universal.obddashboard.telemetry.HealthHistory
 import com.universal.obddashboard.telemetry.PowerState
 import com.universal.obddashboard.telemetry.TelemetryEngine
 import com.universal.obddashboard.telemetry.TelemetryHub
@@ -130,6 +131,9 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     /** Bússola do celular: liga junto com o GPS em alta precisão (captura ativa). */
     private var phoneCompass: PhoneCompassSensor? = null
     private var phoneMotion: PhoneMotionSensor? = null
+    /** Pré-diagnóstico: última gravação (relógio monotônico) e o estado de cada subsistema, que vai ao painel. */
+    private var lastHealthSaveMono = 0L
+    @Volatile private var healthLevels: Map<String, Double?> = emptyMap()
     private var locationAllowed = false
 
     /** Tempo parado até perguntar se encerra (null = nunca), do ajuste do usuário. */
@@ -532,6 +536,10 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             result.phoneImuCalibration?.let { AppSettings.setPhoneImuCalibration(this, it) }
             result.speedCalibration?.let { AppSettings.setSpeedCalibration(this, vehicleId, it) }
             result.positionCorrection?.let { c -> trip?.tripId?.let { id -> correctEstimatedTrack(id, c) } }
+            if (mono - lastHealthSaveMono >= HEALTH_SAVE_MS) {
+                lastHealthSaveMono = mono
+                saveHealth(loaded, TelemetryHub.state.value)
+            }
             val gpsAlert = gpsLostAlert(loaded, state, now, mono)
             TelemetryHub.update {
                 it.copy(derived = result.derived, alerts = result.alerts + listOfNotNull(gpsAlert), tripDistanceKm = trip?.distanceKm ?: 0.0)
@@ -799,7 +807,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         "derived.maxLateralG" to d.maxLateralG,
         "derived.tripCost" to d.tripCost,
         "pc.ecoBand" to d.ecoBand?.toDouble(),
-    ) + dynamicsForRemote(d) + crossForRemote(d)
+    ) + dynamicsForRemote(d) + crossForRemote(d) + healthLevels
 
     /** Fontes cruzadas: o painel web mostra de onde veio cada valor e as conferências. */
     private fun crossForRemote(d: DerivedMetrics): Map<String, Double?> = mapOf(
@@ -1148,7 +1156,36 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         stopSelf()
     }
 
+    /**
+     * Junta as observações da viagem ao histórico de saúde do veículo e guarda o estado da central (luz de injeção,
+     * códigos, monitores). A viagem é regravada a cada vez (substitui a anterior), então nada se perde se o app fechar.
+     */
+    private fun saveHealth(loaded: LoadedProfile, s: DashboardState) {
+        val eng = engine ?: return
+        val t = trip ?: return
+        runCatching {
+            val h = AppSettings.health(this, vehicleId)
+            h.record(t.tripId, System.currentTimeMillis(), eng.health.observations())
+            val mil = s.value(loaded.profile.roles.milOn, System.currentTimeMillis(), 120_000)
+            if (mil != null) {
+                val ready = com.universal.obddashboard.obd.Readiness.fromReadings(s.readings.mapValues { it.value.value })
+                h.central = HealthHistory.Central(System.currentTimeMillis(), mil >= 1.0, s.confirmedDtcs, s.pendingDtcs, ready?.incomplete?.map { it.name })
+            }
+            AppSettings.setHealth(this, vehicleId, h)
+            // 0 normal, 1 atenção, 2 verificar; sem dados fica de fora
+            healthLevels = h.subsystems().associate { sub ->
+                "health.${sub.id}" to when (sub.level) {
+                    HealthHistory.Level.NO_DATA -> null
+                    HealthHistory.Level.OK -> 0.0
+                    HealthHistory.Level.WATCH -> 1.0
+                    HealthHistory.Level.ALERT -> 2.0
+                }
+            }
+        }.onFailure { Log.w(TAG, "Falha ao guardar o pré-diagnóstico", it) }
+    }
+
     private suspend fun persistTripEnd(reason: String) {
+        TelemetryHub.profile?.let { saveHealth(it, TelemetryHub.state.value) }
         val t = trip ?: return
         trip = null
         try {
@@ -1474,6 +1511,8 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         const val REASON_IGNITION_NOT_DETECTED = "ignition_not_detected"
 
         private const val DERIVED_TICK_MS = 250L
+        /** Pré-diagnóstico regravado a cada minuto (a viagem em andamento substitui a anterior). */
+        private const val HEALTH_SAVE_MS = 60_000L
         private const val STATUS_NOTIFICATION_MS = 5000L
         private const val ALERT_REPEAT_MS = 60_000L
         private const val TRIP_FLUSH_EVERY = 15                 // × 2 s = 30 s

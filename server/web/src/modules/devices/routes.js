@@ -1,5 +1,5 @@
 import { ago } from '../account/user-agent.js';
-import { buildHealth } from './health.js';
+import { appHealth, buildHealth } from './health.js';
 import { Readable } from 'node:stream';
 import { ApiError, message } from '../../shared/errors.js';
 import { pageParam, pagerFor } from '../../shared/pagination.js';
@@ -168,6 +168,7 @@ export default function devicesRoutes(app, {
       reportJson: JSON.stringify(report.chart),
       health,
       healthJson: JSON.stringify(health.chart),
+      appHealth: appHealth(data.latest?.metrics),
       maintenance: buildMaintenance(maintenance),
       faults,
       faultsActive: faults.filter((f) => f.active).length,
