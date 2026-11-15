@@ -20,6 +20,7 @@ import devicesRoutes from './modules/devices/routes.js';
 import gatewayRoutes, { DEVICE_ROUTES } from './modules/gateway/routes.js';
 import loginRoutes from './modules/login/routes.js';
 import projetoRoutes from './modules/projeto/routes.js';
+import notasRoutes from './modules/notas/routes.js';
 import vehicleRoutes from './modules/vehicle/routes.js';
 
 export { checkFormToken, isSameOriginRequest, issueFormToken } from './shared/protection.js';
@@ -27,7 +28,7 @@ export { checkFormToken, isSameOriginRequest, issueFormToken } from './shared/pr
 const SRC = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(SRC, '..');
 // Cada módulo publica seus próprios arquivos em /modules/<nome>/.
-const MODULES_WITH_ASSETS = ['account', 'admin', 'devices', 'projeto', 'vehicle'];
+const MODULES_WITH_ASSETS = ['account', 'admin', 'devices', 'notas', 'projeto', 'vehicle'];
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
@@ -74,6 +75,7 @@ export function createHandlebars() {
 /** Item do menu destacado em cada página. */
 function activePageOf(url) {
   if (url.startsWith('/painel-veiculo')) return 'vehicle';
+  if (url.startsWith('/admin/notas')) return 'notas';
   if (url.startsWith('/admin')) return 'admin';
   if (url.startsWith('/meus-dados/sessoes')) return 'sessoes';
   if (url.startsWith('/meus-dados')) return 'conta';
@@ -415,6 +417,7 @@ export async function buildApp({ config, logger }) {
   vehicleRoutes(app, shared);
   adminRoutes(app, shared);
   projetoRoutes(app, shared);
+  notasRoutes(app, shared);
 
   return app;
 }

@@ -1,0 +1,148 @@
+{{#> pageHeader title="Notas do projeto" icon="fa-clipboard-list" subtitle="Como tudo funciona, o que está feito, o que falta e as decisões. Visível só para o Super Admin."}}{{/pageHeader}}
+
+<nav class="notas-nav mb-3" aria-label="Seções das notas">
+  <ul class="nav nav-pills flex-wrap gap-1 small">
+    <li class="nav-item"><a class="nav-link" href="#fluxo"><i class="fa-solid fa-diagram-project me-1" aria-hidden="true"></i>Como funciona</a></li>
+    <li class="nav-item"><a class="nav-link" href="#pendente"><i class="fa-solid fa-list-check me-1" aria-hidden="true"></i>Pendente</a></li>
+    <li class="nav-item"><a class="nav-link" href="#feito"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Feito</a></li>
+    <li class="nav-item"><a class="nav-link" href="#prediagnostico"><i class="fa-solid fa-stethoscope me-1" aria-hidden="true"></i>Pré-diagnóstico</a></li>
+    <li class="nav-item"><a class="nav-link" href="#decisoes"><i class="fa-solid fa-scale-balanced me-1" aria-hidden="true"></i>Decisões</a></li>
+  </ul>
+</nav>
+
+<section id="fluxo" class="notas-section card mb-4">
+  <div class="card-header"><h2 class="h6 fw-semibold mb-0"><i class="fa-solid fa-diagram-project me-2" aria-hidden="true"></i>Como funciona</h2></div>
+  <div class="card-body">
+    <div class="notas-fluxo mb-3"><img src="/modules/notas/fluxo.svg" alt="Fluxo: o carro fala com o ELM327 pela linha K e com o ESP32 pela rede CAN (só escuta); os dois mandam por Bluetooth ao app, que grava e envia ao servidor; o painel mostra ao vivo e o histórico." width="960" height="600"></div>
+    <p class="mb-2"><a href="/modules/notas/fluxo.svg" target="_blank" rel="noopener"><i class="fa-solid fa-up-right-from-square me-1" aria-hidden="true"></i>Abrir o fluxo em tamanho cheio</a></p>
+    <ul class="mb-0">
+      <li><b>Carro só consultado:</b> o ELM327 pede PIDs pela linha K e o ESP32 só escuta a rede CAN, com a transmissão travada no hardware. Nada é enviado à central nem à rede.</li>
+      <li><b>Linha K lenta:</b> cerca de 200 ms por pedido, umas 5 leituras por segundo para tudo. O que a rede CAN já dá (rotação, velocidade, água, tensão, consumo da injeção) chega bem mais rápido pelo ESP32.</li>
+      <li><b>O celular faz as contas:</b> mostradores, consumo, dinâmica, fontes cruzadas, alertas e manutenção. Grava uma amostra a cada 2 s e manda ao servidor ao vivo e no histórico.</li>
+      <li><b>O ESP32 dorme sozinho:</b> 2 min sem quadros na rede e ele entra em sono leve; acorda com a rede (chave, porta, alarme) e volta em cerca de 2 s.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="pendente" class="notas-section card mb-4">
+  <div class="card-header"><h2 class="h6 fw-semibold mb-0"><i class="fa-solid fa-list-check me-2" aria-hidden="true"></i>Pendente</h2></div>
+  <div class="card-body">
+    <h3 class="h6 fw-semibold">No carro e na bancada</h3>
+    <ul class="notas-list mb-4">
+      <li><span class="badge text-bg-warning">placa</span><span>Montar o divisor da bateria (R5 100 kΩ, R6 20 kΩ, C1 100 nF "104") embaixo do RT8272 e gravar o firmware 1.6 pelo cabo USB.</span></li>
+      <li><span class="badge text-bg-warning">app</span><span>Refazer o Calibrar frente: arrancada em linha reta, de 5 a 20 km/h.</span></li>
+      <li><span class="badge text-bg-warning">consumo</span><span>Segundo tanque cheio, com captura e ESP32, para confirmar o fator 0,66 do consumo da injeção pela rede CAN.</span></li>
+      <li><span class="badge text-bg-warning">sensor</span><span>Instalar o GY-273 (bússola) no carro; o firmware já procura sozinho.</span></li>
+      <li><span class="badge text-bg-secondary">alternativa</span><span>Versão com SN65HVD230: tirar o R2 de 120 Ω do módulo antes de ligar no carro.</span></li>
+    </ul>
+    <h3 class="h6 fw-semibold">Desenvolvimento</h3>
+    <ul class="notas-list mb-4">
+      <li><span class="badge text-bg-primary">próximo</span><span>Pré-diagnóstico preventivo: ler a sonda pré (0114) e a LTFT (0107), que a central tem e o app não consulta; roteiros "Check-up a frio e partida" e "Marcha lenta quente". Ver <a href="#prediagnostico">a avaliação</a>.</span></li>
+      <li><span class="badge text-bg-secondary">depois</span><span>Android Auto pelo teste interno da Play (o Android Auto 17.7+ recusa APK instalado à mão).</span></li>
+      <li><span class="badge text-bg-secondary">depois</span><span>Consumo com etanol.</span></li>
+      <li><span class="badge text-bg-secondary">depois</span><span>Backup do servidor (com a chave do TOTP) e PostgreSQL no CI para os testes do servidor.</span></li>
+      <li><span class="badge text-bg-secondary">avaliar</span><span>Memória no ESP32: guardar os quadros quando o Bluetooth cair e mandar ao reconectar (muda o firmware e o protocolo com o app).</span></li>
+      <li><span class="badge text-bg-secondary">avaliar</span><span>Modo 06 da central: testar uma vez na varredura de diagnóstico.</span></li>
+      <li><span class="badge text-bg-info">meta</span><span>Versão 1.0.0.</span></li>
+    </ul>
+    <h3 class="h6 fw-semibold">Descartado</h3>
+    <ul class="notas-list mb-0">
+      <li><span class="badge text-bg-dark">15/11</span><span>Wi-Fi e atualização do firmware pelo Wi-Fi (OTA): o firmware continua só pelo cabo USB, mais simples e mais seguro.</span></li>
+      <li><span class="badge text-bg-dark">06/11</span><span>Resto do roteiro de mapeamento no Uno (freio de mão, ré, setas, pisca-alerta, limpadores): não têm sinal útil na rede pelo pino 14.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="feito" class="notas-section card mb-4">
+  <div class="card-header"><h2 class="h6 fw-semibold mb-0"><i class="fa-solid fa-circle-check me-2" aria-hidden="true"></i>Feito</h2></div>
+  <div class="card-body">
+    <ul class="notas-list mb-0">
+      <li><span class="badge text-bg-success">0.8</span><span>App Android com a tela em WebView: perfis JSON por veículo, ELM327 pela linha K, mostradores, histórico e exportação.</span></li>
+      <li><span class="badge text-bg-success">0.9.0</span><span>Servidor de telemetria e painel web, alarmes, vários veículos, aba Falhas.</span></li>
+      <li><span class="badge text-bg-success">0.9.11</span><span>Escuta CAN pelo ESP32 no pino 14 e os sinais do Uno mapeados (velocidade, hodômetro, tanque, rotação, água, tensão, luzes, A/C).</span></li>
+      <li><span class="badge text-bg-success">0.9.17</span><span>Roteiro de captura guiado por voz e vibração, genérico e por perfil.</span></li>
+      <li><span class="badge text-bg-success">0.9.2x</span><span>Consumo pela injeção, indicador ECO, hodômetro sincronizado pela rede, computador de bordo, avisos.</span></li>
+      <li><span class="badge text-bg-success">0.9.33</span><span>Temas dos mostradores e a simulação de viagens no painel.</span></li>
+      <li><span class="badge text-bg-success">0.9.34</span><span>BMP180: pressão, temperatura da caixa, vácuo e desvio do MAP. Placa ilhada, caixa para impressão 3D e a placa em 3D no painel.</span></li>
+      <li><span class="badge text-bg-success">0.9.38</span><span>Manutenção pelo manual e pelo mecânico, estado da escuta CAN, resumo ao encerrar a viagem.</span></li>
+      <li><span class="badge text-bg-success">0.9.41</span><span>Tela Dinâmica com o LSM6DS3 (horizonte, força G, câmbio P/D/R), bússola GY-273 calibrada pelo GPS, altitude, calibração dos sensores.</span></li>
+      <li><span class="badge text-bg-success">0.9.47</span><span>Dinâmica com o ritmo real da velocidade do ELM327 e a bússola com o anel girando.</span></li>
+      <li><span class="badge text-bg-success">0.9.48</span><span>Aviso do ESP32 sem conexão aos 30 s, com contagem e fechamento automático.</span></li>
+      <li><span class="badge text-bg-success">0.9.49</span><span>GPS nativo quando o celular não tem os serviços do Google.</span></li>
+      <li><span class="badge text-bg-success">0.9.50</span><span>Fontes cruzadas (percurso sem GPS, fator da velocidade pelo GPS, motor por votação, celular de reserva, inclinação pela altitude, temperatura de fora) e a bateria pelo divisor do ESP32 (firmware 1.6).</span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="prediagnostico" class="notas-section card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center gap-2">
+    <h2 class="h6 fw-semibold mb-0"><i class="fa-solid fa-stethoscope me-2" aria-hidden="true"></i>Avaliação do pré-diagnóstico preventivo</h2>
+    <span class="badge text-bg-secondary">15/11/2026 · não implementado</span>
+  </div>
+  <div class="card-body">
+    <p>A central (IAW 7GF) responde pela linha K e anuncia os PIDs 01, 03, 04, 05, 06, 07, 0B, 0C, 0D, 0E, 0F, 11, 13, 14, 15, 1C, 20 e 21. Não tem 0142 (tensão), 0133 (pressão atmosférica), 0146 (ambiente) nem 0152 (% de etanol). O 0101 mostra que ela mesma roda os monitores de catalisador, sonda, aquecedor da sonda e falha de ignição.</p>
+    <p class="small text-body-secondary mb-2">Classes:
+      <span class="badge text-bg-success notas-class">A</span> PIDs atuais ·
+      <span class="badge text-bg-primary notas-class">B</span> somando PID padrão ·
+      <span class="badge text-bg-info notas-class">C</span> sensores locais ·
+      <span class="badge text-bg-secondary notas-class">D</span> GY-273 ·
+      <span class="badge text-bg-danger notas-class">E</span> inviável ou limitado</p>
+    <div class="table-responsive mb-3">
+      <table class="table table-sm align-top notas-table">
+        <thead><tr><th scope="col">Checagem</th><th scope="col">Classe</th><th scope="col">Como fica</th></tr></thead>
+        <tbody>
+          <tr><td>Eficiência do catalisador</td><td><span class="badge text-bg-primary notas-class">B</span> <span class="badge text-bg-danger">limite</span></td><td>0114 em janela de teste (só 0114 e 0115, ≈ 2 Hz cada); o monitor da própria central já é lido.</td></tr>
+          <tr><td>Vazamento no escapamento</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Sonda pós abaixo de 0,35 V fora do corte de injeção (consumo zero no CAN), por minutos.</td></tr>
+          <tr><td>Aquecimento das sondas</td><td><span class="badge text-bg-primary notas-class">B</span></td><td>0114 rápida só nos 3 primeiros minutos depois da partida a frio.</td></tr>
+          <tr><td>Desvio de mistura por faixa</td><td><span class="badge text-bg-primary notas-class">B</span></td><td>Somar a LTFT (0107) a cada 30 s; separar marcha lenta de cruzeiro.</td></tr>
+          <tr><td>Saúde do flex</td><td><span class="badge text-bg-danger notas-class">E</span></td><td>Sem PID de % de etanol: só a mistura depois de cada abastecimento, como pista.</td></tr>
+          <tr><td>Avanço de ignição</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Contra uma referência do próprio carro; sem PID de retardo por detonação.</td></tr>
+          <tr><td>Falhas de ignição (modo 06)</td><td><span class="badge text-bg-danger notas-class">E</span></td><td>Quase nunca existe na linha K; restam os códigos P0300 a P0304 pendentes.</td></tr>
+          <tr><td>Vácuo em marcha lenta quente</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Pelo vácuo (pressão atmosférica − MAP), com o A/C conhecido pelo CAN.</td></tr>
+          <tr><td>MAP × BMP180</td><td><span class="badge text-bg-info notas-class">C</span></td><td>Já calculado (desvio do MAP); falta limite e alerta.</td></tr>
+          <tr><td>Temperaturas a frio e cofre</td><td><span class="badge text-bg-success notas-class">A</span> <span class="badge text-bg-info notas-class">C</span></td><td>Admissão × água depois de parada longa; o BMP180 só no primeiro minuto (fica na caixa).</td></tr>
+          <tr><td>Filtro de ar (plena carga)</td><td><span class="badge text-bg-success notas-class">A</span> <span class="badge text-bg-info notas-class">C</span></td><td>MAP × BMP180, com o bit de plena carga do CAN como gatilho; evento raro.</td></tr>
+          <tr><td>Borboleta e marcha lenta</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Rotação rápida pelo CAN, cruzada com TPS e carga.</td></tr>
+          <tr><td>Termostática aberta</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Tempo até 80 °C e queda abaixo de 75 °C em velocidade constante.</td></tr>
+          <tr><td>Termostática fechada, ventoinha</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Ventoinha deduzida pela curva perto de 97 °C (não aparece no CAN).</td></tr>
+          <tr><td>Bateria na partida</td><td><span class="badge text-bg-info notas-class">C</span></td><td>Já medida pelo divisor (firmware 1.6); falta compensar o frio e o limite.</td></tr>
+          <tr><td>Regulador e alternador</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Tensão de três fontes; cargas ligadas conhecidas pelo CAN.</td></tr>
+          <tr><td>Ripple do alternador</td><td><span class="badge text-bg-danger notas-class">E</span></td><td>O C1 corta acima de ≈ 95 Hz; precisaria de 10 nF e leitura em rajadas.</td></tr>
+          <tr><td>Arrasto, freio preso, pneu</td><td><span class="badge text-bg-info notas-class">C</span></td><td>Só em ponto morto, com inclinação e referência do carro; o vento atrapalha.</td></tr>
+          <tr><td>Embreagem patinando</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Rotação/velocidade sob carga fora da faixa de cada marcha.</td></tr>
+          <tr><td>Vibração anormal</td><td><span class="badge text-bg-info notas-class">C</span></td><td>Precisa de FFT no ESP32 (roda ≈ 14 Hz a 100 km/h, coxim ≈ 30 Hz em marcha lenta).</td></tr>
+          <tr><td>Uso severo do freio</td><td><span class="badge text-bg-info notas-class">C</span></td><td>Descida longa (BMP180) com desaceleração; contador, não falha.</td></tr>
+          <tr><td>GY-273</td><td><span class="badge text-bg-secondary notas-class">D</span></td><td>Já detectado e usado na bússola; acrescenta o rumo absoluto.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 class="h6 fw-semibold">Roteiros de diagnóstico</h3>
+    <p class="mb-2">Os roteiros de captura de hoje ganham três campos: <code>trigger</code> (condição avaliada sozinha, com tempo mínimo), <code>collect</code> (PIDs rápidos só durante o passo) e <code>evaluate</code> (regra que grava um resultado).</p>
+    <ol class="mb-3">
+      <li><b>Check-up a frio e partida:</b> MAP × BMP180, temperaturas, tensão em repouso, queda na partida e aquecimento das sondas.</li>
+      <li><b>Marcha lenta quente:</b> vácuo, estabilidade da rotação, mistura, sonda pós e tensão; depois "ligue o A/C".</li>
+      <li><b>Catalisador e sondas:</b> automático em cruzeiro estável, 60 s só com 0114 e 0115.</li>
+      <li><b>Bateria e alternador:</b> a 2.000 rpm, com cargas desligadas e ligadas.</li>
+      <li><b>Rolagem em ponto morto:</b> referência do arrasto em reta plana.</li>
+      <li><b>Linha de base do carro:</b> os anteriores nas primeiras semanas, até formar a referência de cada medida.</li>
+    </ol>
+    <h3 class="h6 fw-semibold">Contra alarme falso</h3>
+    <p class="mb-0">Só em regime (água acima de 80 °C, fora do corte, 2 min depois da partida, 15 a 20 min depois de abastecer), repetido em pelo menos 3 viagens, comparado com a referência do próprio carro e com os monitores da central. Sempre como "sugere verificar".</p>
+  </div>
+</section>
+
+<section id="decisoes" class="notas-section card mb-4">
+  <div class="card-header"><h2 class="h6 fw-semibold mb-0"><i class="fa-solid fa-scale-balanced me-2" aria-hidden="true"></i>Decisões</h2></div>
+  <div class="card-body">
+    <ul class="mb-0">
+      <li><b>Carro só consultado:</b> nunca apagar falhas nem mandar comando; escuta CAN só com a transmissão travada no hardware.</li>
+      <li><b>Dois adaptadores, cada um direto ao celular por Bluetooth clássico:</b> ELM327 para a linha K e ESP32 para a rede CAN. Sem ponte e sem Wi-Fi para os dados.</li>
+      <li><b>ESP32 sem Wi-Fi:</b> firmware gravado só pelo cabo USB (15/11/2026).</li>
+      <li><b>Só Android, sem Play Store:</b> APK pelas releases do GitHub; a tela é uma WebView, igual ao painel web.</li>
+      <li><b>Fidelidade aos dados do carro:</b> nada que mascare a leitura; estimativas sempre marcadas como estimativas.</li>
+      <li><b>Tudo o que o app mostra ou grava vai ao painel</b>, ao vivo e no histórico.</li>
+      <li><b>Painel sem CDN:</b> bibliotecas locais, sem script nem estilo embutido.</li>
+      <li><b>Repositório público:</b> sem dados reais de viagem, sem fotos de terceiros, sem PDFs de manuais.</li>
+    </ul>
+  </div>
+</section>
