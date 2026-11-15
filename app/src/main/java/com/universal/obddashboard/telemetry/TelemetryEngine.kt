@@ -77,6 +77,8 @@ class TelemetryEngine(
     private val ambient = AmbientEstimate()
     private val battery = BatteryWatch()
     private val vibration = ArrayDeque<Pair<Long, Double>>()
+    /** Pré-diagnóstico desta viagem: só junta medidas no regime certo (ver HealthMonitor). */
+    val health = HealthMonitor(profile.profile.thermal?.let { HealthMonitor.Thermal(it.fanStage2C, it.criticalC) } ?: HealthMonitor.Thermal())
     private var lastPeakAt = 0L
 
     init { setTrims(trims) }
@@ -313,6 +315,27 @@ class TelemetryEngine(
         ambient.update(dtS, v(roles.intakeTemp), v(roles.coolantTemp) ?: state.value(PhoneSensors.CAN_COOLANT, now), speed)
         // Bateria pelo ESP32, conferida com a da rede
         battery.update(espVolts, state.value(Slcan.ESP_BATT_REST, now), state.value(Slcan.ESP_BATT_LOWEST, now), carVolts, engine.on)
+        // Pré-diagnóstico: rotação e água da rede CAN quando houver (mais rápidas), pressão do ar da melhor fonte
+        val flag = { id: String -> state.value(id, now)?.let { it >= 0.5 } }
+        health.update(
+            HealthMonitor.Input(
+                now = now, dtS = dtS,
+                rpm = state.value(PhoneSensors.CAN_RPM, now, 2000) ?: rpm,
+                speedKmh = speed ?: state.value(roles.canSpeed, now),
+                coolantC = v(roles.coolantTemp) ?: state.value(PhoneSensors.CAN_COOLANT, now),
+                mapKpa = v(roles.map),
+                throttlePct = tps,
+                baroKpa = pressure?.takeIf { pressureFresh }?.value?.div(10.0)
+                    ?: phonePressure?.takeIf { phonePressureFresh }?.value?.div(10.0)
+                    ?: estimatedLoad.atmosphericKpa,
+                volts = carVolts,
+                acOn = flag(CAN_AC),
+                loadsOn = flag(CAN_LIGHTS) == true || flag(CAN_DEFOG) == true,
+                mapOffsetKpa = estimatedLoad.mapOffsetKpa,
+                battRestV = battery.restV,
+                battCrankV = battery.crankV,
+            ),
+        )
 
         val derived = DerivedMetrics(
             fuelLph = lph,
@@ -411,6 +434,10 @@ class TelemetryEngine(
         const val IMU_STALE_MS = 2000L
         const val IMU_SAVE_MS = 30_000L
         const val VIBRATION_WINDOW_MS = 3000L
+        /** Sinais da rede CAN usados no pré-diagnóstico (nomes dos perfis com escuta). */
+        const val CAN_AC = "can_ac"
+        const val CAN_LIGHTS = "can_lights"
+        const val CAN_DEFOG = "can_defog"
         const val SOURCE_ESP32 = "esp32"
         const val SOURCE_PHONE = "celular"
 

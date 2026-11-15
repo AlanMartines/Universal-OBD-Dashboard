@@ -77,6 +77,26 @@ describe('relatórios do dispositivo', () => {
   });
 });
 
+describe('notas do projeto', () => {
+  test('linha do tempo igual ao CHANGELOG (rode scripts/notas-linha-do-tempo.mjs)', async () => {
+    const { parseChangelog } = await import('../src/modules/notas/changelog.js');
+    const md = readFileSync(new URL('../../../CHANGELOG.md', import.meta.url), 'utf8');
+    const saved = JSON.parse(readFileSync(new URL('../src/modules/notas/linha-do-tempo.json', import.meta.url), 'utf8'));
+    assert.deepEqual(saved, parseChangelog(md));
+    assert.ok(saved.some((v) => v.version === '0.1.0'));
+  });
+});
+
+describe('pré-diagnóstico do app', () => {
+  test('níveis por subsistema a partir da última amostra', async () => {
+    const { appHealth } = await import('../src/modules/devices/health.js');
+    assert.deepEqual(appHealth({ 'health.cooling': 0, 'health.electric': 1, 'health.central': 2, rpm: 900 }), [
+      { topic: 'Central (injeção)', level: 'bad' }, { topic: 'Arrefecimento', level: 'ok' }, { topic: 'Elétrica', level: 'warn' },
+    ]);
+    assert.deepEqual(appHealth(null), []);
+  });
+});
+
 describe('sessões: nome do aparelho', () => {
   test('navegador e sistema legíveis; celular reconhecido', () => {
     assert.deepEqual(describeAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0'), { label: 'Firefox — Windows', mobile: false });
@@ -543,14 +563,16 @@ describe('fluxo pelo navegador', () => {
     assert.ok(!donoPage.body.includes('name="accountId"'));
     assert.ok(!donoPage.body.includes('Auditoria recente'));
     assert.ok(!donoPage.body.includes('Cadastro público'));
-    // Notas do projeto: só o Super Admin vê o menu e a página
-    const notas = await web.inject({ method: 'GET', url: '/admin/notas', headers: { cookie: adminCookie } });
+    // Notas do projeto: públicas, como o resto da área do projeto; o endereço antigo redireciona
+    const notas = await web.inject({ method: 'GET', url: '/projeto/notas' });
     assert.equal(notas.statusCode, 200);
     assert.match(notas.body, /Notas do projeto/);
     assert.match(notas.body, /\/modules\/notas\/fluxo\.svg/);
-    assert.match(superPage.body, /href="\/admin\/notas"/);
-    assert.ok(!donoPage.body.includes('href="/admin/notas"'));
-    assert.equal((await web.inject({ method: 'GET', url: '/admin/notas', headers: { cookie: donoCookie } })).statusCode, 403);
+    assert.match(superPage.body, /href="\/projeto\/notas"/);
+    assert.match(donoPage.body, /href="\/projeto\/notas"/);
+    const antiga = await web.inject({ method: 'GET', url: '/admin/notas' });
+    assert.equal(antiga.statusCode, 301);
+    assert.equal(antiga.headers.location, '/projeto/notas');
     assert.equal((await web.inject({ method: 'GET', url: '/modules/notas/fluxo.svg' })).statusCode, 200);
 
     const donoCsrf = await csrfOf(donoCookie);
@@ -558,7 +580,6 @@ describe('fluxo pelo navegador', () => {
     const cookie = await enter('atendimento', senhaDe(madeUser.body), 'uma frase longa para esta conta');
     const denied = await web.inject({ method: 'GET', url: '/admin', headers: { cookie } });
     assert.equal(denied.statusCode, 403);
-    assert.equal((await web.inject({ method: 'GET', url: '/admin/notas', headers: { cookie } })).statusCode, 403);
     assert.ok(!denied.body.includes('href="/admin"'));
     const panel = await web.inject({ method: 'GET', url: '/painel', headers: { cookie } });
     assert.ok(!panel.body.includes('action="/dispositivos"'));

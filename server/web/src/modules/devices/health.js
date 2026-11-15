@@ -69,6 +69,17 @@ export function healthFindings(days) {
   return out;
 }
 
+/** Pré-diagnóstico do app por viagem (health.<subsistema>: 0 normal, 1 atenção, 2 verificar), da última amostra. */
+const APP_HEALTH = [['central', 'Central (injeção)'], ['cooling', 'Arrefecimento'], ['electric', 'Elétrica'], ['intake', 'Admissão'], ['idle', 'Marcha lenta']];
+export function appHealth(metrics) {
+  const m = metrics || {};
+  return APP_HEALTH.map(([id, topic]) => {
+    const v = m[`health.${id}`];
+    const level = typeof v === 'number' ? ['ok', 'warn', 'bad'][Math.round(v)] : null;
+    return level ? { topic, level } : null;
+  }).filter(Boolean);
+}
+
 /** Séries dos gráficos: datas e um array por medida (null onde o dia não tem a leitura). */
 export function healthCharts(days) {
   const pick = (key, d = 2) => days.map((x) => (x[key] == null ? null : Number(x[key].toFixed(d))));

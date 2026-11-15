@@ -59,6 +59,14 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
     { id: 'ignition', title: 'Ignição ligada, motor desligado', place: 'stopped', steps: [
       { id: 'door_driver', title: 'Porta do motorista', priority: true, engine: 'off', pattern: { on: 'Abra a porta', off: 'Feche a porta', on_s: 3, off_s: 3, repeat: 2 } }] }] } }),
   captureMark: () => 'ok', captureSpeak() {}, captureVibrate() {}, captureKeepAlive() {},
+  getHealth: () => JSON.stringify({ window: 5, repeat: 3, central: { at: Date.now() - 3600e3, mil: false, confirmed: [], pending: [], incomplete: ['Catalisador'] }, subsystems: [
+    { id: 'central', level: 'OK', checks: [] },
+    { id: 'cooling', level: 'OK', checks: [{ id: 'warmup', level: 'OK', flagged: 0, recent: 4, value: 7.5, lastFlagged: false, at: Date.now() }, { id: 'road_cool', level: 'OK', flagged: 0, recent: 3, value: 0, lastFlagged: false, at: Date.now() }, { id: 'overheat', level: 'OK', flagged: 0, recent: 5, value: 98, lastFlagged: false, at: Date.now() }] },
+    { id: 'electric', level: 'WATCH', checks: [{ id: 'charging', level: 'WATCH', flagged: 3, recent: 5, value: 13.05, lastFlagged: true, at: Date.now() }, { id: 'rest_v', level: 'NO_DATA', flagged: 0, recent: 0, value: null, lastFlagged: false, at: null }, { id: 'crank_v', level: 'NO_DATA', flagged: 0, recent: 0, value: null, lastFlagged: false, at: null }] },
+    { id: 'intake', level: 'OK', checks: [{ id: 'idle_vacuum', level: 'OK', flagged: 0, recent: 4, value: 0.33, lastFlagged: false, at: Date.now() }, { id: 'map_offset', level: 'OK', flagged: 0, recent: 5, value: -0.8, lastFlagged: false, at: Date.now() }] },
+    { id: 'idle', level: 'NO_DATA', checks: [{ id: 'idle_rpm', level: 'NO_DATA', flagged: 0, recent: 0, value: null, lastFlagged: false, at: null }] },
+  ] }),
+  shareHealth() {}, clearHealth: () => 'ok',
   getMaintenance: () => JSON.stringify({ totalKm: 183200, presetsFromProfile: true, items: [
     { id: 1, name: 'Troca de óleo e filtro de óleo', intervalKm: 15000, intervalMonths: 12, notes: '5W30, 2,7 L', status: { level: 'SOON', nextKm: 183900, remainingKm: 700, nextAt: Date.now() + 90 * 864e5, remainingDays: 90 }, records: [{ id: 1, timestamp: Date.now() - 275 * 864e5, odometerKm: 168900, cost: 230, notes: null }] },
     { id: 2, name: 'Fluido de freio', intervalKm: null, intervalMonths: 24, notes: null, status: { level: 'DUE', nextKm: null, remainingKm: null, nextAt: Date.now() - 10 * 864e5, remainingDays: -10 }, records: [{ id: 2, timestamp: Date.now() - 740 * 864e5, odometerKm: null, cost: null, notes: null }] },

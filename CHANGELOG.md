@@ -6,7 +6,13 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Saúde do carro (pré-diagnóstico, fase 1):** em Manutenção, um card por subsistema (central, arrefecimento, elétrica, admissão e marcha lenta), só com o que o app já lê. Cada checagem junta medidas no regime certo (aquecimento depois da partida a frio, temperatura na estrada, ventoinha, carga acima de 1.500 rpm, bateria em repouso e na partida pelo divisor, vácuo e oscilação da rotação em marcha lenta quente, desvio do MAP com o motor parado). Um sinal só vira aviso depois de 3 das últimas 5 viagens; superaquecimento e queda forte na partida valem na primeira vez. "Enviar resumo ao mecânico" manda o texto por qualquer app; "Recomeçar" zera depois de um conserto. Vai ao painel: aba Saúde ("Pré-diagnóstico do app") e o grupo "Saúde do carro (app)" ao vivo.
+- **A/C, luzes e desembaçador pela escuta CAN (Uno Vivace):** bits já recebidos e mapeados (0x281 b2 bit 6, 0x380 b0 bit 3, 0x180 b2 bit 4) passam a ser lidos; o pré-diagnóstico usa para não confundir carga elétrica e A/C com defeito.
+- **Notas do projeto com a linha do tempo:** todas as versões, com data e cada mudança, tiradas do CHANGELOG (`scripts/notas-linha-do-tempo.mjs`; o teste avisa se ficar desatualizada), a situação atual no carro e o pré-diagnóstico com cada regra.
+
 ### Alterado
+- **Notas do projeto públicas:** saíram da Administração e foram para a área do projeto (`/projeto/notas`, aba "Notas"), como "O projeto" e "Sobre"; o endereço antigo redireciona.
 - **Peças em três níveis:** essencial (ELM327), recomendado (ESP32 com a escuta CAN, LSM6DS3, BMP180, GY-273 e o divisor da bateria) e opcional (LED tricolor), no firmware, na placa, na lista de compras e nas Notas do projeto. Sem uma peça recomendada tudo continua funcionando, com menos informação ou menos precisão.
 - **Fontes cruzadas mostra o que falta:** o card da aba Sensores lista as peças recomendadas ausentes e o que fica menos preciso sem cada uma (etiqueta "Menos preciso").
 
