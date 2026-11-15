@@ -7,17 +7,43 @@
 Copia os dois para server/web/src/modules/projeto/public/, de onde o painel os serve. Uso, na raiz do projeto ou
 de qualquer lugar: python3 docs/img/gerar_pinagem.py
 """
+import re
 import shutil
 from pathlib import Path
 from xml.sax.saxutils import escape as esc
 
 COR = {'pwr': '#b91c1c', 'gnd': '#475569', 'k': '#7c3aed', 'canh': '#1d4ed8', 'canl': '#0e7490', 'j1850': '#a16207', 'livre': '#cbd5e1'}
-STYLE = """text{font-family:Arial,Helvetica,'DejaVu Sans',sans-serif;fill:#1f2937;font-size:15px}
-.t{font-size:22px;font-weight:700}.s{font-size:14px;fill:#4b5563}.m{text-anchor:middle}.e{text-anchor:end}
-.n{font-size:17px;font-weight:700;text-anchor:middle;fill:#111827}.nl{font-size:17px;font-weight:700;text-anchor:middle;fill:#ffffff}
-.lb{font-size:15px;font-weight:700}.h{font-size:16px;font-weight:700;text-anchor:middle}
-.mini{font-size:10px;font-weight:700;text-anchor:middle;fill:#111827}.minil{font-size:10px;font-weight:700;text-anchor:middle;fill:#fff}
-.b{fill:#f8fafc;stroke:#334155;stroke-width:2}"""
+# Estilo como atributos de cada elemento, sem <style> nem style="": o painel serve o SVG com CSP style-src 'self', que
+# bloqueia CSS embutido quando o arquivo é aberto direto numa aba (os cards ficavam pretos e o texto sem fonte).
+FONTE = "Arial,Helvetica,'DejaVu Sans',sans-serif"
+TEXTO = {'font-family': FONTE, 'fill': '#1f2937', 'font-size': '15px'}
+CLASSE = {
+    't': {'font-size': '22px', 'font-weight': '700'},
+    's': {'font-size': '14px', 'fill': '#4b5563'},
+    'm': {'text-anchor': 'middle'},
+    'e': {'text-anchor': 'end'},
+    'n': {'font-size': '17px', 'font-weight': '700', 'text-anchor': 'middle', 'fill': '#111827'},
+    'nl': {'font-size': '17px', 'font-weight': '700', 'text-anchor': 'middle', 'fill': '#ffffff'},
+    'lb': {'font-size': '15px', 'font-weight': '700'},
+    'h': {'font-size': '16px', 'font-weight': '700', 'text-anchor': 'middle'},
+    'mini': {'font-size': '10px', 'font-weight': '700', 'text-anchor': 'middle', 'fill': '#111827'},
+    'minil': {'font-size': '10px', 'font-weight': '700', 'text-anchor': 'middle', 'fill': '#ffffff'},
+    'b': {'fill': '#f8fafc', 'stroke': '#334155', 'stroke-width': '2'},
+}
+ATRIB = re.compile(r'([\w:-]+)="([^"]*)"')
+
+def atributos(m):
+    """class="..." e style="..." viram atributos de apresentação (o style vence a classe, que vence o padrão)."""
+    tag, resto, fim = m.group(1), m.group(2), m.group(3)
+    attrs = dict(ATRIB.findall(resto))
+    final = dict(TEXTO) if tag == 'text' else {}
+    for c in attrs.pop('class', '').split():
+        final.update(CLASSE[c])
+    for decl in filter(None, attrs.pop('style', '').split(';')):
+        k, v = decl.split(':', 1)
+        final[k.strip()] = v.strip()
+    final.update({k: v for k, v in attrs.items() if k not in final or k in ('x', 'y', 'transform')})
+    return f'<{tag} ' + ' '.join(f'{k}="{v}"' for k, v in final.items()) + fim + '>'
 
 def conector(cx, cy, esc_=1.0, pinos=None, mini=False, invertida=False):
     """Tomada na posição padrão: 1–8 em cima, 9–16 embaixo. invertida: de cabeça para baixo (pino 1 embaixo, à
@@ -63,7 +89,8 @@ def rotulos(pos, labels, cy):
 
 def svg(w, h, titulo, desc, corpo):
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" aria-label="{esc(desc)}">'
-            f'<title>{esc(titulo)}</title><style>\n{STYLE}\n</style><rect width="{w}" height="{h}" fill="#ffffff"/>' + ''.join(corpo) + '</svg>\n')
+            f'<title>{esc(titulo)}</title><rect width="{w}" height="{h}" fill="#ffffff"/>'
+            + re.sub(r'<(text|rect)((?:\s+[\w:-]+="[^"]*")*)\s*(/?)>', atributos, ''.join(corpo)) + '</svg>\n')
 
 RAIZ = Path(__file__).resolve().parents[2]
 GERAL = RAIZ / 'docs/img/pinagem-obd2.svg'
@@ -77,7 +104,7 @@ L = {2: ('J1850 (BUS+)', COR['j1850']), 4: ('Terra do chassi', COR['gnd']), 5: (
      6: ('CAN-H (ISO 15765)', COR['canh']), 7: ('Linha K (ISO 9141 / 14230)', COR['k']),
      10: ('J1850 (BUS−)', COR['j1850']), 14: ('CAN-L (ISO 15765)', COR['canl']), 15: ('Linha L (opcional)', COR['k']), 16: ('+12 V da bateria', COR['pwr'])}
 c, pos = conector(cx, cy, 1.0, {n: v[1] for n, v in L.items()})
-corpo = [f'<text x="40" y="44" class="t">Tomada OBD2 (SAE J1962), </text>',
+corpo = [f'<text x="40" y="44" class="t">Tomada OBD2 (SAE J1962)</text>',
          f'<text x="40" y="70" class="s">Só os pinos que a norma fixa. Os pinos 1, 3, 8, 9, 11, 12 e 13 ficam livres para cada fabricante usar como quiser.</text>']
 corpo += c + rotulos(pos, L, cy)
 # protocolos
