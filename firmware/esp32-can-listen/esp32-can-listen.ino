@@ -40,7 +40,7 @@
  * pelo rumo do GPS: não precisa alinhar o módulo com o carro, só prendê-lo firme e longe de fios de força e ímãs
  * (alto-falante). No descanso, o magnetômetro também desliga.
  *
- * Tensão da bateria (opcional, firmware 1.6): divisor na placa, 12 V com fusível → R5 100 kΩ → D34 → R6 22 kΩ → GND,
+ * Tensão da bateria (opcional, firmware 1.6): divisor na placa, 12 V com fusível → R5 100 kΩ → D34 → R6 20 kΩ → GND,
  * com C1 de 100 nF do D34 ao GND. Lido a 100 Hz; a cada BAT_MS sai a média do intervalo, o menor valor do intervalo,
  * a tensão em repouso (lida assim que o ESP32 liga, antes da partida) e o menor valor desde que ligou (a partida):
  *   # bateria v=12.63 min=12.41 repouso=12.58 menor=9.87
@@ -83,9 +83,9 @@ const int I2C_SCL = 26;
 const uint8_t BMP_ADDR = 0x77;
 const unsigned long AMB_MS = 5000;   // o app descarta leituras com mais de 10 s
 
-// Tensão da bateria (opcional): divisor R5 100 kΩ / R6 22 kΩ no D34 (ADC1, que funciona com o Bluetooth ligado).
+// Tensão da bateria (opcional): divisor R5 100 kΩ / R6 20 kΩ no D34 (ADC1, que funciona com o Bluetooth ligado).
 const int BAT_PIN = 34;
-const float BAT_DIVISOR = (100.0f + 22.0f) / 22.0f;   // 12 V viram 2,16 V no pino
+const float BAT_DIVISOR = (100.0f + 20.0f) / 20.0f;   // 12 V viram 2,00 V no pino (com 22 kΩ no R6: (100 + 22) / 22)
 const float BAT_AJUSTE = 1.0f;                       // correção fina, se o multímetro discordar
 const float BAT_MIN_V = 4.0f;                        // abaixo disso não há divisor (o ESP32 nem ligaria)
 const unsigned long BAT_SAMPLE_MS = 10;
@@ -522,7 +522,7 @@ float batRead() {
 }
 
 void batBegin() {
-  analogSetPinAttenuation(BAT_PIN, ADC_11db);   // até ~3,1 V no pino (17 V na bateria)
+  analogSetPinAttenuation(BAT_PIN, ADC_11db);   // até ~3,1 V no pino (18,6 V na bateria)
   float sum = 0;
   for (int i = 0; i < 32; i++) sum += batRead();
   batRest = sum / 32;

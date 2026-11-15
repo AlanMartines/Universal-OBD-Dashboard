@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Divisor da bateria com R6 de 20 kΩ:** o projeto passa a usar 100 kΩ + 20 kΩ (o par mais fácil de achar). 12 V viram 2,00 V no D34 e o limite de leitura sobe para 18,6 V. O firmware 1.6 já usa o fator novo; com 22 kΩ, basta trocar o `BAT_DIVISOR`.
+
 ## [0.9.50] - 2026-11-15
 
 ### Adicionado

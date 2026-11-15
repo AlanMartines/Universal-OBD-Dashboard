@@ -553,7 +553,7 @@
 <line x1="13.57" y1="48.97" x2="23.73" y2="48.97" stroke="#9e9e9e" stroke-width="0.5" stroke-linecap="round"/>
 <rect x="15.55" y="47.82" width="6.2" height="2.3" rx="1.0" fill="#e8d3a9" stroke="#8d6e63" stroke-width="0.2"/>
 <rect x="16.45" y="47.82" width="0.6" height="2.3" fill="#d32f2f"/>
-<rect x="17.55" y="47.82" width="0.6" height="2.3" fill="#d32f2f"/>
+<rect x="17.55" y="47.82" width="0.6" height="2.3" fill="#212121"/>
 <rect x="18.65" y="47.82" width="0.6" height="2.3" fill="#ef6c00"/>
 <rect x="20.35" y="47.82" width="0.6" height="2.3" fill="#c9a227"/>
 <line x1="13.57" y1="51.51" x2="18.65" y2="51.51" stroke="#9e9e9e" stroke-width="0.5" stroke-linecap="round"/>

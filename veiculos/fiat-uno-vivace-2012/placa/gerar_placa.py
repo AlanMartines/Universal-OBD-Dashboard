@@ -183,10 +183,10 @@ LED_ESP = {'COM': 'D18', 'R': 'TX2', 'G': 'RX2', 'B': 'D4'}
 TRACKS += [(f'LED {n} ({LED_ESP[n]})', LED_COL[n], [(c, r), (c, r + 1)]) for n, (c, r) in LED_PINS.items()]
 ESP_USED.update({LED_ESP[n]: LED_COL[n] for n in LED_PINS})
 # Divisor da tensão da bateria (firmware 1.6): mede a bateria pelo ESP32, mesmo com a rede do carro dormindo.
-# 12 V com fusível → R5 (100 kΩ) → junção → R6 (22 kΩ) → GND; a junção vai ao D34 (entrada só de leitura, ADC1: funciona
-# com o Bluetooth ligado). 12 V viram 2,16 V no pino; o limite de leitura (3,1 V) corresponde a 17 V. C1 (100 nF, "104")
+# 12 V com fusível → R5 (100 kΩ) → junção → R6 (20 kΩ) → GND; a junção vai ao D34 (entrada só de leitura, ADC1: funciona
+# com o Bluetooth ligado). 12 V viram 2,00 V no pino; o limite de leitura (3,1 V) corresponde a 18,6 V. C1 (100 nF, "104")
 # da junção ao GND filtra o ruído. Tudo embaixo do RT8272, que fica encaixado nas barras fêmea por cima.
-# Consumo do divisor: 12,6 V ÷ 122 kΩ ≈ 0,1 mA, desprezível mesmo com o carro parado.
+# Consumo do divisor: 12,6 V ÷ 120 kΩ ≈ 0,1 mA, desprezível mesmo com o carro parado.
 BAT = '#8d6e63'
 RES += [
     ('R5', (4, 22), (4, 18), '12 V com fusível → junção do D34 (divisor da bateria)'),
@@ -194,7 +194,7 @@ RES += [
 ]
 RES_VALOR = {   # valor e faixas de cada resistor; os outros são de 1 kΩ (marrom, preto, vermelho, ouro)
     'R5': ('100 kΩ', ['#6d4c41', '#212121', '#f9a825', '#c9a227']),   # marrom, preto, amarelo, ouro
-    'R6': ('22 kΩ', ['#d32f2f', '#d32f2f', '#ef6c00', '#c9a227']),    # vermelho, vermelho, laranja, ouro
+    'R6': ('20 kΩ', ['#d32f2f', '#212121', '#ef6c00', '#c9a227']),    # vermelho, preto, laranja, ouro
 }
 LABEL_RIGHT = {'R5'}   # nome à direita (à esquerda fica o OUT− do RT8272)
 R_1K = ('1 kΩ', ['#6d4c41', '#212121', '#d32f2f', '#c9a227'])
@@ -738,7 +738,7 @@ def battery_divider_schematic(s, line, dot):
     line([(xr, y0 + 15), (x0 + 40, y0 + 15)], BAT)
     s.text(x0 + 41, y0 + 15.6, 'D34 do ESP32', 1.6, BAT, anchor='start', weight='bold')
     s.add(f'<rect x="{xr - 1.2}" y="{y0 + 17}" width="2.4" height="5" fill="#fff" stroke="#8d6e63" stroke-width="0.4"/>')
-    s.text(xr - 2, y0 + 20.2, 'R6 22 kΩ', 1.6, '#5d4037', anchor='end')
+    s.text(xr - 2, y0 + 20.2, 'R6 20 kΩ', 1.6, '#5d4037', anchor='end')
     line([(xr, y0 + 22), (xr, y0 + 25), (xr + 10, y0 + 25)], BLK)
     # C1 em paralelo com o R6
     xc = xr + 10
@@ -749,7 +749,7 @@ def battery_divider_schematic(s, line, dot):
     line([(xc, y0 + 20), (xc, y0 + 25)], BLK)
     s.text(xc + 2, y0 + 20.2, 'C1 100 nF', 1.6, '#5d4037', anchor='start')
     s.text(xc + 12, y0 + 25.6, 'GND', 1.6, BLK, anchor='start')
-    s.text(x0 + 27, y0 + 28, '12 V → 2,16 V no pino · até 17 V · consumo ≈ 0,1 mA', 1.4, '#5d4037')
+    s.text(x0 + 27, y0 + 28, '12 V → 2,00 V no pino · até 18,6 V · consumo ≈ 0,1 mA', 1.4, '#5d4037')
 
 
 def sn65_schematic(s, line, dot, buck, esp, sn):

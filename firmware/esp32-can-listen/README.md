@@ -95,10 +95,10 @@ Mede a bateria pelo próprio ESP32, sem depender da rede do carro: a tensão em 
 | Peça | Liga entre |
 |---|---|
 | R5 100 kΩ (marrom, preto, amarelo, ouro) | 12 V depois do fusível (IN+ do RT8272) e o D34 |
-| R6 22 kΩ (vermelho, vermelho, laranja, ouro) | D34 e GND |
+| R6 20 kΩ (vermelho, preto, laranja, ouro) | D34 e GND |
 | C1 100 nF (cerâmico, "104") | D34 e GND |
 
-O D34 só lê (não tem saída) e é do ADC1, o único conversor que funciona com o Bluetooth ligado. 12 V viram 2,16 V no pino; o limite de leitura, cerca de 3,1 V, corresponde a 17 V na bateria. O divisor consome cerca de 0,1 mA, desprezível mesmo com o carro parado.
+O D34 só lê (não tem saída) e é do ADC1, o único conversor que funciona com o Bluetooth ligado. 12 V viram 2,00 V no pino; o limite de leitura, cerca de 3,1 V, corresponde a 18,6 V na bateria. Com um R6 de 22 kΩ também funciona: troque o `BAT_DIVISOR` para `(100.0f + 22.0f) / 22.0f`. O divisor consome cerca de 0,1 mA, desprezível mesmo com o carro parado.
 
 O firmware lê a 100 Hz e, a cada segundo, manda:
 
