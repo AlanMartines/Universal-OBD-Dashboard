@@ -8,6 +8,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Corrigido
 - **Pinagem OBD2 aberta em tamanho cheio:** ao clicar nos desenhos da página /projeto, os cards ficavam pretos e o texto sem fonte, porque a política de segurança do painel bloqueia o estilo embutido no SVG aberto direto na aba. O estilo agora vai em atributos de cada elemento; também saiu a vírgula sobrando no título.
+- **Aviso do ESP32 sem conexão mais tarde:** o Bluetooth do ESP32 demora mais que o ELM327 para conectar (até ~14 s numa viagem). A pergunta agora espera 30 s, e não 10 s, e continua fechando sozinha se ele conectar.
 
 ## [0.9.47] - 2026-11-14
 
