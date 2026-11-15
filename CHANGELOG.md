@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.51] - 2026-11-15
+
 ### Adicionado
 - **Notas do projeto no painel (só Super Admin):** Administração → Notas do projeto (`/admin/notas`) reúne como tudo funciona (fluxograma do carro ao painel), o que está pendente, o que está feito, a avaliação do pré-diagnóstico preventivo e as decisões do projeto. Admin e Usuário não veem o menu e recebem acesso negado.
 
