@@ -524,6 +524,14 @@
 <path d="M21.19,5.79 L21.19,8.33" fill="none" stroke="#43a047" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
 <path d="M18.65,5.79 L18.65,8.33" fill="none" stroke="#b0b7bd" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
 <path d="M18.65,5.79 L18.65,8.33" fill="none" stroke="#1e88e5" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
+<path d="M38.97,61.67 L38.97,59.13" fill="none" stroke="#b0b7bd" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
+<path d="M38.97,61.67 L38.97,59.13" fill="none" stroke="#7b1fa2" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
+<path d="M38.97,48.97 L36.43,48.97" fill="none" stroke="#b0b7bd" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
+<path d="M38.97,48.97 L36.43,48.97" fill="none" stroke="#8d6e63" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
+<path d="M36.43,33.73 L36.43,36.27 L36.43,38.81 L36.43,41.35 L36.43,43.89 L36.43,46.43 L36.43,48.97 L36.43,51.51" fill="none" stroke="#b0b7bd" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
+<path d="M36.43,33.73 L36.43,36.27 L36.43,38.81 L36.43,41.35 L36.43,43.89 L36.43,46.43 L36.43,48.97 L36.43,51.51" fill="none" stroke="#8d6e63" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
+<path d="M31.35,51.51 L28.81,51.51 L26.27,51.51" fill="none" stroke="#b0b7bd" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
+<path d="M31.35,51.51 L28.81,51.51 L26.27,51.51" fill="none" stroke="#263238" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" opacity="1.0"/>
 <circle cx="46.59" cy="64.21" r="0.90" fill="#fff" stroke="#7b1fa2" stroke-width="0.3"/><circle cx="46.59" cy="64.21" r="0.6" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="26.27" cy="64.21" r="0.90" fill="#fff" stroke="#7b1fa2" stroke-width="0.3"/><circle cx="26.27" cy="64.21" r="0.6" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="33.89" cy="33.73" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
@@ -534,6 +542,8 @@
 <circle cx="26.27" cy="8.33" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="13.57" cy="43.89" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="21.19" cy="8.33" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
+<circle cx="38.97" cy="48.97" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
+<circle cx="36.43" cy="51.51" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="44.05" cy="8.33" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="16.11" cy="8.33" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="28.81" cy="33.73" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
@@ -547,16 +557,18 @@
 <circle cx="16.11" cy="61.67" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="11.03" cy="46.43" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="11.03" cy="61.67" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
+<circle cx="31.35" cy="51.51" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="38.97" cy="8.33" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="18.65" cy="33.73" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="18.65" cy="41.35" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
-<circle cx="13.57" cy="33.73" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="41.51" cy="33.73" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="28.81" cy="8.33" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
+<circle cx="13.57" cy="33.73" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="26.27" cy="5.79" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="13.57" cy="41.35" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="36.43" cy="33.73" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="23.73" cy="8.33" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
+<circle cx="36.43" cy="48.97" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="21.19" cy="5.79" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="28.81" cy="38.81" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="5.95" cy="61.67" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
@@ -574,11 +586,13 @@
 <circle cx="13.57" cy="46.43" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="13.57" cy="61.67" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="28.81" cy="5.79" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
+<circle cx="38.97" cy="59.13" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="26.27" cy="33.73" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="23.73" cy="5.79" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="28.81" cy="43.89" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="21.19" cy="33.73" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="8.49" cy="8.33" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
+<circle cx="26.27" cy="48.97" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="8.49" cy="61.67" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="44.05" cy="33.73" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
 <circle cx="31.35" cy="8.33" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>
@@ -634,12 +648,20 @@
 <text x="7.22" y="6.29" font-size="1.25" fill="#ef6c00" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">3V3</text>
 <rect x="12.12" y="48.15" width="5.45" height="1.44" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="14.84" y="49.22" font-size="1.25" fill="#00838f" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">BMP180</text>
+<rect x="32.58" y="39.52" width="3.12" height="1.44" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="34.14" y="40.58" font-size="1.25" fill="#8d6e63" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">D34</text>
 <rect x="4.00" y="42.06" width="3.90" height="1.44" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="5.95" y="43.12" font-size="1.25" fill="#ef6c00" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">3V3 </text>
 <rect x="7.94" y="57.55" width="3.12" height="1.44" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="9.51" y="58.61" font-size="1.25" fill="#f9a825" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">CRX</text>
 <rect x="7.35" y="15.43" width="2.29" height="1.38" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="8.49" y="16.45" font-size="1.2" fill="#616161" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">R4</text>
+<rect x="37.83" y="53.53" width="2.29" height="1.38" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="38.97" y="54.55" font-size="1.2" fill="#616161" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">R5</text>
+<rect x="30.21" y="48.45" width="2.29" height="1.38" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="31.35" y="49.47" font-size="1.2" fill="#616161" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">R6</text>
+<rect x="32.75" y="50.99" width="2.29" height="1.38" rx="0.35" fill="#fff" opacity=".9"/>
+<text x="33.89" y="52.01" font-size="1.2" fill="#616161" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">C1</text>
 <rect x="12.32" y="20.01" width="25.35" height="1.38" rx="0.35" fill="#fff" opacity=".9"/>
 <text x="25.00" y="21.03" font-size="1.2" fill="#757575" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">barras do ESP32 nas linhas 2 e 12</text>
 <text x="25.00" y="73.50" font-size="1.7" fill="#5d4037" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">VISTA DE BAIXO · lado da solda (espelhada)</text>

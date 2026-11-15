@@ -86,6 +86,18 @@ interface TripDao {
     @Query("SELECT * FROM telemetry_log WHERE trip_id = :tripId ORDER BY timestamp")
     suspend fun telemetryForTrip(tripId: Long): List<TelemetryLogEntity>
 
+    /**
+     * Acerta os pontos estimados sem GPS (marcados com derived.positionEstimated) quando o GPS volta: o ponto do instante
+     * t anda (t − from)/span da diferença entre a posição estimada e a real.
+     */
+    @Query(
+        "UPDATE telemetry_log SET latitude = latitude + :dLat * (timestamp - :from) / :span, " +
+            "longitude = longitude + :dLon * (timestamp - :from) / :span " +
+            "WHERE trip_id = :tripId AND timestamp BETWEEN :from AND :to AND latitude IS NOT NULL " +
+            "AND extra_json LIKE '%derived.positionEstimated%'",
+    )
+    suspend fun correctEstimatedTrack(tripId: Long, from: Long, to: Long, span: Double, dLat: Double, dLon: Double): Int
+
     @Query("SELECT MAX(timestamp) FROM telemetry_log WHERE trip_id = :tripId")
     suspend fun lastTelemetryAt(tripId: Long): Long?
 

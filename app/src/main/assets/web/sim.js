@@ -128,6 +128,7 @@ window.ObdSim = (function () {
       stft_b1: stft, ltft_b1: v.ltft, mil_on: mil ? 1 : 0, dtc_count: mil ? 1 : 0,
       // escuta CAN e sensor do ESP32: parcial do painel, temperatura interna e pressão
       trip_km: 1234.5 + v.tripKm, cabin_temp: 27.4, cabin_pressure: 1013.25 * Math.pow(1 - v.alt / 44330, 5.255),
+      esp_batt_v: v.rpm > 300 ? 14.12 : 12.55,
     };
 
     const alerts = [];
@@ -139,7 +140,7 @@ window.ObdSim = (function () {
 
     return {
       running: true, diagRecording: true, profileId: meta.id, vehicleName: meta.vehicleName,
-      canLink: 'connected', canInfo: { firmware: '1.4', bitrateKbps: 50, bmp: 'ok', lsm: 'ok', mag: 'ok', magChip: 'qmc5883l', frames: 48210, lost: 0, busErrors: 0, framesPerSec: 312, statsAt: Date.now(), appFrames: 48190, resting: false, error: null, restarts: 0 },
+      canLink: 'connected', canInfo: { firmware: '1.4', bitrateKbps: 50, bmp: 'ok', lsm: 'ok', mag: 'ok', magChip: 'qmc5883l', batt: 'ok', frames: 48210, lost: 0, busErrors: 0, framesPerSec: 312, statsAt: Date.now(), appFrames: 48190, resting: false, error: null, restarts: 0 },
       connection: 'STREAMING', statusMessage: 'Capturando • ' + meta.ecuModel, power: 'ACTIVE',
       readings,
       derived: {
@@ -154,6 +155,10 @@ window.ObdSim = (function () {
         driveState: v.speed < 0.5 ? 0 : 1, imuAction: null,
         headingDeg: v.heading, headingSource: v.speed >= 12 ? 'gps' : 'mag', compassPct: 100, compassReady: true,
         altitudeM: v.alt, altitudeTrend: pitch > 2 && v.speed > 20 ? 1 : 0, altitudeGps: true,
+        // fontes cruzadas
+        imuSource: 'esp32', pressureSource: 'esp32', positionEstimated: false, speedFactor: 1.012, speedFactorKm: 182,
+        engineOn: v.rpm > 300, engineSource: 'rpm', slopeBaroPct: Math.tan(pitch * Math.PI / 180) * 100, slopeDiffDeg: 0.4,
+        slopeSuspicious: false, ambientC: 24, ambientSource: 'partida', battRestV: 12.58, battCrankV: 10.12, battDiffV: 0.06,
       },
       gps: { lat: -20.4697, lon: -54.6201, speedKmh: v.speed * 0.97, accuracyM: 4, bearing: v.heading, altitudeM: v.alt, ageMs: 300 },
       alerts, confirmedDtcs: mil ? ['P0133'] : [], pendingDtcs: [],

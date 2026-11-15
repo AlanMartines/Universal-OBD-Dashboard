@@ -72,4 +72,10 @@ class Esp32InfoTest {
         assertNull(Esp32Info.apply(Esp32Info(), "t2A04016200DE", 0, 0))
         assertNull(Esp32Info.apply(Esp32Info(), "# bmp180 temp=24.3C pressao=1013.2hPa", 0, 0))
     }
+
+    @Test fun batteryDividerAbsentAndReadingsPassThrough() {
+        assertEquals("ausente", feed(0L to "# bateria ausente").batt)
+        // A leitura não é estado: segue para os valores (o "ok" vem de quem lê a linha)
+        assertNull(Esp32Info.apply(Esp32Info(), "# bateria v=12.63 min=12.41 repouso=12.58 menor=9.87", 0L, 0L))
+    }
 }

@@ -46,6 +46,8 @@ object AppSettings {
     private const val KEY_TIMED_RUNS_PREFIX = "timed_runs_"
     private const val KEY_ATMOSPHERIC_KPA = "atmospheric_kpa"
     private const val KEY_IMU_CALIBRATION = "imu_calibration"
+    private const val KEY_PHONE_IMU_CALIBRATION = "phone_imu_calibration"
+    private const val KEY_SPEED_CALIBRATION = "speed_calibration_"
     private const val KEY_COMPASS_CALIBRATION = "compass_calibration"
     private const val KEY_CAN_ADAPTER = "can_adapter_names"
     private const val KEY_SENSOR_TRIMS = "sensor_trims"
@@ -95,7 +97,25 @@ object AppSettings {
         prefs(context).edit { putString(KEY_COMPASS_CALIBRATION, cal.encode()) }
     }
 
-    fun clearImuCalibration(context: Context) = prefs(context).edit { remove(KEY_IMU_CALIBRATION) }
+    fun clearImuCalibration(context: Context) = prefs(context).edit { remove(KEY_IMU_CALIBRATION); remove(KEY_PHONE_IMU_CALIBRATION) }
+
+    /** Orientação do celular no suporte (reserva do sensor de movimento do ESP32); vai no backup. */
+    fun phoneImuCalibration(context: Context): ImuMotion.Calibration? =
+        ImuMotion.Calibration.decode(prefs(context).getString(KEY_PHONE_IMU_CALIBRATION, null))
+
+    fun setPhoneImuCalibration(context: Context, cal: ImuMotion.Calibration) {
+        prefs(context).edit { putString(KEY_PHONE_IMU_CALIBRATION, cal.encode()) }
+    }
+
+    /** Somas do fator da velocidade aprendido pelo GPS, por veículo; vai no backup. */
+    fun speedCalibration(context: Context, vehicleId: String): com.universal.obddashboard.telemetry.SpeedCalibrator.State? =
+        com.universal.obddashboard.telemetry.SpeedCalibrator.State.decode(prefs(context).getString(KEY_SPEED_CALIBRATION + vehicleId, null))
+
+    fun setSpeedCalibration(context: Context, vehicleId: String, st: com.universal.obddashboard.telemetry.SpeedCalibrator.State) {
+        prefs(context).edit { putString(KEY_SPEED_CALIBRATION + vehicleId, st.encode()) }
+    }
+
+    fun clearSpeedCalibration(context: Context, vehicleId: String) = prefs(context).edit { remove(KEY_SPEED_CALIBRATION + vehicleId) }
 
     fun clearCompassCalibration(context: Context) = prefs(context).edit { remove(KEY_COMPASS_CALIBRATION) }
 

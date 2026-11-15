@@ -142,5 +142,26 @@
 <text x="136.50" y="105.50" font-size="1.4" fill="#1565c0" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">DRDY sem ligação</text>
 <text x="136.50" y="42.00" font-size="1.5" fill="#5d4037" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">nos cabos, longe do calor</text>
 <text x="136.50" y="76.50" font-size="1.4" fill="#6a1b9a" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">CS no 3V3 e SA0 no GND, no módulo</text>
+<rect x="2" y="75" width="58" height="31" rx="1.5" fill="#fffaf3" stroke="#8d6e63" stroke-width="0.35" stroke-dasharray="1 0.6"/>
+<text x="31.00" y="78.60" font-size="1.8" fill="#8d6e63" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">Bateria no ESP32 (divisor, firmware 1.6)</text>
+<text x="14.00" y="82.40" font-size="1.5" fill="#7b1fa2" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">12 V com fusível (IN+ do RT8272)</text>
+<path d="M14.00,83.50 L14.00,85.00" fill="none" stroke="#7b1fa2" stroke-width="0.55" stroke-linejoin="round"/>
+<rect x="12.8" y="85" width="2.4" height="5" fill="#fff" stroke="#8d6e63" stroke-width="0.4"/>
+<text x="12.00" y="88.20" font-size="1.6" fill="#5d4037" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">R5 100 kΩ</text>
+<path d="M14.00,90.00 L14.00,94.00" fill="none" stroke="#8d6e63" stroke-width="0.55" stroke-linejoin="round"/>
+<circle cx="14" cy="92" r="0.9" fill="#8d6e63"/>
+<path d="M14.00,92.00 L44.00,92.00" fill="none" stroke="#8d6e63" stroke-width="0.55" stroke-linejoin="round"/>
+<text x="45.00" y="92.60" font-size="1.6" fill="#8d6e63" text-anchor="start" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">D34 do ESP32</text>
+<rect x="12.8" y="94" width="2.4" height="5" fill="#fff" stroke="#8d6e63" stroke-width="0.4"/>
+<text x="12.00" y="97.20" font-size="1.6" fill="#5d4037" text-anchor="end" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">R6 22 kΩ</text>
+<path d="M14.00,99.00 L14.00,102.00 L24.00,102.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M14.00,92.00 L24.00,92.00" fill="none" stroke="#8d6e63" stroke-width="0.55" stroke-linejoin="round"/>
+<circle cx="24" cy="92" r="0.9" fill="#8d6e63"/>
+<path d="M24.00,92.00 L24.00,96.00" fill="none" stroke="#8d6e63" stroke-width="0.55" stroke-linejoin="round"/>
+<path d="M22.4,96 L25.6,96 M22.4,97 L25.6,97" stroke="#a0522d" stroke-width="0.5"/>
+<path d="M24.00,97.00 L24.00,102.00" fill="none" stroke="#263238" stroke-width="0.55" stroke-linejoin="round"/>
+<text x="26.00" y="97.20" font-size="1.6" fill="#5d4037" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">C1 100 nF</text>
+<text x="36.00" y="102.60" font-size="1.6" fill="#263238" text-anchor="start" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">GND</text>
+<text x="31.00" y="105.00" font-size="1.4" fill="#5d4037" text-anchor="middle" font-weight="normal" font-family="DejaVu Sans, Arial, sans-serif">12 V → 2,16 V no pino · até 17 V · consumo ≈ 0,1 mA</text>
 <text x="75.00" y="1.00" font-size="2.0" fill="#5d4037" text-anchor="middle" font-weight="bold" font-family="DejaVu Sans, Arial, sans-serif">Esquema de ligação (fora de escala)</text>
 </svg>

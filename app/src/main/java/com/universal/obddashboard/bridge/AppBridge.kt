@@ -78,6 +78,20 @@ class AppBridge(private val activity: MainActivity) {
             "compass",
             AppSettings.compassCalibration(activity)?.let { c -> JSONObject().put("pct", c.progressPct).put("ready", c.ready) } ?: JSONObject.NULL,
         )
+        o.put(
+            "phoneImu",
+            AppSettings.phoneImuCalibration(activity)?.mount()?.let { m ->
+                JSONObject().put("upAxis", m.upAxis).put("forwardAxis", m.forwardAxis ?: JSONObject.NULL)
+            } ?: JSONObject.NULL,
+        )
+        o.put(
+            "speed",
+            AppSettings.speedCalibration(activity, Vehicles.selectedId(activity))?.let { st ->
+                val cal = com.universal.obddashboard.telemetry.SpeedCalibrator(st)
+                JSONObject().put("km", st.carKm).put("factor", cal.factor ?: JSONObject.NULL)
+                    .put("readyKm", com.universal.obddashboard.telemetry.SpeedCalibrator.READY_KM)
+            } ?: JSONObject.NULL,
+        )
         return o.toString()
     }
 
@@ -101,6 +115,7 @@ class AppBridge(private val activity: MainActivity) {
             "imu" -> TelemetryHub.ImuRequest.FORGET_IMU
             "compass" -> TelemetryHub.ImuRequest.FORGET_COMPASS
             "phone" -> TelemetryHub.ImuRequest.FORGET_PHONE
+            "speed" -> TelemetryHub.ImuRequest.FORGET_SPEED
             else -> return "Opção inválida."
         }
         if (ObdForegroundService.isRunning) {
@@ -108,6 +123,7 @@ class AppBridge(private val activity: MainActivity) {
         } else when (r) {
             TelemetryHub.ImuRequest.FORGET_IMU -> AppSettings.clearImuCalibration(activity)
             TelemetryHub.ImuRequest.FORGET_COMPASS -> AppSettings.clearCompassCalibration(activity)
+            TelemetryHub.ImuRequest.FORGET_SPEED -> AppSettings.clearSpeedCalibration(activity, Vehicles.selectedId(activity))
             else -> Unit   // o celular é aprendido de novo a cada captura
         }
         return "ok"

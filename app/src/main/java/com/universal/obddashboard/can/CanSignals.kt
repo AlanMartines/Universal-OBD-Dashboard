@@ -83,6 +83,21 @@ object Slcan {
         return listOf(IMU_AX, IMU_AY, IMU_AZ, IMU_GX, IMU_GY, IMU_GZ, IMU_PEAK).zip(v).toMap()
     }
 
+    /** Tensão da bateria pelo divisor do ESP32 (firmware 1.6), em volts. */
+    const val ESP_BATT_V = "esp_batt_v"
+    const val ESP_BATT_MIN = "esp_batt_min"
+    const val ESP_BATT_REST = "esp_batt_rest"
+    const val ESP_BATT_LOWEST = "esp_batt_lowest"
+    private val BATT = Regex("^# bateria v=$NUM min=$NUM repouso=$NUM menor=$NUM$")
+
+    /** `# bateria v=12.63 min=12.41 repouso=12.58 menor=9.87`; fora de 3 a 20 V, null. */
+    fun parseBattery(line: String): Map<String, Double>? {
+        val m = BATT.matchEntire(line.trim()) ?: return null
+        val v = m.groupValues.drop(1).map { it.toDouble() }
+        if (v.any { it !in 3.0..20.0 }) return null
+        return listOf(ESP_BATT_V, ESP_BATT_MIN, ESP_BATT_REST, ESP_BATT_LOWEST).zip(v).toMap()
+    }
+
     /** Magnetômetro do ESP32 (QMC5883L, QMC5883P ou HMC5883L): campo magnético em µT, nos eixos impressos no módulo. */
     const val MAG_X = "mag_x"
     const val MAG_Y = "mag_y"

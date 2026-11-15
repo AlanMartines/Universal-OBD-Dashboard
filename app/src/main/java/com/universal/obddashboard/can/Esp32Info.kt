@@ -14,6 +14,8 @@ data class Esp32Info(
     /** Magnetômetro (bússola): "ok", "ausente" ou "sem resposta", e o modelo encontrado (qmc5883l, qmc5883p, hmc5883l). */
     val mag: String? = null,
     val magChip: String? = null,
+    /** Divisor da bateria (firmware 1.6): "ok" ao chegar a primeira leitura, "ausente" sem ele; null antes. */
+    val batt: String? = null,
     val frames: Long? = null,
     val lost: Long? = null,
     val busErrors: Long? = null,
@@ -68,6 +70,7 @@ data class Esp32Info(
                     restarts = cur.restarts + if (reset && cur.firmware == null) 1 else 0,
                 )
             }
+            if (l == "# bateria ausente") return cur.copy(batt = "ausente")
             if (l.startsWith("# descanso")) return cur.copy(resting = true, framesPerSec = null)
             if (l.startsWith("# acordou")) return cur.copy(resting = false)
             ERROR.matchEntire(l)?.let { return cur.copy(error = it.groupValues[1]) }

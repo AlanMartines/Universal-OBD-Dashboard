@@ -114,6 +114,34 @@ data class DerivedMetrics(
     val avgMovingKmh: Double? = null,
     /** % do tempo andando no verde, meio e vermelho. */
     val ecoPct: List<Double>? = null,
+    // ---- Fontes cruzadas
+    /** De onde vem o movimento na tela: "esp32" ou "celular" (reserva); null sem nenhum. */
+    val imuSource: String? = null,
+    /** De onde vem a pressão da altitude: "esp32" ou "celular". */
+    val pressureSource: String? = null,
+    /** Sem GPS, a posição está sendo estimada pela velocidade e pelo rumo. */
+    val positionEstimated: Boolean = false,
+    val estLatitude: Double? = null,
+    val estLongitude: Double? = null,
+    val estAccuracyM: Double? = null,
+    val estDistanceM: Double? = null,
+    /** Fator da velocidade do carro aprendido pelo GPS (null até ficar pronto) e quantos km já entraram na conta. */
+    val speedFactor: Double? = null,
+    val speedFactorKm: Double = 0.0,
+    /** Motor ligado pela votação (null sem nenhuma fonte) e a fonte que decidiu: "rpm", "tensao" ou "vibracao". */
+    val engineOn: Boolean? = null,
+    val engineSource: String? = null,
+    /** Inclinação do último trecho pela pressão (%) e a diferença média sensor − pressão (°). */
+    val slopeBaroPct: Double? = null,
+    val slopeDiffDeg: Double? = null,
+    val slopeSuspicious: Boolean = false,
+    /** Temperatura de fora estimada pela admissão (°C) e como: "partida" ou "andando". */
+    val ambientC: Double? = null,
+    val ambientSource: String? = null,
+    /** Bateria pelo ESP32: em repouso, na partida e a diferença para a tensão da rede (V). */
+    val battRestV: Double? = null,
+    val battCrankV: Double? = null,
+    val battDiffV: Double? = null,
 )
 
 data class DashboardState(
@@ -210,9 +238,10 @@ object TelemetryHub {
      * Pedido da tela para os sensores do ESP32, consumido pelo serviço durante a captura:
      * - aba Dinâmica: [LEVEL] (Zerar nível), [FORWARD] (Calibrar frente);
      * - Ajustes → Calibração dos sensores: [FORGET_IMU] (esquecer nível e frente), [FORGET_COMPASS] (zerar a bússola do
-     *   ESP32), [FORGET_PHONE] (reaprender o celular no suporte), [TRIMS] (ajuste fino mudou, reler).
+     *   ESP32), [FORGET_PHONE] (reaprender o celular no suporte), [TRIMS] (ajuste fino mudou, reler), [FORGET_SPEED]
+     *   (reaprender o fator da velocidade pelo GPS).
      */
-    enum class ImuRequest { LEVEL, FORWARD, FORGET_IMU, FORGET_COMPASS, FORGET_PHONE, TRIMS }
+    enum class ImuRequest { LEVEL, FORWARD, FORGET_IMU, FORGET_COMPASS, FORGET_PHONE, TRIMS, FORGET_SPEED }
 
     private val imuRequests = java.util.concurrent.ConcurrentLinkedQueue<ImuRequest>()
 

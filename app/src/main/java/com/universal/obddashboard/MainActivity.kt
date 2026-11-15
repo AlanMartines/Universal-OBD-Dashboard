@@ -431,7 +431,24 @@ class MainActivity : ComponentActivity() {
                     .put("tripCost", d.tripCost.orNull())
                     .put("recommendedGear", d.recommendedGear ?: JSONObject.NULL)
                     .put("estimatedGear", d.estimatedGear ?: JSONObject.NULL)
-                    .put("shiftUp", d.shiftUp),
+                    .put("shiftUp", d.shiftUp)
+                    .put("imuSource", d.imuSource ?: JSONObject.NULL)
+                    .put("pressureSource", d.pressureSource ?: JSONObject.NULL)
+                    .put("positionEstimated", d.positionEstimated)
+                    .put("estDistanceM", d.estDistanceM.orNull())
+                    .put("estAccuracyM", d.estAccuracyM.orNull())
+                    .put("speedFactor", d.speedFactor.orNull())
+                    .put("speedFactorKm", d.speedFactorKm)
+                    .put("engineOn", d.engineOn ?: JSONObject.NULL)
+                    .put("engineSource", d.engineSource ?: JSONObject.NULL)
+                    .put("slopeBaroPct", d.slopeBaroPct.orNull())
+                    .put("slopeDiffDeg", d.slopeDiffDeg.orNull())
+                    .put("slopeSuspicious", d.slopeSuspicious)
+                    .put("ambientC", d.ambientC.orNull())
+                    .put("ambientSource", d.ambientSource ?: JSONObject.NULL)
+                    .put("battRestV", d.battRestV.orNull())
+                    .put("battCrankV", d.battCrankV.orNull())
+                    .put("battDiffV", d.battDiffV.orNull()),
             )
             .put(
                 "gps",
@@ -461,6 +478,7 @@ class MainActivity : ComponentActivity() {
                 JSONObject().put("firmware", i.firmware ?: JSONObject.NULL).put("bitrateKbps", i.bitrateKbps ?: JSONObject.NULL)
                     .put("bmp", i.bmp ?: JSONObject.NULL).put("lsm", i.lsm ?: JSONObject.NULL)
                     .put("mag", i.mag ?: JSONObject.NULL).put("magChip", i.magChip ?: JSONObject.NULL)
+                    .put("batt", i.batt ?: JSONObject.NULL)
                     .put("frames", i.frames ?: JSONObject.NULL).put("lost", i.lost ?: JSONObject.NULL)
                     .put("busErrors", i.busErrors ?: JSONObject.NULL).put("framesPerSec", i.framesPerSec.orNull())
                     .put("statsAt", i.statsAt ?: JSONObject.NULL).put("appFrames", i.appFrames)

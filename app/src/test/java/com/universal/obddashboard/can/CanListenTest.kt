@@ -126,4 +126,15 @@ class CanListenTest {
         val error = runCatching { ProfileParser.parse(json) }.exceptionOrNull()
         assertTrue(error.toString(), error is ProfileException)
     }
+
+    @Test
+    fun parsesTheBatteryLineFromTheEsp32() {
+        val v = Slcan.parseBattery("# bateria v=12.63 min=12.41 repouso=12.58 menor=9.87")!!
+        assertEquals(12.63, v[Slcan.ESP_BATT_V]!!, 1e-9)
+        assertEquals(12.41, v[Slcan.ESP_BATT_MIN]!!, 1e-9)
+        assertEquals(12.58, v[Slcan.ESP_BATT_REST]!!, 1e-9)
+        assertEquals(9.87, v[Slcan.ESP_BATT_LOWEST]!!, 1e-9)
+        assertNull(Slcan.parseBattery("# bateria v=0.10 min=0.10 repouso=0.10 menor=0.10"))
+        assertNull(Slcan.parseBattery("# bateria ausente"))
+    }
 }
