@@ -543,12 +543,22 @@ describe('fluxo pelo navegador', () => {
     assert.ok(!donoPage.body.includes('name="accountId"'));
     assert.ok(!donoPage.body.includes('Auditoria recente'));
     assert.ok(!donoPage.body.includes('Cadastro público'));
+    // Notas do projeto: só o Super Admin vê o menu e a página
+    const notas = await web.inject({ method: 'GET', url: '/admin/notas', headers: { cookie: adminCookie } });
+    assert.equal(notas.statusCode, 200);
+    assert.match(notas.body, /Notas do projeto/);
+    assert.match(notas.body, /\/modules\/notas\/fluxo\.svg/);
+    assert.match(superPage.body, /href="\/admin\/notas"/);
+    assert.ok(!donoPage.body.includes('href="/admin/notas"'));
+    assert.equal((await web.inject({ method: 'GET', url: '/admin/notas', headers: { cookie: donoCookie } })).statusCode, 403);
+    assert.equal((await web.inject({ method: 'GET', url: '/modules/notas/fluxo.svg' })).statusCode, 200);
 
     const donoCsrf = await csrfOf(donoCookie);
     const madeUser = await post('/admin/usuarios', { _csrf: donoCsrf, username: 'atendimento', role: 'user' }, donoCookie);
     const cookie = await enter('atendimento', senhaDe(madeUser.body), 'uma frase longa para esta conta');
     const denied = await web.inject({ method: 'GET', url: '/admin', headers: { cookie } });
     assert.equal(denied.statusCode, 403);
+    assert.equal((await web.inject({ method: 'GET', url: '/admin/notas', headers: { cookie } })).statusCode, 403);
     assert.ok(!denied.body.includes('href="/admin"'));
     const panel = await web.inject({ method: 'GET', url: '/painel', headers: { cookie } });
     assert.ok(!panel.body.includes('action="/dispositivos"'));

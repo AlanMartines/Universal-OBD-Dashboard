@@ -1,0 +1,12 @@
+/* Notas do projeto (/admin/notas), só para o Super Admin. */
+.notas-nav { padding-block: 0.25rem; }
+.notas-section { scroll-margin-top: 5rem; }
+.notas-fluxo { background: #fff; border-radius: 0.5rem; padding: 0.5rem; overflow-x: auto; }
+.notas-fluxo img { display: block; width: 100%; min-width: 640px; height: auto; }
+.notas-list { display: grid; gap: 0.5rem; padding: 0; margin: 0; list-style: none; }
+.notas-list li { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.75rem; align-items: start; }
+.notas-list li > .badge { margin-top: 0.15rem; font-variant-numeric: tabular-nums; }
+.notas-table { min-width: 680px; }
+.notas-table td:first-child { font-weight: 500; width: 28%; }
+.notas-table td:nth-child(2) { white-space: nowrap; width: 1%; }
+.notas-class { display: inline-block; min-width: 1.6rem; text-align: center; }

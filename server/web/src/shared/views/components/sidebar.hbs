@@ -33,6 +33,7 @@
     <p class="sidebar-group sidebar-label">Administração</p>
     <ul class="sidebar-nav">
       <li><a href="/admin" title="{{#if (eq user.role "superadmin")}}Configurações{{else}}Usuários{{/if}}" class="{{#if (eq activePage "admin")}}active{{/if}}" {{#if (eq activePage "admin")}}aria-current="page"{{/if}}><i class="fa-solid fa-gear fa-fw" aria-hidden="true"></i><span class="sidebar-label">{{#if (eq user.role "superadmin")}}Configurações{{else}}Usuários{{/if}}</span></a></li>
+      {{#if (eq user.role "superadmin")}}<li><a href="/admin/notas" title="Notas do projeto" class="{{#if (eq activePage "notas")}}active{{/if}}" {{#if (eq activePage "notas")}}aria-current="page"{{/if}}><i class="fa-solid fa-clipboard-list fa-fw" aria-hidden="true"></i><span class="sidebar-label">Notas do projeto</span></a></li>{{/if}}
     </ul>
     {{/if}}
   </div>

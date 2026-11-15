@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" font-family="DejaVu Sans, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Como o Universal OBD Dashboard funciona</title>
+  <desc id="d">O carro fala com o ELM327 pela linha K e com o ESP32 pela rede CAN (só escuta). Os dois mandam por Bluetooth ao app no celular, que calcula, grava e envia ao servidor; o painel web mostra ao vivo e o histórico.</desc>
+  <defs>
+    <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#455a64"/>
+    </marker>
+  </defs>
+  <rect width="960" height="600" fill="#ffffff"/>
+
+  <!-- Carro -->
+  <rect x="300" y="20" width="360" height="92" rx="10" fill="#eceff1" stroke="#455a64" stroke-width="1.5"/>
+  <text x="480" y="48" text-anchor="middle" font-size="17" font-weight="bold" fill="#263238">Carro: Uno Vivace 2012</text>
+  <text x="480" y="70" text-anchor="middle" font-size="13" fill="#455a64">central Magneti Marelli IAW 7GF</text>
+  <text x="380" y="98" text-anchor="middle" font-size="12" fill="#1565c0">linha K · pino 7</text>
+  <text x="590" y="98" text-anchor="middle" font-size="12" fill="#6a1b9a">rede CAN · pino 14</text>
+
+  <!-- ELM327 -->
+  <rect x="80" y="170" width="300" height="96" rx="10" fill="#e3f2fd" stroke="#1565c0" stroke-width="1.5"/>
+  <text x="230" y="198" text-anchor="middle" font-size="16" font-weight="bold" fill="#0d47a1">ELM327 (Bluetooth)</text>
+  <text x="230" y="220" text-anchor="middle" font-size="12" fill="#1565c0">KWP2000 (ATSP5), ≈ 200 ms por pedido</text>
+  <text x="230" y="238" text-anchor="middle" font-size="12" fill="#1565c0">PIDs do modo 01, falhas (03/07/0A)</text>
+  <text x="230" y="256" text-anchor="middle" font-size="12" fill="#1565c0">e a tensão (ATRV)</text>
+
+  <!-- ESP32 -->
+  <rect x="520" y="150" width="380" height="136" rx="10" fill="#f3e5f5" stroke="#6a1b9a" stroke-width="1.5"/>
+  <text x="710" y="178" text-anchor="middle" font-size="16" font-weight="bold" fill="#4a148c">ESP32 · escuta CAN (listen-only)</text>
+  <text x="710" y="200" text-anchor="middle" font-size="12" fill="#6a1b9a">TJA1050 no CAN-L, transmissão travada no hardware</text>
+  <text x="710" y="220" text-anchor="middle" font-size="12" fill="#6a1b9a">I2C: BMP180 · LSM6DS3 · GY-273 (opcional)</text>
+  <text x="710" y="240" text-anchor="middle" font-size="12" fill="#6a1b9a">bateria pelo divisor no D34 (firmware 1.6)</text>
+  <text x="710" y="260" text-anchor="middle" font-size="12" fill="#6a1b9a">descanso: 2 min sem quadros → sono leve</text>
+  <text x="710" y="276" text-anchor="middle" font-size="11" fill="#8e24aa">firmware só pelo cabo USB</text>
+
+  <!-- setas carro → adaptadores -->
+  <path d="M380,112 L300,168" fill="none" stroke="#1565c0" stroke-width="2" marker-end="url(#seta)"/>
+  <text x="290" y="140" text-anchor="end" font-size="11" fill="#1565c0">consulta (só leitura)</text>
+  <path d="M590,112 L660,148" fill="none" stroke="#6a1b9a" stroke-width="2" marker-end="url(#seta)"/>
+  <text x="680" y="132" text-anchor="start" font-size="11" fill="#6a1b9a">só escuta</text>
+
+  <!-- Celular -->
+  <rect x="160" y="330" width="640" height="118" rx="10" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="480" y="358" text-anchor="middle" font-size="16" font-weight="bold" fill="#1b5e20">App Android (celular dedicado)</text>
+  <text x="480" y="380" text-anchor="middle" font-size="12" fill="#2e7d32">mostradores, Dinâmica, computador de bordo, alertas, manutenção, roteiros de captura</text>
+  <text x="480" y="398" text-anchor="middle" font-size="12" fill="#2e7d32">fontes cruzadas: percurso sem GPS, fator da velocidade, motor por votação, celular de reserva</text>
+  <text x="480" y="416" text-anchor="middle" font-size="12" fill="#2e7d32">GPS (Google ou nativo), bússola, acelerômetro e barômetro do celular</text>
+  <text x="480" y="434" text-anchor="middle" font-size="12" fill="#2e7d32">banco local (viagens, amostras a cada 2 s) e gravação de diagnóstico</text>
+
+  <!-- setas adaptadores → celular -->
+  <path d="M230,266 L300,328" fill="none" stroke="#455a64" stroke-width="2" marker-end="url(#seta)"/>
+  <path d="M710,286 L650,328" fill="none" stroke="#455a64" stroke-width="2" marker-end="url(#seta)"/>
+  <text x="480" y="310" text-anchor="middle" font-size="12" fill="#455a64">Bluetooth clássico (cada adaptador direto ao celular)</text>
+
+  <!-- Servidor -->
+  <rect x="80" y="500" width="380" height="80" rx="10" fill="#fff8e1" stroke="#ef6c00" stroke-width="1.5"/>
+  <text x="270" y="528" text-anchor="middle" font-size="16" font-weight="bold" fill="#e65100">Servidor (Docker Compose)</text>
+  <text x="270" y="550" text-anchor="middle" font-size="12" fill="#ef6c00">API Fastify · PostgreSQL · worker (Saúde)</text>
+  <text x="270" y="568" text-anchor="middle" font-size="12" fill="#ef6c00">OSRM (percurso nas ruas)</text>
+
+  <!-- Painel -->
+  <rect x="540" y="500" width="340" height="80" rx="10" fill="#e0f2f1" stroke="#00796b" stroke-width="1.5"/>
+  <text x="710" y="528" text-anchor="middle" font-size="16" font-weight="bold" fill="#004d40">Painel web</text>
+  <text x="710" y="550" text-anchor="middle" font-size="12" fill="#00796b">ao vivo, histórico, percurso, Saúde,</text>
+  <text x="710" y="568" text-anchor="middle" font-size="12" fill="#00796b">relatórios, manutenção e a placa em 3D</text>
+
+  <!-- setas celular → servidor → painel -->
+  <path d="M330,448 L290,498" fill="none" stroke="#455a64" stroke-width="2" marker-end="url(#seta)"/>
+  <text x="330" y="482" text-anchor="start" font-size="11" fill="#455a64">HTTPS: ao vivo e histórico</text>
+  <path d="M460,540 L538,540" fill="none" stroke="#455a64" stroke-width="2" marker-end="url(#seta)"/>
+</svg>
