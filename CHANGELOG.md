@@ -6,6 +6,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.56] - 2026-11-16
+
+### Corrigido
+- **Saúde do carro: bateria do ESP32 conferida com a rede do carro.** Em 16/11 o divisor do ESP32 leu 1,6 a 1,9 V abaixo da rede com o motor ligado (mau contato na alimentação da placa, em investigação) e marcou 7,57 V numa partida em que a rede mostrava 12,2 V e repouso de 11,78 V com a rede em 12,48 V: o pré-diagnóstico acusaria bateria fraca sem motivo. Agora, a cada viagem, o app compara as duas leituras (uma por segundo, rede entre 11 e 15,5 V); se a diferença mediana passar de 0,5 V, ou se não houver tensão da rede para conferir, o repouso e a partida daquela viagem são descartados, e a Saúde do carro mostra em Elétrica o aviso para conferir a alimentação da placa (fusível, emendas e terra). Esse aviso é da instalação, não do carro: não muda o estado dos subsistemas.
 ## [0.9.55] - 2026-11-16
 
 ### Corrigido

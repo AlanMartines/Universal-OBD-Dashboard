@@ -62,7 +62,7 @@
       <li><span class="badge text-bg-success">instalado</span><span>ELM327 e ESP32 juntos pelo cabo Y, cada um por Bluetooth ao celular.</span></li>
       <li><span class="badge text-bg-success">instalado</span><span>Celular dedicado ao app, com Android sem os serviços do Google (o GPS nativo cobre).</span></li>
       <li><span class="badge text-bg-warning">falta</span><span>GY-273 (bússola): o firmware já procura sozinho; sem ele, o rumo parado vem da bússola do celular.</span></li>
-      <li><span class="badge text-bg-success">instalado</span><span>Divisor da bateria (100 kΩ, 20 kΩ e capacitor "104"): conferido com o multímetro em 15/11 (2,09 V no D34 com a bateria em 12,46 V). Com o motor desligado o ESP32 bate com o multímetro; com o Bluetooth ligado, lê 0,4 a 1,0 V abaixo da rede do carro (em investigação).</span></li>
+      <li><span class="badge text-bg-success">instalado</span><span>Divisor da bateria (100 kΩ, 20 kΩ e capacitor "104"): conferido com o multímetro em 15/11 (2,09 V no D34 com a bateria em 12,46 V). Com o motor desligado o ESP32 bateu com o multímetro; com o Bluetooth ligado lia 0,4 a 1,0 V abaixo da rede do carro em 15/11, e em 16/11 passou a 1,6 a 1,9 V abaixo (até o repouso saiu 0,7 V abaixo): o erro cresce com o consumo da placa, o que aponta mau contato na alimentação dela. Desde a v0.9.56 o app descarta o repouso e a partida da viagem quando a diferença passa de 0,5 V.</span></li>
     </ul>
   </div>
 </section>
@@ -72,7 +72,8 @@
   <div class="card-body">
     <h3 class="h6 fw-semibold">No carro e na bancada</h3>
     <ul class="notas-list mb-4">
-      <li><span class="badge text-bg-warning">conferir</span><span>Primeiras partidas com o firmware 1.7: a queda na partida deve vir acima dos 7,3 a 8,6 V do 1.6 (que pegava o pico de 10 ms do motor de partida engatando).</span></li>
+      <li><span class="badge text-bg-warning">conferir</span><span>Partidas com o firmware 1.7 em 16/11: o ESP32 marcou 9,0 e 7,57 V com a rede do carro em 10,9 e 12,2 V. O valor só fica confiável depois de resolvida a alimentação da placa.</span></li>
+      <li><span class="badge text-bg-warning">fiação</span><span>Alimentação da placa do ESP32: conferir porta-fusível, emendas e terra; a leitura da bateria cai até 1,9 V com o Bluetooth ligado.</span></li>
       <li><span class="badge text-bg-warning">medir</span><span>Com o motor ligado, medir com o multímetro o D34 (≈ 2,35 V esperados com 14,1 V), a entrada da placa (12 V depois do fusível × GND) e os bornes da bateria: separar queda na fiação de erro do conversor do ESP32.</span></li>
       <li><span class="badge text-bg-warning">sensor</span><span>Instalar o GY-273 (bússola, recomendado).</span></li>
       <li><span class="badge text-bg-warning">app</span><span>Refazer o Calibrar frente: arrancada em linha reta, de 5 a 20 km/h.</span></li>
@@ -116,8 +117,8 @@
           <tr><td>Estrada</td><td>motor já passou de 85 °C, acima de 60 km/h por 3 min</td><td>Água abaixo de 75 °C (termostática presa aberta).</td></tr>
           <tr><td>Superaquecimento</td><td>motor quente</td><td>Mais de 30 s acima da 2ª velocidade da ventoinha (103 °C); acima de 105 °C é verificar.</td></tr>
           <tr><td>Carga do alternador</td><td>acima de 1.500 rpm, depois de 1 min de motor</td><td>Mediana abaixo de 13,2 V (13,0 V com farol, desembaçador ou A/C) ou acima de 14,9 V; acima de 15,5 V é verificar.</td></tr>
-          <tr><td>Bateria em repouso</td><td>divisor do ESP32, ao acordar (porta aberta, luz interna)</td><td>Abaixo de 12,0 V (lido de 12,08 a 12,49 V em 15 e 16/11).</td></tr>
-          <tr><td>Queda na partida</td><td>divisor do ESP32 com o firmware 1.7 (média de 100 ms), depois de o motor pegar</td><td>Abaixo de 9,6 V; abaixo de 9,0 V é verificar. Ignorada antes do 1.7: o pico de 10 ms dava 7,3 a 8,6 V numa bateria boa.</td></tr>
+          <tr><td>Bateria em repouso</td><td>divisor do ESP32, ao acordar (porta aberta, luz interna)</td><td>Abaixo de 12,0 V (lido de 12,08 a 12,49 V em 15 e 16/11). Só vale se o ESP32 bater com a rede do carro na viagem (até 0,5 V de diferença mediana).</td></tr>
+          <tr><td>Queda na partida</td><td>divisor do ESP32 com o firmware 1.7 (média de 100 ms), depois de o motor pegar</td><td>Abaixo de 9,6 V; abaixo de 9,0 V é verificar. Ignorada antes do 1.7: o pico de 10 ms dava 7,3 a 8,6 V numa bateria boa. Como o repouso, só vale com o ESP32 conferido com a rede do carro.</td></tr>
           <tr><td>Vácuo em marcha lenta</td><td>água acima de 80 °C, parado, 550 a 1.150 rpm, borboleta até 8 %, sem A/C, 2 min depois da partida</td><td>MAP subindo mais de 7 pontos (≈ 7 kPa) acima do normal do próprio carro, aprendido nas 5 primeiras viagens, ou acima de 55% da pressão do ar (ar falso, mangueira, cânister, compressão). O Uno sem A/C fica em 42 a 44%.</td></tr>
           <tr><td>Sensor MAP</td><td>chave ligada, motor parado</td><td>Mais de 3 kPa de diferença para a pressão do ar.</td></tr>
           <tr><td>Rotação em marcha lenta</td><td>o mesmo regime do vácuo, medida dentro de cada parada</td><td>Oscilação acima de ±30 rpm (corpo de borboleta, ar falso, vela ou cabo). O Uno fica em ±2 a ±10 rpm.</td></tr>
