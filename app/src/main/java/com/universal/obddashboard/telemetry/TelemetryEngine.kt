@@ -336,6 +336,7 @@ class TelemetryEngine(
                 // Antes do firmware 1.7 o "menor" é uma leitura de 10 ms: pega o pico do motor de partida engatando
                 // (7 a 9 V numa bateria boa), não a tensão sustentada da partida. Só vale do 1.7 em diante.
                 battCrankV = battery.crankV.takeIf { firmwareAtLeast(state.canInfo?.firmware, 1, 7) },
+                espBattV = espVolts,
             ),
         )
 

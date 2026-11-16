@@ -60,6 +60,10 @@ class MaintenanceBridge(private val activity: MainActivity) {
             JSONObject().put("at", c.at).put("mil", c.milOn).put("confirmed", JSONArray(c.confirmed)).put("pending", JSONArray(c.pending))
                 .put("incomplete", c.incomplete?.let { JSONArray(it) } ?: JSONObject.NULL)
         } ?: JSONObject.NULL)
+        // Conferência da bateria do ESP32 com a rede do carro (última viagem): fora, o repouso e a partida são descartados
+        o.put("espBatt", h.check(com.universal.obddashboard.telemetry.HealthMonitor.ESP_BATT).last?.let { e ->
+            JSONObject().put("diff", e.value).put("off", e.flagged).put("at", e.at)
+        } ?: JSONObject.NULL)
         o.put("window", com.universal.obddashboard.telemetry.HealthHistory.REPEAT_WINDOW)
         o.put("repeat", com.universal.obddashboard.telemetry.HealthHistory.REPEAT_MIN)
         return o.toString()

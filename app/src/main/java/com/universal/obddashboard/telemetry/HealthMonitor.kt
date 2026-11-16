@@ -44,6 +44,8 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
         val mapOffsetKpa: Double?,
         val battRestV: Double?,
         val battCrankV: Double?,
+        /** Bateria lida agora pelo divisor do ESP32 (V), para conferir com [volts]. */
+        val espBattV: Double? = null,
     )
 
     data class Observation(val value: Double, val flagged: Boolean, val severe: Boolean = false)
@@ -71,6 +73,9 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
     private var mapOffset: Double? = null
     private var restV: Double? = null
     private var crankV: Double? = null
+    // ESP32 − rede do carro, uma por segundo
+    private val espDiff = mutableListOf<Double>()
+    private var lastEspDiffAt = 0L
 
     fun update(i: Input) {
         if (tripStartAt == null) tripStartAt = i.now
@@ -107,6 +112,11 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
         }
         i.battRestV?.let { restV = it }
         i.battCrankV?.let { crankV = it }
+        val esp = i.espBattV
+        if (esp != null && v != null && v in ESP_CHECK_MIN_V..ESP_CHECK_MAX_V && i.now - lastEspDiffAt >= 1000) {
+            espDiff += esp - v
+            lastEspDiffAt = i.now
+        }
 
         // ---- Admissão e marcha lenta: quente, parado, em marcha lenta, sem acelerar, sem A/C, 2 min depois da partida
         val idle = c != null && c >= WARM_C && !moving && i.rpm != null && i.rpm in IDLE_RPM_MIN..IDLE_RPM_MAX &&
@@ -147,8 +157,16 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
             val low = if (chargeLoads) CHARGE_LOW_LOADED_V else CHARGE_LOW_V
             put(CHARGING, Observation(med, med < low || med > CHARGE_HIGH_V, severe = med > CHARGE_SEVERE_V))
         }
-        restV?.let { put(REST_V, Observation(it, it < REST_LOW_V)) }
-        crankV?.let { put(CRANK_V, Observation(it, it < CRANK_LOW_V, severe = it < CRANK_SEVERE_V)) }
+        // Repouso e partida só valem com o ESP32 conferido com a rede do carro nesta viagem
+        val espOk = if (espDiff.size >= MIN_SAMPLES) {
+            val d = median(espDiff)
+            put(ESP_BATT, Observation(d, abs(d) > ESP_BATT_DIFF_MAX_V))
+            abs(d) <= ESP_BATT_DIFF_MAX_V
+        } else false
+        if (espOk) {
+            restV?.let { put(REST_V, Observation(it, it < REST_LOW_V)) }
+            crankV?.let { put(CRANK_V, Observation(it, it < CRANK_LOW_V, severe = it < CRANK_SEVERE_V)) }
+        }
         if (idleMapRatio.size >= MIN_SAMPLES) {
             val r = median(idleMapRatio)
             // O limite fixo só pega o caso grosseiro; o resto é comparado com o normal do carro (HealthHistory)
@@ -173,6 +191,8 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
         const val IDLE_VACUUM = "idle_vacuum"
         const val MAP_OFFSET = "map_offset"
         const val IDLE_RPM = "idle_rpm"
+        /** Diferença da bateria ESP32 − rede do carro (V): não é do carro, é da instalação; fica fora dos subsistemas. */
+        const val ESP_BATT = "esp_batt"
 
         const val RUNNING_RPM = 400.0
         const val COLD_START_C = 40.0
@@ -193,6 +213,14 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
         const val REST_LOW_V = 12.0
         const val CRANK_LOW_V = 9.6
         const val CRANK_SEVERE_V = 9.0
+        /**
+         * Acima disso de diferença (mediana da viagem) o divisor do ESP32 não bate com a rede do carro e o repouso e a
+         * partida da viagem são descartados. Em 16/11, com mau contato na alimentação da placa, ficou 1,6 a 1,9 V abaixo
+         * com o motor ligado e marcou 7,57 V numa partida em que a rede mostrava 12,2 V.
+         */
+        const val ESP_BATT_DIFF_MAX_V = 0.5
+        const val ESP_CHECK_MIN_V = 11.0
+        const val ESP_CHECK_MAX_V = 15.5
         const val IDLE_RPM_MIN = 550.0
         const val IDLE_RPM_MAX = 1150.0
         /** Borboleta eletrônica: em marcha lenta o Uno fica em 4 a 5 % (gravações de 15 e 16/11). */

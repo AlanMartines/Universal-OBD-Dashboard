@@ -14,13 +14,55 @@ class HealthMonitorTest {
     private fun HealthMonitor.step(
         s: Double, rpm: Double?, speed: Double = 0.0, coolant: Double? = 90.0, map: Double? = 31.0, tps: Double = 0.0,
         baro: Double? = 95.0, volts: Double? = 14.1, ac: Boolean? = false, loads: Boolean = false,
+        rest: Double? = null, crank: Double? = null, esp: Double? = null,
     ) {
         var left = s
         while (left > 0) {
             t += 250
             left -= 0.25
-            update(HealthMonitor.Input(t, 0.25, rpm, speed, coolant, map, tps, baro, volts, ac, loads, null, null, null))
+            update(HealthMonitor.Input(t, 0.25, rpm, speed, coolant, map, tps, baro, volts, ac, loads, null, rest, crank, esp))
         }
+    }
+
+    @Test
+    fun espBatteryMatchingTheCarKeepsRestAndCrank() {
+        val m = HealthMonitor()
+        m.step(30.0, 0.0, volts = 12.5, rest = 12.5, esp = 12.4)
+        m.step(60.0, 900.0, volts = 14.1, rest = 12.5, crank = 10.4, esp = 13.8)
+        val o = m.observations()
+        assertFalse(o.getValue(HealthMonitor.ESP_BATT).flagged)
+        assertEquals(12.5, o.getValue(HealthMonitor.REST_V).value, 1e-9)
+        assertEquals(10.4, o.getValue(HealthMonitor.CRANK_V).value, 1e-9)
+    }
+
+    @Test
+    fun espBatteryFarFromTheCarDiscardsRestAndCrank() {
+        // 16/11: rede em 12,5 / 14,1 V, ESP32 quase 2 V abaixo, "partida" de 7,57 V e repouso de 11,78 V
+        val m = HealthMonitor()
+        m.step(30.0, 0.0, volts = 12.5, rest = 11.78, esp = 10.5)
+        m.step(60.0, 900.0, volts = 14.1, rest = 11.78, crank = 7.57, esp = 12.2)
+        val o = m.observations()
+        assertTrue(o.getValue(HealthMonitor.ESP_BATT).flagged)
+        assertTrue(o.getValue(HealthMonitor.ESP_BATT).value < -1.5)
+        assertNull(o[HealthMonitor.REST_V])
+        assertNull(o[HealthMonitor.CRANK_V])
+    }
+
+    @Test
+    fun espBatteryWithoutCarVoltageIsNotTrusted() {
+        val m = HealthMonitor()
+        m.step(60.0, 900.0, volts = null, rest = 12.5, crank = 10.4, esp = 13.8)
+        val o = m.observations()
+        assertNull(o[HealthMonitor.ESP_BATT])
+        assertNull(o[HealthMonitor.REST_V])
+    }
+
+    @Test
+    fun espBatteryCheckStaysOutOfTheSubsystems() {
+        val h = HealthHistory()
+        repeat(5) { h.record(it.toLong(), it * 1000L, mapOf(HealthMonitor.ESP_BATT to HealthMonitor.Observation(-1.8, true))) }
+        assertTrue(h.check(HealthMonitor.ESP_BATT).last!!.flagged)
+        assertTrue(h.subsystems().none { it.level == Level.WATCH || it.level == Level.ALERT })
     }
 
     @Test

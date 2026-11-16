@@ -107,6 +107,12 @@ const HL_EMPTY = {
 };
 let hlData = null;
 
+/** Bateria do ESP32 fora da rede do carro na última viagem: o repouso e a partida dela foram descartados. */
+function hlEspBattLine(e) {
+  if (!e || !e.off) return null;
+  return `A bateria lida pelo ESP32 ficou ${fmt(Math.abs(e.diff), 1)} V ${e.diff < 0 ? 'abaixo' : 'acima'} da rede do carro na última viagem: repouso e partida descartados. Não é defeito do carro; confira a alimentação da placa (fusível, emendas e terra).`;
+}
+
 function hlCentralLines(c) {
   if (!c) return ['Ainda sem leitura da central.'];
   const out = [];
@@ -147,6 +153,8 @@ function renderHealth() {
         const rep = c.flagged ? ` Fora do normal em ${c.flagged} das últimas ${c.recent} viagens.` : c.level === 'LEARNING' ? ' Aprendendo o normal deste carro (5 viagens).' : '';
         return [txt + rep, c.level === 'WATCH' || c.level === 'ALERT'];
       });
+    const espLine = sub.id === 'electric' ? hlEspBattLine(hlData.espBatt) : null;
+    if (espLine) lines.push([espLine, true]);
     for (const [t, flag] of lines) {
       const li = document.createElement('li');
       li.textContent = t;
@@ -165,6 +173,7 @@ $('hl-share').addEventListener('click', () => {
     lines.push(`${HL_SUB[sub.id] || sub.id}: ${HL_LEVEL[sub.level][0]}`);
     if (sub.id === 'central') hlCentralLines(hlData.central).forEach((t) => lines.push('- ' + t));
     else sub.checks.filter((c) => c.value != null).forEach((c) => lines.push('- ' + HL_CHECK[c.id](c.value, c.lastFlagged)));
+    if (sub.id === 'electric' && hlEspBattLine(hlData.espBatt)) lines.push('- ' + hlEspBattLine(hlData.espBatt));
   }
   bridge.shareHealth(lines.join('\n'));
 });
