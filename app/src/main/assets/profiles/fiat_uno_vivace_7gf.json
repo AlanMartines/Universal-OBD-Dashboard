@@ -272,7 +272,7 @@
   },
 
   "_comment_speed": "Velocidade da ECU 2,6% abaixo do hodômetro do carro (406,6 km × 418 km num trecho de teste); o GPS ficou 1,8% acima do hodômetro. O fator só entra na distância quando não há GPS.",
-  "_comment_can": "Escuta CAN com ESP32 (veiculos/fiat-uno-vivace-2012): só os sinais confirmados. Rotação, temperatura e tensão (can_*) foram conferidas com o ELM327 e não substituem as leituras dele. O nível do tanque começa em 1%: nos últimos segundos antes de a ignição desligar, o painel manda o 0x380 com o b5 zerado. can_fuel_lph (0x281 b4 × 0,66) é provável: bateu com o consumo calculado em quatro viagens (±3%), falta conferir entre dois tanques cheios.",
+  "_comment_can": "Escuta CAN com ESP32 (veiculos/fiat-uno-vivace-2012): só os sinais confirmados. Rotação, temperatura e tensão (can_*) foram conferidas com o ELM327 e não substituem as leituras dele. O nível do tanque começa em 1%: nos últimos segundos antes de a ignição desligar, o painel manda o 0x380 com o b5 zerado. can_fuel_lph (0x281 b4 × 0,66) confirmado: bateu com o consumo calculado em quatro viagens (±3%) e entre dois tanques cheios (+2,2% sobre a bomba, mesmo erro do cálculo pelo MAP).",
   "can_listen": {
     "bitrate_kbps": 50,
     "signals": [

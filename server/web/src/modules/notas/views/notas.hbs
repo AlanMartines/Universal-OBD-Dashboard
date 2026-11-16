@@ -61,6 +61,8 @@
       <li><span class="badge text-bg-success">instalado</span><span>BMP180 e LSM6DS3 longe do ESP32, cada um no seu canto, sem interferência térmica ou elétrica dos outros componentes.</span></li>
       <li><span class="badge text-bg-success">instalado</span><span>ELM327 e ESP32 juntos pelo cabo Y, cada um por Bluetooth ao celular.</span></li>
       <li><span class="badge text-bg-success">instalado</span><span>Celular dedicado ao app, com Android sem os serviços do Google (o GPS nativo cobre).</span></li>
+      <li><span class="badge text-bg-success">conferido</span><span>Consumo entre dois tanques cheios (05 a 16/11, 388 km na cidade, 53 viagens): 38,99 L na bomba, 9,95 km/L. Pela injeção na rede CAN (fator 0,66) o app somou 39,86 L (+2,2 %); pelo ELM327 (MAP), 39,82 L (+2,1 %). As duas fontes independentes erram juntas, dentro da variação do gatilho da bomba (0,5 a 1 L): calibração mantida. O fator 0,66 passa de provável a confirmado.</span></li>
+      <li><span class="badge text-bg-info">tanque</span><span>Nível pela rede CAN (0x380 byte 5) chegou a 14 % sem acender a reserva; com cerca de 9 L no tanque nessa hora, a luz deve vir perto de 6 a 7 L. Ao ligar a chave, o byte 6 bit 2 acendeu por um instante: candidato ao teste de lâmpadas.</span></li>
       <li><span class="badge text-bg-warning">falta</span><span>GY-273 (bússola): o firmware já procura sozinho; sem ele, o rumo parado vem da bússola do celular.</span></li>
       <li><span class="badge text-bg-success">instalado</span><span>Divisor da bateria (100 kΩ, 20 kΩ e capacitor "104"): conferido com o multímetro em 15/11 (2,09 V no D34 com a bateria em 12,46 V). Com o motor desligado o ESP32 bateu com o multímetro; com o Bluetooth ligado lia 0,4 a 1,0 V abaixo da rede do carro em 15/11, e em 16/11 passou a 1,6 a 1,9 V abaixo (até o repouso saiu 0,7 V abaixo): o erro cresce com o consumo da placa, o que aponta mau contato na alimentação dela. Desde a v0.9.56 o app descarta o repouso e a partida da viagem quando a diferença passa de 0,5 V.</span></li>
     </ul>
@@ -73,11 +75,11 @@
     <h3 class="h6 fw-semibold">No carro e na bancada</h3>
     <ul class="notas-list mb-4">
       <li><span class="badge text-bg-warning">conferir</span><span>Partidas com o firmware 1.7 em 16/11: o ESP32 marcou 9,0 e 7,57 V com a rede do carro em 10,9 e 12,2 V. O valor só fica confiável depois de resolvida a alimentação da placa.</span></li>
-      <li><span class="badge text-bg-warning">fiação</span><span>Alimentação da placa do ESP32: conferir porta-fusível, emendas e terra; a leitura da bateria cai até 1,9 V com o Bluetooth ligado.</span></li>
+      <li><span class="badge text-bg-warning">divisor</span><span>Bateria pelo ESP32: a diferença para a rede do carro era 0,3 a 0,5 V em 15/11, 0,9 V às 6h36 de 16/11 e saltou para 1,8 a 2,1 V depois de abrir a caixa para gravar o firmware 1.7 (o código do 1.7 não mexe nessa leitura). O erro é proporcional (o ESP32 marca 84 a 86 % do real, parado ou com o motor ligado), o que aponta o divisor (contato no R5, D34 ou R6) ou o conversor do ESP32, não queda na alimentação. Medir o topo do R5 e o D34 contra o GND: a razão deve dar 6. A placa ilhada soldada deve resolver.</span></li>
       <li><span class="badge text-bg-warning">medir</span><span>Com o motor ligado, medir com o multímetro o D34 (≈ 2,35 V esperados com 14,1 V), a entrada da placa (12 V depois do fusível × GND) e os bornes da bateria: separar queda na fiação de erro do conversor do ESP32.</span></li>
       <li><span class="badge text-bg-warning">sensor</span><span>Instalar o GY-273 (bússola, recomendado).</span></li>
       <li><span class="badge text-bg-warning">app</span><span>Refazer o Calibrar frente: arrancada em linha reta, de 5 a 20 km/h.</span></li>
-      <li><span class="badge text-bg-warning">consumo</span><span>Segundo tanque cheio, com captura e ESP32, para confirmar o fator 0,66 do consumo da injeção pela rede CAN.</span></li>
+      <li><span class="badge text-bg-warning">consumo</span><span>Próximo tanque cheio: se as duas estimativas derem de novo cerca de 2 % acima da bomba, ajustar o fator da injeção para 0,646 e a eficiência volumétrica para 0,97. Ficar atento à luz da reserva a partir de 12 % no marcador.</span></li>
       <li><span class="badge text-bg-secondary">alternativa</span><span>Versão com SN65HVD230: tirar o R2 de 120 Ω do módulo antes de ligar no carro.</span></li>
     </ul>
     <h3 class="h6 fw-semibold">Desenvolvimento</h3>
