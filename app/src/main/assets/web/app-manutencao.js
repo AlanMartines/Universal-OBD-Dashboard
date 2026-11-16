@@ -86,7 +86,7 @@ function mtFillSelect() {
 }
 
 /* ---------------------------------------------------------------- Saúde do carro (pré-diagnóstico) */
-const HL_LEVEL = { NO_DATA: ['Sem dados', 'pill'], OK: ['Normal', 'pill pill-ok'], WATCH: ['Atenção', 'pill pill-warn'], ALERT: ['Verificar', 'pill pill-bad'] };
+const HL_LEVEL = { NO_DATA: ['Sem dados', 'pill'], LEARNING: ['Aprendendo', 'pill'], OK: ['Normal', 'pill pill-ok'], WATCH: ['Atenção', 'pill pill-warn'], ALERT: ['Verificar', 'pill pill-bad'] };
 const HL_SUB = { central: 'Central (injeção)', cooling: 'Arrefecimento', electric: 'Elétrica', intake: 'Admissão', idle: 'Marcha lenta' };
 /** Texto de cada checagem: o valor da última viagem e, fora do normal, o que olhar. */
 const HL_CHECK = {
@@ -96,13 +96,13 @@ const HL_CHECK = {
   charging: (v, f) => (f ? `${fmt(v, 2)} V acima de 1.500 rpm: ${v < 13.5 ? 'o alternador pode não estar carregando bem' : 'acima do normal, verifique o regulador do alternador'} (o normal é 13,5 a 14,7 V).` : `${fmt(v, 2)} V acima de 1.500 rpm.`),
   rest_v: (v, f) => (f ? `${fmt(v, 2)} V em repouso, antes da partida: bateria descarregada ou fraca.` : `${fmt(v, 2)} V em repouso.`),
   crank_v: (v, f) => (f ? `Caiu a ${fmt(v, 2)} V na partida: bateria fraca ou motor de partida puxando demais.` : `${fmt(v, 2)} V na partida.`),
-  idle_vacuum: (v, f) => (f ? `MAP em marcha lenta a ${fmt(v * 100, 0)}% da pressão do ar: vácuo fraco. Vale olhar entrada de ar falso, mangueiras, cânister e compressão.` : `MAP em marcha lenta a ${fmt(v * 100, 0)}% da pressão do ar (normal até 42%).`),
+  idle_vacuum: (v, f) => (f ? `MAP em marcha lenta a ${fmt(v * 100, 0)}% da pressão do ar, acima do normal deste carro: vácuo fraco. Vale olhar entrada de ar falso, mangueiras, cânister e compressão.` : `MAP em marcha lenta a ${fmt(v * 100, 0)}% da pressão do ar.`),
   map_offset: (v, f) => (f ? `O sensor MAP marca ${fmt(Math.abs(v), 1)} kPa ${v > 0 ? 'acima' : 'abaixo'} da pressão do ar com o motor parado: sensor desregulado ou mangueira obstruída.` : `Sensor MAP a ${fmt(v, 1)} kPa da pressão do ar com o motor parado.`),
   idle_rpm: (v, f) => (f ? `A rotação oscila ±${fmt(v, 0)} rpm em marcha lenta quente: corpo de borboleta sujo, ar falso ou vela/cabo.` : `Rotação estável em marcha lenta (±${fmt(v, 0)} rpm).`),
 };
 const HL_EMPTY = {
   warmup: 'Ainda sem partida a frio.', road_cool: 'Ainda sem trecho de estrada com o motor quente.', overheat: 'Ainda sem motor aquecido.',
-  charging: 'Ainda sem trecho acima de 1.500 rpm.', rest_v: 'Tensão em repouso: precisa do divisor da bateria no ESP32.', crank_v: 'Queda na partida: precisa do divisor da bateria no ESP32.',
+  charging: 'Ainda sem trecho acima de 1.500 rpm.', rest_v: 'Tensão em repouso: precisa do divisor da bateria no ESP32.', crank_v: 'Queda na partida: precisa do divisor da bateria e do firmware 1.7 no ESP32.',
   idle_vacuum: 'Ainda sem marcha lenta quente (parado, sem A/C).', map_offset: 'Ainda sem leitura com a chave ligada e o motor parado.', idle_rpm: 'Ainda sem marcha lenta quente.',
 };
 let hlData = null;
@@ -123,7 +123,7 @@ function renderHealth() {
   const list = $('hl-list');
   list.textContent = '';
   if (!hlData) return;
-  const order = ['NO_DATA', 'OK', 'WATCH', 'ALERT'];
+  const order = ['NO_DATA', 'LEARNING', 'OK', 'WATCH', 'ALERT'];
   const worst = hlData.subsystems.reduce((w, s) => (order.indexOf(s.level) > order.indexOf(w) ? s.level : w), 'NO_DATA');
   $('hl-pill').textContent = HL_LEVEL[worst][0];
   $('hl-pill').className = HL_LEVEL[worst][1];
@@ -144,7 +144,7 @@ function renderHealth() {
       : sub.checks.map((c) => {
         if (c.value == null) return [HL_EMPTY[c.id] || 'Sem dados.', false];
         const txt = HL_CHECK[c.id] ? HL_CHECK[c.id](c.value, c.lastFlagged) : String(c.value);
-        const rep = c.flagged ? ` Fora do normal em ${c.flagged} das últimas ${c.recent} viagens.` : '';
+        const rep = c.flagged ? ` Fora do normal em ${c.flagged} das últimas ${c.recent} viagens.` : c.level === 'LEARNING' ? ' Aprendendo o normal deste carro (5 viagens).' : '';
         return [txt + rep, c.level === 'WATCH' || c.level === 'ALERT'];
       });
     for (const [t, flag] of lines) {

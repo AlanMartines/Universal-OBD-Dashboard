@@ -6,6 +6,18 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Saúde do carro: limites revistos com as viagens de 15 e 16/11.** Sem isso, um carro saudável ganharia avisos:
+  - **marcha lenta não era reconhecida:** a borboleta eletrônica do Uno fica em 4 a 5 % parada, e a regra pedia menos de 3 %; agora até 8 %;
+  - **vácuo comparado com o normal do próprio carro:** o Uno sem A/C fica em 42 a 44% da pressão do ar, e o limite fixo era 42%. Agora o app aprende o normal nas 5 primeiras viagens ("Aprendendo") e só avisa se subir mais de 7 pontos, ou passar de 55%;
+  - **oscilação da rotação dentro de cada parada:** juntar paradas diferentes inflava o número (29 a 79 rpm); dentro de cada uma o Uno fica em 2 a 10 rpm. Limite de 30 rpm;
+  - **bateria em repouso a 12,0 V:** o ESP32 mede ao acordar, com a porta aberta (12,08 a 12,49 V nesses dias);
+  - **queda na partida só com o firmware 1.7:** o 1.6 registrava uma leitura de 10 ms, o pico do motor de partida engatando (7,3 a 8,6 V numa bateria boa; a média do segundo ficou em 10,4 a 10,9 V).
+- **Tempo de pausa ao retomar a viagem:** saía absurdo (cerca de 56 anos) no registro de diagnóstico quando a viagem anterior ainda não tinha amostra.
+
+### Alterado
+- **Firmware do ESP32 1.7:** o "menor" da linha `# bateria` passa a ser a menor média de 100 ms desde que o ESP32 ligou, a tensão sustentada da partida, como num teste de bateria. Gravar pelo cabo USB.
+
 ## [0.9.54] - 2026-11-16
 
 ### Corrigido

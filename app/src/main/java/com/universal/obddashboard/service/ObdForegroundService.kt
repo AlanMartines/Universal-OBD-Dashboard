@@ -250,7 +250,12 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         }
         trip = acc
         val tripId = acc.tripId
-        val gapS = if (resumeId != null) (now - maxOf(last?.endTime ?: 0L, lastSampleAt ?: 0L)) / 1000 else null
+        // Mesma referência da retomada (CapturePolicy): sem fim nem amostra, conta do início da viagem
+        val gapS = if (resumeId != null && last != null) {
+            (now - (maxOf(last.endTime ?: 0L, lastSampleAt ?: 0L).takeIf { it > 0 } ?: last.startTime)) / 1000
+        } else {
+            null
+        }
         Log.i(TAG, if (gapS != null) "Retomando a viagem $tripId (pausa de ${gapS}s)" else "Nova viagem $tripId")
         openRecorder(loaded, trigger, tripId, gapS)
         synchronized(recordedDtcs) { recordedDtcs.clear() }
@@ -1175,7 +1180,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             // 0 normal, 1 atenção, 2 verificar; sem dados fica de fora
             healthLevels = h.subsystems().associate { sub ->
                 "health.${sub.id}" to when (sub.level) {
-                    HealthHistory.Level.NO_DATA -> null
+                    HealthHistory.Level.NO_DATA, HealthHistory.Level.LEARNING -> null
                     HealthHistory.Level.OK -> 0.0
                     HealthHistory.Level.WATCH -> 1.0
                     HealthHistory.Level.ALERT -> 2.0

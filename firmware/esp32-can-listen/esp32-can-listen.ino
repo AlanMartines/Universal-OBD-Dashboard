@@ -42,7 +42,8 @@
  *
  * Tensão da bateria (recomendado, firmware 1.6): divisor na placa, 12 V com fusível → R5 100 kΩ → D34 → R6 20 kΩ → GND,
  * com C1 de 100 nF do D34 ao GND. Lido a 100 Hz; a cada BAT_MS sai a média do intervalo, o menor valor do intervalo,
- * a tensão em repouso (lida assim que o ESP32 liga, antes da partida) e o menor valor desde que ligou (a partida):
+ * a tensão em repouso (lida assim que o ESP32 liga, antes da partida) e a menor média de 100 ms desde que ligou (a partida;
+ * uma leitura isolada de 10 ms pega o pico do motor de partida engatando, 7 a 9 V numa bateria boa):
  *   # bateria v=12.63 min=12.41 repouso=12.58 menor=9.87
  * Tudo em volts. Sem o divisor (pino abaixo de BAT_MIN_V), aparece uma vez "# bateria ausente" e nada mais.
  *
@@ -516,6 +517,10 @@ void sendFrame(const twai_message_t &m) {
 bool batOk = false;
 float batRest = 0, batLowest = 99, batMin = 99, batSum = 0;
 uint16_t batN = 0;
+// Média de 100 ms (BAT_BLOCK leituras) para o "menor": a tensão sustentada da partida, não o pico de um instante
+const uint8_t BAT_BLOCK = 10;
+float batBlockSum = 0;
+uint8_t batBlockN = 0;
 
 float batRead() {
   return analogReadMilliVolts(BAT_PIN) / 1000.0f * BAT_DIVISOR * BAT_AJUSTE;
@@ -536,7 +541,13 @@ void batSample() {
   batSum += v;
   batN++;
   if (v < batMin) batMin = v;
-  if (v < batLowest) batLowest = v;
+  batBlockSum += v;
+  if (++batBlockN >= BAT_BLOCK) {
+    float avg = batBlockSum / batBlockN;
+    if (avg < batLowest) batLowest = avg;
+    batBlockSum = 0;
+    batBlockN = 0;
+  }
 }
 
 void sendBattery() {
@@ -556,7 +567,7 @@ void setup() {
   batBegin();   // primeiro de tudo: a tensão em repouso, antes de a partida puxar a bateria
   ledsInit();
   if (!bt.begin(BT_NAME)) Serial.println("# ERRO Bluetooth nao iniciou; seguindo so pela USB");
-  sendLine("# esp32-can-listen 1.6");
+  sendLine("# esp32-can-listen 1.7");
   if (woke) sendLine("# acordou: atividade na rede CAN");
   if (!batOk) sendLine("# bateria ausente");   // de novo: a primeira saiu antes do Bluetooth
   Wire.begin(I2C_SDA, I2C_SCL, 100000);   // BMP180, LSM6DS3 e magnetômetro dividem o mesmo I2C

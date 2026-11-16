@@ -57,12 +57,12 @@
   <div class="card-body">
     <ul class="notas-list mb-0">
       <li><span class="badge text-bg-success">instalado</span><span>ESP32 fixo no carro, ligado direto na tomada OBD com fusível; 5 V no ESP32 e modo descanso funcionando. O carro fica no máximo dois dias parado, e nas paradas longas o módulo é desconectado.</span></li>
-      <li><span class="badge text-bg-success">instalado</span><span>Firmware 1.6 gravado pelo cabo USB (descanso, LEDs de estado, BMP180, LSM6DS3, magnetômetro e leitura da bateria).</span></li>
+      <li><span class="badge text-bg-success">instalado</span><span>Firmware 1.6 gravado pelo cabo USB (descanso, LEDs de estado, BMP180, LSM6DS3, magnetômetro e leitura da bateria). O 1.7, com a tensão da partida pela média de 100 ms, está pronto para gravar.</span></li>
       <li><span class="badge text-bg-success">instalado</span><span>BMP180 e LSM6DS3 longe do ESP32, cada um no seu canto, sem interferência térmica ou elétrica dos outros componentes.</span></li>
       <li><span class="badge text-bg-success">instalado</span><span>ELM327 e ESP32 juntos pelo cabo Y, cada um por Bluetooth ao celular.</span></li>
       <li><span class="badge text-bg-success">instalado</span><span>Celular dedicado ao app, com Android sem os serviços do Google (o GPS nativo cobre).</span></li>
       <li><span class="badge text-bg-warning">falta</span><span>GY-273 (bússola): o firmware já procura sozinho; sem ele, o rumo parado vem da bússola do celular.</span></li>
-      <li><span class="badge text-bg-warning">falta</span><span>Divisor da bateria (100 kΩ, 20 kΩ e capacitor "104", peças já em mãos): sem ele, o ESP32 avisa "bateria ausente". Montar na próxima vez que abrir a caixa.</span></li>
+      <li><span class="badge text-bg-success">instalado</span><span>Divisor da bateria (100 kΩ, 20 kΩ e capacitor "104"): conferido com o multímetro em 15/11 (2,09 V no D34 com a bateria em 12,46 V). Com o motor desligado o ESP32 bate com o multímetro; com o Bluetooth ligado, lê 0,4 a 1,0 V abaixo da rede do carro (em investigação).</span></li>
     </ul>
   </div>
 </section>
@@ -72,7 +72,8 @@
   <div class="card-body">
     <h3 class="h6 fw-semibold">No carro e na bancada</h3>
     <ul class="notas-list mb-4">
-      <li><span class="badge text-bg-warning">placa</span><span>Montar o divisor da bateria (R5 100 kΩ, R6 20 kΩ, C1 100 nF) embaixo do RT8272. O firmware 1.6 já está gravado.</span></li>
+      <li><span class="badge text-bg-warning">firmware</span><span>Gravar o firmware 1.7 pelo cabo USB: a queda na partida passa a ser a média de 100 ms (o 1.6 pegava o pico de 10 ms do motor de partida engatando).</span></li>
+      <li><span class="badge text-bg-warning">medir</span><span>Com o motor ligado, medir com o multímetro o D34 (≈ 2,35 V esperados com 14,1 V), a entrada da placa (12 V depois do fusível × GND) e os bornes da bateria: separar queda na fiação de erro do conversor do ESP32.</span></li>
       <li><span class="badge text-bg-warning">sensor</span><span>Instalar o GY-273 (bússola, recomendado).</span></li>
       <li><span class="badge text-bg-warning">app</span><span>Refazer o Calibrar frente: arrancada em linha reta, de 5 a 20 km/h.</span></li>
       <li><span class="badge text-bg-warning">consumo</span><span>Segundo tanque cheio, com captura e ESP32, para confirmar o fator 0,66 do consumo da injeção pela rede CAN.</span></li>
@@ -80,7 +81,7 @@
     </ul>
     <h3 class="h6 fw-semibold">Desenvolvimento</h3>
     <ul class="notas-list mb-4">
-      <li><span class="badge text-bg-primary">em teste</span><span>Pré-diagnóstico, fase 1 (central, arrefecimento, elétrica, admissão e marcha lenta): observar algumas semanas de viagens e ajustar os limites com os dados reais.</span></li>
+      <li><span class="badge text-bg-primary">em teste</span><span>Pré-diagnóstico, fase 1 (central, arrefecimento, elétrica, admissão e marcha lenta): limites revistos em 16/11 com as viagens de 15 e 16/11 (marcha lenta com a borboleta eletrônica em 4 a 5 %, vácuo pelo normal do próprio carro, oscilação por parada, repouso a 12,0 V, partida só com o firmware 1.7). Seguir observando.</span></li>
       <li><span class="badge text-bg-primary">próximo</span><span>Pré-diagnóstico, fase 2: mistura (STFT por faixa), escape (sonda pós fora do corte), plausibilidade das temperaturas e embreagem patinando. Ver <a href="#prediagnostico">o pré-diagnóstico</a>.</span></li>
       <li><span class="badge text-bg-secondary">depois</span><span>Android Auto pelo teste interno da Play (o Android Auto 17.7+ recusa APK instalado à mão).</span></li>
       <li><span class="badge text-bg-secondary">depois</span><span>Consumo com etanol.</span></li>
@@ -115,11 +116,11 @@
           <tr><td>Estrada</td><td>motor já passou de 85 °C, acima de 60 km/h por 3 min</td><td>Água abaixo de 75 °C (termostática presa aberta).</td></tr>
           <tr><td>Superaquecimento</td><td>motor quente</td><td>Mais de 30 s acima da 2ª velocidade da ventoinha (103 °C); acima de 105 °C é verificar.</td></tr>
           <tr><td>Carga do alternador</td><td>acima de 1.500 rpm, depois de 1 min de motor</td><td>Mediana abaixo de 13,2 V (13,0 V com farol, desembaçador ou A/C) ou acima de 14,9 V; acima de 15,5 V é verificar.</td></tr>
-          <tr><td>Bateria em repouso</td><td>divisor do ESP32, ao acordar</td><td>Abaixo de 12,2 V.</td></tr>
-          <tr><td>Queda na partida</td><td>divisor do ESP32, depois de o motor pegar</td><td>Abaixo de 9,6 V; abaixo de 9,0 V é verificar.</td></tr>
-          <tr><td>Vácuo em marcha lenta</td><td>água acima de 80 °C, parado, 550 a 1.150 rpm, sem acelerar, sem A/C, 2 min depois da partida</td><td>MAP acima de 42% da pressão do ar (ar falso, mangueira, cânister, compressão).</td></tr>
+          <tr><td>Bateria em repouso</td><td>divisor do ESP32, ao acordar (porta aberta, luz interna)</td><td>Abaixo de 12,0 V (lido de 12,08 a 12,49 V em 15 e 16/11).</td></tr>
+          <tr><td>Queda na partida</td><td>divisor do ESP32 com o firmware 1.7 (média de 100 ms), depois de o motor pegar</td><td>Abaixo de 9,6 V; abaixo de 9,0 V é verificar. Ignorada antes do 1.7: o pico de 10 ms dava 7,3 a 8,6 V numa bateria boa.</td></tr>
+          <tr><td>Vácuo em marcha lenta</td><td>água acima de 80 °C, parado, 550 a 1.150 rpm, borboleta até 8 %, sem A/C, 2 min depois da partida</td><td>MAP subindo mais de 7 pontos (≈ 7 kPa) acima do normal do próprio carro, aprendido nas 5 primeiras viagens, ou acima de 55% da pressão do ar (ar falso, mangueira, cânister, compressão). O Uno sem A/C fica em 42 a 44%.</td></tr>
           <tr><td>Sensor MAP</td><td>chave ligada, motor parado</td><td>Mais de 3 kPa de diferença para a pressão do ar.</td></tr>
-          <tr><td>Rotação em marcha lenta</td><td>o mesmo regime do vácuo</td><td>Oscilação acima de ±60 rpm (corpo de borboleta, ar falso, vela ou cabo).</td></tr>
+          <tr><td>Rotação em marcha lenta</td><td>o mesmo regime do vácuo, medida dentro de cada parada</td><td>Oscilação acima de ±30 rpm (corpo de borboleta, ar falso, vela ou cabo). O Uno fica em ±2 a ±10 rpm.</td></tr>
         </tbody>
       </table>
     </div>

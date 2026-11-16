@@ -333,7 +333,9 @@ class TelemetryEngine(
                 loadsOn = flag(CAN_LIGHTS) == true || flag(CAN_DEFOG) == true,
                 mapOffsetKpa = estimatedLoad.mapOffsetKpa,
                 battRestV = battery.restV,
-                battCrankV = battery.crankV,
+                // Antes do firmware 1.7 o "menor" é uma leitura de 10 ms: pega o pico do motor de partida engatando
+                // (7 a 9 V numa bateria boa), não a tensão sustentada da partida. Só vale do 1.7 em diante.
+                battCrankV = battery.crankV.takeIf { firmwareAtLeast(state.canInfo?.firmware, 1, 7) },
             ),
         )
 
@@ -430,6 +432,14 @@ class TelemetryEngine(
     }
 
     companion object {
+        /** "1.7", "1.10"… ≥ [major].[minor]? Versão desconhecida conta como antiga. */
+        fun firmwareAtLeast(version: String?, major: Int, minor: Int): Boolean {
+            val p = version?.split('.')?.map { it.toIntOrNull() ?: return false } ?: return false
+            val ma = p.getOrElse(0) { 0 }
+            val mi = p.getOrElse(1) { 0 }
+            return ma > major || (ma == major && mi >= minor)
+        }
+
         /** Sem linha do sensor de movimento há tanto tempo, os valores somem da tela. */
         const val IMU_STALE_MS = 2000L
         const val IMU_SAVE_MS = 30_000L

@@ -66,6 +66,7 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
     private var idleS = 0.0
     private val idleMapRatio = ArrayList<Double>()
     private val idleRpm = ArrayList<Double>()
+    private val idleWindowSd = ArrayList<Double>()
     private var lastIdleRpmAt = 0L
     private var mapOffset: Double? = null
     private var restV: Double? = null
@@ -117,9 +118,20 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
             if (idleS >= IDLE_SETTLE_S && map != null && baro != null && baro in 60.0..110.0) idleMapRatio += map / baro
             if (idleS >= IDLE_SETTLE_S && i.now - lastIdleRpmAt >= 200) { idleRpm += i.rpm!!; lastIdleRpmAt = i.now }
         } else {
+            closeIdleWindow()
             idleS = 0.0
         }
         i.mapOffsetKpa?.let { mapOffset = it }
+    }
+
+    /**
+     * Fim de uma parada em marcha lenta: guarda quanto a rotação oscilou dentro dela. Juntar paradas diferentes inflaria o
+     * número (a marcha lenta de uma parada para outra muda um pouco); nas gravações de 15 e 16/11, dentro de cada parada
+     * assentada, ficou entre 2 e 10 rpm.
+     */
+    private fun closeIdleWindow() {
+        if (idleRpm.size >= IDLE_WINDOW_MIN) idleWindowSd += stdev(idleRpm)
+        idleRpm.clear()
     }
 
     /** Observações desta viagem até agora (só as checagens que tiveram o regime certo). */
@@ -139,11 +151,13 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
         crankV?.let { put(CRANK_V, Observation(it, it < CRANK_LOW_V, severe = it < CRANK_SEVERE_V)) }
         if (idleMapRatio.size >= MIN_SAMPLES) {
             val r = median(idleMapRatio)
+            // O limite fixo só pega o caso grosseiro; o resto é comparado com o normal do carro (HealthHistory)
             put(IDLE_VACUUM, Observation(r, r > IDLE_MAP_RATIO_MAX))
         }
         mapOffset?.let { put(MAP_OFFSET, Observation(it, abs(it) > MAP_OFFSET_MAX_KPA)) }
-        if (idleRpm.size >= MIN_SAMPLES * 5) {
-            val sd = stdev(idleRpm)
+        val sds = idleWindowSd + if (idleRpm.size >= IDLE_WINDOW_MIN) listOf(stdev(idleRpm)) else emptyList()
+        if (sds.isNotEmpty()) {
+            val sd = median(sds)
             put(IDLE_RPM, Observation(sd, sd > IDLE_RPM_SD_MAX))
         }
     }
@@ -175,18 +189,26 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
         const val CHARGE_LOW_LOADED_V = 13.0
         const val CHARGE_HIGH_V = 14.9
         const val CHARGE_SEVERE_V = 15.5
-        const val REST_LOW_V = 12.2
+        /** O repouso é lido quando o ESP32 acorda (porta aberta, luz interna acesa): 12,08 a 12,49 V em 15 e 16/11. */
+        const val REST_LOW_V = 12.0
         const val CRANK_LOW_V = 9.6
         const val CRANK_SEVERE_V = 9.0
         const val IDLE_RPM_MIN = 550.0
         const val IDLE_RPM_MAX = 1150.0
-        const val IDLE_TPS_MAX = 3.0
+        /** Borboleta eletrônica: em marcha lenta o Uno fica em 4 a 5 % (gravações de 15 e 16/11). */
+        const val IDLE_TPS_MAX = 8.0
         const val IDLE_SETTLE_S = 10.0
-        /** MAP em marcha lenta quente acima de 42% da pressão do ar (≈ 42 kPa ao nível do mar): vácuo fraco. */
-        const val IDLE_MAP_RATIO_MAX = 0.42
+        /**
+         * MAP em marcha lenta quente acima de 55% da pressão do ar: vácuo fraco em qualquer carro. O normal varia de motor
+         * para motor (o Uno, sem A/C, fica em 42 a 44%), então o resto é comparado com o próprio carro: ver
+         * [HealthHistory.BASELINE_RISE].
+         */
+        const val IDLE_MAP_RATIO_MAX = 0.55
         const val MAP_OFFSET_MAX_KPA = 3.0
-        /** Rotação oscilando mais que isso (desvio-padrão, rpm) em marcha lenta quente. */
-        const val IDLE_RPM_SD_MAX = 60.0
+        /** Rotação oscilando mais que isso (desvio-padrão dentro de cada parada, mediana entre as paradas, rpm). */
+        const val IDLE_RPM_SD_MAX = 30.0
+        /** Leituras (a cada 200 ms) para uma parada contar: 2 s depois de assentar. */
+        const val IDLE_WINDOW_MIN = 10
         const val MIN_SAMPLES = 10
 
         fun median(v: List<Double>): Double { val s = v.sorted(); return if (s.size % 2 == 1) s[s.size / 2] else (s[s.size / 2 - 1] + s[s.size / 2]) / 2 }
@@ -201,18 +223,20 @@ class HealthMonitor(private val thermal: Thermal = Thermal()) {
 class HealthHistory(
     private val trips: MutableMap<String, MutableList<Entry>> = mutableMapOf(),
     var central: Central? = null,
+    /** Normal do próprio carro, aprendido nas primeiras viagens (por checagem). */
+    private val baselines: MutableMap<String, Double> = mutableMapOf(),
 ) {
     @kotlinx.serialization.Serializable
     data class Entry(val tripId: Long, val at: Long, val value: Double, val flagged: Boolean, val severe: Boolean)
 
     @kotlinx.serialization.Serializable
-    private data class Saved(val trips: Map<String, List<Entry>> = emptyMap(), val central: Central? = null)
+    private data class Saved(val trips: Map<String, List<Entry>> = emptyMap(), val central: Central? = null, val baselines: Map<String, Double> = emptyMap())
 
     /** Luz de injeção, códigos e monitores da própria central, como estavam na última leitura. */
     @kotlinx.serialization.Serializable
     data class Central(val at: Long, val milOn: Boolean, val confirmed: List<String>, val pending: List<String>, val incomplete: List<String>?)
 
-    enum class Level { NO_DATA, OK, WATCH, ALERT }
+    enum class Level { NO_DATA, LEARNING, OK, WATCH, ALERT }
 
     data class CheckState(val id: String, val level: Level, val last: Entry?, val flaggedRecent: Int, val recent: Int)
     data class Subsystem(val id: String, val level: Level, val checks: List<CheckState>)
@@ -225,18 +249,28 @@ class HealthHistory(
             list += Entry(tripId, at, o.value, o.flagged, o.severe)
             list.sortBy { it.at }
             while (list.size > KEEP) list.removeAt(0)
+            // Normal do carro: mediana das primeiras viagens (fica guardado; "Recomeçar" apaga)
+            if (id in BASELINE_CHECKS && id !in baselines && list.size >= BASELINE_TRIPS) {
+                baselines[id] = HealthMonitor.median(list.take(BASELINE_TRIPS).map { it.value })
+            }
         }
     }
+
+    fun baseline(id: String): Double? = baselines[id]
 
     fun check(id: String): CheckState {
         val list = trips[id].orEmpty()
         if (list.isEmpty()) return CheckState(id, Level.NO_DATA, null, 0, 0)
-        val recent = list.takeLast(REPEAT_WINDOW)
+        val base = baselines[id]
+        // Com linha de base, fora do normal é o limite fixo ou subir mais que BASELINE_RISE acima do normal do carro
+        val eff = if (id in BASELINE_CHECKS) list.map { e -> e.copy(flagged = e.flagged || (base != null && e.value > base + BASELINE_RISE)) } else list
+        val recent = eff.takeLast(REPEAT_WINDOW)
         val flagged = recent.count { it.flagged }
-        val last = list.last()
+        val last = eff.last()
         val level = when {
             recent.any { it.severe } -> Level.ALERT
             flagged >= REPEAT_MIN -> Level.WATCH
+            id in BASELINE_CHECKS && base == null -> Level.LEARNING
             else -> Level.OK
         }
         return CheckState(id, level, last, flagged, recent.size)
@@ -256,12 +290,17 @@ class HealthHistory(
         }
     }
 
-    fun encode(): String = JSON.encodeToString(Saved.serializer(), Saved(trips, central))
+    fun encode(): String = JSON.encodeToString(Saved.serializer(), Saved(trips, central, baselines))
 
     companion object {
         const val KEEP = 10
         const val REPEAT_WINDOW = 5
         const val REPEAT_MIN = 3
+        /** Checagens comparadas com o normal do próprio carro, aprendido nas [BASELINE_TRIPS] primeiras viagens. */
+        val BASELINE_CHECKS = setOf(HealthMonitor.IDLE_VACUUM)
+        const val BASELINE_TRIPS = 5
+        /** Subida do MAP em marcha lenta (fração da pressão do ar) acima do normal do carro: ≈ 7 kPa. */
+        const val BASELINE_RISE = 0.07
 
         const val CENTRAL = "central"
         const val COOLING = "cooling"
@@ -279,7 +318,7 @@ class HealthHistory(
 
         fun decode(text: String?): HealthHistory = runCatching {
             val saved = JSON.decodeFromString(Saved.serializer(), text!!)
-            HealthHistory(saved.trips.mapValues { it.value.toMutableList() }.toMutableMap(), saved.central)
+            HealthHistory(saved.trips.mapValues { it.value.toMutableList() }.toMutableMap(), saved.central, saved.baselines.toMutableMap())
         }.getOrElse { HealthHistory() }
     }
 }

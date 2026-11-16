@@ -25,7 +25,7 @@ Faça isto com a placa desligada do carro.
 1. Na Arduino IDE, instale o pacote **esp32**, da Espressif (*Ferramentas → Placa → Gerenciador de placas*).
 2. Abra `esp32-can-listen.ino` e escolha a placa **ESP32 Dev Module**.
 3. Grave na placa. Se a IDE ficar parada em `Connecting...`, segure o botão BOOT até a gravação começar.
-4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.6` e `# listen-only 50 kbps`.
+4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.7` e `# listen-only 50 kbps`.
 
 Se faltar memória ao compilar, escolha *Ferramentas → Partition Scheme → Huge APP*.
 
@@ -104,7 +104,7 @@ O app calibra a bússola sozinho, pelo rumo do GPS: andando em linha reta, guard
 
 ## Tensão da bateria (recomendado, divisor na placa)
 
-Mede a bateria pelo próprio ESP32, sem depender da rede do carro: a tensão em repouso (antes da partida), a queda na partida e a carga do alternador andando. São três peças na placa, embaixo do RT8272 ([montagem](../../veiculos/fiat-uno-vivace-2012/placa/README.md#divisor-da-bateria)):
+Mede a bateria pelo próprio ESP32, sem depender da rede do carro (firmware 1.6; a tensão da partida certa vem do 1.7): a tensão em repouso (antes da partida), a queda na partida e a carga do alternador andando. São três peças na placa, embaixo do RT8272 ([montagem](../../veiculos/fiat-uno-vivace-2012/placa/README.md#divisor-da-bateria)):
 
 | Peça | Liga entre |
 |---|---|
@@ -123,7 +123,7 @@ O firmware lê a 100 Hz e, a cada segundo, manda:
 - **v:** média do último segundo.
 - **min:** menor valor do último segundo.
 - **repouso:** a tensão lida assim que o ESP32 liga (a rede acordou: porta, chave), antes da partida.
-- **menor:** o menor valor desde que o ESP32 ligou; depois de dar a partida, é a queda da partida.
+- **menor:** a menor média de 100 ms desde que o ESP32 ligou; depois de dar a partida, é a tensão da partida (firmware 1.7; no 1.6 era uma leitura de 10 ms, que pega o pico do motor de partida engatando, de 7 a 9 V mesmo numa bateria boa).
 
 Sem o divisor, aparece uma vez `# bateria ausente`. Se o multímetro discordar, ajuste `BAT_AJUSTE` (o app também compara com a tensão da rede do carro e mostra a diferença).
 
