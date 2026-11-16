@@ -57,7 +57,7 @@
   <div class="card-body">
     <ul class="notas-list mb-0">
       <li><span class="badge text-bg-success">instalado</span><span>ESP32 fixo no carro, ligado direto na tomada OBD com fusível; 5 V no ESP32 e modo descanso funcionando. O carro fica no máximo dois dias parado, e nas paradas longas o módulo é desconectado.</span></li>
-      <li><span class="badge text-bg-success">instalado</span><span>Firmware 1.6 gravado pelo cabo USB (descanso, LEDs de estado, BMP180, LSM6DS3, magnetômetro e leitura da bateria). O 1.7, com a tensão da partida pela média de 100 ms, está pronto para gravar.</span></li>
+      <li><span class="badge text-bg-success">instalado</span><span>Firmware 1.7 gravado pelo cabo USB em 16/11 (descanso, LEDs de estado, BMP180, LSM6DS3, magnetômetro, leitura da bateria e queda na partida pela média de 100 ms), com a partição Huge APP: 3 MB de programa, sem atualização pelo Wi-Fi.</span></li>
       <li><span class="badge text-bg-success">instalado</span><span>BMP180 e LSM6DS3 longe do ESP32, cada um no seu canto, sem interferência térmica ou elétrica dos outros componentes.</span></li>
       <li><span class="badge text-bg-success">instalado</span><span>ELM327 e ESP32 juntos pelo cabo Y, cada um por Bluetooth ao celular.</span></li>
       <li><span class="badge text-bg-success">instalado</span><span>Celular dedicado ao app, com Android sem os serviços do Google (o GPS nativo cobre).</span></li>
@@ -72,7 +72,7 @@
   <div class="card-body">
     <h3 class="h6 fw-semibold">No carro e na bancada</h3>
     <ul class="notas-list mb-4">
-      <li><span class="badge text-bg-warning">firmware</span><span>Gravar o firmware 1.7 pelo cabo USB: a queda na partida passa a ser a média de 100 ms (o 1.6 pegava o pico de 10 ms do motor de partida engatando).</span></li>
+      <li><span class="badge text-bg-warning">conferir</span><span>Primeiras partidas com o firmware 1.7: a queda na partida deve vir acima dos 7,3 a 8,6 V do 1.6 (que pegava o pico de 10 ms do motor de partida engatando).</span></li>
       <li><span class="badge text-bg-warning">medir</span><span>Com o motor ligado, medir com o multímetro o D34 (≈ 2,35 V esperados com 14,1 V), a entrada da placa (12 V depois do fusível × GND) e os bornes da bateria: separar queda na fiação de erro do conversor do ESP32.</span></li>
       <li><span class="badge text-bg-warning">sensor</span><span>Instalar o GY-273 (bússola, recomendado).</span></li>
       <li><span class="badge text-bg-warning">app</span><span>Refazer o Calibrar frente: arrancada em linha reta, de 5 a 20 km/h.</span></li>
@@ -158,7 +158,7 @@
           <tr><td>Borboleta e marcha lenta</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Rotação rápida pelo CAN, cruzada com TPS e carga.</td></tr>
           <tr><td>Termostática aberta</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Tempo até 80 °C e queda abaixo de 75 °C em velocidade constante.</td></tr>
           <tr><td>Termostática fechada, ventoinha</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Ventoinha deduzida pela curva perto de 97 °C (não aparece no CAN).</td></tr>
-          <tr><td>Bateria na partida</td><td><span class="badge text-bg-info notas-class">C</span></td><td>Já medida pelo divisor (firmware 1.6); falta compensar o frio e o limite.</td></tr>
+          <tr><td>Bateria na partida</td><td><span class="badge text-bg-info notas-class">C</span></td><td>Medida pelo divisor com o firmware 1.7 (média de 100 ms); falta compensar o frio.</td></tr>
           <tr><td>Regulador e alternador</td><td><span class="badge text-bg-success notas-class">A</span></td><td>Tensão de três fontes; cargas ligadas conhecidas pelo CAN.</td></tr>
           <tr><td>Ripple do alternador</td><td><span class="badge text-bg-danger notas-class">E</span></td><td>O C1 corta acima de ≈ 95 Hz; precisaria de 10 nF e leitura em rajadas.</td></tr>
           <tr><td>Arrasto, freio preso, pneu</td><td><span class="badge text-bg-info notas-class">C</span></td><td>Só em ponto morto, com inclinação e referência do carro; o vento atrapalha.</td></tr>

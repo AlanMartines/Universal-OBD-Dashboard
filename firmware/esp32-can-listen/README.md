@@ -24,10 +24,18 @@ Faça isto com a placa desligada do carro.
 
 1. Na Arduino IDE, instale o pacote **esp32**, da Espressif (*Ferramentas → Placa → Gerenciador de placas*).
 2. Abra `esp32-can-listen.ino` e escolha a placa **ESP32 Dev Module**.
-3. Grave na placa. Se a IDE ficar parada em `Connecting...`, segure o botão BOOT até a gravação começar.
-4. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.7` e `# listen-only 50 kbps`.
+3. Em *Ferramentas → Partition Scheme*, escolha **Huge APP (3MB No OTA/1MB SPIFFS)** (veja abaixo).
+4. Grave na placa. Se a IDE ficar parada em `Connecting...`, segure o botão BOOT até a gravação começar.
+5. No *Monitor serial* a 500000 baud deve aparecer `# esp32-can-listen 1.7` e `# listen-only 50 kbps`.
 
-Se faltar memória ao compilar, escolha *Ferramentas → Partition Scheme → Huge APP*.
+### Partição: Huge APP
+
+O firmware é gravado só pelo cabo USB, sem atualização pelo Wi-Fi (OTA). Por isso não precisa das duas áreas de programa de 1,2 MB do esquema padrão: o Huge APP junta tudo numa área de 3 MB, e só a pilha do Bluetooth clássico ocupa perto de 1 MB.
+
+- A área de configurações (NVS) continua existindo, e sobra 1 MB de arquivos (SPIFFS), hoje sem uso.
+- Use sempre o mesmo esquema: trocar de esquema apaga a área de arquivos.
+- Se um dia o ESP32 guardar dados enquanto o celular estiver desconectado e 1 MB faltar, a opção é *No OTA (2MB APP/2MB SPIFFS)*.
+- As opções *8M* e *16M* só valem para placas com essa memória; a ESP32 Dev Module (WROOM-32) tem 4 MB.
 
 A velocidade é fixa em `TWAI_TIMING_CONFIG_50KBITS()`, a da rede do Uno Vivace. Em outro carro, ajuste esse valor e o aviso `# listen-only` logo abaixo.
 
