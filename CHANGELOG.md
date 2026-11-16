@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.55] - 2026-11-16
+
 ### Corrigido
 - **Saúde do carro: limites revistos com as viagens de 15 e 16/11.** Sem isso, um carro saudável ganharia avisos:
   - **marcha lenta não era reconhecida:** a borboleta eletrônica do Uno fica em 4 a 5 % parada, e a regra pedia menos de 3 %; agora até 8 %;
