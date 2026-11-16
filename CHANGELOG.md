@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Bolinha da força G (Dinâmica, app e painel web):** passa a mostrar a força sentida pelo motorista, como no padrão dos carros: acelerando ela desce, freando sobe, curva à direita vai para a esquerda e curva à esquerda vai para a direita. Antes mostrava o sentido da aceleração do carro (tudo ao contrário). O limite agora é pelo raio do alvo (≈ 0,55 g): numa frenagem forte em curva ela não sai mais do círculo.
+
 ## [0.9.53] - 2026-11-15
 
 ### Corrigido

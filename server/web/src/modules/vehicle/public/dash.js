@@ -1235,8 +1235,13 @@ window.Dash = (function () {
         this.trailDots.forEach((c) => c.setAttribute('opacity', '0'));
         return;
       }
-      const x = clamp(-lat * 80, -46, 46);
-      const y = clamp(-lon * 80, -46, 46);
+      // Força sentida pelo motorista (pêndulo): o contrário da aceleração do carro. lateralG > 0 é curva à esquerda e
+      // accelG > 0 é acelerando, então: acelerando a bolinha desce, freando sobe, curva à direita vai para a esquerda e
+      // curva à esquerda vai para a direita. 80 por g (anéis de 0,25 e 0,5 g), limitada pelo raio para não sair do alvo.
+      let x = lat * 80;
+      let y = lon * 80;
+      const r = Math.hypot(x, y);
+      if (r > BALL_MAX_R) { x *= BALL_MAX_R / r; y *= BALL_MAX_R / r; }
       this.trail.push([x, y]);
       if (this.trail.length > this.trailDots.length) this.trail.shift();
       this.trailDots.forEach((c, i) => {
@@ -1249,6 +1254,8 @@ window.Dash = (function () {
       this.ballDot.setAttribute('cy', y.toFixed(1));
     },
   };
+  /** Raio máximo da bolinha da força G no alvo (viewBox de ±50, bolinha de raio 6): ≈ 0,55 g. */
+  const BALL_MAX_R = 44;
   /** De onde veio o rumo: GPS andando, magnetômetro do ESP32, bússola do celular ou as duas bússolas juntas. */
   const HEAD_SRC = { gps: 'GPS', mag: 'bússola', phone: 'celular', both: 'bússola + celular' };
   /** Pontos cardeais e colaterais (N, NE, L, SE, S, SO, O, NO). */
