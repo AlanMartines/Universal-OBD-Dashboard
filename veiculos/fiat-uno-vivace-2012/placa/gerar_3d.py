@@ -546,6 +546,14 @@ for name, a, b, _ in g.CAPS:
         cyl('placa', TIN, (hx, hy, T), (hx, hy, T + 2.2), 0.25)
     box('placa', '#ef8f2f', mx - 2.5, my - 1.25, T + 2.0, 5.0, 2.5, 4.0)
 
+# ---------------------------------------------------------------- Pontos de teste: laço de metal em pé, capa na cor do sinal
+TP_H = 5.0   # altura do laço sobre a placa (Keystone 5000/5001: cerca de 5 mm)
+for name, rot, (c, r), col, _ in g.TEST_POINTS:
+    x, y = xy(c, r)
+    cyl('placa', col, (x, y, T), (x, y, T + 1.6), 0.9)
+    loop = [(x, y, -0.8), (x, y, T + 2.6)] + [(x + 1.1 * math.sin(a), y, T + 3.7 - 1.1 * math.cos(a)) for a in [i * math.pi / 6 for i in range(13)]]
+    tube('placa', SILVER, loop, 0.25)
+
 # ---------------------------------------------------------------- Lado de baixo: fio estanhado e solda
 for name, col, pts in g.TRACKS:
     tube('trilhas', col, [(*xy(c, r), BOT_Z) for c, r in pts], 0.38)
@@ -559,6 +567,7 @@ for _, a, b, _ in g.RES + g.CAPS:
 for row in (2, 12):
     legs |= {(c, row) for c in range(2, 17)}
 legs |= set(g.BUCK_PINS.values()) | set(g.TRANS_PINS.values()) | set(g.OBD_PADS.values()) | set(g.CAN_HOLES.values()) | set(g.BMP_PINS.values()) | set(g.LSM_PINS.values()) | set(g.MAG_PINS.values())
+legs |= {cr for _, _, cr, _, _ in g.TEST_POINTS}
 for _, _, pts, _ in g.JUMPERS:
     legs |= {p for p in (pts[0], pts[-1]) if is_hole(*p)}
 for track_pts in [t[2] for t in g.TRACKS]:
@@ -632,6 +641,8 @@ DET = {
     'trilhas': [{'n': name, 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts in g.TRACKS]
                + [{'n': name, 'cor': col, 'pts': [rr(xy(*a)), rr(xy(*b))]} for name, col, a, b in g.LINKS],
     'solda': [rr(xy(c, r)) for c, r in sorted(legs)],
+    'pontos_teste': [{'n': f'{name} ({rot}): {desc}', 'nome': name, 'rotulo': rot, 'cor': col, 'p': rr(xy(*cr))}
+                     for name, rot, cr, col, desc in g.TEST_POINTS],
     'bmp': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.BMP_PINS.items()],
     'lsm': [{'n': n, 'p': rr(xy(*cr))} for n, cr in g.LSM_PINS.items()],
     'lsm_modulo': {**{k: round(v, 3) for k, v in LSM_MOD.items()}, 'housing': HOUSING_H,

@@ -16,6 +16,7 @@ O app funciona só com o ELM327. Cada peça recomendada acrescenta informação 
 | Recomendado | BMP180 (pressão e temperatura) | A altitude vem do barômetro do celular, se ele tiver; sem ele, somem a altitude, a conferência do MAP e a conferência da inclinação. |
 | Recomendado | GY-273 (bússola) | Parado ou sem GPS, o rumo vem só da bússola do celular; o percurso sem GPS fica menos certo. |
 | Recomendado | Divisor da bateria (R5, R6 e C1) | Sem a tensão em repouso e sem a queda na partida. |
+| Recomendado | Pontos de teste (TP1 a TP4) | As medições com o multímetro precisam achar a perna certa de cada peça, com a placa montada. |
 | Opcional | LED tricolor | Sem o aviso visual na tampa; o LED azul do ESP32 continua. |
 
 ## Desenho
@@ -132,6 +133,36 @@ Tudo fica **embaixo do RT8272**, que encaixa por cima nas barras fêmea: monte o
 **Como funciona:** 12 V na bateria viram 2,00 V no D34 (12 × 20 ÷ 120). O pino lê até cerca de 3,1 V, o que corresponde a 18,6 V: folga para o alternador (14,5 V) e para picos. Mesmo um pico de 40 V passa só 0,4 mA pelo R5, que os diodos de proteção do ESP32 aguentam. O divisor consome cerca de 0,1 mA, sem efeito na bateria com o carro parado. O D34 só lê (não tem saída) e é do ADC1, o conversor que funciona com o Bluetooth ligado.
 
 **Conferir:** com a placa no carro e o ESP32 fora das barras, o D34 (5,12) deve marcar um sexto da tensão da bateria (2,07 V com 12,4 V). Com o firmware 1.6, aparece `# bateria v=12.63 …` a cada segundo ([firmware](../../../firmware/esp32-can-listen/README.md#tensão-da-bateria-recomendado-divisor-na-placa)).
+
+## Pontos de teste
+
+Quatro laços de metal em pé, onde a ponta do multímetro encosta (ou a garra jacaré prende) sem procurar perna de componente. Ficam onde nada passa por cima (ESP32, módulos, fusível e os fios J1 a J3), iguais nas duas versões da placa, e aparecem nos desenhos e no modelo 3D.
+
+| Ponto | Furo | Capa | Liga em | Mede |
+|---|---|---|---|---|
+| TP1 · 12 V | (11,23) | vermelha | trilha (8,23) → (11,23), da linha de 12 V com fusível | 12 V depois do fusível: o que chega ao RT8272 e ao topo do divisor (R5) |
+| TP2 · 5 V | (16,14) | vermelha | trilha de 5 V da coluna 16 | saída do RT8272 (VIN do ESP32 e os sensores) |
+| TP3 · GND | (12,13) | preta | trilha de GND da linha 13 | referência, perto do ESP32 |
+| TP4 · GND | (10,21) | preta | trilha (9,21) → (10,21), da coluna 9 | referência, perto do TP1 |
+
+O **D34** e o **3V3** ficam embaixo do ESP32: meça na solda do próprio pino, na face de cima da placa do ESP32 (os nomes estão serigrafados ao lado).
+
+**Peças:** ponto de teste em laço para furo de 1 mm, tipo Keystone 5000 (vermelho) e 5001 (preto), ou genérico; custa centavos. Sem ele, serve uma sobra de perna de resistor dobrada em laço, soldada no furo. Para o multímetro, uma ponta com **garra jacaré** no fio preto: presa num GND, fica uma mão livre.
+
+### Medições
+
+Motor ligado em marcha lenta, sem farol e sem A/C, com o app capturando e o ESP32 conectado. Multímetro em tensão contínua (escala de 20 V). Ponta preta no TP4 (ou TP3). Anote junto a tensão da bateria que o app mostra para o ESP32 e a da rede do carro.
+
+| # | Ponta vermelha | Esperado | Se não bater |
+|---|---|---|---|
+| 1 | Bornes da bateria (preta no −) | 13,5 a 14,7 V | Problema do alternador, não da placa. |
+| 2 | TP1 | igual à medida 1 (até 0,2 V a menos) | Queda no fio do OBD, no suporte do fusível ou no terra. |
+| 3 | Pino D34 do ESP32 | TP1 ÷ 6 (≈ 2,35 V com 14,1 V) | Razão diferente de 6: R5, R6 ou o contato deles. |
+| 4 | TP2 | 5,0 V ± 0,25 | Ajuste do RT8272 (trimpot) ou módulo com defeito. |
+| 5 | Pino 3V3 do ESP32 | 3,3 V ± 0,1 | Regulador do ESP32. |
+| 6 | Preta no − da bateria, vermelha no TP4 | menos de 0,1 V | Queda no terra (pinos 4 e 5 do OBD). |
+
+**Como ler:** se a medida 3 vezes 6 dá a medida 2, mas o app mostra menos, o erro está no conversor do ESP32 (corrija com `BAT_AJUSTE` no firmware). Se 2 ÷ 3 não dá 6, o erro está no divisor.
 
 ## Ilhas, trilhas, resistores e fios
 

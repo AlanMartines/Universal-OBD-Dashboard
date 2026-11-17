@@ -1070,6 +1070,25 @@ function iniciar() {
     }
   }
 
+  // ------------------------------------------------------------ pontos de teste: laço de metal em pé com a capa na cor do sinal
+  {
+    for (const tp of X.pontos_teste || []) {
+      const g = new THREE.Group();
+      const [x, y] = tp.p;
+      const capa = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 1.6, 20), std(new THREE.Color(tp.cor).getHex(), 0.5));
+      capa.position.copy(W(x, y, A.T + 0.8));
+      capa.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), W(x, y, 1).sub(W(x, y, 0)).normalize());
+      g.add(capa);
+      const pts = [W(x, y, -0.8), W(x, y, A.T + 2.6)];
+      for (let i = 0; i <= 12; i++) {
+        const a = (i * Math.PI) / 6;
+        pts.push(W(x + 1.1 * Math.sin(a), y, A.T + 3.7 - 1.1 * Math.cos(a)));
+      }
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'centripetal'), 40, 0.25, 8), M.estanho));
+      poe(g, 'placa', tp.n);
+    }
+  }
+
   // ------------------------------------------------------------ suporte AS-06 com tampa e o fusível de vidro de 1,5 A
   // corpo aberto em cima (piso e duas torres com as presilhas), vazado nas laterais do meio; tampa com duas abas
   {

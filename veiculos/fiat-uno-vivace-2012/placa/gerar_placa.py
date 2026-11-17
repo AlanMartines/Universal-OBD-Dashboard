@@ -215,6 +215,23 @@ BUCK_MM = 21.0
 BUCK_PINS = {'EN': (8, 14), 'IN-': (8, 15), 'IN+': (8, 16), 'OUT-': (1, 20), 'OUT+': (1, 21)}
 BUCK_COL = {'EN': '#9e9e9e', 'IN-': BLK, 'IN+': PUR, 'OUT-': BLK, 'OUT+': RED}
 
+# Pontos de teste (16/11/2026, pedido do Alan): laços de metal soldados num furo, para encostar a ponta do multímetro
+# (ou prender a garra jacaré) sem procurar perna de componente. Tipo Keystone 5000 (vermelho) e 5001 (preto), furo de
+# 1 mm; ou uma sobra de perna de resistor dobrada em laço. Ficam onde nada passa por cima (ESP32, módulos, fusível e os
+# fios J1 a J3) e são os mesmos nas duas versões. O D34 e o 3V3 ficam embaixo do ESP32: mede-se na solda do próprio pino,
+# na face de cima da placa do ESP32. Medições e valores esperados: README.md, seção "Pontos de teste".
+# (nome, rótulo, furo, cor, o que mede)
+TEST_POINTS = [
+    ('TP1', '12 V', (11, 23), PUR, '12 V depois do fusível: o que entra no RT8272 e no topo do divisor (R5)'),
+    ('TP2', '5 V', (16, 14), RED, '5 V da saída do RT8272 (VIN do ESP32 e os sensores)'),
+    ('TP3', 'GND', (12, 13), BLK, 'GND, perto do ESP32 e dos conectores dos sensores'),
+    ('TP4', 'GND', (10, 21), BLK, 'GND, perto do TP1 e do fusível'),
+]
+TRACKS += [
+    ('TP1: 12 V com fusível', PUR, [(8, 23), (11, 23)]),
+    ('TP4: GND', BLK, [(9, 21), (10, 21)]),
+]
+
 
 def expand(pts):
     """Furos por onde passa uma trilha reta entre pontos (coluna, linha)."""
@@ -308,6 +325,15 @@ def pad_mark(s, c, r, color, label=None, where='below', X=lambda x: x, size=1.15
     if label:
         dy = {'below': 2.4, 'above': -1.6}[where]
         s.text(X(x), y + dy, label, size, color, weight='bold', bg=True)
+
+
+def test_points(s, labels=True):
+    """Pontos de teste vistos de cima: laço de metal com a capa na cor do sinal e o nome."""
+    for name, rot, (c, r), col, _ in TEST_POINTS:
+        x, y = hp(c, r)
+        s.add(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="1.0" fill="{col}" stroke="#fff" stroke-width="0.2"/><circle cx="{x:.2f}" cy="{y:.2f}" r="0.55" fill="none" stroke="#cfd8dc" stroke-width="0.35"/>')
+        if labels:
+            s.text(x, y - 1.6, f'{name} {rot}', 0.85, col, weight='bold', bg=True)
 
 
 def track(s, pts, color, X, width=1.0, opacity=1.0):
@@ -552,6 +578,7 @@ def view_top(stage, scale):
         bmp_header(s, labels=True)
         led_header(s, labels=True)
         fuse_footprint(s)
+        test_points(s)
         s.text(hp(*FUSE_C)[0], hp(*FUSE_C)[1] + 3.3, f'suporte do fusível: alargar 2 furos para {FUSE_DRILL:.1f} mm'.replace('.', ','), 1.0, PUR, weight='bold', bg=True)
         for pin, (c, r) in OBD_PADS.items():
             pad_mark(s, c, r, {'16': RED, '4': BLK, '5': BLK, '14': BLU}[pin], pin, 'below')
@@ -571,6 +598,7 @@ def view_top(stage, scale):
         bmp_header(s, labels=False)
         esp32_art(s)
         led_header(s, labels=False)
+        test_points(s)
         for pin, (c, r) in OBD_PADS.items():
             x, y = hp(c, r)
             _, col, listra = OBD_WIRE[pin]
@@ -602,6 +630,7 @@ def view_bottom(scale):
     for row in (2, 12):
         legs |= {(c, row) for c in range(2, 17)}
     legs |= set(BUCK_PINS.values()) | set(TRANS_PINS.values()) | set(CAN_HOLES.values()) | set(BMP_PINS.values()) | set(LSM_PINS.values()) | set(MAG_PINS.values()) | set(LED_HEADER)
+    legs |= {cr for _, _, cr, _, _ in TEST_POINTS}
     for c, r in legs:
         x, y = hp(c, r)
         s.add(f'<circle cx="{X(x):.2f}" cy="{y:.2f}" r="0.55" fill="#9e9e9e" stroke="#616161" stroke-width="0.15"/>')

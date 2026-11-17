@@ -75,7 +75,8 @@
     <h3 class="h6 fw-semibold">No carro e na bancada</h3>
     <ul class="notas-list mb-4">
       <li><span class="badge text-bg-warning">conferir</span><span>Partidas com o firmware 1.7 em 16/11: o ESP32 marcou 9,0 e 7,57 V com a rede do carro em 10,9 e 12,2 V. O valor só fica confiável depois de resolvida a alimentação da placa.</span></li>
-      <li><span class="badge text-bg-warning">divisor</span><span>Bateria pelo ESP32: a diferença para a rede do carro era 0,3 a 0,5 V em 15/11, 0,9 V às 6h36 de 16/11 e saltou para 1,8 a 2,1 V depois de abrir a caixa para gravar o firmware 1.7 (o código do 1.7 não mexe nessa leitura). O erro é proporcional (o ESP32 marca 84 a 86 % do real, parado ou com o motor ligado), o que aponta o divisor (contato no R5, D34 ou R6) ou o conversor do ESP32, não queda na alimentação. Medir o topo do R5 e o D34 contra o GND: a razão deve dar 6. A placa ilhada soldada deve resolver.</span></li>
+      <li><span class="badge text-bg-warning">divisor</span><span>Bateria pelo ESP32: a diferença para a rede do carro era 0,3 a 0,5 V em 15/11, 0,9 V às 6h36 de 16/11 e saltou para 1,8 a 2,1 V depois de abrir a caixa para gravar o firmware 1.7 (o código do 1.7 não mexe nessa leitura). O erro é proporcional (o ESP32 marca 84 a 86 % do real, parado ou com o motor ligado), o que aponta o divisor (contato no R5, D34 ou R6) ou o conversor do ESP32, não queda na alimentação. Com a placa ilhada, medir o TP1 (12 V depois do fusível) e o D34 contra o GND: a razão deve dar 6. A placa soldada deve resolver.</span></li>
+      <li><span class="badge text-bg-warning">montar</span><span>Pontos de teste na placa ilhada (16/11): TP1 12 V depois do fusível, TP2 5 V, TP3 e TP4 GND, em laços tipo Keystone 5000/5001 (ou perna de resistor); o D34 e o 3V3 medem-se na solda do pino do ESP32. Roteiro das 6 medições no README da placa.</span></li>
       <li><span class="badge text-bg-warning">medir</span><span>Com o motor ligado, medir com o multímetro o D34 (≈ 2,35 V esperados com 14,1 V), a entrada da placa (12 V depois do fusível × GND) e os bornes da bateria: separar queda na fiação de erro do conversor do ESP32.</span></li>
       <li><span class="badge text-bg-warning">sensor</span><span>Instalar o GY-273 (bússola, recomendado).</span></li>
       <li><span class="badge text-bg-warning">app</span><span>Refazer o Calibrar frente: arrancada em linha reta, de 5 a 20 km/h.</span></li>
@@ -188,6 +189,7 @@
       <li><b>Painel sem CDN:</b> bibliotecas locais, sem script nem estilo embutido.</li>
       <li><b>Pré-diagnóstico só com o que já é lido</b> (15/11/2026): sem PID novo, sem peça nova e sem mexer no carro.</li>
       <li><b>Peças em três níveis</b> (15/11/2026): essencial (ELM327), recomendado (ESP32, LSM6DS3, BMP180, GY-273, divisor) e opcional (LED tricolor).</li>
+      <li><b>Pontos de teste na placa</b> (16/11/2026): 12 V depois do fusível, 5 V e dois GND em laços de metal, para medir com a placa montada; o D34 e o 3V3 na solda do pino do ESP32.</li>
       <li><b>Notas do projeto públicas</b> (15/11/2026): o conteúdo já está no repositório público.</li>
       <li><b>Repositório público:</b> sem dados reais de viagem, sem fotos de terceiros, sem PDFs de manuais.</li>
     </ul>

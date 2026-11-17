@@ -133,7 +133,7 @@ O firmware lê a 100 Hz e, a cada segundo, manda:
 - **repouso:** a tensão lida assim que o ESP32 liga (a rede acordou: porta, chave), antes da partida.
 - **menor:** a menor média de 100 ms desde que o ESP32 ligou; depois de dar a partida, é a tensão da partida (firmware 1.7; no 1.6 era uma leitura de 10 ms, que pega o pico do motor de partida engatando, de 7 a 9 V mesmo numa bateria boa).
 
-Sem o divisor, aparece uma vez `# bateria ausente`. Se o multímetro discordar, ajuste `BAT_AJUSTE` (o app também compara com a tensão da rede do carro e mostra a diferença).
+Sem o divisor, aparece uma vez `# bateria ausente`. Se o multímetro discordar, ajuste `BAT_AJUSTE` (o app também compara com a tensão da rede do carro e mostra a diferença). Para medir, use os pontos de teste da placa e o roteiro de [medições](../../veiculos/fiat-uno-vivace-2012/placa/README.md#medições): a razão entre o TP1 (12 V depois do fusível) e o D34 deve dar 6.
 
 ## LEDs de estado
 
