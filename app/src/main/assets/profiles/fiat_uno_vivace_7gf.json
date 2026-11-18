@@ -378,8 +378,9 @@
     },
     {
       "id": "battery_weak",
+      "_comment": "Com a lanterna ou o farol acesos a tensão cai sem a bateria estar fraca (18/11/2026: 11,7 V com a lanterna e o farol, 12,1 V ao desligar). can_lights vem da escuta CAN; sem ela o sinal é desconhecido e o alerta vale como antes.",
       "level": "warning",
-      "condition": "battery_volts < 11.8 && rpm < 100",
+      "condition": "battery_volts < 11.8 && rpm < 100 && can_lights != 1",
       "message": "Bateria fraca com motor desligado: {battery_volts} V.",
       "sustain_ms": 5000
     },
