@@ -6,6 +6,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.57] - 2026-11-18
+
+### Corrigido
+- **Alerta "bateria fraca" com o motor desligado (Uno):** não dispara mais com a lanterna ou o farol acesos. Em 18/11, ao ligar a chave de manhã com as luzes acesas, a rede marcou 11,7 V e o alerta saiu; ao apagar, voltou a 12,1 V. O sinal da lanterna vem da escuta CAN (`can_lights`); sem o ESP32 o alerta vale como antes.
 ## [0.9.56] - 2026-11-16
 
 ### Corrigido

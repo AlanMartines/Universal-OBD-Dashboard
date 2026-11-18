@@ -1,5 +1,21 @@
 [
  {
+  "version": "0.9.57",
+  "date": "2026-11-18",
+  "sections": [
+   {
+    "kind": "fixed",
+    "title": "Corrigido",
+    "items": [
+     {
+      "title": "Alerta \"bateria fraca\" com o motor desligado (Uno)",
+      "text": "não dispara mais com a lanterna ou o farol acesos. Em 18/11, ao ligar a chave de manhã com as luzes acesas, a rede marcou 11,7 V e o alerta saiu; ao apagar, voltou a 12,1 V. O sinal da lanterna vem da escuta CAN (can_lights); sem o ESP32 o alerta vale como antes."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.56",
   "date": "2026-11-16",
   "sections": [
