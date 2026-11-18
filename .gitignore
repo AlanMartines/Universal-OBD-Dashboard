@@ -30,3 +30,4 @@ __pycache__/
 # Custom
 .claude
 CLAUDE.md
+setup-agent-kit.sh
