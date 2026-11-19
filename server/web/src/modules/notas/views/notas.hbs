@@ -93,11 +93,11 @@
       <li><span class="badge text-bg-secondary">depois</span><span>Backup do servidor (com a chave do TOTP) e PostgreSQL no CI para os testes do servidor.</span></li>
       <li><span class="badge text-bg-secondary">avaliar</span><span>Memória no ESP32: guardar os quadros quando o Bluetooth cair e mandar ao reconectar (muda o firmware e o protocolo com o app).</span></li>
       <li><span class="badge text-bg-secondary">avaliar</span><span>Modo 06 da central: testar uma vez na varredura de diagnóstico.</span></li>
-      <li><span class="badge text-bg-secondary">futuro</span><span>Som do motor no painel web (17/11/2026): tocar a viagem gravada com o som simulado pelo engine-sim original (de Ange Yaghi, licença MIT, com crédito visível), compilado em WebAssembly, seguindo a rotação da rede CAN e a borboleta do ELM327, com um arquivo de motor por veículo (<code>engines/fiat_uno_vivace_7gf.mr</code>, Fire 1.0 8V). A Community Edition não serve (só o executável, sem código nem licença). Fases: prova de conceito fora do repositório (compila, peso e processamento), o arquivo do Fire comparado com uma gravação real do motor, e o player na página da viagem. Pontos de atenção: threads no navegador, política de segurança para WebAssembly, instruções SSE e o comando de válvulas e o escape estimados. Alternativa mais leve: amostras gravadas do próprio carro tocadas pelo Web Audio.</span></li>
       <li><span class="badge text-bg-info">meta</span><span>Versão 1.0.0.</span></li>
     </ul>
     <h3 class="h6 fw-semibold">Descartado</h3>
     <ul class="notas-list mb-0">
+      <li><span class="badge text-bg-dark">19/11/2026</span><span>Som do motor no painel web com o engine-sim (simulação física compilada para o navegador e um arquivo de motor por veículo): viável, mas muito trabalho para o resultado (port para WebAssembly, threads, política de segurança e comando de válvulas estimado). Avaliado em 17/11.</span></li>
       <li><span class="badge text-bg-dark">15/11/2026</span><span>Wi-Fi e atualização do firmware pelo Wi-Fi (OTA): o firmware continua só pelo cabo USB, mais simples e mais seguro.</span></li>
       <li><span class="badge text-bg-dark">15/11/2026</span><span>Pré-diagnóstico com PIDs ou peças novas: só o que já é lido hoje (sonda pré e LTFT ficam para depois, se um dia valer a pena).</span></li>
       <li><span class="badge text-bg-dark">06/11/2026</span><span>Resto do roteiro de mapeamento no Uno (freio de mão, ré, setas, pisca-alerta, limpadores): não têm sinal útil na rede pelo pino 14.</span></li>
