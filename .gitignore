@@ -31,3 +31,4 @@ __pycache__/
 .claude
 CLAUDE.md
 setup-agent-kit.sh
+.omc/
