@@ -167,6 +167,52 @@ Resposta: `{ "received", "stored", "rejected" }`.
 - Os dados, incluindo GPS, não são cifrados campo a campo. Cifre o disco da VPS e os backups.
 - O tempo real roda em um único processo da `api`.
 
+## Backup do banco
+
+`scripts/backup-banco.sh` faz um backup diário cifrado do PostgreSQL, e `scripts/testar-restauracao.sh` confere todo mês se ele de fato restaura.
+
+- **O que vai:** o dump do banco (`pg_dump -Fc`), os papéis (`pg_dumpall --globals-only`) e uma cópia do `.env`. Tudo é cifrado com GPG (AES-256) antes de tocar o disco.
+- **Conferência:** cada backup é decifrado por inteiro e listado pelo `pg_restore` antes de entrar na pasta.
+- **Retenção:** 7 diários, 4 semanais (domingo) e 6 mensais (dia 1), em `/usr/local/obdBackup`, espelhados por `rclone` num armazenamento externo. O `--max-delete` impede que uma pasta local vazia apague o remoto.
+- **Teste de restauração:** sobe um Postgres descartável, sem rede, restaura o backup mais recente e confere as tabelas, as migrações e os usuários contra a produção.
+
+### Instalação
+
+```bash
+sudo install -d -m 700 /etc/obd-backup
+# Frase do GPG: guarde uma cópia num gerenciador de senhas. Sem ela, o backup não abre.
+sudo sh -c 'umask 077; openssl rand -base64 48 | tr -d "\n" > /etc/obd-backup/senha'
+# Destino do rclone (um remoto já configurado em "rclone config")
+sudo sh -c 'umask 077; echo "REMOTO=meu-remoto:bucket/obd" > /etc/obd-backup/backup.conf'
+```
+
+A frase e a configuração ficam em `/etc/obd-backup`, fora da pasta do projeto: se a pasta pessoal também for copiada para a nuvem, a chave não viaja junto com os arquivos cifrados.
+
+No `crontab -e` do root (ajuste o caminho):
+
+```cron
+30 2 * * * /bin/bash /caminho/server/scripts/backup-banco.sh >> /var/log/obd-backup.log 2>&1
+30 4 2 * * /bin/bash /caminho/server/scripts/testar-restauracao.sh >> /var/log/obd-backup.log 2>&1
+```
+
+Para rodar à mão sem enviar: `SEM_ENVIO=1 sudo scripts/backup-banco.sh`.
+
+### Restaurar na produção
+
+Só em caso de perda do banco. Pare o que escreve nele, recrie o banco vazio e restaure:
+
+```bash
+docker compose stop api worker web
+F=/usr/local/obdBackup/diario/obd-AAAA-MM-DD.dump.gpg
+docker compose exec -T db dropdb -U obd_owner obd
+docker compose exec -T db createdb -U obd_owner obd
+gpg --batch --pinentry-mode loopback --passphrase-file /etc/obd-backup/senha -d "$F" \
+  | docker compose exec -T db pg_restore -U obd_owner -d obd --exit-on-error
+docker compose start api worker web
+```
+
+Num servidor novo, restaure antes o `.env` (`gpg -d obd-AAAA-MM-DD.env.gpg > .env`), suba só o `db` e siga os mesmos passos. O papel da aplicação é criado pelo `db/init` com a senha do `.env`.
+
 ## Testes
 
 Precisam de um PostgreSQL descartável, porque **o banco indicado é apagado a cada execução**:
