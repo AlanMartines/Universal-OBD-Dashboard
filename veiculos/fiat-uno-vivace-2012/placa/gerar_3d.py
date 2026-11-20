@@ -252,7 +252,7 @@ for name, col, pts, _ in g.JUMPERS:
 # Comprimento do cabo encurtado no desenho (o de verdade tem 30 cm).
 OBD_Z = caixa.OBD_FURO_Z                        # altura do centro do cabo: a do furo da parede direita (meio da caixa)
 OBD_BOCA = (g.W + 12.0, g.H + 6.0)              # boca da capa (x, y)
-OBD_CAPA_R, OBD_CAPA_FIM = 3.0, g.W + 36.0      # cabo de 6 mm
+OBD_CAPA_R, OBD_CAPA_FIM = 2.5, g.W + 36.0      # capa de 5 mm (medida pelo Alan em 20/11/2026)
 OBD_PLUG = {'x0': g.W + 44.0, 'l': 26.0, 'w': 42.0, 'h': 17.0}   # corpo do plugue macho (boca virada para longe da placa)
 _ordem = ['16', '4', '5', '14']
 
