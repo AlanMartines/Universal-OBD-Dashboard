@@ -6,6 +6,7 @@
 //   --disable-2fa               também desativa os dois fatores, se o autenticador foi perdido
 import { createInterface } from 'node:readline';
 import { parseArgs } from 'node:util';
+import { alertUser } from '../src/alerts.js';
 import { audit, createPool } from '../src/db.js';
 import { generatePassword, hashPassword, normalizeUsername, passwordProblem } from '../src/security.js';
 
@@ -46,10 +47,13 @@ export async function resetPassword(pool, username, password, { disableMfa = fal
     }
     await client.query('DELETE FROM sessions WHERE user_id = $1', [rows[0].id]);
     if (disableMfa) {
-      await client.query(
-        'UPDATE users SET totp_secret = NULL, totp_pending = NULL, totp_enabled_at = NULL, totp_last_step = NULL WHERE id = $1',
+      const off = await client.query(
+        'UPDATE users SET totp_secret = NULL, totp_pending = NULL, totp_enabled_at = NULL, totp_last_step = NULL WHERE id = $1 AND totp_enabled_at IS NOT NULL',
         [rows[0].id],
       );
+      // Só avisa quando havia 2FA ligado: o e-mail chega mesmo que o reset tenha sido pedido por outra pessoa.
+      if (off.rowCount) await alertUser(client, rows[0].id, 'mfa_desativado', { byServer: true });
+      await client.query('UPDATE users SET totp_pending = NULL WHERE id = $1', [rows[0].id]);
       await client.query('DELETE FROM recovery_codes WHERE user_id = $1', [rows[0].id]);
       await audit(client, { actor: 'linha-de-comando', action: '2fa_desativado', target: username });
     }
