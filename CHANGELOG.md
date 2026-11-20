@@ -6,12 +6,16 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Painel: alertas de segurança por e-mail.** A conta recebe um aviso quando é bloqueada por senhas erradas, quando alguém acerta a senha mas erra o código do autenticador, quando um administrador entra de uma rede nova, quando um aparelho é pareado e quando a verificação em duas etapas é desligada. O Usuário (atendimento) sem e-mail avisa o dono da conta.
+- **Servidor: backup diário cifrado do banco.** `server/scripts/backup-banco.sh` guarda o dump do PostgreSQL, os papéis e o `.env`, cifrados com GPG (AES-256), confere cada arquivo antes de guardar, mantém 7 diários, 4 semanais e 6 mensais e espelha a pasta num armazenamento externo com rclone. `server/scripts/testar-restauracao.sh` restaura todo mês o backup mais recente num Postgres descartável e confere as tabelas, as migrações e os usuários. Instalação e restauração no README do servidor.
+
 ### Alterado
 - **Caixa da placa (Uno): furo redondo de 5 mm para o cabo OBD** na parede direita, no meio da altura e na mesma direção do cabo, no lugar do rasgo fechado pela lingueta da tampa. STL, OpenSCAD, desenho com cotas e visor 3D do painel atualizados; o cabo passa pelo furo antes da solda.
 
 ### Segurança
 - **App: tela protegida contra dados que viram código.** Nomes de dispositivo Bluetooth, perfis importados, backups restaurados, códigos de falha e respostas da IA entram na tela só como texto:
-  - todo HTML com dados passa por `html\`...\``, que escapa cada valor;
+  - todo HTML com dados passa pela função `html` (um template marcado), que escapa cada valor;
   - a página tem uma política de segurança (CSP) que só aceita os scripts do próprio app, sem código embutido;
   - um teste quebra se alguém montar HTML com dado fora disso.
 - **App: backup do Android desligado.** O banco (com o percurso pelo GPS) e as preferências (com o token do painel e a chave da IA) não vão mais para a nuvem nem para o celular novo pela transferência do sistema. Para trocar de celular, use Ajustes → Backup completo, que deixa as chaves de fora.
@@ -21,9 +25,6 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - **Dependabot também para o npm do painel e para a imagem base do Node.**
 - **Imagens do painel sem o npm.** O npm embutido na imagem do Node trazia 6 falhas altas conhecidas (brace-expansion e undici), sem uso em execução: agora ele sai depois da instalação, e a base fica presa por digest. O reset de senha passa a ser `docker compose exec api node bin/user-reset-password.js --user NOME`.
 - **Painel: verificação em duas etapas obrigatória para o Super Admin.** Sem 2FA ativo, depois da troca da senha inicial, o painel só abre Meus Dados até o aplicativo autenticador ser configurado; a desativação pela tela é recusada (perda do celular: código de recuperação ou `--disable-2fa` no servidor, que volta a pedir o 2FA). Em Configurações, um ajuste novo, desligado por padrão, estende a exigência a todos os donos de conta (Admin). As mudanças do ajuste ficam na auditoria.
-
-### Adicionado
-- **Servidor: backup diário cifrado do banco.** `server/scripts/backup-banco.sh` guarda o dump do PostgreSQL, os papéis e o `.env`, cifrados com GPG (AES-256), confere cada arquivo antes de guardar, mantém 7 diários, 4 semanais e 6 mensais e espelha a pasta num armazenamento externo com rclone. `server/scripts/testar-restauracao.sh` restaura todo mês o backup mais recente num Postgres descartável e confere as tabelas, as migrações e os usuários. Instalação e restauração no README do servidor.
 
 ## [0.9.57] - 2026-11-18
 

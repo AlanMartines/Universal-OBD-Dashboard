@@ -1,3 +1,4 @@
+import { alertUser } from '../alerts.js';
 import { dashLimitsFrom } from '../dash-limits.js';
 import { audit } from '../db.js';
 import { fail } from '../errors.js';
@@ -51,6 +52,7 @@ export default function deviceRoutes(app, { pool, live, limit }) {
         [rows[0].user_id, installationId, rows[0].id],
       );
       await audit(client, { action: 'dispositivo_pareado', target: rows[0].id, ip: request.clientIp });
+      await alertUser(client, rows[0].user_id, 'dispositivo_pareado', { ip: request.clientIp, device: rows[0].name });
       await client.query('COMMIT');
       return { deviceId: rows[0].id, deviceName: rows[0].name, deviceToken: token };
     } catch (error) {

@@ -1,3 +1,4 @@
+import { alertIfNewNetwork, alertUser } from '../alerts.js';
 import { audit } from '../db.js';
 import { fail } from '../errors.js';
 import { LOCK_AFTER, LOCK_MAX_MINUTES, passwordField } from '../schemas.js';
@@ -22,7 +23,7 @@ export default function authRoutes(app, {
     const { password } = request.body;
     const { rows } = await pool.query(
       // Nome de usuário nunca tem @, então não há como confundir com um e-mail.
-      `SELECT u.id, u.username, u.password_hash, u.failed_logins, u.locked_until, u.totp_enabled_at,
+      `SELECT u.id, u.username, u.role, u.password_hash, u.failed_logins, u.locked_until, u.totp_enabled_at,
               u.disabled OR COALESCE(owner.disabled, false) AS disabled
          FROM users u LEFT JOIN users owner ON owner.id = u.account_id
         WHERE u.${username.includes('@') ? 'email' : 'username'} = $1`,
@@ -46,6 +47,8 @@ export default function authRoutes(app, {
         [user.id, failures, minutes],
       );
       await audit(pool, { actor: user.username, action: 'login_recusado', ip: request.clientIp });
+      // Um aviso por sequência: no primeiro bloqueio (os seguintes só aumentam o tempo).
+      if (failures === LOCK_AFTER) await alertUser(pool, user.id, 'conta_bloqueada', { ip: request.clientIp, minutes });
       throw fail(401, 'invalid_credentials');
     }
     await pool.query('UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = $1', [user.id]);
@@ -58,6 +61,7 @@ export default function authRoutes(app, {
       );
       return { mfaRequired: true, mfaToken };
     }
+    await alertIfNewNetwork(pool, user, request.clientIp);
     await audit(pool, { actor: user.username, action: 'login', ip: request.clientIp });
     return { token: await createSession(user.id, { request }) };
   });

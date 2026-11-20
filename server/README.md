@@ -160,6 +160,14 @@ Resposta: `{ "received", "stored", "rejected" }`.
 - **Web:** token CSRF com conferência de `Sec-Fetch-Site` e `Origin`, CSP sem scripts ou estilos embutidos e escape automático do Handlebars. Nada vem de CDN.
 - **Banco:** consultas sempre parametrizadas, feitas por um papel sem privilégios de superusuário.
 - **Robôs:** limites por IP, campo invisível nos formulários, token de formulário assinado e tempo mínimo de preenchimento no cadastro, que vem fechado por padrão.
+- **Alertas por e-mail:** a própria conta recebe um aviso quando:
+  - fica bloqueada por senhas erradas (um aviso por sequência);
+  - alguém acerta a senha, mas erra o código do autenticador até o fim;
+  - um Super Admin ou Admin entra de uma rede nova (outra faixa /24 no IPv4 ou /48 no IPv6), comparada com os logins do último ano;
+  - um aparelho é pareado;
+  - a verificação em duas etapas é desligada, pela tela ou pela linha de comando.
+
+  O Usuário (atendimento) sem e-mail avisa o dono da conta. Sem e-mail cadastrado, nada é enviado. Os avisos usam a fila do `mailer` e nunca levam senha, código ou token.
 - **Contas:** uma conta nunca acessa dispositivos de outra; só o superadmin vê todos. Ações sensíveis ficam na auditoria, sem senhas nem tokens.
 
 ### Limitações atuais

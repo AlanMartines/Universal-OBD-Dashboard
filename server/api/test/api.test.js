@@ -718,6 +718,107 @@ describe('API', () => {
     });
   });
 
+  describe('alertas por e-mail', () => {
+    const outbox = async (recipient) => (await pool.query(
+      'SELECT subject, body FROM mail_outbox WHERE recipient = $1 ORDER BY id', [recipient],
+    )).rows;
+    const setEmail = (username, email) => pool.query('UPDATE users SET email = $2 WHERE username = $1', [username, email]);
+    const tryLogin = (username, password, ip) => internal(app, 'POST', '/internal/auth/login', { body: { username, password }, ip });
+
+    test('conta bloqueada: um aviso por sequência, com o IP e sem a senha', async () => {
+      await userToken(app, admin, 'alertabloq');
+      await setEmail('alertabloq', 'alertabloq@exemplo.test');
+      for (let i = 0; i < 7; i += 1) await tryLogin('alertabloq', 'senha errada de propósito', '203.0.113.5');
+      const mails = await outbox('alertabloq@exemplo.test');
+      assert.equal(mails.length, 1);
+      assert.match(mails[0].subject, /bloqueada/);
+      assert.ok(mails[0].body.includes('203.0.113.5'));
+      assert.ok(!mails[0].body.includes('senha errada de propósito'));
+    });
+
+    test('Usuário sem e-mail avisa o dono da conta; sem e-mail nenhum, nada sai', async () => {
+      const dono = await userToken(app, admin, 'alertadono');
+      await setEmail('alertadono', 'alertadono@exemplo.test');
+      const atend = await internal(app, 'POST', '/internal/admin/users', { token: dono, body: { username: 'alertaatend', role: 'user' } });
+      assert.equal(atend.statusCode, 200);
+      for (let i = 0; i < 5; i += 1) await tryLogin('alertaatend', 'senha errada de propósito', '203.0.113.6');
+      const mails = await outbox('alertadono@exemplo.test');
+      assert.equal(mails.length, 1);
+      assert.ok(mails[0].subject.includes('alertaatend'));
+      await userToken(app, admin, 'alertasem');
+      const before = (await pool.query('SELECT count(*)::int AS n FROM mail_outbox')).rows[0].n;
+      for (let i = 0; i < 5; i += 1) await tryLogin('alertasem', 'senha errada de propósito', '203.0.113.7');
+      assert.equal((await pool.query('SELECT count(*)::int AS n FROM mail_outbox')).rows[0].n, before);
+    });
+
+    test('login de administração de rede nova avisa; mesma rede e perfil Usuário não', async () => {
+      await userToken(app, admin, 'alertaip');   // primeiro login, de 127.0.0.1
+      await setEmail('alertaip', 'alertaip@exemplo.test');
+      assert.ok((await tryLogin('alertaip', USER_PASSWORD, '127.0.0.9')).json().token);
+      assert.equal((await outbox('alertaip@exemplo.test')).length, 0);
+      assert.ok((await tryLogin('alertaip', USER_PASSWORD, '198.51.100.10')).json().token);
+      assert.ok((await tryLogin('alertaip', USER_PASSWORD, '198.51.100.20')).json().token);
+      assert.ok((await tryLogin('alertaip', USER_PASSWORD, '::ffff:198.51.100.30')).json().token);
+      const mails = await outbox('alertaip@exemplo.test');
+      assert.equal(mails.length, 1);
+      assert.match(mails[0].subject, /endereço novo/);
+      assert.ok(mails[0].body.includes('198.51.100.10'));
+
+      const dono = await userToken(app, admin, 'alertaip2');
+      await setEmail('alertaip2', 'alertaip2@exemplo.test');
+      const at = await internal(app, 'POST', '/internal/admin/users', { token: dono, body: { username: 'alertaipuser', role: 'user' } });
+      const first = await tryLogin('alertaipuser', at.json().password, '127.0.0.1');
+      await internal(app, 'POST', '/internal/auth/password', { token: first.json().token, body: { currentPassword: at.json().password, newPassword: USER_PASSWORD } });
+      assert.ok((await tryLogin('alertaipuser', USER_PASSWORD, '192.0.2.44')).json().token);
+      assert.equal((await outbox('alertaip2@exemplo.test')).length, 0);
+    });
+
+    test('código do autenticador errado até o fim e 2FA desligado avisam', async () => {
+      const tok = await userToken(app, admin, 'alertamfa');
+      await setEmail('alertamfa', 'alertamfa@exemplo.test');
+      const { secret } = await enableMfa(app, tok, USER_PASSWORD);
+      const { mfaToken } = (await tryLogin('alertamfa', USER_PASSWORD, '203.0.113.8')).json();
+      for (let i = 0; i < 6; i += 1) {
+        await internal(app, 'POST', '/internal/auth/mfa', { body: { mfaToken, code: '000000' }, ip: '203.0.113.8' });
+      }
+      let mails = await outbox('alertamfa@exemplo.test');
+      assert.equal(mails.length, 1);
+      assert.match(mails[0].subject, /código errado/);
+      const off = await internal(app, 'POST', '/internal/account/mfa/disable', {
+        token: tok, body: { currentPassword: USER_PASSWORD, code: codeForStep(secret, stepAt(Date.now()) + 1) },
+      });
+      assert.equal(off.statusCode, 200);
+      mails = await outbox('alertamfa@exemplo.test');
+      assert.equal(mails.length, 2);
+      assert.match(mails[1].subject, /desligada/);
+    });
+
+    test('2FA desligado pela linha de comando avisa só se estava ligado', async () => {
+      const tok = await userToken(app, admin, 'alertacli');
+      await setEmail('alertacli', 'alertacli@exemplo.test');
+      await resetPassword(pool, 'alertacli', 'senha nova pelo terminal 1', { disableMfa: true });
+      assert.equal((await outbox('alertacli@exemplo.test')).length, 0);
+      const t2 = await login(app, 'alertacli', 'senha nova pelo terminal 1');
+      await internal(app, 'POST', '/internal/auth/password', { token: t2, body: { currentPassword: 'senha nova pelo terminal 1', newPassword: USER_PASSWORD } });
+      await enableMfa(app, t2, USER_PASSWORD);
+      await resetPassword(pool, 'alertacli', 'senha nova pelo terminal 2', { disableMfa: true });
+      const mails = await outbox('alertacli@exemplo.test');
+      assert.equal(mails.length, 1);
+      assert.ok(mails[0].body.includes('administrador do servidor'));
+      assert.ok(tok);
+    });
+
+    test('novo aparelho pareado avisa o dono com o nome do dispositivo', async () => {
+      const tok = await userToken(app, admin, 'alertapar');
+      await setEmail('alertapar', 'alertapar@exemplo.test');
+      await pairDevice(app, tok, '0b6d2c3b-4a59-4e6f-8a7b-0c1d2e3f4a5c');
+      const mails = await outbox('alertapar@exemplo.test');
+      assert.equal(mails.length, 1);
+      assert.match(mails[0].subject, /aparelho pareado/);
+      assert.ok(mails[0].body.includes('Celular de teste'));
+    });
+  });
+
   describe('sessões ativas', () => {
     test('lista as próprias e encerra sem atingir outras contas', async () => {
       const t1 = await userToken(app, admin, 'sessoes1');

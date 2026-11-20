@@ -1,3 +1,4 @@
+import { alertIfNewNetwork, alertUser } from '../alerts.js';
 import { audit } from '../db.js';
 import { fail } from '../errors.js';
 import { passwordField, uuidParam } from '../schemas.js';
@@ -51,7 +52,7 @@ export default function securityRoutes(app, {
   }, async (request) => {
     const hash = sha256(request.body.mfaToken);
     const { rows } = await pool.query(
-      `SELECT c.attempts, u.id, u.username, u.totp_secret, u.disabled
+      `SELECT c.attempts, u.id, u.username, u.role, u.totp_secret, u.disabled
          FROM mfa_challenges c JOIN users u ON u.id = c.user_id
         WHERE c.token_hash = $1 AND c.expires_at > now()`,
       [hash],
@@ -70,6 +71,8 @@ export default function securityRoutes(app, {
     if (!accepted) {
       if (challenge.attempts + 1 >= MFA_ATTEMPTS) {
         await pool.query('DELETE FROM mfa_challenges WHERE token_hash = $1', [hash]);
+        // Senha certa e código errado até o fim: a senha provavelmente vazou.
+        await alertUser(pool, challenge.id, 'codigo_2fa_esgotado', { ip: request.clientIp });
       } else {
         await pool.query('UPDATE mfa_challenges SET attempts = attempts + 1 WHERE token_hash = $1', [hash]);
       }
@@ -77,6 +80,7 @@ export default function securityRoutes(app, {
       throw fail(401, 'mfa_code_invalid');
     }
     await pool.query('DELETE FROM mfa_challenges WHERE user_id = $1', [challenge.id]);
+    await alertIfNewNetwork(pool, challenge, request.clientIp);
     await audit(pool, { actor: challenge.username, action: 'login', ip: request.clientIp });
     return { token: await createSession(challenge.id, { request }) };
   });
@@ -169,6 +173,7 @@ export default function securityRoutes(app, {
     );
     await pool.query('DELETE FROM recovery_codes WHERE user_id = $1', [user.id]);
     await audit(pool, { actor: user.username, action: '2fa_desativado', target: user.username, ip: request.clientIp });
+    await alertUser(pool, user.id, 'mfa_desativado', { ip: request.clientIp });
     return { ok: true };
   });
 
