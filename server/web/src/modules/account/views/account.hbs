@@ -116,17 +116,26 @@
   </div>
 </div>
 
-<div class="card mb-4 mfa-card">
+<div class="card mb-4 mfa-card" id="mfa">
   <div class="card-header d-flex justify-content-between align-items-center gap-2">
     <span class="fw-semibold"><i class="fa-solid fa-shield-halved me-2" aria-hidden="true"></i>Verificação em duas etapas (2FA)</span>
     {{#if account.mfaEnabled}}<span class="badge mfa-badge-on"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Ativa</span>{{else}}<span class="badge text-bg-secondary">Inativa</span>{{/if}}
   </div>
   <div class="card-body">
+    {{#if user.mfaSetupRequired}}
+    <div class="alert alert-warning d-flex gap-2" role="alert">
+      <i class="fa-solid fa-triangle-exclamation mt-1" aria-hidden="true"></i>
+      <span>Para o seu perfil, a verificação em duas etapas é <strong>obrigatória</strong>. Ative-a abaixo para voltar a usar o painel.</span>
+    </div>
+    {{/if}}
     {{#if account.mfaEnabled}}
     <p class="mb-2">Cada login pede, além da senha, o código do seu aplicativo autenticador.</p>
     <p class="small mb-3 {{#if account.recoveryLow}}text-warning-emphasis{{else}}text-body-secondary{{/if}}">
       <i class="fa-solid fa-key me-1" aria-hidden="true"></i>{{account.recoveryLeft}} códigos de recuperação restantes.{{#if account.recoveryLow}} Desative e ative de novo para gerar códigos novos.{{/if}}
     </p>
+    {{#if user.mfaRequired}}
+    <p class="small text-body-secondary mb-0"><i class="fa-solid fa-lock me-1" aria-hidden="true"></i>Obrigatória para o seu perfil: não pode ser desativada.</p>
+    {{else}}
     <button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#mfa-off" aria-expanded="{{#if mfaOpen}}true{{else}}false{{/if}}" aria-controls="mfa-off">
       <i class="fa-solid fa-shield me-1" aria-hidden="true"></i>Desativar 2FA
     </button>
@@ -144,6 +153,7 @@
         <div class="col-12 text-end"><button class="btn btn-danger" type="submit">Desativar</button></div>
       </form>
     </div>
+    {{/if}}
     {{else}}
     <p class="mb-2">Adicione uma camada extra de segurança à sua conta. Depois de ativar, cada login pede também um código gerado pelo aplicativo autenticador (Google Authenticator, Microsoft Authenticator, Authy…). Mesmo que alguém descubra sua senha, não entra sem o celular.</p>
     <ol class="mfa-steps small text-body-secondary">
@@ -154,7 +164,7 @@
     <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#mfa-on" aria-expanded="{{#if mfaOpen}}true{{else}}false{{/if}}" aria-controls="mfa-on">
       <i class="fa-solid fa-shield-halved me-1" aria-hidden="true"></i>Ativar 2FA
     </button>
-    <div class="collapse{{#if mfaOpen}} show{{/if}}" id="mfa-on">
+    <div class="collapse{{#if mfaOpen}} show{{else if user.mfaSetupRequired}} show{{/if}}" id="mfa-on">
       <form method="post" action="/meus-dados/2fa/iniciar" class="row g-3 mt-1" data-validate>
         <input type="hidden" name="_csrf" value="{{csrf}}">
         <div class="col-md-6">

@@ -57,6 +57,8 @@ async function seedSettings(client, config) {
     `INSERT INTO settings (key, value) VALUES ('signup_open', $1::jsonb) ON CONFLICT (key) DO NOTHING`,
     [JSON.stringify(config.signupDefaultOpen)],
   );
+  // 2FA obrigatório para donos de conta (Admin): desligado até o Super Admin ligar.
+  await client.query(`INSERT INTO settings (key, value) VALUES ('mfa_required_admins', 'false'::jsonb) ON CONFLICT (key) DO NOTHING`);
 }
 
 async function seedAdmin(client, config, log) {

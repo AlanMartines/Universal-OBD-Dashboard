@@ -55,6 +55,7 @@ export default function adminRoutes(app, {
     const accounts = await pool.query(`SELECT id, username FROM users WHERE role = 'admin' AND NOT disabled ORDER BY username`);
     return {
       signupOpen: await signupOpen(),
+      mfaRequiredAdmins: (await pool.query(`SELECT value FROM settings WHERE key = 'mfa_required_admins'`)).rows[0]?.value === true,
       users: users.rows,
       usersPagination: users.pagination,
       audit: auditLog.rows,
@@ -70,6 +71,23 @@ export default function adminRoutes(app, {
   }, async (request) => {
     await pool.query(`UPDATE settings SET value = $1::jsonb WHERE key = 'signup_open'`, [JSON.stringify(request.body.open)]);
     await audit(pool, { actor: request.session.impersonatedBy ?? request.session.user.username, action: request.body.open ? 'cadastro_aberto' : 'cadastro_fechado', ip: request.clientIp });
+    return { ok: true };
+  });
+
+  app.post('/internal/admin/mfa-admins', {
+    preValidation: requireSuperadmin,
+    schema: { body: { type: 'object', required: ['required'], additionalProperties: false, properties: { required: { type: 'boolean' } } } },
+  }, async (request) => {
+    await pool.query(
+      `INSERT INTO settings (key, value) VALUES ('mfa_required_admins', $1::jsonb)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [JSON.stringify(request.body.required)],
+    );
+    await audit(pool, {
+      actor: request.session.impersonatedBy ?? request.session.user.username,
+      action: request.body.required ? '2fa_admins_obrigatorio' : '2fa_admins_opcional',
+      ip: request.clientIp,
+    });
     return { ok: true };
   });
 

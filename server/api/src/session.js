@@ -9,7 +9,9 @@ export function createAccess({ config, pool }) {
     const { rows } = await pool.query(
       `SELECT s.csrf_token, s.last_seen_at, u.id, u.username, u.role, u.must_change_password,
               u.display_name, u.avatar_updated_at, u.account_id,
-              s.impersonator_id, imp.username AS impersonator
+              s.impersonator_id, imp.username AS impersonator,
+              u.totp_enabled_at IS NOT NULL AS mfa_enabled,
+              COALESCE((SELECT value FROM settings WHERE key = 'mfa_required_admins') = 'true'::jsonb, false) AS mfa_admins
          FROM sessions s JOIN users u ON u.id = s.user_id
          LEFT JOIN users imp ON imp.id = s.impersonator_id
          LEFT JOIN users owner ON owner.id = u.account_id
@@ -19,6 +21,8 @@ export function createAccess({ config, pool }) {
     );
     if (!rows.length) return null;
     const row = rows[0];
+    // 2FA obrigatório: sempre para o Super Admin; para o dono de conta (Admin), quando o ajuste estiver ligado.
+    const mfaRequired = row.role === 'superadmin' || (row.role === 'admin' && row.mfa_admins);
     if (Date.now() - row.last_seen_at.getTime() > 60000) {
       await pool.query('UPDATE sessions SET last_seen_at = now() WHERE token_hash = $1', [hash]);
     }
@@ -36,6 +40,10 @@ export function createAccess({ config, pool }) {
         // Na personificação, a troca obrigatória é da pessoa, não do suporte.
         mustChangePassword: row.must_change_password && !row.impersonator_id,
         impersonatedBy: row.impersonator ?? null,
+        mfaRequired,
+        // Na personificação, quem configura o 2FA é a pessoa, não o suporte.
+        // Vem depois da troca obrigatória de senha.
+        mfaSetupRequired: mfaRequired && !row.mfa_enabled && !row.impersonator_id && !row.must_change_password,
         displayName: row.display_name,
         avatarVersion: row.avatar_updated_at ? row.avatar_updated_at.getTime() : null,
       },
@@ -53,8 +61,15 @@ export function createAccess({ config, pool }) {
     if (request.session.impersonatedBy) throw fail(403, 'forbidden');
   };
   // Senha inicial ou resetada: nada funciona até o usuário definir uma nova.
+  // Depois, quem tem 2FA obrigatório e ainda não ativou só consegue configurá-lo.
   const requireReady = async (request) => {
     await requireSession(request);
+    if (request.session.user.mustChangePassword) throw fail(403, 'password_change_required');
+    if (request.session.user.mfaSetupRequired) throw fail(403, 'mfa_setup_required');
+  };
+  // Rotas de configurar o 2FA: liberadas mesmo enquanto ele é exigido, mas nunca na personificação.
+  const requireOwnMfaSetup = async (request) => {
+    await requireOwnSession(request);
     if (request.session.user.mustChangePassword) throw fail(403, 'password_change_required');
   };
   const requireOwnReady = async (request) => {
@@ -122,5 +137,5 @@ export function createAccess({ config, pool }) {
     dashLimits: d.dash_limits ?? null,
   });
 
-  return { requireSession, requireReady, requireOwnSession, requireOwnReady, requireManager, requireSuperadmin, createSession, signupOpen, loadDevice, publicDevice, locationAllowed };
+  return { requireSession, requireReady, requireOwnSession, requireOwnReady, requireOwnMfaSetup, requireManager, requireSuperadmin, createSession, signupOpen, loadDevice, publicDevice, locationAllowed };
 }

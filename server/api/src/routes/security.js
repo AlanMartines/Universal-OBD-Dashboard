@@ -15,7 +15,7 @@ const MAIL_READY_MINUTES = 15;
 const IMPERSONATION_HOURS = 1;
 
 export default function securityRoutes(app, {
-  config, pool, limit, requireSession, requireOwnReady, requireSuperadmin, createSession,
+  config, pool, limit, requireSession, requireOwnReady, requireOwnMfaSetup, requireSuperadmin, createSession,
 }) {
   const perUser = (request) => request.session?.user.id ?? request.clientIp;
   const codeField = { type: 'string', minLength: 6, maxLength: 16 };
@@ -85,7 +85,7 @@ export default function securityRoutes(app, {
 
   app.post('/internal/account/mfa/setup', {
     ...limit(10, '1 hour', perUser),
-    preValidation: requireOwnReady,
+    preValidation: requireOwnMfaSetup,
     schema: { body: { type: 'object', required: ['currentPassword'], additionalProperties: false, properties: { currentPassword: passwordField } } },
   }, async (request) => {
     const { user } = request.session;
@@ -97,7 +97,7 @@ export default function securityRoutes(app, {
     return { ok: true };
   });
 
-  app.get('/internal/account/mfa/pending', { preValidation: requireOwnReady }, async (request) => {
+  app.get('/internal/account/mfa/pending', { preValidation: requireOwnMfaSetup }, async (request) => {
     const { user } = request.session;
     const { rows } = await pool.query('SELECT totp_pending FROM users WHERE id = $1', [user.id]);
     if (!rows[0].totp_pending) throw fail(404, 'not_found');
@@ -107,7 +107,7 @@ export default function securityRoutes(app, {
 
   app.post('/internal/account/mfa/enable', {
     ...limit(20, '1 hour', perUser),
-    preValidation: requireOwnReady,
+    preValidation: requireOwnMfaSetup,
     schema: { body: { type: 'object', required: ['code'], additionalProperties: false, properties: { code: codeField } } },
   }, async (request) => {
     const { user } = request.session;
@@ -152,6 +152,8 @@ export default function securityRoutes(app, {
     },
   }, async (request) => {
     const { user } = request.session;
+    // Super Admin (e Admin, com o ajuste ligado) não fica sem 2FA. Perda do celular: comando do servidor.
+    if (user.mfaRequired) throw fail(400, 'mfa_required');
     await checkPassword(user.id, request.body.currentPassword);
     const { rows } = await pool.query('SELECT totp_secret FROM users WHERE id = $1', [user.id]);
     if (!rows[0].totp_secret) throw fail(400, 'mfa_expired');

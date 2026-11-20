@@ -80,6 +80,9 @@ O login aceita usuário ou e-mail. Em **Meus Dados**, a pessoa altera nome, foto
 - **Foto:** JPG, PNG ou WebP de até 5 MB. A imagem é regravada em 256 × 256, sem metadados como GPS, e fica no banco, visível só com login.
 
 - **Verificação em duas etapas:** aplicativo autenticador (TOTP), com chave cifrada no banco e 10 códigos de recuperação de uso único.
+  - **Obrigatória para o Super Admin.** Depois da troca da senha inicial, o painel só libera Meus Dados até o 2FA ser ativado, e ele não pode ser desativado pela tela.
+  - **Para os donos de conta (Admin):** opcional por padrão. Em Configurações, o Super Admin pode exigi-la de todos; quem ainda não ativou passa pelo mesmo bloqueio no próximo acesso.
+  - O perfil Usuário (atendimento) continua com o 2FA opcional, e o modo suporte nunca pede o 2FA da conta visitada.
 - **Sessões ativas:** a pessoa vê onde está conectada e encerra o que não reconhecer.
 - **Esqueci minha senha:** link de 1 hora para o e-mail confirmado. A resposta não revela se o e-mail existe.
 - **Modo suporte:** o Super Admin entra como outra conta por até 1 hora, com faixa visível e registro na auditoria. Senha, e-mail, 2FA e dados pessoais ficam bloqueados.
@@ -99,7 +102,7 @@ docker compose exec api npm run -s user:reset-password -- --user NOME --prompt
 docker compose exec api npm run -s user:reset-password -- --user NOME --password 'SENHA'
 ```
 
-Se a pessoa perdeu o autenticador e os códigos, acrescente `--disable-2fa` ao comando.
+Se a pessoa perdeu o autenticador e os códigos, acrescente `--disable-2fa` ao comando. Quando o 2FA é obrigatório para o perfil dela, o painel pede um novo autenticador logo depois da troca de senha.
 
 O reset encerra as sessões do usuário, libera o bloqueio e exige nova troca no próximo login.
 

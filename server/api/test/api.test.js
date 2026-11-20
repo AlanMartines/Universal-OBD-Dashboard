@@ -10,7 +10,7 @@ import { processAvatar } from '../src/routes/account.js';
 import { isValidEmail } from '../src/security.js';
 import { passwordProblem, sha256 } from '../src/security.js';
 import {
-  ADMIN, adminToken, freshDb, internal, login, pairDevice, sample, send, startApi, testConfig, userToken, KEY, USER_PASSWORD,
+  ADMIN, adminLogin, adminToken, enableMfa, freshDb, internal, login, pairDevice, sample, send, startApi, testConfig, userToken, KEY, USER_PASSWORD,
 } from './helpers.js';
 
 describe('configuração e admin inicial', () => {
@@ -127,7 +127,7 @@ describe('API', () => {
     });
 
     test('token e senha não ficam em claro no banco', async () => {
-      const token = await login(app, ADMIN.username, 'outra frase longa do administrador');
+      const token = await adminLogin(app);
       const raw = await pool.query('SELECT 1 FROM sessions WHERE token_hash = $1', [sha256(token)]);
       assert.equal(raw.rowCount, 1);
       const dump = JSON.stringify((await pool.query('SELECT * FROM sessions')).rows);
@@ -663,6 +663,61 @@ describe('API', () => {
     });
   });
 
+  describe('2FA obrigatório', () => {
+    const devices = (token) => internal(app, 'GET', '/internal/devices', { token });
+    const setMfaAdmins = (token, required) => internal(app, 'POST', '/internal/admin/mfa-admins', { token, body: { required } });
+
+    test('Super Admin sem 2FA só consegue configurá-lo; depois não consegue desligar', async () => {
+      const created = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username: 'outroraiz', role: 'superadmin' } });
+      assert.equal(created.statusCode, 200);
+      const tok = await login(app, 'outroraiz', created.json().password);
+      // A troca de senha vem antes do 2FA.
+      assert.deepEqual((await devices(tok)).json(), { error: 'password_change_required' });
+      assert.equal((await internal(app, 'POST', '/internal/account/mfa/setup', { token: tok, body: { currentPassword: created.json().password } })).statusCode, 403);
+      await internal(app, 'POST', '/internal/auth/password', { token: tok, body: { currentPassword: created.json().password, newPassword: USER_PASSWORD } });
+      const session = (await internal(app, 'GET', '/internal/auth/session', { token: tok })).json();
+      assert.equal(session.user.mfaSetupRequired, true);
+      const blocked = await devices(tok);
+      assert.equal(blocked.statusCode, 403);
+      assert.deepEqual(blocked.json(), { error: 'mfa_setup_required' });
+      assert.equal((await internal(app, 'GET', '/internal/admin/overview', { token: tok })).statusCode, 403);
+      assert.equal((await internal(app, 'GET', '/internal/account', { token: tok })).statusCode, 200);
+      const { secret } = await enableMfa(app, tok, USER_PASSWORD);
+      assert.equal((await devices(tok)).statusCode, 200);
+      const off = await internal(app, 'POST', '/internal/account/mfa/disable', {
+        token: tok, body: { currentPassword: USER_PASSWORD, code: codeForStep(secret, stepAt(Date.now()) + 1) },
+      });
+      assert.deepEqual(off.json(), { error: 'mfa_required' });
+      assert.ok((await pool.query(`SELECT 1 FROM users WHERE username = 'outroraiz' AND totp_enabled_at IS NOT NULL`)).rowCount);
+    });
+
+    test('ajuste dos donos de conta: desligado por padrão, só o Super Admin muda, Usuário não é afetado', async () => {
+      const dono = await userToken(app, admin, 'donomfa');
+      const atend = await internal(app, 'POST', '/internal/admin/users', { token: dono, body: { username: 'atendmfa', role: 'user' } });
+      const atendTok = await login(app, 'atendmfa', atend.json().password);
+      await internal(app, 'POST', '/internal/auth/password', { token: atendTok, body: { currentPassword: atend.json().password, newPassword: USER_PASSWORD } });
+      assert.equal((await internal(app, 'GET', '/internal/admin/overview', { token: admin })).json().mfaRequiredAdmins, false);
+      assert.equal((await devices(dono)).statusCode, 200);
+      assert.equal((await setMfaAdmins(dono, true)).statusCode, 403);
+
+      assert.equal((await setMfaAdmins(admin, true)).statusCode, 200);
+      assert.equal((await internal(app, 'GET', '/internal/admin/overview', { token: admin })).json().mfaRequiredAdmins, true);
+      assert.deepEqual((await devices(dono)).json(), { error: 'mfa_setup_required' });
+      assert.equal((await devices(atendTok)).statusCode, 200);
+      assert.equal((await devices(admin)).statusCode, 200);
+      const { secret } = await enableMfa(app, dono, USER_PASSWORD);
+      assert.equal((await devices(dono)).statusCode, 200);
+      const code = codeForStep(secret, stepAt(Date.now()) + 1);
+      const off = (body) => internal(app, 'POST', '/internal/account/mfa/disable', { token: dono, body });
+      assert.deepEqual((await off({ currentPassword: USER_PASSWORD, code })).json(), { error: 'mfa_required' });
+
+      assert.equal((await setMfaAdmins(admin, false)).statusCode, 200);
+      assert.equal((await off({ currentPassword: USER_PASSWORD, code })).statusCode, 200);
+      const actions = (await pool.query(`SELECT action FROM audit_log WHERE action LIKE '2fa_admins_%' ORDER BY id`)).rows.map((r) => r.action);
+      assert.deepEqual(actions, ['2fa_admins_obrigatorio', '2fa_admins_opcional']);
+    });
+  });
+
   describe('sessões ativas', () => {
     test('lista as próprias e encerra sem atingir outras contas', async () => {
       const t1 = await userToken(app, admin, 'sessoes1');
@@ -732,7 +787,7 @@ describe('API', () => {
       alvo = await userToken(app, admin, 'alvo');
       alvoId = (await pool.query(`SELECT id FROM users WHERE username = 'alvo'`)).rows[0].id;
       await pairDevice(app, alvo, 'cccccccc-1111-4111-8111-cccccccccccc');
-      superTok = await login(app, ADMIN.username, 'outra frase longa do administrador');
+      superTok = await adminLogin(app);
     });
     const go = (token, id = alvoId) => internal(app, 'POST', `/internal/admin/users/${id}/impersonate`, { token });
 
@@ -797,7 +852,7 @@ describe('API', () => {
     });
 
     test('super admin não vê localização de outra conta, em nenhum caminho', async () => {
-      const superTok = await login(app, ADMIN.username, 'outra frase longa do administrador');
+      const superTok = await adminLogin(app);
       const res = await route(superTok);
       assert.equal(res.statusCode, 403);
       assert.deepEqual(res.json(), { error: 'location_restricted' });
