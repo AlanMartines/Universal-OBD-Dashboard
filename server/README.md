@@ -93,13 +93,13 @@ Vale para qualquer usuário, desde que o nome esteja correto:
 
 ```bash
 # Gera uma senha aleatória e mostra uma única vez
-docker compose exec api npm run -s user:reset-password -- --user NOME
+docker compose exec api node bin/user-reset-password.js --user NOME
 
 # Pede a senha sem mostrar na tela (recomendado)
-docker compose exec api npm run -s user:reset-password -- --user NOME --prompt
+docker compose exec api node bin/user-reset-password.js --user NOME --prompt
 
 # Define a senha informada (fica no histórico do terminal)
-docker compose exec api npm run -s user:reset-password -- --user NOME --password 'SENHA'
+docker compose exec api node bin/user-reset-password.js --user NOME --password 'SENHA'
 ```
 
 Se a pessoa perdeu o autenticador e os códigos, acrescente `--disable-2fa` ao comando. Quando o 2FA é obrigatório para o perfil dela, o painel pede um novo autenticador logo depois da troca de senha.

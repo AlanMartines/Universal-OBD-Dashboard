@@ -9,20 +9,27 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Só leitura: nenhum job deste fluxo escreve no repositório, em releases ou em pacotes.
+permissions:
+  contents: read
+
+# Actions presas pelo hash do commit (a tag pode ser movida); o Dependabot atualiza hash e comentário.
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: 17
 
       # Cache de dependências e da distribuição do Gradle; o Android SDK já vem no runner.
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: Testes de unidade, lint e APK de debug
         run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --console=plain
@@ -36,7 +43,7 @@ jobs:
 
       - name: Relatórios de teste e lint
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: relatorios
           path: |
@@ -45,7 +52,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: APK de debug
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
@@ -56,14 +63,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: APK otimizado (R8)
         run: ./gradlew :app:assembleSmoke --console=plain
@@ -75,7 +84,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Abrir o app no emulador
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
           arch: x86_64
@@ -89,3 +98,79 @@ jobs:
             adb shell pidof br.com.eletroinfotecnologia.universalobd
             adb logcat -d -s AndroidRuntime:E > crash.txt || true
             if grep -qE "com.universal.obddashboard|br.com.eletroinfotecnologia.universalobd" crash.txt; then cat crash.txt; exit 1; fi
+
+  # Testes do painel web (api e web) contra um PostgreSQL descartável.
+  servidor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: testpw
+          POSTGRES_DB: obd_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d obd_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://postgres:testpw@127.0.0.1:5432/obd_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            server/api/package-lock.json
+            server/web/package-lock.json
+
+      # --ignore-scripts: nenhum pacote roda código na instalação.
+      - name: Dependências
+        run: |
+          npm ci --ignore-scripts --prefix server/api
+          npm ci --ignore-scripts --prefix server/web
+
+      - name: Testes da API
+        working-directory: server/api
+        run: npm test
+
+      - name: Testes do web
+        working-directory: server/web
+        run: npm test
+
+  # Segredos no histórico, dependências e imagens com falhas conhecidas. Ferramentas em imagens
+  # oficiais presas por digest, sem Action de terceiros.
+  seguranca:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GITLEAKS: ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+      TRIVY: aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      # Histórico inteiro; achados falsos ficam no .gitleaksignore, pela impressão digital.
+      - name: Segredos (gitleaks)
+        run: docker run --rm --network none -u "$(id -u):$(id -g)" -v "$PWD:/repo:ro" "$GITLEAKS" git /repo --redact --no-banner --exit-code 1
+
+      - name: Dependências e Dockerfiles (trivy)
+        run: |
+          docker run --rm -v "$PWD:/repo:ro" -v "$RUNNER_TEMP/trivy:/root/.cache" "$TRIVY" fs \
+            --scanners vuln,misconfig --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            --skip-dirs node_modules /repo
+
+      - name: Imagens do painel (trivy)
+        run: |
+          docker build -q -t obd-api:ci server/api
+          docker build -q -t obd-web:ci server/web
+          for img in obd-api:ci obd-web:ci; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$RUNNER_TEMP/trivy:/root/.cache" "$TRIVY" image \
+              --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$img"
+          done

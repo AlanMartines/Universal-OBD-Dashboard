@@ -7,6 +7,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ## [Não lançado]
 
 ### Segurança
+- **CI endurecido.** O fluxo tem só permissão de leitura, e o de release dá escrita apenas ao job que publica. As Actions são presas pelo hash do commit, e o checkout não guarda o token. Novos jobs:
+  - **servidor:** testes da API e do web contra um PostgreSQL descartável;
+  - **seguranca:** gitleaks no histórico inteiro e Trivy nas dependências, nos Dockerfiles e nas imagens do painel (altas e críticas com correção).
+- **Dependabot também para o npm do painel e para a imagem base do Node.**
+- **Imagens do painel sem o npm.** O npm embutido na imagem do Node trazia 6 falhas altas conhecidas (brace-expansion e undici), sem uso em execução: agora ele sai depois da instalação, e a base fica presa por digest. O reset de senha passa a ser `docker compose exec api node bin/user-reset-password.js --user NOME`.
 - **Painel: verificação em duas etapas obrigatória para o Super Admin.** Sem 2FA ativo, depois da troca da senha inicial, o painel só abre Meus Dados até o aplicativo autenticador ser configurado; a desativação pela tela é recusada (perda do celular: código de recuperação ou `--disable-2fa` no servidor, que volta a pedir o 2FA). Em Configurações, um ajuste novo, desligado por padrão, estende a exigência a todos os donos de conta (Admin). As mudanças do ajuste ficam na auditoria.
 
 ### Adicionado
