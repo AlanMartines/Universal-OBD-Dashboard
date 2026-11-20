@@ -8,6 +8,7 @@ const AUDIT = {
   login_recusado: ['Login recusado', 'fa-ban', 'danger'],
   codigo_2fa_recusado: ['Código 2FA recusado', 'fa-ban', 'danger'],
   '2fa_ativado': ['2FA ativada', 'fa-shield-halved', 'success'],
+  '2fa_trocado': ['Aplicativo autenticador trocado', 'fa-mobile-screen-button', 'info'],
   '2fa_desativado': ['2FA desativada', 'fa-shield', 'warning'],
   '2fa_admins_obrigatorio': ['2FA obrigatória para os donos de conta', 'fa-shield-halved', 'success'],
   '2fa_admins_opcional': ['2FA opcional para os donos de conta', 'fa-shield', 'warning'],

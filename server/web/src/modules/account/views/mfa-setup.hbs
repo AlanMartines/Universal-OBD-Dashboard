@@ -1,6 +1,7 @@
 <div class="row justify-content-center">
   <div class="col-md-8 col-lg-6">
-    <h1 class="page-title mb-2"><span class="page-title-icon" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>Ativar verificação em duas etapas</h1>
+    <h1 class="page-title mb-2"><span class="page-title-icon" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>{{#if replacing}}Trocar o aplicativo autenticador{{else}}Ativar verificação em duas etapas{{/if}}</h1>
+    {{#if replacing}}<p class="text-body-secondary">Escaneie no aplicativo do celular novo. O aplicativo atual continua valendo até você confirmar o código abaixo; depois disso, ele e os códigos de recuperação antigos deixam de valer.</p>{{/if}}
     <ol class="mfa-progress mb-3" aria-label="Etapas">
       <li class="done">Senha</li>
       <li class="current" aria-current="step">QR Code e código</li>
@@ -21,7 +22,7 @@
         <label class="form-label fw-semibold required-mark" for="code">Código de 6 dígitos</label>
         <input class="form-control" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="6" required autofocus>
       </div>
-      <button class="btn btn-primary" type="submit">Ativar</button>
+      <button class="btn btn-primary" type="submit">{{#if replacing}}Confirmar a troca{{else}}Ativar{{/if}}</button>
       <a class="btn btn-outline-secondary" href="/meus-dados">Cancelar</a>
     </form>
   </div>

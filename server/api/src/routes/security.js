@@ -101,12 +101,42 @@ export default function securityRoutes(app, {
     return { ok: true };
   });
 
+  /**
+   * Trocar o aplicativo autenticador (celular novo) sem desligar o 2FA: com a senha e um código do
+   * aplicativo atual ou de recuperação, gera o segredo novo. O antigo vale até o enable confirmar o novo.
+   */
+  app.post('/internal/account/mfa/replace', {
+    ...limit(10, '1 hour', perUser),
+    preValidation: requireOwnReady,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['currentPassword', 'code'],
+        additionalProperties: false,
+        properties: { currentPassword: passwordField, code: codeField },
+      },
+    },
+  }, async (request) => {
+    const { user } = request.session;
+    await checkPassword(user.id, request.body.currentPassword);
+    const { rows } = await pool.query('SELECT totp_secret, totp_enabled_at FROM users WHERE id = $1', [user.id]);
+    if (!rows[0].totp_enabled_at || !rows[0].totp_secret) throw fail(400, 'mfa_not_enabled');
+    let accepted = await consumeTotp(user.id, rows[0].totp_secret, request.body.code);
+    if (!accepted) {
+      const used = await pool.query('DELETE FROM recovery_codes WHERE code_hash = $1 AND user_id = $2', [sha256(normalizeRecoveryCode(request.body.code)), user.id]);
+      accepted = used.rowCount === 1;
+    }
+    if (!accepted) throw fail(400, 'mfa_code_invalid');
+    await pool.query('UPDATE users SET totp_pending = $2 WHERE id = $1', [user.id, sealSecret(generateSecret(), config.totpKey)]);
+    return { ok: true };
+  });
+
   app.get('/internal/account/mfa/pending', { preValidation: requireOwnMfaSetup }, async (request) => {
     const { user } = request.session;
-    const { rows } = await pool.query('SELECT totp_pending FROM users WHERE id = $1', [user.id]);
+    const { rows } = await pool.query('SELECT totp_pending, totp_enabled_at FROM users WHERE id = $1', [user.id]);
     if (!rows[0].totp_pending) throw fail(404, 'not_found');
     const secret = openSecret(rows[0].totp_pending, config.totpKey);
-    return { secret, uri: otpauthUri(secret, user.username) };
+    return { secret, uri: otpauthUri(secret, user.username), replacing: Boolean(rows[0].totp_enabled_at) };
   });
 
   app.post('/internal/account/mfa/enable', {
@@ -115,8 +145,9 @@ export default function securityRoutes(app, {
     schema: { body: { type: 'object', required: ['code'], additionalProperties: false, properties: { code: codeField } } },
   }, async (request) => {
     const { user } = request.session;
-    const { rows } = await pool.query('SELECT totp_pending FROM users WHERE id = $1', [user.id]);
+    const { rows } = await pool.query('SELECT totp_pending, totp_enabled_at FROM users WHERE id = $1', [user.id]);
     if (!rows[0].totp_pending) throw fail(400, 'mfa_expired');
+    const replacing = Boolean(rows[0].totp_enabled_at);
     const step = verifyTotp(openSecret(rows[0].totp_pending, config.totpKey), request.body.code);
     if (step === null) throw fail(400, 'mfa_code_invalid');
     const codes = generateRecoveryCodes();
@@ -132,7 +163,8 @@ export default function securityRoutes(app, {
         await client.query('INSERT INTO recovery_codes (code_hash, user_id) VALUES ($1, $2)', [sha256(normalizeRecoveryCode(code)), user.id]);
       }
       await client.query('DELETE FROM sessions WHERE user_id = $1 AND token_hash <> $2', [user.id, request.session.tokenHash]);
-      await audit(client, { actor: user.username, action: '2fa_ativado', target: user.username, ip: request.clientIp });
+      await audit(client, { actor: user.username, action: replacing ? '2fa_trocado' : '2fa_ativado', target: user.username, ip: request.clientIp });
+      if (replacing) await alertUser(client, user.id, 'mfa_trocado', { ip: request.clientIp });
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK').catch(() => {});

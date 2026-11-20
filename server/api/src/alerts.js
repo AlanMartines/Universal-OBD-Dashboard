@@ -33,6 +33,12 @@ export const ALERTS = {
     `Em ${at}, o dispositivo "${device}" da conta "${username}" foi pareado com um aparelho, que passa a enviar `
       + `telemetria ao painel.\n${deOnde(ip)}\n\nSe não foi você, revogue o dispositivo em Dispositivos.`,
   ],
+  mfa_trocado: ({ username, ip, at }) => [
+    `Aplicativo autenticador trocado na conta "${username}"`,
+    `Em ${at}, a conta "${username}" passou a usar outro aplicativo autenticador. O anterior deixou de valer, os `
+      + `códigos de recuperação foram trocados e as outras sessões foram encerradas.\n${deOnde(ip)}\n\n`
+      + 'Se não foi você, troque a senha agora em Meus Dados e fale com o administrador.',
+  ],
   mfa_desativado: ({ username, ip, at, byServer }) => [
     `Verificação em duas etapas desligada na conta "${username}"`,
     `Em ${at}, a verificação em duas etapas da conta "${username}" foi desligada`

@@ -718,6 +718,54 @@ describe('API', () => {
     });
   });
 
+  describe('trocar o aplicativo autenticador', () => {
+    const replace = (token, body) => internal(app, 'POST', '/internal/account/mfa/replace', { token, body });
+
+    test('pede senha e código atual; o antigo vale até confirmar o novo; códigos e sessões renovados', async () => {
+      const tok = await userToken(app, admin, 'trocamfa');
+      await pool.query(`UPDATE users SET email = 'trocamfa@exemplo.test' WHERE username = 'trocamfa'`);
+      assert.deepEqual((await replace(tok, { currentPassword: USER_PASSWORD, code: '123456' })).json(), { error: 'mfa_not_enabled' });
+      const { secret: antigo, recoveryCodes } = await enableMfa(app, tok, USER_PASSWORD);
+      const outra = (await internal(app, 'POST', '/internal/auth/login', { body: { username: 'trocamfa', password: USER_PASSWORD } })).json();
+      const outraTok = (await internal(app, 'POST', '/internal/auth/mfa', { body: { mfaToken: outra.mfaToken, code: recoveryCodes[0] } })).json().token;
+      assert.ok(outraTok);
+
+      assert.equal((await replace(tok, { currentPassword: 'senha errada mesmo', code: codeForStep(antigo, stepAt(Date.now())) })).statusCode, 400);
+      assert.deepEqual((await replace(tok, { currentPassword: USER_PASSWORD, code: '000000' })).json(), { error: 'mfa_code_invalid' });
+      assert.equal((await replace(tok, { currentPassword: USER_PASSWORD, code: recoveryCodes[1] })).statusCode, 200);
+      const pend = (await internal(app, 'GET', '/internal/account/mfa/pending', { token: tok })).json();
+      assert.equal(pend.replacing, true);
+      assert.notEqual(pend.secret, antigo);
+      // antes de confirmar, o antigo continua valendo
+      assert.equal((await pool.query(`SELECT 1 FROM users WHERE username = 'trocamfa' AND totp_enabled_at IS NOT NULL AND totp_pending IS NOT NULL`)).rowCount, 1);
+
+      const on = await internal(app, 'POST', '/internal/account/mfa/enable', { token: tok, body: { code: codeForStep(pend.secret, stepAt(Date.now())) } });
+      assert.equal(on.statusCode, 200);
+      assert.equal(on.json().recoveryCodes.length, 10);
+      assert.equal((await internal(app, 'GET', '/internal/devices', { token: outraTok })).statusCode, 401);   // outras sessões caem
+      const l = (await internal(app, 'POST', '/internal/auth/login', { body: { username: 'trocamfa', password: USER_PASSWORD } })).json();
+      assert.equal((await internal(app, 'POST', '/internal/auth/mfa', { body: { mfaToken: l.mfaToken, code: recoveryCodes[2] } })).statusCode, 401);   // código antigo não vale
+      const ok = await internal(app, 'POST', '/internal/auth/mfa', { body: { mfaToken: l.mfaToken, code: on.json().recoveryCodes[0] } });
+      assert.ok(ok.json().token);
+      const acoes = (await pool.query(`SELECT action FROM audit_log WHERE target = 'trocamfa' AND action LIKE '2fa_%' ORDER BY id`)).rows.map((r) => r.action);
+      assert.deepEqual(acoes, ['2fa_ativado', '2fa_trocado']);
+      const mails = (await pool.query(`SELECT subject FROM mail_outbox WHERE recipient = 'trocamfa@exemplo.test'`)).rows;
+      assert.equal(mails.filter((m) => /autenticador trocado/.test(m.subject)).length, 1);
+    });
+
+    test('Super Admin com 2FA obrigatório também troca', async () => {
+      const created = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username: 'trocaraiz', role: 'superadmin' } });
+      const tok = await login(app, 'trocaraiz', created.json().password);
+      await internal(app, 'POST', '/internal/auth/password', { token: tok, body: { currentPassword: created.json().password, newPassword: USER_PASSWORD } });
+      const { recoveryCodes } = await enableMfa(app, tok, USER_PASSWORD);
+      assert.equal((await replace(tok, { currentPassword: USER_PASSWORD, code: recoveryCodes[0] })).statusCode, 200);
+      const pend = (await internal(app, 'GET', '/internal/account/mfa/pending', { token: tok })).json();
+      const on = await internal(app, 'POST', '/internal/account/mfa/enable', { token: tok, body: { code: codeForStep(pend.secret, stepAt(Date.now())) } });
+      assert.equal(on.statusCode, 200);
+      assert.equal((await internal(app, 'GET', '/internal/devices', { token: tok })).statusCode, 200);
+    });
+  });
+
   describe('alertas por e-mail', () => {
     const outbox = async (recipient) => (await pool.query(
       'SELECT subject, body FROM mail_outbox WHERE recipient = $1 ORDER BY id', [recipient],

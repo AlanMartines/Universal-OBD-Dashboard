@@ -83,6 +83,8 @@ O login aceita usuário ou e-mail. Em **Meus Dados**, a pessoa altera nome, foto
   - **Obrigatória para o Super Admin.** Depois da troca da senha inicial, o painel só libera Meus Dados até o 2FA ser ativado, e ele não pode ser desativado pela tela.
   - **Para os donos de conta (Admin):** opcional por padrão. Em Configurações, o Super Admin pode exigi-la de todos; quem ainda não ativou passa pelo mesmo bloqueio no próximo acesso.
   - O perfil Usuário (atendimento) continua com o 2FA opcional, e o modo suporte nunca pede o 2FA da conta visitada.
+  - **Celular novo:** em Meus Dados, "Trocar o aplicativo autenticador" pede a senha e um código do aplicativo atual (ou de recuperação) e mostra o QR novo. O aplicativo antigo vale até o código do novo ser confirmado; depois, os códigos de recuperação são trocados, as outras sessões caem e chega um aviso por e-mail. Serve também para gerar códigos de recuperação novos.
+  - **Perdeu o celular e os códigos:** só pelo servidor, com o reset de senha e `--disable-2fa` (veja Reset de senha).
 - **Sessões ativas:** a pessoa vê onde está conectada e encerra o que não reconhecer.
 - **Esqueci minha senha:** link de 1 hora para o e-mail confirmado. A resposta não revela se o e-mail existe.
 - **Modo suporte:** o Super Admin entra como outra conta por até 1 hora, com faixa visível e registro na auditoria. Senha, e-mail, 2FA e dados pessoais ficam bloqueados.
