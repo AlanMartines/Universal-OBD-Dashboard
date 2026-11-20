@@ -224,6 +224,30 @@ docker compose start api worker web
 
 Num servidor novo, restaure antes o `.env` (`gpg -d obd-AAAA-MM-DD.env.gpg > .env`), suba só o `db` e siga os mesmos passos. O papel da aplicação é criado pelo `db/init` com a senha do `.env`.
 
+## Homologação
+
+Um segundo painel no mesmo servidor, para testar uma versão (migrações, atualização de dependências, mudança grande) antes de ela chegar à produção. Quem cuida é o `scripts/homologacao.sh`:
+
+- **Isolamento:** projeto do Compose `obd-homolog`, com contêineres, redes, imagens e banco próprios. A faixa da rede `routing` muda pelo `ROUTING_SUBNET`.
+- **Cópia separada do código:** roda de um git worktree em `<repo>-homolog`. Trocar a versão da homologação nunca mexe na pasta da produção.
+- **Acesso só pelo túnel SSH:** fica em `127.0.0.1:28480`, sem Nginx e sem HTTPS (por isso o `ALLOW_INSECURE_COOKIE=true`):
+
+  ```bash
+  ssh -L 28480:127.0.0.1:28480 <servidor>     # depois abra http://localhost:28480
+  ```
+- **Sem e-mail:** a homologação não tem SMTP. Alertas e redefinições ficam na fila e somem em um dia.
+- **Configuração:** em `/etc/obd-homolog/homolog.env`, fora do Git, com segredos próprios. A chave do 2FA é a da produção, para o login com 2FA funcionar com os dados copiados.
+
+```bash
+sudo scripts/homologacao.sh preparar             # uma vez: cria a configuração
+sudo scripts/homologacao.sh subir                # master; ou uma ref, ex.: origin/feat/x depois de um git fetch
+sudo scripts/homologacao.sh copiar-producao      # banco da homologação = backup cifrado mais recente da produção
+sudo scripts/homologacao.sh estado
+sudo scripts/homologacao.sh parar                # o banco da homologação fica
+```
+
+O `copiar-producao` usa o backup do `scripts/backup-banco.sh`, nunca o banco da produção ao vivo, e apaga da cópia as sessões, os desafios de 2FA, os links e os e-mails pendentes. Depois dele, o login é o mesmo da produção. O `subir` seguinte aplica nesse banco as migrações da versão em teste.
+
 ## Testes
 
 Precisam de um PostgreSQL descartável, porque **o banco indicado é apagado a cada execução**:

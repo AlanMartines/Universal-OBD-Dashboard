@@ -8,6 +8,10 @@
     "title": "Adicionado",
     "items": [
      {
+      "title": "Servidor: homologação",
+      "text": "server/scripts/homologacao.sh sobe um segundo painel no mesmo servidor (projeto obd-homolog, cópia separada do código, só em 127.0.0.1:28480 pelo túnel SSH, sem e-mail) e copia para ele o backup mais recente da produção, para testar migrações e atualizações antes de publicar."
+     },
+     {
       "title": "Painel: alertas de segurança por e-mail",
       "text": "A conta recebe um aviso quando é bloqueada por senhas erradas, quando alguém acerta a senha mas erra o código do autenticador, quando um administrador entra de uma rede nova, quando um aparelho é pareado e quando a verificação em duas etapas é desligada. O Usuário (atendimento) sem e-mail avisa o dono da conta."
      },

@@ -7,6 +7,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ## [Não lançado]
 
 ### Adicionado
+- **Servidor: homologação.** `server/scripts/homologacao.sh` sobe um segundo painel no mesmo servidor (projeto `obd-homolog`, cópia separada do código, só em `127.0.0.1:28480` pelo túnel SSH, sem e-mail) e copia para ele o backup mais recente da produção, para testar migrações e atualizações antes de publicar.
 - **Painel: alertas de segurança por e-mail.** A conta recebe um aviso quando é bloqueada por senhas erradas, quando alguém acerta a senha mas erra o código do autenticador, quando um administrador entra de uma rede nova, quando um aparelho é pareado e quando a verificação em duas etapas é desligada. O Usuário (atendimento) sem e-mail avisa o dono da conta.
 - **Servidor: backup diário cifrado do banco.** `server/scripts/backup-banco.sh` guarda o dump do PostgreSQL, os papéis e o `.env`, cifrados com GPG (AES-256), confere cada arquivo antes de guardar, mantém 7 diários, 4 semanais e 6 mensais e espelha a pasta num armazenamento externo com rclone. `server/scripts/testar-restauracao.sh` restaura todo mês o backup mais recente num Postgres descartável e confere as tabelas, as migrações e os usuários. Instalação e restauração no README do servidor.
 
