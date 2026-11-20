@@ -374,7 +374,9 @@ function renderDiagnostics() {
   const box = $('diag-files');
   box.innerHTML = d.files.length ? '' : '<p class="muted small">Nenhum arquivo gravado.</p>';
   diagFiles = d.files;
-  $('diag-clear-row').hidden = !d.files.some((f) => !f.active);
+  // Exportar tudo vale com qualquer gravação; apagar todas, só se houver alguma parada.
+  $('diag-clear-row').hidden = !d.files.length;
+  $('diag-clear').hidden = !d.files.some((f) => !f.active);
   d.files.forEach((f) => {
     const el = document.createElement('div');
     el.className = 'item';
@@ -395,6 +397,15 @@ function renderDiagnostics() {
   });
 }
 
+$('diag-export-all').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  btn.textContent = 'Gerando…';
+  const res = await nativeAsync((id) => bridge.exportAllDiagnostics(id)).catch((err) => err.message);
+  btn.disabled = false;
+  btn.textContent = 'Exportar tudo (.zip)';
+  if (res !== 'ok') alert(res);
+});
 $('diag-clear').addEventListener('click', () => {
   const gone = diagFiles.filter((f) => !f.active);
   if (!gone.length) return;

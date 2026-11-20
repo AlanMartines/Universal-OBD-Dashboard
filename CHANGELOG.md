@@ -6,6 +6,14 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **App: exportar tudo de uma vez.**
+  - **Histórico → Exportar todos:** um .zip com o CSV de cada viagem do veículo e o GPX das que têm GPS. São os mesmos arquivos dos botões de cada viagem.
+  - **Ajustes → Gravação de diagnóstico → Exportar tudo (.zip):** todas as gravações num arquivo só, inclusive a que está gravando.
+
+### Alterado
+- **App: botão "Apagar histórico"** no lugar de "Apagar todo o histórico deste veículo", que não cabia ao lado dos outros botões.
+
 ## [0.9.59] - 2026-11-20
 
 ### Adicionado

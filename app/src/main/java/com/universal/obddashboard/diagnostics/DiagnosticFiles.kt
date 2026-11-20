@@ -1,6 +1,8 @@
 package com.universal.obddashboard.diagnostics
 
 import android.content.Context
+import com.universal.obddashboard.export.TripExportFiles
+import com.universal.obddashboard.export.ZipExport
 import com.universal.obddashboard.service.ObdForegroundService
 import java.io.File
 import java.util.zip.GZIPOutputStream
@@ -28,6 +30,18 @@ object DiagnosticFiles {
         val dir = File(context.cacheDir, EXPORT_DIR).apply { mkdirs() }
         val out = File(dir, "$name.gz")
         src.inputStream().use { input -> GZIPOutputStream(out.outputStream()).use { input.copyTo(it) } }
+        return out
+    }
+
+    /**
+     * Ajustes → Gravação de diagnóstico → Exportar tudo: todas as gravações num .zip (a que está gravando entra com
+     * o que já foi escrito). Os .jsonl compactam bem, como no .gz de cada arquivo.
+     */
+    fun exportAllZip(context: Context): File {
+        val files = list(context)
+        if (files.isEmpty()) throw DiagnosticFileException("Nenhuma gravação de diagnóstico")
+        val out = File(TripExportFiles.exportDir(context), "diagnostico_${TripExportFiles.stamp()}.zip")
+        ZipExport.write(out) { zip -> files.forEach { zip.add(it.name, resolve(context, it.name)) } }
         return out
     }
 

@@ -5,6 +5,9 @@ import android.content.Intent
 import androidx.core.content.FileProvider
 import com.universal.obddashboard.db.AppDatabase
 import java.io.File
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /** Grava a exportação de uma viagem em cache/exports e monta o Intent de compartilhamento. */
 object TripExportFiles {
@@ -36,11 +39,47 @@ object TripExportFiles {
             }
         }
 
+        return File(exportDir(context), TripExporter.fileName(trip, format.extension)).apply { writeText(content) }
+    }
+
+    /**
+     * Histórico → Exportar todos: um .zip com o CSV de cada viagem do veículo e o GPX das que têm GPS (os mesmos
+     * arquivos dos botões de cada viagem). Uma viagem por vez na memória.
+     * @throws ExportException se não houver nenhuma viagem com amostras.
+     */
+    suspend fun writeAll(context: Context, vehicleId: String, zone: ZoneId = ZoneId.systemDefault()): File {
+        val dao = AppDatabase.get(context).tripDao()
+        val trips = dao.recentTrips(Int.MAX_VALUE, vehicleId)
+        if (trips.isEmpty()) throw ExportException("Nenhuma viagem gravada neste veículo")
+        val out = File(exportDir(context), "historico_${stamp(zone)}.zip")
+        val written = ZipExport.write(out) { zip ->
+            for (trip in trips.asReversed()) {   // da mais antiga para a mais nova
+                val samples = dao.telemetryForTrip(trip.id)
+                if (samples.isEmpty()) continue
+                zip.add(TripExporter.fileName(trip, Format.CSV.extension, zone), TripExporter.csv(samples).toByteArray())
+                if (TripExporter.hasGps(samples)) {
+                    zip.add(TripExporter.fileName(trip, Format.GPX.extension, zone), TripExporter.gpx(trip, samples, dao.dtcsForTrip(trip.id)).toByteArray())
+                }
+            }
+            zip.count
+        }
+        if (written == 0) {
+            out.delete()
+            throw ExportException("Nenhuma viagem com amostras gravadas")
+        }
+        return out
+    }
+
+    /** cache/exports, servido pelo FileProvider; o que passou de um dia é apagado aqui. */
+    fun exportDir(context: Context): File {
         val dir = File(context.cacheDir, DIR).apply { mkdirs() }
         val now = System.currentTimeMillis()
         dir.listFiles()?.filter { now - it.lastModified() > MAX_AGE_MS }?.forEach { it.delete() }
-        return File(dir, TripExporter.fileName(trip, format.extension)).apply { writeText(content) }
+        return dir
     }
+
+    fun stamp(zone: ZoneId = ZoneId.systemDefault()): String =
+        DateTimeFormatter.ofPattern("yyyyMMdd-HHmm").format(Instant.now().atZone(zone))
 
     fun shareIntent(context: Context, file: File, format: Format): Intent = shareIntent(context, file, format.mimeType)
 

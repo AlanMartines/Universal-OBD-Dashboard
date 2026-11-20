@@ -142,6 +142,7 @@ h2 { font-size: 0.95rem; margin: 18px 0 8px; color: var(--muted); font-weight: 6
 .list .item .delta-ok { color: var(--accent); }
 .list .item .delta-warn { color: var(--yellow); }
 .history-head h2 { margin: 12px 0 8px; }
+.history-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 
 .tabs {
   display: flex; gap: 6px; padding: 2px 16px 10px; border-bottom: 1px solid var(--line);

@@ -1,5 +1,31 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "App: exportar tudo de uma vez",
+      "text": "Histórico → Exportar todos: um .zip com o CSV de cada viagem do veículo e o GPX das que têm GPS. São os mesmos arquivos dos botões de cada viagem. Ajustes → Gravação de diagnóstico → Exportar tudo (.zip): todas as gravações num arquivo só, inclusive a que está gravando."
+     }
+    ]
+   },
+   {
+    "kind": "changed",
+    "title": "Alterado",
+    "items": [
+     {
+      "title": "App: botão \"Apagar histórico\"",
+      "text": "no lugar de \"Apagar todo o histórico deste veículo\", que não cabia ao lado dos outros botões."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.59",
   "date": "2026-11-20",
   "sections": [
