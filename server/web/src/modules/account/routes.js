@@ -99,9 +99,10 @@ export default function accountRoutes(app, {
   // ---------- Dois fatores ----------
 
   const setupView = async (request, reply, status = 200, error = null) => {
-    const { secret, uri } = await api(request, 'GET', '/internal/account/mfa/pending');
+    const { secret, uri, replacing } = await api(request, 'GET', '/internal/account/mfa/pending');
     return reply.code(status).view('modules/account/views/mfa-setup.hbs', context(request, {
-      title: 'Verificação em duas etapas', secret, qr: await QRCode.toDataURL(uri, { width: 220, margin: 1 }), error, pageCss: ['/modules/account/account.css'],
+      title: replacing ? 'Trocar o aplicativo autenticador' : 'Verificação em duas etapas',
+      replacing, secret, qr: await QRCode.toDataURL(uri, { width: 220, margin: 1 }), error, pageCss: ['/modules/account/account.css'],
     }));
   };
 
@@ -114,6 +115,19 @@ export default function accountRoutes(app, {
     } catch (error) {
       if (!clientError(error)) throw error;
       return accountView(request, reply, error.status, { error: message(error.code), mfaOpen: true });
+    }
+  });
+
+  // Celular novo: confirma a senha e um código do aplicativo atual (ou de recuperação) e mostra o QR novo.
+  app.post('/meus-dados/2fa/trocar', { preHandler: requireUser }, async (request, reply) => {
+    try {
+      await api(request, 'POST', '/internal/account/mfa/replace', {
+        body: { currentPassword: String(request.body?.currentPassword ?? ''), code: String(request.body?.code ?? '').trim() },
+      });
+      return reply.redirect('/meus-dados/2fa', 303);
+    } catch (error) {
+      if (!clientError(error)) throw error;
+      return accountView(request, reply, error.status, { error: message(error.code === 'invalid_request' ? 'mfa_code_invalid' : error.code), mfaSwapOpen: true });
     }
   });
 

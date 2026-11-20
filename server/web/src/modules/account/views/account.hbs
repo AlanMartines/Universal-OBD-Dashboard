@@ -131,8 +131,26 @@
     {{#if account.mfaEnabled}}
     <p class="mb-2">Cada login pede, além da senha, o código do seu aplicativo autenticador.</p>
     <p class="small mb-3 {{#if account.recoveryLow}}text-warning-emphasis{{else}}text-body-secondary{{/if}}">
-      <i class="fa-solid fa-key me-1" aria-hidden="true"></i>{{account.recoveryLeft}} códigos de recuperação restantes.{{#if account.recoveryLow}} Desative e ative de novo para gerar códigos novos.{{/if}}
+      <i class="fa-solid fa-key me-1" aria-hidden="true"></i>{{account.recoveryLeft}} códigos de recuperação restantes.{{#if account.recoveryLow}} Use "Trocar o aplicativo autenticador" (pode ser o mesmo celular) para gerar códigos novos.{{/if}}
     </p>
+    <button class="btn btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#mfa-swap" aria-expanded="{{#if mfaSwapOpen}}true{{else}}false{{/if}}" aria-controls="mfa-swap">
+      <i class="fa-solid fa-mobile-screen-button me-1" aria-hidden="true"></i>Trocar o aplicativo autenticador
+    </button>
+    <div class="collapse{{#if mfaSwapOpen}} show{{/if}}" id="mfa-swap">
+      <p class="small text-body-secondary mt-1 mb-0">Para usar outro celular sem desligar a verificação. Também gera códigos de recuperação novos.</p>
+      <form method="post" action="/meus-dados/2fa/trocar" class="row g-3 mt-1 mb-3" data-validate>
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold required-mark" for="mfaSwapPassword">Senha atual</label>
+          <input class="form-control" id="mfaSwapPassword" name="currentPassword" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold required-mark" for="mfaSwapCode">Código do aplicativo atual ou de recuperação</label>
+          <input class="form-control" id="mfaSwapCode" name="code" autocomplete="one-time-code" minlength="6" maxlength="16" required>
+        </div>
+        <div class="col-12 text-end"><button class="btn btn-primary" type="submit">Continuar<i class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></i></button></div>
+      </form>
+    </div>
     {{#if user.mfaRequired}}
     <p class="small text-body-secondary mb-0"><i class="fa-solid fa-lock me-1" aria-hidden="true"></i>Obrigatória para o seu perfil: não pode ser desativada.</p>
     {{else}}

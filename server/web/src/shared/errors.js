@@ -27,6 +27,7 @@ export const MESSAGES = {
   mfa_code_invalid: 'Código incorreto. Confira o aplicativo e tente de novo.',
   mfa_expired: 'A verificação expirou. Entre novamente.',
   mfa_already_enabled: 'A verificação em duas etapas já está ativa.',
+  mfa_not_enabled: 'A verificação em duas etapas não está ativa. Ative-a primeiro.',
   mfa_required: 'A verificação em duas etapas é obrigatória para o seu perfil e não pode ser desativada. Perdeu o celular? Use um código de recuperação ou peça a redefinição ao administrador do servidor.',
   mfa_setup_required: 'Ative a verificação em duas etapas para continuar.',
   reset_link_invalid: 'Este link é inválido ou já venceu. Peça um novo em "Esqueci minha senha".',

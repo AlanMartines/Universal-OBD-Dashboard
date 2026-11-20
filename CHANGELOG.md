@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Painel: trocar o aplicativo autenticador.** Em Meus Dados, com a senha e um código do aplicativo atual ou de recuperação, a conta passa para um celular novo sem desligar a verificação em duas etapas (inclusive o Super Admin, para quem ela é obrigatória). O aplicativo antigo vale até o novo ser confirmado; os códigos de recuperação são trocados, as outras sessões caem, a troca fica na auditoria e chega um aviso por e-mail.
+
 ## [0.9.58] - 2026-11-20
 
 ### Adicionado

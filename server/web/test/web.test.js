@@ -296,6 +296,20 @@ describe('fluxo pelo navegador', () => {
     assert.equal((await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } })).statusCode, 200);
     const after = (await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie: adminCookie } })).body;
     assert.ok(after.includes('não pode ser desativada') && !after.includes('action="/meus-dados/2fa/desativar"'));
+    // Trocar o aplicativo autenticador pelas telas: senha + código atual, QR novo, confirmação.
+    assert.ok(after.includes('Trocar o aplicativo autenticador') && after.includes('action="/meus-dados/2fa/trocar"'));
+    const errado = await post('/meus-dados/2fa/trocar', { _csrf: field(after, '_csrf'), currentPassword: 'nova frase longa do administrador', code: '000000' }, adminCookie);
+    assert.equal(errado.statusCode, 400);
+    assert.ok(errado.body.includes('Código incorreto') && errado.body.includes('class="collapse show" id="mfa-swap"'));
+    const troca = await post('/meus-dados/2fa/trocar', { _csrf: field(after, '_csrf'), currentPassword: 'nova frase longa do administrador', code: codeForStep(secret, stepAt(Date.now()) + 1) }, adminCookie);
+    assert.equal(troca.headers.location, '/meus-dados/2fa');
+    const novo = (await web.inject({ method: 'GET', url: '/meus-dados/2fa', headers: { cookie: adminCookie } })).body;
+    assert.ok(novo.includes('Confirmar a troca') && novo.includes('continua valendo'));
+    const segredoNovo = novo.match(/<code class="user-select-all text-break">([A-Z2-7]+)<\/code>/)[1];
+    assert.notEqual(segredoNovo, secret);
+    const confirmada = await post('/meus-dados/2fa/ativar', { _csrf: field(novo, '_csrf'), code: codeForStep(segredoNovo, stepAt(Date.now())) }, adminCookie);
+    assert.equal(confirmada.statusCode, 200);
+    assert.equal((await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } })).statusCode, 200);
     // Ajuste dos donos de conta na Administração: liga e desliga.
     const adminPage = (await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } })).body;
     assert.ok(adminPage.includes('2FA dos donos de conta') && adminPage.includes('Exigir dos donos de conta'));
