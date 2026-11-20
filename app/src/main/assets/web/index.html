@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Só código do próprio app: nada de script embutido, eval ou recurso de fora. A ponte com o Android
+       fica exposta a esta página, então um dado que escapasse para o HTML não conseguiria rodar código. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
   <title>Universal OBD</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="dash.css">

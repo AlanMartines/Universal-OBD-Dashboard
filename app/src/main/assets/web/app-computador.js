@@ -50,7 +50,7 @@ function renderComputer(s) {
   if (c.idleS) st.push(`Marcha lenta ${pcDuration(c.idleS)} · ${fmt(c.idleFuelL, 2)} L${c.idleCost != null ? ' · ' + brl(c.idleCost) : ''}`);
   if (c.fuelCutKm >= 0.1) st.push(`Injeção cortada ${fmt(c.fuelCutKm, 1)} km`);
   if (c.ecoPct) st.push(`Verde ${fmt(c.ecoPct[0])}% · meio ${fmt(c.ecoPct[1])}% · vermelho ${fmt(c.ecoPct[2])}%`);
-  $('pc-stats').innerHTML = '';
+  $('pc-stats').replaceChildren();
   st.forEach((t) => { const sp = document.createElement('span'); sp.textContent = t; $('pc-stats').appendChild(sp); });
 }
 
@@ -69,7 +69,7 @@ async function showTripSummary(btn) {
   box.textContent = 'Calculando…';
   item.appendChild(box);
   const r = parse(await nativeAsync((id) => bridge.getTripSummary(id, Number(btn.dataset.summary))).catch((e) => JSON.stringify({ ok: false, error: e.message })), { ok: false });
-  box.innerHTML = '';
+  box.replaceChildren();
   if (!r.ok) { box.textContent = r.error || 'Falha ao calcular o resumo.'; return; }
   fillTripSummary(box, r);
 }

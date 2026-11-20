@@ -103,6 +103,16 @@ const fmt = (v, d = 0) => (v === null || v === undefined || Number.isNaN(v)) ? '
 const parse = (s, fallback) => { try { return JSON.parse(s); } catch (e) { return fallback; } };
 
 /*
+ * HTML com dados. Tudo o que entra por ${...} em html`...` é escapado: nomes de dispositivo Bluetooth,
+ * perfis importados, backups, códigos de falha e respostas da IA nunca viram marcação. Fragmentos
+ * feitos com html`...` (ou listas deles) entram como estão. Regra conferida no WebAssetsTest.
+ */
+class SafeHtml { constructor(s) { this.s = s; } toString() { return this.s; } }
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const htmlPart = (v) => (v instanceof SafeHtml ? v.s : Array.isArray(v) ? v.map(htmlPart).join('') : esc(v));
+const html = (strings, ...values) => new SafeHtml(strings.reduce((out, s, i) => out + s + (i < values.length ? htmlPart(values[i]) : ''), ''));
+
+/*
  * Avisos rápidos na parte de baixo da tela, empilhados (até 3; o mais novo embaixo). Cada um tem ícone
  * pelo tipo, barra do tempo que falta e some sozinho; tocar fecha, arrastar para o lado dispensa e
  * segurar o dedo pausa. O texto entra como texto, nunca como HTML.

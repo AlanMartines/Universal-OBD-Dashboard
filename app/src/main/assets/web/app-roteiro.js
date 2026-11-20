@@ -64,7 +64,7 @@ function scriptStepsFlat() {
 
 function scriptRenderList() {
   const box = $('script-list');
-  box.innerHTML = '';
+  box.replaceChildren();
   const legend = document.createElement('p');
   legend.className = 'muted small';
   legend.textContent = '★ = dados que quase todo carro informa (referências, motor, tanque, luzes e ar-condicionado): faça estes primeiro. Os demais variam de carro para carro. Os passos com "(passageiro)" são feitos por quem vai ao lado, com o carro andando. Pule o que o carro não tiver.';
@@ -165,7 +165,7 @@ function scriptBackToList() {
 }
 
 function scriptButtons(box, labels, onClick) {
-  box.innerHTML = '';
+  box.replaceChildren();
   labels.forEach((l) => {
     const b = document.createElement('button');
     b.className = 'btn';
@@ -225,7 +225,7 @@ function scriptStart() {
   };
   if (st.events) scriptButtons(events, st.events, tap);
   if (st.zones) {
-    events.innerHTML = '';
+    events.replaceChildren();
     st.zones.forEach((z) => {
       const card = document.createElement('div');
       card.className = 'script-zone zone-' + z.color;
@@ -328,7 +328,7 @@ function scriptFinish(result) {
 /** Leituras no fim do passo: o que a captura tem agora de rotação, temperaturas, tensão, tanque e hodômetro. */
 function scriptRenderReadings() {
   const box = $('script-readings');
-  box.innerHTML = '';
+  box.replaceChildren();
   const r = (lastState && lastState.readings) || {};
   const roles = meta.roles || {};
   const ids = [roles.rpm || 'rpm', 'can_rpm', roles.coolant || 'coolant_temp', 'can_coolant_temp', roles.voltage || 'battery_volts', 'can_voltage',

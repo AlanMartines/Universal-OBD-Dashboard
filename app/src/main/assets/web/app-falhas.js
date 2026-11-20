@@ -80,7 +80,7 @@ function renderFaultsNow(conf, pend, s) {
   if (key === lastFaultsKey) return;
   lastFaultsKey = key;
   const box = $('fault-now');
-  box.innerHTML = '';
+  box.replaceChildren();
   if (conf.length + pend.length === 0) {
     box.className = 'list muted small';
     box.textContent = s.connection === 'STREAMING' ? 'Nenhuma falha ativa.' : 'Nenhuma falha lida ainda. Elas aparecem durante a captura.';
@@ -108,7 +108,7 @@ function scanLine(text, muted) {
 function renderScan(r) {
   const box = $('fault-scan-result');
   box.hidden = false;
-  box.innerHTML = '';
+  box.replaceChildren();
   if (!r.ok) { box.appendChild(scanLine(r.error || 'Falha na leitura.')); return; }
   const when = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const mil = r.milOn == null ? 'luz da injeção não informada' : r.milOn ? 'luz da injeção ACESA' : 'luz da injeção apagada';

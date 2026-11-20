@@ -12,7 +12,7 @@ const READY_ACTIONS = {
 function renderReadiness() {
   const items = parse(bridge.getReadiness(), []);
   const box = $('readiness');
-  box.innerHTML = '';
+  box.replaceChildren();
   items.forEach((it) => {
     const row = document.createElement('div');
     row.className = 'ready-item';
@@ -65,7 +65,7 @@ function loadBluetooth(s) {
   const data = parse(bridge.getBondedDevices(), { permission: false, devices: [] });
   bonded = data.devices || [];
   const sel = $('adapter-select');
-  sel.innerHTML = '';
+  sel.replaceChildren();
   const auto = document.createElement('option');
   auto.value = '';
   auto.textContent = `Automático (${(s && s.profileAdapterNames) || 'nomes do perfil'})`;
@@ -96,7 +96,7 @@ function loadBluetooth(s) {
 /** Gatilhos: caixas para os pareados (exceto o adaptador); o campo de texto guarda o resto. */
 function renderTriggers() {
   const box = $('trigger-list');
-  box.innerHTML = '';
+  box.replaceChildren();
   const adapter = $('adapter-select').value;
   const entries = csvList($('extra-triggers').value);
   bonded.filter((d) => d.address !== adapter).forEach((d) => {
@@ -147,7 +147,7 @@ function loadCanCard(s) {
   if ($('can-card').hidden) return;
   const sel = $('can-adapter');
   const current = s.canAdapterNames || '';
-  sel.innerHTML = '';
+  sel.replaceChildren();
   const none = document.createElement('option');
   none.value = '';
   none.textContent = 'Sem escuta CAN';
@@ -187,7 +187,7 @@ $('can-test').addEventListener('click', async () => {
   const r = parse(await nativeAsync((id) => bridge.testCanListen(id, 15)).catch((e) => JSON.stringify({ ok: false, error: e.message })), { ok: false });
   btn.disabled = false;
   btn.textContent = 'Testar (15 s)';
-  box.innerHTML = '';
+  box.replaceChildren();
   if (!r.ok) { box.textContent = r.error || 'Falha no teste.'; toast(r.error || 'Falha no teste.', true); return; }
   const head = document.createElement('p');
   head.textContent = `${fmt(r.frames)} quadros recebidos.`;

@@ -71,9 +71,9 @@ function consoleRenderHistory() {
   files.forEach((f) => {
     const el = document.createElement('div');
     el.className = 'item';
-    el.innerHTML = `<b></b><div class="kv"><span>${mb(f.size)}</span><span>${dt(f.modified)}</span>${f.active ? '<span class="rec">● gravando</span>' : ''}</div>` +
-      `<div class="actions"><button class="btn btn-small" data-c-view>Ver</button><button class="btn btn-small" data-diag-export>Exportar .gz</button>` +
-      (f.active ? '' : `<button class="btn btn-small btn-danger" data-diag-delete>Apagar</button>`) + '</div>';
+    el.innerHTML = html`<b></b><div class="kv"><span>${mb(f.size)}</span><span>${dt(f.modified)}</span>${f.active ? html`<span class="rec">● gravando</span>` : ''}</div>
+      <div class="actions"><button class="btn btn-small" data-c-view>Ver</button><button class="btn btn-small" data-diag-export>Exportar .gz</button>${
+      f.active ? '' : html`<button class="btn btn-small btn-danger" data-diag-delete>Apagar</button>`}</div>`;
     el.querySelector('b').textContent = f.name;
     el.querySelectorAll('button').forEach((b) => { b.dataset.name = f.name; });
     box.appendChild(el);
@@ -98,7 +98,7 @@ $('console-run').addEventListener('click', () => {
     bridge.consoleStop();
   } else {
     consoleShowOutput();
-    $('console-out').innerHTML = '';
+    $('console-out').replaceChildren();
     const res = bridge.consoleStart($('console-baud').value);
     if (res !== 'ok') consoleAppend(['! ' + res]);
   }
@@ -106,7 +106,7 @@ $('console-run').addEventListener('click', () => {
 });
 $('console-identify').addEventListener('click', () => {
   consoleShowOutput();
-  $('console-out').innerHTML = '';
+  $('console-out').replaceChildren();
   const res = bridge.consoleIdentify();
   if (res !== 'ok') consoleAppend(['! ' + res]);
   consolePoll();
@@ -128,7 +128,7 @@ $('console-history').addEventListener('click', (e) => {
   if (view) {
     const r = parse(bridge.readDiagnostic(view.dataset.name), { error: 'resposta inválida' });
     consoleShowOutput();
-    $('console-out').innerHTML = '';
+    $('console-out').replaceChildren();
     consoleAppend(r.error ? ['! ' + r.error] : ['# ' + view.dataset.name, ...r.lines.flatMap(consoleFormat)]);
   } else if (exp) {
     const res = bridge.exportDiagnostic(exp.dataset.name);

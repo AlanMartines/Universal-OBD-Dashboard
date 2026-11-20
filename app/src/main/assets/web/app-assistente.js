@@ -9,7 +9,7 @@ const aiReady = () => !!ai.ready;
 function loadAiSettings() {
   ai = parse(bridge.getAiSettings(), {});
   const sel = $('ai-provider');
-  sel.innerHTML = (ai.providers || []).map((p) => `<option value="${p.id}">${esc(p.label)}</option>`).join('');
+  sel.innerHTML = html`${(ai.providers || []).map((p) => html`<option value="${p.id}">${p.label}</option>`)}`;
   sel.value = ai.provider;
   $('ai-enabled').checked = !!ai.enabled;
   $('ai-url').value = ai.baseUrl || '';
@@ -50,8 +50,7 @@ $('ai-models-btn').addEventListener('click', async () => {
     return;
   }
   const cur = $('ai-model').value.trim();
-  $('ai-model-list').innerHTML = '<option value="">Escolha um modelo…</option>'
-    + r.models.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  $('ai-model-list').innerHTML = html`<option value="">Escolha um modelo…</option>${r.models.map((m) => html`<option value="${m}">${m}</option>`)}`;
   $('ai-model-list').value = r.models.includes(cur) ? cur : '';
   $('ai-model-list-wrap').hidden = false;
   out.textContent = `${r.models.length} modelo(s) encontrados. Escolha na lista e toque em Salvar.`;
@@ -80,7 +79,9 @@ $('ai-test').addEventListener('click', () => {
 });
 
 /** Texto simples da resposta, com **negrito** do Markdown. */
-const aiFormat = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/^#{1,4}\s*/gm, '');
+// Escapa tudo e só depois converte **negrito**: a resposta da IA nunca vira marcação própria.
+const aiFormat = (t) => html`${String(t == null ? '' : t)}`.s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/^#{1,4}\s*/gm, '');
+const aiHtml = (t) => { const h = html``; h.s = aiFormat(t); return h; };
 
 /* Um painel para os três usos: explicar falha ("dtc"), analisar viagem ("trip") e conversa ("ask").
    Antes do primeiro envio de cada tipo, mostra o texto exato e espera o "Enviar". */
@@ -106,7 +107,7 @@ async function aiOpen(flow) {
   if (aiFlow !== flow) return; // painel fechado ou trocado enquanto consultava
   if (saved && saved.text) {
     // Resposta guardada: mostra sem consultar (e sem gastar créditos) até pedir de novo
-    $('ai-answer').innerHTML = aiFormat(saved.text);
+    $('ai-answer').innerHTML = html`${aiHtml(saved.text)}`;
     $('ai-saved-info').textContent = `Resposta de ${dt(saved.createdAt)}${saved.model ? ' · ' + saved.model : ''}.`;
     $('ai-saved').hidden = false;
     return;
@@ -154,12 +155,12 @@ function aiShowError(msg) {
 
 function aiRenderChat(waiting, error) {
   const box = $('ai-turns');
-  box.innerHTML = aiChat.turns.length || waiting ? '' :
-    '<p class="muted small">Pergunte sobre consumo, gastos, viagens ou falhas. A IA recebe um resumo do histórico do carro.</p>';
-  const add = (cls, html) => { const d = document.createElement('div'); d.className = 'ai-turn ' + cls; d.innerHTML = html; box.appendChild(d); };
-  aiChat.turns.forEach((t) => add(t.role, t.role === 'user' ? esc(t.content) : aiFormat(t.content)));
-  if (waiting) { add('user', esc(aiChat.question)); add('assistant muted', 'Consultando a IA…'); }
-  if (error) add('error', 'Não foi possível consultar: ' + esc(error));
+  box.innerHTML = aiChat.turns.length || waiting ? '' : '<p class="muted small">Pergunte sobre consumo, gastos, viagens ou falhas. A IA recebe um resumo do histórico do carro.</p>';
+  // Texto comum entra escapado; só a resposta da IA passa por aiHtml (escapa e marca o negrito).
+  const add = (cls, content) => { const d = document.createElement('div'); d.className = 'ai-turn ' + cls; d.innerHTML = html`${content}`; box.appendChild(d); };
+  aiChat.turns.forEach((t) => add(t.role, t.role === 'user' ? t.content : aiHtml(t.content)));
+  if (waiting) { add('user', aiChat.question); add('assistant muted', 'Consultando a IA…'); }
+  if (error) add('error', 'Não foi possível consultar: ' + error);
   $('ai-ask').disabled = !!waiting;
   $('ai-suggestions').hidden = aiChat.turns.length > 0 || !!waiting;
   box.lastElementChild && box.lastElementChild.scrollIntoView({ block: 'end' });
@@ -194,7 +195,7 @@ $('ai-ask').addEventListener('click', () => {
 });
 $('ai-question').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('ai-ask').click(); } });
 $('ai-new').addEventListener('click', () => { aiChat.turns = []; aiChat.question = ''; $('ai-question').value = ''; $('ai-sent').hidden = true; aiRenderChat(); });
-$('ai-suggestions').innerHTML = AI_SUGGESTIONS.map((q) => `<button class="btn btn-small" type="button">${esc(q)}</button>`).join('');
+$('ai-suggestions').innerHTML = html`${AI_SUGGESTIONS.map((q) => html`<button class="btn btn-small" type="button">${q}</button>`)}`;
 $('ai-suggestions').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { $('ai-question').value = b.textContent; $('ai-question').focus(); } });
 $('ask-ai').addEventListener('click', openAsk);
 
@@ -224,13 +225,13 @@ window.onAiResult = (r) => {
     $('ai-question').value = '';
     aiRenderChat();
   } else {
-    $('ai-answer').innerHTML = aiFormat(r.text);
+    $('ai-answer').innerHTML = html`${aiHtml(r.text)}`;
   }
 };
 
 function renderPermissions(p) {
-  $('permissions').innerHTML = Object.entries(p)
-    .map(([k, v]) => `<div>${v ? '✅' : '⛔'} ${k}</div>`).join('') || '<span class="muted">--</span>';
+  const items = Object.entries(p).map(([k, v]) => html`<div>${v ? '✅' : '⛔'} ${k}</div>`);
+  $('permissions').innerHTML = html`${items.length ? items : html`<span class="muted">--</span>`}`;
 }
 window.onPermissions = renderPermissions;
 
@@ -249,7 +250,7 @@ function setEthanolSelect(pct) {
   const sel = $('ethanol');
   const v = Math.round(pct);
   const values = [...new Set([...Array(21).keys()].map((i) => i * 5).concat(v))].sort((a, b) => a - b);
-  sel.innerHTML = values.map((x) => `<option value="${x}">${x}%${x === 0 ? ' (só gasolina)' : x === 100 ? ' (só etanol)' : ''}</option>`).join('');
+  sel.innerHTML = html`${values.map((x) => html`<option value="${x}">${x}%${x === 0 ? ' (só gasolina)' : x === 100 ? ' (só etanol)' : ''}</option>`)}`;
   sel.value = String(v);
 }
 $('ethanol').addEventListener('change', (e) => { bridge.setEthanolPercent(Number(e.target.value)); toast('Etanol no tanque salvo.'); });
