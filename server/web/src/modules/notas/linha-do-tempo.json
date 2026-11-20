@@ -1,5 +1,21 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "Servidor: backup diário cifrado do banco",
+      "text": "server/scripts/backup-banco.sh guarda o dump do PostgreSQL, os papéis e o .env, cifrados com GPG (AES-256), confere cada arquivo antes de guardar, mantém 7 diários, 4 semanais e 6 mensais e espelha a pasta num armazenamento externo com rclone. server/scripts/testar-restauracao.sh restaura todo mês o backup mais recente num Postgres descartável e confere as tabelas, as migrações e os usuários. Instalação e restauração no README do servidor."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.57",
   "date": "2026-11-18",
   "sections": [
