@@ -10,6 +10,10 @@
      {
       "title": "Painel: alertas de segurança por e-mail",
       "text": "A conta recebe um aviso quando é bloqueada por senhas erradas, quando alguém acerta a senha mas erra o código do autenticador, quando um administrador entra de uma rede nova, quando um aparelho é pareado e quando a verificação em duas etapas é desligada. O Usuário (atendimento) sem e-mail avisa o dono da conta."
+     },
+     {
+      "title": "Servidor: backup diário cifrado do banco",
+      "text": "server/scripts/backup-banco.sh guarda o dump do PostgreSQL, os papéis e o .env, cifrados com GPG (AES-256), confere cada arquivo antes de guardar, mantém 7 diários, 4 semanais e 6 mensais e espelha a pasta num armazenamento externo com rclone. server/scripts/testar-restauracao.sh restaura todo mês o backup mais recente num Postgres descartável e confere as tabelas, as migrações e os usuários. Instalação e restauração no README do servidor."
      }
     ]
    },
@@ -29,7 +33,7 @@
     "items": [
      {
       "title": "App: tela protegida contra dados que viram código",
-      "text": "Nomes de dispositivo Bluetooth, perfis importados, backups restaurados, códigos de falha e respostas da IA entram na tela só como texto: todo HTML com dados passa por html\\...\\``, que escapa cada valor; a página tem uma política de segurança (CSP) que só aceita os scripts do próprio app, sem código embutido; um teste quebra se alguém montar HTML com dado fora disso."
+      "text": "Nomes de dispositivo Bluetooth, perfis importados, backups restaurados, códigos de falha e respostas da IA entram na tela só como texto: todo HTML com dados passa pela função html (um template marcado), que escapa cada valor; a página tem uma política de segurança (CSP) que só aceita os scripts do próprio app, sem código embutido; um teste quebra se alguém montar HTML com dado fora disso."
      },
      {
       "title": "App: backup do Android desligado",
@@ -50,16 +54,6 @@
      {
       "title": "Painel: verificação em duas etapas obrigatória para o Super Admin",
       "text": "Sem 2FA ativo, depois da troca da senha inicial, o painel só abre Meus Dados até o aplicativo autenticador ser configurado; a desativação pela tela é recusada (perda do celular: código de recuperação ou --disable-2fa no servidor, que volta a pedir o 2FA). Em Configurações, um ajuste novo, desligado por padrão, estende a exigência a todos os donos de conta (Admin). As mudanças do ajuste ficam na auditoria."
-     }
-    ]
-   },
-   {
-    "kind": "added",
-    "title": "Adicionado",
-    "items": [
-     {
-      "title": "Servidor: backup diário cifrado do banco",
-      "text": "server/scripts/backup-banco.sh guarda o dump do PostgreSQL, os papéis e o .env, cifrados com GPG (AES-256), confere cada arquivo antes de guardar, mantém 7 diários, 4 semanais e 6 mensais e espelha a pasta num armazenamento externo com rclone. server/scripts/testar-restauracao.sh restaura todo mês o backup mais recente num Postgres descartável e confere as tabelas, as migrações e os usuários. Instalação e restauração no README do servidor."
      }
     ]
    }
