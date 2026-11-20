@@ -4,6 +4,16 @@
   "date": null,
   "sections": [
    {
+    "kind": "changed",
+    "title": "Alterado",
+    "items": [
+     {
+      "title": "Caixa da placa (Uno): furo redondo de 5 mm para o cabo OBD",
+      "text": "na parede direita, no meio da altura e na mesma direção do cabo, no lugar do rasgo fechado pela lingueta da tampa. STL, OpenSCAD, desenho com cotas e visor 3D do painel atualizados; o cabo passa pelo furo antes da solda."
+     }
+    ]
+   },
+   {
     "kind": "security",
     "title": "Segurança",
     "items": [

@@ -1680,6 +1680,14 @@ function iniciar() {
         furo.absarc(0, 0, p.ri, 0, Math.PI * 2, true);
         sh.holes.push(furo);
         geo = new THREE.ExtrudeGeometry(sh, { depth: z1 - z0, bevelEnabled: false, curveSegments: 32 });
+        if (p.e === 'x') {
+          // placa em pé na parede (furo do cabo OBD): c = (y, z) do centro e z = (x0, x1) a espessura em x
+          geo.rotateY(Math.PI / 2);
+          geo.translate(-(z1 - z0) / 2, 0, 0);
+          const m = new THREE.Mesh(geo, mat);
+          m.position.copy(W((z0 + z1) / 2, p.c[0], p.c[1]));
+          return m;
+        }
         geo.rotateX(-Math.PI / 2);
         geo.translate(0, -(z1 - z0) / 2, 0);
       }

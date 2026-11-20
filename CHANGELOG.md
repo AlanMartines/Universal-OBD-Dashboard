@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Caixa da placa (Uno): furo redondo de 5 mm para o cabo OBD** na parede direita, no meio da altura e na mesma direção do cabo, no lugar do rasgo fechado pela lingueta da tampa. STL, OpenSCAD, desenho com cotas e visor 3D do painel atualizados; o cabo passa pelo furo antes da solda.
+
 ### Segurança
 - **CI endurecido.** O fluxo tem só permissão de leitura, e o de release dá escrita apenas ao job que publica. As Actions são presas pelo hash do commit, e o checkout não guarda o token. Novos jobs:
   - **servidor:** testes da API e do web contra um PostgreSQL descartável;

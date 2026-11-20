@@ -10,9 +10,11 @@ module base() union() {
     translate([-4.5, -82.5, -7.5]) cube([75.000, 86.500, 2.000]);
     translate([68.5, -14.53, -5.5]) cube([2.000, 18.530, 25.500]);
     translate([68.5, -27.53, -5.5]) cube([2.000, 13.000, 16.200]);
-    translate([68.5, -72.7, -5.5]) cube([2.000, 45.170, 25.500]);
-    translate([68.5, -79.3, -5.5]) cube([2.000, 6.600, 6.200]);
-    translate([68.5, -82.5, -5.5]) cube([2.000, 3.200, 25.500]);
+    translate([68.5, -71.5, -5.5]) cube([2.000, 43.970, 25.500]);
+    translate([68.5, -80.5, -5.5]) cube([2.000, 9.000, 8.250]);
+    translate([68.5, -80.5, 11.75]) cube([2.000, 9.000, 8.250]);
+    translate([68.5, -82.5, -5.5]) cube([2.000, 2.000, 25.500]);
+    translate([68.5, -76, 7.25]) rotate([0, 90, 0]) difference() { translate([-4.5, -4.5, 0]) cube([9, 9, 2.000]); translate([0, 0, -0.01]) cylinder(r = 2.5, h = 2.020); }
     translate([-4.5, -82.5, -5.5]) cube([2.000, 86.500, 25.500]);
     translate([-2.5, 2, -5.5]) cube([71.000, 2.000, 25.500]);
     translate([-2.5, -82.5, -5.5]) cube([71.000, 2.000, 25.500]);
@@ -60,11 +62,10 @@ module tampa_montada() union() {
     translate([-7, -85, 20]) difference() { cylinder(r = 4, h = 2.000); translate([0, 0, -0.01]) cylinder(r = 1.7, h = 2.020); }
     translate([73, -85, 20]) difference() { cylinder(r = 4, h = 2.000); translate([0, 0, -0.01]) cylinder(r = 1.7, h = 2.020); }
     translate([67, -13.53, 18]) cube([1.200, 15.230, 2.000]);
-    translate([67, -71.7, 18]) cube([1.200, 43.170, 2.000]);
+    translate([67, -80.2, 18]) cube([1.200, 51.670, 2.000]);
     translate([-2.2, -80.2, 18]) cube([1.200, 81.900, 2.000]);
     translate([-1, 0.5, 18]) cube([68.000, 1.200, 2.000]);
     translate([-1, -80.2, 18]) cube([68.000, 1.200, 2.000]);
-    translate([68.5, -79.1, 7.3]) cube([2.000, 6.200, 12.700]);
     translate([36.5, -2.3, 15]) difference() { cylinder(r = 3.6, h = 5.000); translate([0, 0, -0.01]) cylinder(r = 2.6, h = 5.020); }
     translate([2, -2, 1.9]) cylinder(r = 1.5, h = 18.100);
     translate([48, -2, 1.9]) cylinder(r = 1.5, h = 18.100);

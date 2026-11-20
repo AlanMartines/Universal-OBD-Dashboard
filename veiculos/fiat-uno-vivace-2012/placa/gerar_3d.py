@@ -250,7 +250,7 @@ for name, col, pts, _ in g.JUMPERS:
 # Os 4 fios usados descem da linha 24, viram para a direita e entram na capa do cabo, que segue para a direita da placa;
 # o do pino 6 (CAN-H) fica cortado e isolado com termorretrátil, os outros 11 cortados rente na boca da capa.
 # Comprimento do cabo encurtado no desenho (o de verdade tem 30 cm).
-OBD_Z = 4.0                                     # altura do centro do cabo
+OBD_Z = caixa.OBD_FURO_Z                        # altura do centro do cabo: a do furo da parede direita (meio da caixa)
 OBD_BOCA = (g.W + 12.0, g.H + 6.0)              # boca da capa (x, y)
 OBD_CAPA_R, OBD_CAPA_FIM = 3.0, g.W + 36.0      # cabo de 6 mm
 OBD_PLUG = {'x0': g.W + 44.0, 'l': 26.0, 'w': 42.0, 'h': 17.0}   # corpo do plugue macho (boca virada para longe da placa)
@@ -705,6 +705,8 @@ def _aabb(p):
 def _aabb_caixa(q):
     if q['t'] == 'box':
         return q['a'], q['b']
+    if q.get('e') == 'x':   # placa em pé na parede: c = (y, z), z = (x0, x1)
+        return [q['z'][0], q['c'][0] - q['w'] / 2, q['c'][1] - q['h'] / 2], [q['z'][1], q['c'][0] + q['w'] / 2, q['c'][1] + q['h'] / 2]
     r = q['r'] if q['t'] != 'furada' else max(q['w'], q['h']) / 2
     return [q['c'][0] - r, q['c'][1] - r, q['z'][0]], [q['c'][0] + r, q['c'][1] + r, q['z'][1]]
 
@@ -716,6 +718,11 @@ def conferir_caixa():
         qa, qb = _aabb_caixa(q)
         for p in parts:
             if p[0] == 'led' and 'LED' in (q['n'] or ''):   # o LED atravessa o furo dele
+                continue
+            if q.get('e') == 'x' and p[0] == 'fios' and p[1] == 'cyl' and abs(p[3][2] - OBD_Z) < 0.01 and abs(p[4][2] - OBD_Z) < 0.01:
+                # a capa do cabo OBD atravessa o furo da parede: só acusa se for mais grossa que o furo
+                if p[5] > q['ri'] and min(p[3][0], p[4][0]) < q['z'][1] and max(p[3][0], p[4][0]) > q['z'][0]:
+                    achados.append((q['n'], f'cabo de {2 * p[5]:g} mm (estimado) mais grosso que o furo de {2 * q["ri"]:g} mm'))
                 continue
             pa, pb = _aabb(p)
             if all(pa[i] < qb[i] - 0.01 and qa[i] < pb[i] - 0.01 for i in range(3)):

@@ -36,6 +36,11 @@ GUIA_FUNDO = 12.0            # profundidade do furo-guia
 LED_SUPORTE_R = 2.6          # encaixe do LED de 5 mm (5,2 mm: entra justo, a aba de 5,8 mm fica embaixo)
 LED_SUPORTE_H = 5.0
 PASSA_R = 1.7                # furo de passagem na tampa (3,4 mm)
+# Cabo OBD (pedido do Alan, 20/11/2026): furo redondo de 5 mm na parede direita, no lugar do rasgo com lingueta,
+# na mesma direção do cabo e no meio da altura (entre o fundo da base e o topo da tampa, que é também o meio por dentro)
+OBD_FURO_R = 2.5
+OBD_FURO_Z = (PISO_Z - FUNDO + TOPO_Z + TAMPA) / 2
+OBD_FURO_LADO = 2 * OBD_FURO_R + 4.0   # quadrado da parede em volta do furo
 
 # Abas para prender no carro (parafuso M4 ou abraçadeira de até 4 mm)
 # Abas para prender no carro: furo para parafuso M4 e, mais para fora, fenda para abraçadeira de nylon (tipo Hellermann)
@@ -76,9 +81,17 @@ def anel(cx, cy, z0, z1, ri, ro, nome=None):
     return {'t': 'anel', 'c': [cx, cy], 'z': [z0, z1], 'ri': ri, 'r': ro, 'n': nome}
 
 
-def furada(cx, cy, z0, z1, w, h, r, nome=None):
-    """Placa w x h centrada no furo de raio r."""
-    return {'t': 'furada', 'c': [cx, cy], 'z': [z0, z1], 'w': w, 'h': h, 'ri': r, 'n': nome}
+def furada(cx, cy, z0, z1, w, h, r, nome=None, eixo='z'):
+    """Placa w x h centrada no furo de raio r.
+
+    eixo 'z' (padrão): placa deitada, furo vertical; c = (x, y) do centro e z = (z0, z1) a espessura.
+    eixo 'x': placa em pé numa parede, furo na horizontal; c = (y, z) do centro, z = (x0, x1) a espessura,
+    w a largura em y e h a altura em z.
+    """
+    p = {'t': 'furada', 'c': [cx, cy], 'z': [z0, z1], 'w': w, 'h': h, 'ri': r, 'n': nome}
+    if eixo == 'x':
+        p['e'] = 'x'
+    return p
 
 
 def parede(eixo, fixo0, fixo1, ini, fim, z0, z1, aberturas, nome):
@@ -139,9 +152,13 @@ def montar(ref):
     # Fundo e paredes (as aberturas ficam na parede direita, por onde saem o USB e os dois cabos)
     base.append(bx(o['x0'], o['y0'], o['z0'], o['x1'], o['y1'], PISO_Z, 'Fundo da caixa'))
     usb = (ref['usb_y'], 13.0, ref['usb_z'] - 4.5, TOPO_Z + 1)
-    obd = (ref['obd_y'], 2 * ref['obd_r'] + 0.6, ref['obd_z'] - ref['obd_r'] - 0.3, TOPO_Z + 1)
-    ABERT = {'usb': usb, 'obd': obd}
+    ABERT = {'usb': usb}
+    # cabo OBD: a parede deixa um quadrado em volta do furo, preenchido por uma placa em pé com o furo de 5 mm
+    lado = OBD_FURO_LADO
+    obd = (ref['obd_y'], lado, OBD_FURO_Z - lado / 2, OBD_FURO_Z + lado / 2)
     base += parede('y', INT['x1'], o['x1'], o['y0'], o['y1'], PISO_Z, TOPO_Z, [usb, obd], 'Parede direita (USB e cabo OBD)')
+    base.append(furada(ref['obd_y'], OBD_FURO_Z, INT['x1'], o['x1'], lado, lado, OBD_FURO_R,
+                       'Parede direita: furo de 5 mm do cabo OBD', eixo='x'))
     base += parede('y', o['x0'], INT['x0'], o['y0'], o['y1'], PISO_Z, TOPO_Z, [], 'Parede esquerda')
     base += parede('x', o['y0'], INT['y0'], INT['x0'], INT['x1'], PISO_Z, TOPO_Z, [], 'Parede de cima')
     base += parede('x', INT['y1'], o['y1'], INT['x0'], INT['x1'], PISO_Z, TOPO_Z, [], 'Parede de baixo')
@@ -188,7 +205,7 @@ def montar(ref):
     for L, ini, nome in ref['apoios']:
         base.append(bx(L['x0'] + ini, L['y0'], PISO_Z, L['x0'] + L['l'], L['y0'] + L['w'], L['z0'], f'Apoio do {nome} (fita dupla-face)'))
 
-    # Tampa: chapa, orelhas dos parafusos, aba interna que centraliza e linguetas que fecham as aberturas dos cabos
+    # Tampa: chapa, orelhas dos parafusos e aba interna que centraliza (o USB fica livre; o cabo OBD passa pelo furo)
     tampa += chapa_furada(o['x0'], o['y0'], o['x1'], o['y1'], TOPO_Z, o['z1'], [], 'Tampa')   # fechada (imprimir transparente)
     for cx_, cy_ in torres():
         tampa.append(anel(cx_, cy_, TOPO_Z, o['z1'], PASSA_R, TORRE_R, 'Tampa: furo do parafuso M3 (3,4 mm)'))
@@ -199,10 +216,6 @@ def montar(ref):
     tampa += parede('y', ix0, ix0 + aba_esp, iy0, iy1, TOPO_Z - aba_h, TOPO_Z, [], 'Tampa: aba de encaixe')
     tampa += parede('x', iy0, iy0 + aba_esp, ix0 + aba_esp, ix1 - aba_esp, TOPO_Z - aba_h, TOPO_Z, [], 'Tampa: aba de encaixe')
     tampa += parede('x', iy1 - aba_esp, iy1, ix0 + aba_esp, ix1 - aba_esp, TOPO_Z - aba_h, TOPO_Z, [], 'Tampa: aba de encaixe')
-    # linguetas: descem pela abertura até encostar no cabo (o USB fica livre)
-    for chave, nome, fundo in (('obd', 'Tampa: lingueta do cabo OBD', ref['obd_z'] + ref['obd_r'] + 0.3),):
-        c, w, _, _ = ABERT[chave]
-        tampa.append(bx(INT['x1'], c - w / 2 + 0.2, fundo, o['x1'], c + w / 2 - 0.2, TOPO_Z, nome))
     # suporte do LED tricolor: anel que segura o corpo de 5 mm, com o domo encostado na tampa (a aba fica embaixo)
     if 'led_suporte' in ref:
         lx, ly = ref['led_suporte']
@@ -226,6 +239,8 @@ def montar(ref):
         'parede': PAREDE, 'fundo': FUNDO, 'tampa': TAMPA,
         'torres': [[round(a, 2) for a in t] for t in torres()],
         'aberturas': {k: {'centro_y': round(v[0], 2), 'largura': round(v[1], 2), 'z_baixo': round(v[2], 2)} for k, v in ABERT.items()},
+        'furo_obd': {'centro_y': round(ref['obd_y'], 2), 'centro_z': round(OBD_FURO_Z, 2), 'diametro': round(2 * OBD_FURO_R, 2),
+                     'do_fundo': round(OBD_FURO_Z - (PISO_Z - FUNDO), 2)},
     }
     return {'base': base, 'tampa': tampa, 'medidas': medidas, 'externa': o, 'interna': {**INT, 'z0': PISO_Z, 'z1': TOPO_Z}}
 
@@ -284,8 +299,19 @@ def malha(p):
         return _prisma(_circ(cx, cy, p['r'], angs), z0, z1)
     if p['t'] == 'anel':
         return _anel(_circ(cx, cy, p['r'], angs), _circ(cx, cy, p['ri'], angs), z0, z1)
-    # placa com furo: contorno retangular amostrado nos mesmos ângulos do furo, com os 4 cantos incluídos
-    hw, hh = p['w'] / 2, p['h'] / 2
+    if p.get('e') == 'x':
+        # placa em pé: monta como se fosse deitada no plano (u, v) = (y já invertido, z), com a espessura w em x,
+        # e gira (u, v, w) -> (w, u, v); a troca circular dos eixos mantém o sentido das faces
+        u, v = -p['c'][0], p['c'][1]
+        x0, x1 = p['z']
+        tris = _placa_com_furo(u, v, p['w'], p['h'], p['ri'], x0, x1, angs)
+        return [tuple((c, a, b) for a, b, c in t) for t in tris]
+    return _placa_com_furo(cx, cy, p['w'], p['h'], p['ri'], z0, z1, angs)
+
+
+def _placa_com_furo(cx, cy, w, h, ri, z0, z1, angs):
+    # contorno retangular amostrado nos mesmos ângulos do furo, com os 4 cantos incluídos
+    hw, hh = w / 2, h / 2
     ca = math.atan2(hh, hw)
     angs = sorted(set(angs) | {ca, math.pi - ca, math.pi + ca, 2 * math.pi - ca})
     fora = []
@@ -293,7 +319,7 @@ def malha(p):
         c, s = math.cos(a), math.sin(a)
         t = min(hw / abs(c) if abs(c) > 1e-12 else 1e9, hh / abs(s) if abs(s) > 1e-12 else 1e9)
         fora.append((cx + t * c, cy + t * s))
-    return _anel(fora, _circ(cx, cy, p['ri'], angs), z0, z1)
+    return _anel(fora, _circ(cx, cy, ri, angs), z0, z1)
 
 
 def write_stl(path, tris, nome):
@@ -324,6 +350,12 @@ def _scad_peca(p):
     if p['t'] == 'box':
         (x0, y0, z0), (x1, y1, z1) = p['a'], p['b']
         return f'translate([{x0:g}, {-y1:g}, {z0:g}]) cube([{x1 - x0:.3f}, {y1 - y0:.3f}, {z1 - z0:.3f}]);'
+    if p.get('e') == 'x':
+        # placa em pé: o rotate leva o eixo z do cubo e do cilindro para x (cubo e furo centrados em y e z)
+        x0, x1 = p['z']
+        return (f'translate([{x0:g}, {-p["c"][0]:g}, {p["c"][1]:g}]) rotate([0, 90, 0]) difference() {{ '
+                f'translate([{-p["h"] / 2:g}, {-p["w"] / 2:g}, 0]) cube([{p["h"]:g}, {p["w"]:g}, {x1 - x0:.3f}]); '
+                f'translate([0, 0, -0.01]) cylinder(r = {p["ri"]:g}, h = {x1 - x0 + 0.02:.3f}); }}')
     cx, cy = p['c'][0], -p['c'][1]
     z0, z1 = p['z']
     h = z1 - z0
@@ -413,10 +445,11 @@ def write_svg(path, cx, ref):
     s.text(X((o['x0'] + o['x1']) / 2), oy - 22, 'Base, vista de cima', 3.4, weight='bold')
     for t in torres():
         s.circ(X(t[0]), Y(t[1]), TORRE_R, PAR)
+    abas = [p for p in cx['base'] if p['t'] == 'furada' and p.get('e') != 'x']
     for p in cx['base']:
-        if p['t'] == 'furada':
+        if p['t'] == 'furada' and p.get('e') != 'x':
             s.rect(X(p['c'][0] - p['w'] / 2), Y(p['c'][1] - p['h'] / 2), p['w'], p['h'], PAR, 'none')
-        elif p['n'] and p['n'].startswith('Aba'):
+        elif p['t'] == 'box' and p['n'] and p['n'].startswith('Aba'):
             (x0, y0, _), (x1, y1, _) = p['a'], p['b']
             s.rect(X(x0), Y(y0), x1 - x0, y1 - y0, PAR, 'none')
     for lado in (-1, 1):   # contorno das abas
@@ -426,9 +459,9 @@ def write_svg(path, cx, ref):
         s.rect(X(ax), Y(cy_ - ABA['largura'] / 2), ABA['sai'], ABA['largura'], 'none', '#37474f', 0.25)
     s.rect(X(o['x0']), Y(o['y0']), o['x1'] - o['x0'], o['y1'] - o['y0'], PAR)
     s.rect(X(I['x0']), Y(I['y0']), I['x1'] - I['x0'], I['y1'] - I['y0'], '#eceff1')
+    for p in abas:
+        s.circ(X(p['c'][0]), Y(p['c'][1]), p['ri'], '#ffffff')
     for p in cx['base']:
-        if p['t'] == 'furada':
-            s.circ(X(p['c'][0]), Y(p['c'][1]), p['ri'], '#ffffff')
         if p['t'] == 'box' and p['n'] and ('Apoio' in p['n'] or 'Guia' in p['n']):
             (x0, y0, _), (x1, y1, _) = p['a'], p['b']
             s.rect(X(x0), Y(y0), x1 - x0, y1 - y0, '#b0bec5')
@@ -443,16 +476,18 @@ def write_svg(path, cx, ref):
         s.rect(X(L['x0']), Y(L['y0']), L['l'], L['w'], 'none', cor, 0.3, ' stroke-dasharray="1.2 0.8"')
         s.text(X(L['x0'] + L['l'] / 2), Y(L['y0'] + L['w'] / 2) + 0.7, nome, 2.0, color=cor)
     # aberturas na parede direita (marcadas por cima)
-    for k, rot in (('usb', 'USB'), ('obd', 'OBD')):
-        a = med['aberturas'][k]
-        s.rect(X(I['x1']), Y(a['centro_y'] - a['largura'] / 2), PAREDE, a['largura'], '#ffffff', '#c62828', 0.25)
-        s.text(X(o['x1']) + 2, Y(a['centro_y']) + 0.9, rot, 2.2, anchor='start', color='#c62828')
+    a = med['aberturas']['usb']
+    s.rect(X(I['x1']), Y(a['centro_y'] - a['largura'] / 2), PAREDE, a['largura'], '#ffffff', '#c62828', 0.25)
+    s.text(X(o['x1']) + 2, Y(a['centro_y']) + 0.9, 'USB', 2.2, anchor='start', color='#c62828')
+    fo = med['furo_obd']
+    s.rect(X(I['x1']), Y(fo['centro_y'] - fo['diametro'] / 2), PAREDE, fo['diametro'], '#ffffff', '#c62828', 0.25, ' stroke-dasharray="0.8 0.5"')
+    s.text(X(o['x1']) + 2, Y(fo['centro_y']) + 0.9, 'OBD (furo)', 2.2, anchor='start', color='#c62828')
     # cotas
     s.cota_h(X(o['x0']), X(o['x1']), Y(o['y0']) - 13, f'{_f(med["externa"][0])} (sem abas)', Y(o['y0']))
     s.cota_h(X(I['x0']), X(I['x1']), Y(o['y0']) - 7.5, f'{_f(med["interna"][0])} por dentro', Y(I['y0']))
     t0, t1 = torres()[0], torres()[1]
     s.cota_h(X(t0[0]), X(t1[0]), Y(o['y1']) + 17, f'{_f(t1[0] - t0[0])} entre parafusos', Y(t0[1]) + 0)
-    ab = [p for p in cx['base'] if p['t'] == 'furada']
+    ab = abas
     s.cota_h(X(ab[0]['c'][0]), X(ab[1]['c'][0]), Y(o['y1']) + 23, f'{_f(ab[1]["c"][0] - ab[0]["c"][0])} entre furos das abas', Y(ab[0]['c'][1]))
     fd = 2 * ABA['fenda_dist'] + (o['x1'] - o['x0'])
     s.cota_h(X(o['x0'] - ABA['fenda_dist']), X(o['x1'] + ABA['fenda_dist']), Y(o['y1']) + 29, f'{_f(fd)} entre fendas das abas', Y(ab[0]['c'][1]))
@@ -470,7 +505,7 @@ def write_svg(path, cx, ref):
     s.rect(Yh(o['y1']), Zv(TOPO_Z), o['y1'] - o['y0'], TOPO_Z - o['z0'], PAR)
     for t in (torres()[1], torres()[3]):
         s.rect(Yh(t[1] + TORRE_R), Zv(TOPO_Z), 2 * TORRE_R, TOPO_Z - o['z0'], '#b0bec5')
-    for k, rot in (('usb', 'USB'), ('obd', 'cabo OBD')):
+    for k, rot in (('usb', 'USB'),):
         a = med['aberturas'][k]
         y0_ = a['centro_y'] - a['largura'] / 2
         y1_ = y0_ + a['largura']
@@ -482,10 +517,13 @@ def write_svg(path, cx, ref):
     s.cota_v(Zv(TOPO_Z + TAMPA), Zv(o['z0']), Yh(o['y0']) + 17, f'{_f(o["z1"] - o["z0"])} com a tampa', Yh(o['y0']))
     s.text(Yh(o['y0']), Zv(TOPO_Z + TAMPA) - 2, 'lado do ESP32 →', 2.2, anchor='end', color='#546e7a')
     s.rect(Yh(o['y1']), Zv(TOPO_Z + TAMPA), o['y1'] - o['y0'], TAMPA, 'none', '#607d8b', 0.25, ' stroke-dasharray="1 0.7"')
-    for k in ('usb', 'obd'):
-        a = med['aberturas'][k]
-        s.cota_h(Yh(a['centro_y']), Yh(o['y0']), Zv(o['z0']) + {'usb': 6, 'obd': 12}[k],
-                 f'centro a {_f(a["centro_y"] - o["y0"])}', Zv(o['z0']))
+    a = med['aberturas']['usb']
+    s.cota_h(Yh(a['centro_y']), Yh(o['y0']), Zv(o['z0']) + 6, f'centro a {_f(a["centro_y"] - o["y0"])}', Zv(o['z0']))
+    # furo redondo do cabo OBD, no meio da altura
+    s.circ(Yh(fo['centro_y']), Zv(fo['centro_z']), fo['diametro'] / 2, '#ffffff', '#c62828', 0.25)
+    s.text(Yh(fo['centro_y']), Zv(fo['centro_z']) - fo['diametro'] / 2 - 1.2, f'cabo OBD: furo de {_f(fo["diametro"])}', 2.2, color='#c62828')
+    s.cota_h(Yh(fo['centro_y']), Yh(o['y0']), Zv(o['z0']) + 12, f'centro a {_f(fo["centro_y"] - o["y0"])}', Zv(o['z0']))
+    s.cota_v(Zv(fo['centro_z']), Zv(o['z0']), Yh(fo['centro_y']) + 4, f'{_f(fo["do_fundo"])} do fundo', Yh(fo['centro_y']))
 
     # ---- Corte de lado: alturas internas
     cx0, cy0 = 160.0, 140.0
