@@ -89,6 +89,20 @@ class HistoryBridge(private val activity: MainActivity) {
         }
     }
 
+    /** Histórico → Exportar todos: um .zip com o CSV e o GPX das viagens do veículo, no menu de compartilhamento. */
+    @JavascriptInterface
+    fun exportAllTrips(requestId: String) = activity.answerAsync(requestId) {
+        try {
+            val file = TripExportFiles.writeAll(activity, Vehicles.selectedId(activity))
+            activity.runOnUiThread { activity.startActivity(TripExportFiles.shareIntent(activity, file, "application/zip")) }
+            "ok"
+        } catch (e: TripExportFiles.ExportException) {
+            e.message ?: "erro"
+        } catch (e: Exception) {
+            "Falha ao exportar: ${e.message}"
+        }
+    }
+
     /** Apaga uma viagem com a telemetria e as falhas dela. A viagem em andamento não pode ser apagada. */
     @JavascriptInterface
     fun deleteTrip(requestId: String, tripId: Long) = activity.answerAsync(requestId) {

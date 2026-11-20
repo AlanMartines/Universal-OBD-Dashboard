@@ -299,8 +299,11 @@
       <div class="col">
       <div class="row-between history-head">
         <h2>Viagens</h2>
-        <button id="ask-ai" class="btn btn-small" hidden>Perguntar à IA</button>
-        <button id="clear-history" class="btn btn-small btn-danger">Apagar todo o histórico deste veículo</button>
+        <div class="history-actions">
+          <button id="ask-ai" class="btn btn-small" hidden>Perguntar à IA</button>
+          <button id="export-history" class="btn btn-small">Exportar todos</button>
+          <button id="clear-history" class="btn btn-small btn-danger">Apagar histórico</button>
+        </div>
       </div>
       <p id="history-result" class="small muted"></p>
       <div id="trips" class="list"></div>
@@ -551,9 +554,9 @@
         <span class="label">Gravação de diagnóstico</span>
         <label class="check"><input id="diag-enabled" type="checkbox">
           Gravar tráfego OBD bruto, varredura da ECU, eventos e GPS (1×/s) para análise</label>
-        <p class="muted small">Vale a partir da próxima captura. Cerca de 5–10 MB por hora; arquivos com mais de 30 dias são apagados. Exporte em .gz pelo botão de cada arquivo.</p>
+        <p class="muted small">Vale a partir da próxima captura. Cerca de 5–10 MB por hora; arquivos com mais de 30 dias são apagados. Exporte cada arquivo em .gz ou todos de uma vez em .zip.</p>
         <div id="diag-files" class="list"></div>
-        <div class="row" id="diag-clear-row" hidden><button id="diag-clear" class="btn btn-small btn-danger">Apagar todas as gravações</button></div>
+        <div class="row" id="diag-clear-row" hidden><button id="diag-export-all" class="btn btn-small">Exportar tudo (.zip)</button><button id="diag-clear" class="btn btn-small btn-danger">Apagar todas as gravações</button></div>
         <div id="script-entry" hidden>
           <p class="muted small">Roteiro de captura: passos guiados por voz (portas, luzes, pedais, ventilação…) que marcam no arquivo de diagnóstico o instante exato de cada ação, para mapear a rede do carro. Só marca e lê: nada é enviado ao carro.</p>
           <button id="script-open" class="btn">Abrir roteiro de captura</button>

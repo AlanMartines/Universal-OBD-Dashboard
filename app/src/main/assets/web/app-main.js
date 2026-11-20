@@ -25,6 +25,16 @@ $('trips').addEventListener('click', async (e) => {
   btn.disabled = false;
   if (res !== 'ok') alert(res);
 });
+// Um .zip com o CSV de cada viagem do veículo e o GPX das que têm GPS, no menu de compartilhamento.
+$('export-history').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  btn.textContent = 'Gerando…';
+  const res = await nativeAsync((id) => bridge.exportAllTrips(id)).catch((err) => err.message);
+  btn.disabled = false;
+  btn.textContent = 'Exportar todos';
+  if (res !== 'ok') alert(res);
+});
 $('clear-history').addEventListener('click', async () => {
   if (!confirm('Apagar as viagens, a telemetria e as falhas deste veículo? Isso não pode ser desfeito.')) return;
   const res = await nativeAsync((id) => bridge.deleteAllHistory(id)).catch((err) => err.message);

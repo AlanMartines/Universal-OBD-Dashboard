@@ -122,6 +122,20 @@ class DiagnosticsBridge(private val activity: MainActivity) {
         "Falha ao exportar: ${e.message}"
     }
 
+    /** Ajustes → Gravação de diagnóstico: todas as gravações num .zip, no menu de compartilhamento. */
+    @JavascriptInterface
+    fun exportAllDiagnostics(requestId: String) = activity.answerAsync(requestId) {
+        try {
+            val file = DiagnosticFiles.exportAllZip(activity)
+            activity.runOnUiThread { activity.startActivity(TripExportFiles.shareIntent(activity, file, "application/zip")) }
+            "ok"
+        } catch (e: DiagnosticFiles.DiagnosticFileException) {
+            e.message ?: "erro"
+        } catch (e: Exception) {
+            "Falha ao exportar: ${e.message}"
+        }
+    }
+
     /** Ajustes → Gravação de diagnóstico: apaga todas de uma vez, menos a que estiver gravando. */
     @JavascriptInterface
     fun deleteAllDiagnostics(): String = try {
