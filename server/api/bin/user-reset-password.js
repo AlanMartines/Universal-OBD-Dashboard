@@ -70,7 +70,7 @@ async function main() {
   });
   const username = normalizeUsername(values.user);
   if (!username || (values.password !== undefined && values.prompt)) {
-    console.error('Uso: npm run user:reset-password -- --user NOME [--prompt | --password SENHA] [--disable-2fa]');
+    console.error('Uso: node bin/user-reset-password.js --user NOME [--prompt | --password SENHA] [--disable-2fa]');
     return 2;
   }
   let password = values.password;

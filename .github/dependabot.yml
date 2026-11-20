@@ -10,7 +10,28 @@ updates:
     groups:
       androidx:
         patterns: ["androidx.*"]
+
+  # Actions presas por hash: o PR troca o hash e o comentário da versão juntos.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
+
+  # Painel web: correções e versões menores num PR só por pasta; versões maiores em PR separado.
+  - package-ecosystem: npm
+    directories: ["/server/api", "/server/web"]
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      menores:
+        update-types: [minor, patch]
+
+  # Imagem base presa por digest. A troca de versão maior do Node é decisão manual.
+  - package-ecosystem: docker
+    directories: ["/server/api", "/server/web"]
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]

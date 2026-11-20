@@ -259,8 +259,14 @@ Todo push no `master` e todo PR rodam no GitHub Actions ([ci.yml](.github/workfl
 - `testDebugUnitTest`, `lintDebug` e `assembleDebug`. Os testes incluem Robolectric para a migração do banco, o backup e o Android Auto.
 - Os testes das ferramentas `tools/trip-report` (inclusive a paridade do cálculo de consumo com o app) e `tools/can-capture`.
 - O job **smoke**, que instala num emulador o APK otimizado pelo R8 (variante `smoke`: release com a chave de debug) e confere que o app abre sem travar.
+- O job **servidor**, com os testes da `api` e do `web` contra um PostgreSQL descartável.
+- O job **seguranca**:
+  - procura segredos em todo o histórico com o gitleaks; os falsos positivos conferidos ficam no [.gitleaksignore](.gitleaksignore);
+  - procura falhas conhecidas (altas e críticas, com correção disponível) nas dependências, nos Dockerfiles e nas imagens do painel com o Trivy.
 
-O Dependabot ([dependabot.yml](.github/dependabot.yml)) avisa semanalmente sobre atualizações. O APK de debug e os relatórios de teste/lint ficam disponíveis como artefatos da execução.
+O fluxo só tem permissão de leitura no repositório. As Actions são presas pelo hash do commit, e as ferramentas de segurança rodam pelas imagens oficiais presas por digest.
+
+O Dependabot ([dependabot.yml](.github/dependabot.yml)) avisa toda semana sobre atualizações do Gradle, das Actions, do npm do painel e da imagem base do Node. O APK de debug e os relatórios de teste/lint ficam disponíveis como artefatos da execução.
 
 O APK de debug é assinado com a chave fixa `app/debug.keystore` (versionada de propósito; senha `android`). Assim, APKs gerados pelo CI ou por qualquer máquina atualizam uns aos outros sem precisar desinstalar o app, o que apagaria viagens e ajustes.
 

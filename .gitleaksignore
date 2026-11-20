@@ -1,0 +1,5 @@
+# Falsos positivos conferidos à mão (impressão digital do gitleaks: commit:arquivo:regra:linha).
+# server/api/src/security.js: lista local de senhas comuns, recusadas no cadastro.
+b1f35ed6724447ffe1d70cd69e850776ea81742a:server/api/src/security.js:generic-api-key:16
+# server/api/src/security.js: alfabeto do gerador de senhas aleatórias.
+b1f35ed6724447ffe1d70cd69e850776ea81742a:server/api/src/security.js:generic-api-key:68
