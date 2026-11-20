@@ -6,8 +6,17 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.59] - 2026-11-20
+
 ### Adicionado
 - **Painel: trocar o aplicativo autenticador.** Em Meus Dados, com a senha e um código do aplicativo atual ou de recuperação, a conta passa para um celular novo sem desligar a verificação em duas etapas (inclusive o Super Admin, para quem ela é obrigatória). O aplicativo antigo vale até o novo ser confirmado; os códigos de recuperação são trocados, as outras sessões caem, a troca fica na auditoria e chega um aviso por e-mail.
+
+### Alterado
+- **Dependências (Dependabot #55 a #58, #62 e #63):**
+  - app: Android Gradle Plugin 9.5.2, Gradle 9.9.1, KSP 2.3.14, kotlinx-serialization 1.13 e Robolectric 4.18;
+  - painel: fastify 5.12.8, argon2 0.45.2, nodemailer 10.6, Bootstrap 5.3.9, jQuery 4.1, MapLibre 6.19 e Three.js 0.187.
+
+  Testadas juntas antes do merge: testes, lint e APK do app, testes do servidor e o visor 3D da placa.
 
 ## [0.9.58] - 2026-11-20
 
