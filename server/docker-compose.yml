@@ -82,6 +82,8 @@ services:
       WEB_PORT: ${WEB_PORT:-28471}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
       FORM_SECRET: ${FORM_SECRET:?defina FORM_SECRET no .env}
+      # Só na homologação (acesso por http://localhost no túnel SSH): cookie sem o Secure.
+      ALLOW_INSECURE_COOKIE: ${ALLOW_INSECURE_COOKIE:-false}
       TRUST_PROXY: ${TRUST_PROXY:-}
       SESSION_MAX_DAYS: ${SESSION_MAX_DAYS:-7}
       RATE_LIMIT_FACTOR: ${RATE_LIMIT_FACTOR:-1}
@@ -186,7 +188,7 @@ networks:
     internal: true
     ipam:
       config:
-        - subnet: 10.88.0.0/24
+        - subnet: ${ROUTING_SUBNET:-10.88.0.0/24}   # a homologação usa outra faixa
 
 volumes:
   db-data:
