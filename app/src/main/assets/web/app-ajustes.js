@@ -11,7 +11,7 @@ function profileLabel(p) {
 function loadVehicles(profiles) {
   vehicles = parse(bridge.getVehicles(), { list: [], selected: '' });
   const sel = $('vehicle-select');
-  sel.innerHTML = '';
+  sel.replaceChildren();
   vehicles.list.forEach((v) => {
     const o = document.createElement('option');
     o.value = v.id;
@@ -24,7 +24,7 @@ function loadVehicles(profiles) {
   $('vehicle-plate').value = cur.plate || '';
   $('vehicle-delete').disabled = vehicles.list.length < 2;
   const np = $('vehicle-new-profile');
-  np.innerHTML = '';
+  np.replaceChildren();
   profiles.forEach((p) => {
     const o = document.createElement('option');
     o.value = p.id;
@@ -91,7 +91,7 @@ function loadSettings() {
   const profiles = parse(bridge.listProfiles(), []);
   loadVehicles(profiles);
   const sel = $('profile-select');
-  sel.innerHTML = '';
+  sel.replaceChildren();
   profiles.forEach((p) => {
     const o = document.createElement('option');
     o.value = p.id;
@@ -144,7 +144,7 @@ $('dash-suggestion-use').addEventListener('click', () => {
 function loadAlarms() {
   const sel = $('alarm-output');
   const current = sel.value;
-  sel.innerHTML = '';
+  sel.replaceChildren();
   (meta.outputs || []).forEach((o) => {
     const opt = document.createElement('option');
     opt.value = o.id;
@@ -153,7 +153,7 @@ function loadAlarms() {
   });
   if (current) sel.value = current;
   const box = $('alarm-list');
-  box.innerHTML = '';
+  box.replaceChildren();
   parse(bridge.getUserAlarms(), []).forEach((a) => {
     const row = document.createElement('div');
     row.className = 'item';
@@ -192,7 +192,7 @@ function renderAlarmStatus(s) {
 
 function loadTimers() {
   const box = $('timer-list');
-  box.innerHTML = '';
+  box.replaceChildren();
   parse(bridge.getTimedRuns(), []).forEach((r) => {
     const row = document.createElement('div');
     row.className = 'kv';
@@ -212,7 +212,7 @@ $('timer-clear').addEventListener('click', () => {
 /* Listas em vez de texto livre: a escala sempre termina numa marca do mostrador. */
 const dashOptions = (id, values, label, current) => {
   const sel = $(id);
-  sel.innerHTML = '';
+  sel.replaceChildren();
   values.forEach((v) => {
     const o = document.createElement('option');
     o.value = String(v);
@@ -383,12 +383,12 @@ function renderDiagnostics() {
     el.appendChild(label);
     const info = document.createElement('div');
     info.className = 'kv';
-    info.innerHTML = `<span>${mb(f.size)}</span><span>${dt(f.modified)}</span>${f.active ? '<span class="rec">● gravando</span>' : ''}`;
+    info.innerHTML = html`<span>${mb(f.size)}</span><span>${dt(f.modified)}</span>${f.active ? html`<span class="rec">● gravando</span>` : ''}`;
     el.appendChild(info);
     const actions = document.createElement('div');
     actions.className = 'actions';
-    actions.innerHTML = `<button class="btn btn-small" data-diag-export>Exportar .gz</button>` +
-      (f.active ? '' : `<button class="btn btn-small btn-danger" data-diag-delete>Apagar</button>`);
+    actions.innerHTML = html`<button class="btn btn-small" data-diag-export>Exportar .gz</button>${
+      f.active ? '' : html`<button class="btn btn-small btn-danger" data-diag-delete>Apagar</button>`}`;
     actions.querySelectorAll('button').forEach((b) => { b.dataset.name = f.name; });
     el.appendChild(actions);
     box.appendChild(el);

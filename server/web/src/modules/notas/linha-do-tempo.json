@@ -18,6 +18,14 @@
     "title": "Segurança",
     "items": [
      {
+      "title": "App: tela protegida contra dados que viram código",
+      "text": "Nomes de dispositivo Bluetooth, perfis importados, backups restaurados, códigos de falha e respostas da IA entram na tela só como texto: todo HTML com dados passa por html\\...\\``, que escapa cada valor; a página tem uma política de segurança (CSP) que só aceita os scripts do próprio app, sem código embutido; um teste quebra se alguém montar HTML com dado fora disso."
+     },
+     {
+      "title": "App: backup do Android desligado",
+      "text": "O banco (com o percurso pelo GPS) e as preferências (com o token do painel e a chave da IA) não vão mais para a nuvem nem para o celular novo pela transferência do sistema. Para trocar de celular, use Ajustes → Backup completo, que deixa as chaves de fora."
+     },
+     {
       "title": "CI endurecido",
       "text": "O fluxo tem só permissão de leitura, e o de release dá escrita apenas ao job que publica. As Actions são presas pelo hash do commit, e o checkout não guarda o token. Novos jobs: servidor: testes da API e do web contra um PostgreSQL descartável; seguranca: gitleaks no histórico inteiro e Trivy nas dependências, nos Dockerfiles e nas imagens do painel (altas e críticas com correção)."
      },

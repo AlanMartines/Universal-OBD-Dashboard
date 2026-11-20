@@ -36,7 +36,7 @@ function setupGauge() {
 
   const t = meta.thermal;
   const marks = $('thermo-marks');
-  marks.innerHTML = '';
+  marks.replaceChildren();
   if (t) {
     [t.thermostatOpenC, t.fanStage1C, t.fanStage2C, t.criticalC].forEach((c) => {
       const m = document.createElement('div');
@@ -56,12 +56,12 @@ const thermoPct = (c) => Math.max(0, Math.min(100, (c - THERMO_MIN) / (THERMO_MA
 /* ---------------------------------------------------------------- Sensores (agnóstico) */
 function buildSensorGrid() {
   const grid = $('sensor-grid');
-  grid.innerHTML = '';
+  grid.replaceChildren();
   (meta.outputs || []).forEach((o) => {
     const el = document.createElement('div');
     el.className = 'sensor stale';
     el.id = 'sensor-' + o.id;
-    el.innerHTML = `<div class="lane">${o.lane.replace('_', ' ')}</div><div class="name"></div><div class="val">--</div>`;
+    el.innerHTML = html`<div class="lane">${String(o.lane).replace('_', ' ')}</div><div class="name"></div><div class="val">--</div>`;
     el.querySelector('.name').textContent = o.name;
     grid.appendChild(el);
   });
@@ -324,7 +324,7 @@ function onTelemetry(s) {
 
   // Alertas
   const alerts = $('alerts');
-  alerts.innerHTML = '';
+  alerts.replaceChildren();
   (s.alerts || []).forEach((a) => {
     const el = document.createElement('div');
     el.className = 'alert ' + a.level;
@@ -347,7 +347,7 @@ function onTelemetry(s) {
     dtcs.textContent = s.connection === 'STREAMING' ? 'Nenhuma falha ativa.' : 'Nenhuma falha lida ainda.';
   } else {
     dtcs.className = 'dtc-list';
-    dtcs.innerHTML = '';
+    dtcs.replaceChildren();
     conf.forEach((c) => dtcs.appendChild(chip(c, 'confirmed')));
     pend.forEach((c) => dtcs.appendChild(chip(c, 'pending')));
     if (aiReady()) {
@@ -393,8 +393,8 @@ function renderMonitors(r) {
   pill.className = 'pill ' + (r.allComplete ? 'pill-ok' : '');
   const box = $('monitors');
   box.className = 'monitors';
-  box.innerHTML = r.monitors.length ? r.monitors.map((m) =>
-    `<span class="mon ${m.complete ? 'ok' : 'pending'}">${m.complete ? '✓' : '⏳'} ${esc(m.name)}</span>`).join('') : 'A ECU não informa monitores.';
+  box.innerHTML = html`${r.monitors.length ? r.monitors.map((m) =>
+    html`<span class="mon ${m.complete ? 'ok' : 'pending'}">${m.complete ? '✓' : '⏳'} ${m.name}</span>`) : 'A ECU não informa monitores.'}`;
 }
 
 const dtcText = (code) => dtcDescribe(code, meta.dtcDescriptions).text;

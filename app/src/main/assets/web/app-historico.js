@@ -26,7 +26,7 @@ async function loadHistory() {
     const mins = t.endTime ? Math.round((t.endTime - t.startTime) / 60000) : null;
     const el = document.createElement('div');
     el.className = 'item';
-    el.innerHTML = `<b>${dt(t.startTime)}</b> · ${fmt(t.distanceKm, 1)} km${mins != null ? ` · ${mins} min` : ' · em andamento'}
+    el.innerHTML = html`<b>${dt(t.startTime)}</b> · ${fmt(t.distanceKm, 1)} km${mins != null ? ` · ${mins} min` : ' · em andamento'}
       <div class="kv"><span>Vmáx ${fmt(t.maxSpeedKmh)} km/h</span><span>RPM máx ${fmt(t.maxRpm)}</span>
       <span>Temp máx ${fmt(t.maxCoolantC)} °C</span><span>Tensão mín ${fmt(t.minVoltage, 1)} V</span>
       <span>${fmt(t.fuelUsedL, 2)} L</span><span>${REASONS[t.endReason] || t.endReason || ''}</span></div>
@@ -50,19 +50,19 @@ async function loadHistory() {
   dtcs.forEach((d) => {
     const el = document.createElement('div');
     el.className = 'item';
-    const geo = d.lat != null ? `<a href="https://maps.google.com/?q=${d.lat},${d.lon}">${d.lat.toFixed(5)}, ${d.lon.toFixed(5)}</a>` : 'sem GPS';
+    const geo = d.lat != null ? html`<a href="https://maps.google.com/?q=${Number(d.lat)},${Number(d.lon)}">${Number(d.lat).toFixed(5)}, ${Number(d.lon).toFixed(5)}</a>` : 'sem GPS';
     const desc = dtcText(d.code);
-    el.innerHTML = `<b>${d.code}</b> · ${d.kind === 'CONFIRMED' ? 'confirmada' : 'pendente'} · ${dt(d.detectedAt)}
-      ${desc ? `<div class="small">${desc.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</div>` : ''}
+    el.innerHTML = html`<b>${d.code}</b> · ${d.kind === 'CONFIRMED' ? 'confirmada' : 'pendente'} · ${dt(d.detectedAt)}
+      ${desc ? html`<div class="small">${desc}</div>` : ''}
       <div class="kv"><span>${fmt(d.rpm)} RPM</span><span>${fmt(d.speedKmh)} km/h</span>
       <span>carga ${fmt(d.engineLoadPct)}%</span><span>${fmt(d.coolantC)} °C</span><span>${geo}</span></div>`;
     if (d.ecuFrame && Object.keys(d.ecuFrame).length) {
       const names = Object.fromEntries((meta.outputs || []).map((o) => [o.id, o]));
       const parts = Object.entries(d.ecuFrame).map(([id, v]) => {
         const o = names[id];
-        return o ? `${esc(o.name)} ${fmt(v, o.decimals)} ${esc(o.unit)}` : `${esc(id)} ${fmt(v, 1)}`;
+        return o ? `${o.name} ${fmt(v, o.decimals)} ${o.unit}` : `${id} ${fmt(v, 1)}`;
       });
-      el.insertAdjacentHTML('beforeend', `<div class="small muted">Quadro gravado pela ECU: ${parts.join(' · ')}</div>`);
+      el.insertAdjacentHTML('beforeend', html`<div class="small muted">Quadro gravado pela ECU: ${parts.join(' · ')}</div>`);
     }
     if (aiReady()) {
       const b = document.createElement('button');

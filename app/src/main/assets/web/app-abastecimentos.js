@@ -3,7 +3,6 @@
 /* ---------------------------------------------------------------- Abastecimentos */
 const FUEL_NAMES = { gasoline: 'Gasolina', gasoline_premium: 'Gasolina aditivada', ethanol: 'Etanol', mix: 'Mistura' };
 const brl = (v, d = 2) => (v == null ? '--' : 'R$ ' + fmt(v, d));
-const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const localInput = (ms) => { const d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); };
 
 let fuelSeq = 0;
@@ -56,9 +55,9 @@ async function loadFuel() {
     let est = '';
     if (iv.estimatedLiters != null) {
       const diff = (iv.estimatedLiters / iv.liters - 1) * 100;
-      est = `<span class="${Math.abs(diff) <= 5 ? 'delta-ok' : 'delta-warn'}">app estimou ${fmt(iv.estimatedLiters, 1)} L (${diff > 0 ? '+' : ''}${fmt(diff, 0)}%)</span>`;
+      est = html`<span class="${Math.abs(diff) <= 5 ? 'delta-ok' : 'delta-warn'}">app estimou ${fmt(iv.estimatedLiters, 1)} L (${diff > 0 ? '+' : ''}${fmt(diff, 0)}%)</span>`;
     }
-    el.innerHTML = `<b>${fmt(iv.kmPerL, 1)} km/l</b> · ${fmt(iv.km, 0)} km · ${fmt(iv.liters, 2)} L · ${esc(FUEL_NAMES[iv.fuelType] || iv.fuelType)}
+    el.innerHTML = html`<b>${fmt(iv.kmPerL, 1)} km/l</b> · ${fmt(iv.km, 0)} km · ${fmt(iv.liters, 2)} L · ${FUEL_NAMES[iv.fuelType] || iv.fuelType}
       <div class="kv"><span>${dt(iv.from)} → ${dt(iv.to)}</span><span>${brl(iv.costPerKm)}/km</span>${est}</div>`;
     ib.appendChild(el);
   });
@@ -69,9 +68,9 @@ async function loadFuel() {
   data.items.forEach((f) => {
     const el = document.createElement('div');
     el.className = 'item';
-    el.innerHTML = `<b>${dt(f.timestamp)}</b> · ${fmt(f.liters, 3)} L · ${brl(f.totalPrice)}${f.fullTank ? ' · cheio' : ' · parcial'}
+    el.innerHTML = html`<b>${dt(f.timestamp)}</b> · ${fmt(f.liters, 3)} L · ${brl(f.totalPrice)}${f.fullTank ? ' · cheio' : ' · parcial'}
       <div class="kv"><span>${f.odometerKm != null ? fmt(f.odometerKm, 0) + ' km' : 'sem hodômetro'}</span><span>${brl(f.pricePerLiter, 3)}/L</span>
-      <span>${esc(FUEL_NAMES[f.fuelType] || f.fuelType)}${f.ethanolPct != null ? ' ' + fmt(f.ethanolPct, 0) + '% etanol' : ''}</span><span>${esc(f.station || '')}</span></div>
+      <span>${FUEL_NAMES[f.fuelType] || f.fuelType}${f.ethanolPct != null ? ' ' + fmt(f.ethanolPct, 0) + '% etanol' : ''}</span><span>${f.station || ''}</span></div>
       <div class="actions"><button class="btn btn-small" data-fu-edit="${f.id}">Editar</button>
       <button class="btn btn-small btn-danger" data-fu-delete="${f.id}">Apagar</button></div>`;
     lb.appendChild(el);

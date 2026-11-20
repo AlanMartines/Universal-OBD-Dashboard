@@ -206,14 +206,14 @@ async function loadMaintenance() {
     const last = it.records[0];
     const el = document.createElement('div');
     el.className = 'item';
-    el.innerHTML = `<b>${esc(it.name)}</b> <span class="pill ${lv.cls}">${lv.text}</span>
+    el.innerHTML = html`<b>${it.name}</b> <span class="pill ${lv.cls}">${lv.text}</span>
       <div class="small">${mtWhenText(it.status)}</div>
       <div class="kv"><span>${last ? 'última: ' + dateOnly(last.timestamp) + (last.odometerKm != null ? ' · ' + fmt(last.odometerKm, 0) + ' km' : '') : 'nunca registrado'}</span></div>
-      ${it.notes ? `<div class="small muted">${esc(it.notes)}</div>` : ''}
-      ${it.records.length ? `<details class="small"><summary>Histórico (${it.records.length})</summary>${it.records.map((r) =>
-        `<div class="kv"><span>${dateOnly(r.timestamp)}</span><span>${r.odometerKm != null ? fmt(r.odometerKm, 0) + ' km' : 'sem km'}</span>
-        <span>${r.cost != null ? 'R$ ' + fmt(r.cost, 2) : ''}</span><span>${esc(r.notes || '')}</span>
-        <button class="btn btn-small btn-danger" data-mt-rdel="${r.id}">Apagar</button></div>`).join('')}</details>` : ''}
+      ${it.notes ? html`<div class="small muted">${it.notes}</div>` : ''}
+      ${it.records.length ? html`<details class="small"><summary>Histórico (${it.records.length})</summary>${it.records.map((r) =>
+        html`<div class="kv"><span>${dateOnly(r.timestamp)}</span><span>${r.odometerKm != null ? fmt(r.odometerKm, 0) + ' km' : 'sem km'}</span>
+        <span>${r.cost != null ? 'R$ ' + fmt(r.cost, 2) : ''}</span><span>${r.notes || ''}</span>
+        <button class="btn btn-small btn-danger" data-mt-rdel="${r.id}">Apagar</button></div>`)}</details>` : ''}
       <div class="actions"><button class="btn btn-small btn-primary" data-mt-done="${it.id}">Feito</button>
       <button class="btn btn-small" data-mt-edit="${it.id}">Editar</button>
       <button class="btn btn-small btn-danger" data-mt-del="${it.id}">Apagar</button></div>`;
