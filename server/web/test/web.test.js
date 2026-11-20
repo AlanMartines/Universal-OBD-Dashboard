@@ -11,6 +11,7 @@ import { buildMaintenance, buildReport } from '../src/modules/devices/routes.js'
 import { buildHealth, healthFindings } from '../src/modules/devices/health.js';
 // A API real, com banco real: o teste atravessa a mesma fronteira da produção.
 import { ADMIN, KEY, sample, startApi } from '../../api/test/helpers.js';
+import { codeForStep, stepAt } from '../../api/src/totp.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ORIGIN = 'https://painel.exemplo.test';
@@ -278,7 +279,31 @@ describe('fluxo pelo navegador', () => {
     const csrf = await csrfOf(adminCookie, '/meus-dados/senha');
     const changed = await post('/meus-dados/senha', { _csrf: csrf, currentPassword: ADMIN.password, newPassword: 'nova frase longa do administrador', confirm: 'nova frase longa do administrador' }, adminCookie);
     assert.equal(changed.statusCode, 303);
+    // Super Admin: 2FA obrigatório. Até ativar, tudo leva a Meus Dados, com o formulário já aberto.
+    const blocked = await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } });
+    assert.equal(blocked.headers.location, '/meus-dados#mfa');
+    assert.equal((await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } })).headers.location, '/meus-dados#mfa');
+    const mine = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie: adminCookie } });
+    assert.equal(mine.statusCode, 200);
+    assert.ok(mine.body.includes('<strong>obrigatória</strong>'));
+    assert.ok(mine.body.includes('class="collapse show" id="mfa-on"'));
+    const start = await post('/meus-dados/2fa/iniciar', { _csrf: field(mine.body, '_csrf'), currentPassword: 'nova frase longa do administrador' }, adminCookie);
+    assert.equal(start.headers.location, '/meus-dados/2fa');
+    const setup = (await web.inject({ method: 'GET', url: '/meus-dados/2fa', headers: { cookie: adminCookie } })).body;
+    const secret = setup.match(/<code class="user-select-all text-break">([A-Z2-7]+)<\/code>/)[1];
+    const on = await post('/meus-dados/2fa/ativar', { _csrf: field(setup, '_csrf'), code: codeForStep(secret, stepAt(Date.now())) }, adminCookie);
+    assert.equal(on.statusCode, 200);
     assert.equal((await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } })).statusCode, 200);
+    const after = (await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie: adminCookie } })).body;
+    assert.ok(after.includes('não pode ser desativada') && !after.includes('action="/meus-dados/2fa/desativar"'));
+    // Ajuste dos donos de conta na Administração: liga e desliga.
+    const adminPage = (await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } })).body;
+    assert.ok(adminPage.includes('2FA dos donos de conta') && adminPage.includes('Exigir dos donos de conta'));
+    const toggled = await post('/admin/2fa-donos', { _csrf: field(adminPage, '_csrf'), required: 'true' }, adminCookie);
+    assert.equal(toggled.headers.location, '/admin?ok=mfa_admins_updated');
+    const now = (await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } })).body;
+    assert.ok(now.includes('Tornar opcional') && now.includes('2FA obrigatória para os donos de conta'));
+    await post('/admin/2fa-donos', { _csrf: field(now, '_csrf'), required: 'false' }, adminCookie);
   });
 
   test('POST sem token CSRF ou de outra origem é recusado', async () => {

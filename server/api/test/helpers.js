@@ -1,6 +1,7 @@
 import { loadConfig } from '../src/config.js';
 import { buildApp } from '../src/app.js';
 import { bootstrap, createPool } from '../src/db.js';
+import { codeForStep, stepAt } from '../src/totp.js';
 
 export const DB_URL = process.env.TEST_DATABASE_URL;
 export const KEY = 'chave-interna-de-teste-com-mais-de-32-caracteres';
@@ -54,10 +55,33 @@ export async function adminToken(app) {
   const token = await login(app, ADMIN.username, ADMIN.password);
   const res = await internal(app, 'POST', '/internal/auth/password', {
     token,
-    body: { currentPassword: ADMIN.password, newPassword: 'outra frase longa do administrador' },
+    body: { currentPassword: ADMIN.password, newPassword: ADMIN_NEW_PASSWORD },
   });
   if (res.statusCode !== 200) throw new Error(`troca de senha: ${res.body}`);
+  adminRecovery = (await enableMfa(app, token, ADMIN_NEW_PASSWORD)).recoveryCodes;
   return token;
+}
+
+export const ADMIN_NEW_PASSWORD = 'outra frase longa do administrador';
+let adminRecovery = [];
+
+/** Novo login do Super Admin com 2FA (usa um código de recuperação: o do app não vale duas vezes no mesmo intervalo). */
+export async function adminLogin(app) {
+  const first = await internal(app, 'POST', '/internal/auth/login', { body: { username: ADMIN.username, password: ADMIN_NEW_PASSWORD } });
+  const { mfaToken } = first.json();
+  if (!mfaToken) throw new Error(`login do admin: ${first.body}`);
+  const res = await internal(app, 'POST', '/internal/auth/mfa', { body: { mfaToken, code: adminRecovery.shift() } });
+  return res.json().token;
+}
+
+/** Ativa o 2FA da sessão (obrigatório para o Super Admin) e devolve o segredo e os códigos. */
+export async function enableMfa(app, token, currentPassword) {
+  const setup = await internal(app, 'POST', '/internal/account/mfa/setup', { token, body: { currentPassword } });
+  if (setup.statusCode !== 200) throw new Error(`2FA: ${setup.body}`);
+  const { secret } = (await internal(app, 'GET', '/internal/account/mfa/pending', { token })).json();
+  const on = await internal(app, 'POST', '/internal/account/mfa/enable', { token, body: { code: codeForStep(secret, stepAt(Date.now())) } });
+  if (on.statusCode !== 200) throw new Error(`2FA: ${on.body}`);
+  return { secret, recoveryCodes: on.json().recoveryCodes };
 }
 
 /** Cria um Admin (dono de conta) pronto e devolve o token de sessão. */

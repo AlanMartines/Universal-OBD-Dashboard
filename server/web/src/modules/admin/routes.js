@@ -9,6 +9,8 @@ const AUDIT = {
   codigo_2fa_recusado: ['Código 2FA recusado', 'fa-ban', 'danger'],
   '2fa_ativado': ['2FA ativada', 'fa-shield-halved', 'success'],
   '2fa_desativado': ['2FA desativada', 'fa-shield', 'warning'],
+  '2fa_admins_obrigatorio': ['2FA obrigatória para os donos de conta', 'fa-shield-halved', 'success'],
+  '2fa_admins_opcional': ['2FA opcional para os donos de conta', 'fa-shield', 'warning'],
   senha_alterada: ['Senha alterada', 'fa-key', 'primary'],
   senha_redefinida: ['Senha redefinida', 'fa-key', 'primary'],
   redefinicao_pedida: ['Redefinição de senha pedida', 'fa-envelope', 'secondary'],
@@ -63,6 +65,11 @@ export default function adminRoutes(app, {
   app.post('/admin/cadastro', { preHandler: requireAdmin }, async (request, reply) => {
     await api(request, 'POST', '/internal/admin/signup', { body: { open: request.body?.open === 'true' } });
     return reply.redirect('/admin?ok=signup_updated', 303);
+  });
+
+  app.post('/admin/2fa-donos', { preHandler: requireAdmin }, async (request, reply) => {
+    await api(request, 'POST', '/internal/admin/mfa-admins', { body: { required: request.body?.required === 'true' } });
+    return reply.redirect('/admin?ok=mfa_admins_updated', 303);
   });
 
   app.post('/admin/usuarios', { preHandler: requireAdmin }, async (request, reply) => {

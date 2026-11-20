@@ -41,7 +41,7 @@ export default function accountRoutes(app, {
       title: 'Meus Dados', account, pageCss: ['/modules/account/account.css'], pageScripts: ['/modules/account/account.js'], ...extra,
     }));
   };
-  const clientError = (error) => error instanceof ApiError && error.status < 500 && error.status !== 401 && error.code !== 'password_change_required';
+  const clientError = (error) => error instanceof ApiError && error.status < 500 && error.status !== 401 && error.code !== 'password_change_required' && error.code !== 'mfa_setup_required';
 
   const REDIRECT_ERRORS = ['image_too_large'];
 

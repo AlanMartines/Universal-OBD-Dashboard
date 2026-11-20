@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Segurança
+- **Painel: verificação em duas etapas obrigatória para o Super Admin.** Sem 2FA ativo, depois da troca da senha inicial, o painel só abre Meus Dados até o aplicativo autenticador ser configurado; a desativação pela tela é recusada (perda do celular: código de recuperação ou `--disable-2fa` no servidor, que volta a pedir o 2FA). Em Configurações, um ajuste novo, desligado por padrão, estende a exigência a todos os donos de conta (Admin). As mudanças do ajuste ficam na auditoria.
+
 ### Adicionado
 - **Servidor: backup diário cifrado do banco.** `server/scripts/backup-banco.sh` guarda o dump do PostgreSQL, os papéis e o `.env`, cifrados com GPG (AES-256), confere cada arquivo antes de guardar, mantém 7 diários, 4 semanais e 6 mensais e espelha a pasta num armazenamento externo com rclone. `server/scripts/testar-restauracao.sh` restaura todo mês o backup mais recente num Postgres descartável e confere as tabelas, as migrações e os usuários. Instalação e restauração no README do servidor.
 

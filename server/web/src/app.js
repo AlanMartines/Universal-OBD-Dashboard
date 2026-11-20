@@ -321,6 +321,7 @@ export async function buildApp({ config, logger }) {
         return reply.redirect('/login');
       }
       if (error.code === 'password_change_required') return reply.redirect('/meus-dados/senha');
+      if (error.code === 'mfa_setup_required') return reply.redirect('/meus-dados#mfa', 303);
       return renderError(reply, error.status, error.code);
     }
     if (error.statusCode === 429) return renderError(reply, 429, 'too_many_requests');
@@ -345,6 +346,10 @@ export async function buildApp({ config, logger }) {
     if (!isSameOriginRequest(request.headers, config.publicOrigin)) throw new ApiError(403, 'forbidden');
   });
 
+  const MFA_SETUP_ROUTES = [
+    '/meus-dados', '/meus-dados/2fa', '/meus-dados/2fa/iniciar', '/meus-dados/2fa/ativar',
+    '/logout', '/meus-dados/foto', '/meus-dados/personificacao/sair',
+  ];
   const requireUser = async (request, reply) => {
     if (!request.cookies[cookieName]) return reply.redirect('/login');
     const session = await api(request, 'GET', '/internal/auth/session');
@@ -355,6 +360,10 @@ export async function buildApp({ config, logger }) {
     }
     if (session.user.mustChangePassword && !['/meus-dados/senha', '/logout', '/meus-dados/foto', '/meus-dados/personificacao/sair'].includes(request.routeOptions.url)) {
       return reply.redirect('/meus-dados/senha');
+    }
+    // 2FA obrigatório e ainda não ativado: só Meus Dados (onde se ativa), a configuração e a saída.
+    if (session.user.mfaSetupRequired && !MFA_SETUP_ROUTES.includes(request.routeOptions.url)) {
+      return reply.redirect('/meus-dados#mfa', 303);
     }
     return undefined;
   };
