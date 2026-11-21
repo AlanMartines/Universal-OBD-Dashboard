@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.61] - 2026-11-21
+
 ### Segurança
 - **Painel: senhas vazadas recusadas.** No cadastro, na troca e na redefinição, a senha nova é conferida no Have I Been Pwned por k-anonimato (só 5 caracteres do hash saem do servidor). Se o serviço não responder, a senha passa.
 - **Painel: papéis testados rota a rota.** Um teste garante que o Usuário (atendimento) é recusado em todas as rotas de gestão e o Admin nas rotas só do Super Admin.
