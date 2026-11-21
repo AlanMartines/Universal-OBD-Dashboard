@@ -1,7 +1,8 @@
 import { alertIfNewNetwork, alertUser } from '../alerts.js';
 import { audit } from '../db.js';
 import { fail } from '../errors.js';
-import { LOCK_AFTER, LOCK_MAX_MINUTES, passwordField } from '../schemas.js';
+import { knownNetworks, networkOf } from '../networks.js';
+import { ACCOUNT_LOCK_AFTER, LOCK_AFTER, LOCK_MAX_MINUTES, passwordField } from '../schemas.js';
 import {
   burnPasswordCheck, hashPassword, isValidUsername, normalizeUsername, passwordProblem, randomToken, sha256, verifyPassword,
 } from '../security.js';
@@ -30,28 +31,53 @@ export default function authRoutes(app, {
       [username],
     );
     const user = rows[0];
-    const locked = user?.locked_until && user.locked_until > new Date();
-    // Mesma resposta e custo parecido em todos os casos: não dá para descobrir contas.
+    // Bloqueio por conta e por rede: errar a senha de um lugar só bloqueia aquele lugar. A trava da conta
+    // inteira (muitos erros espalhados) vale só para redes que a conta nunca usou; das conhecidas o dono entra.
+    const net = networkOf(request.clientIp);
+    let locked = false;
+    if (user) {
+      const t = await pool.query('SELECT locked_until FROM login_throttle WHERE user_id = $1 AND net = $2', [user.id, net]);
+      const netLocked = t.rows[0]?.locked_until > new Date();
+      const accountLocked = user.locked_until > new Date() && !(await knownNetworks(pool, user.username)).has(request.clientIp);
+      locked = netLocked || accountLocked;
+    }
+    // Mesma resposta e custo parecido em todos os casos: não dá para descobrir contas nem bloqueios.
     if (!user || user.disabled || locked) {
       await burnPasswordCheck(password);
       await audit(pool, { actor: user?.username ?? '(desconhecido)', action: 'login_recusado', ip: request.clientIp });
       throw fail(401, 'invalid_credentials');
     }
     if (!(await verifyPassword(user.password_hash, password))) {
+      const lockFor = (n, after) => (n >= after ? Math.min(2 ** (n - after), LOCK_MAX_MINUTES) : 0);
+      const { rows: [t] } = await pool.query(
+        `INSERT INTO login_throttle (user_id, net, failures) VALUES ($1, $2, 1)
+         ON CONFLICT (user_id, net) DO UPDATE SET failures = login_throttle.failures + 1, updated_at = now()
+         RETURNING failures`,
+        [user.id, net],
+      );
+      const netMinutes = lockFor(t.failures, LOCK_AFTER);
+      if (netMinutes) {
+        await pool.query(
+          `UPDATE login_throttle SET locked_until = now() + make_interval(mins => $3::int) WHERE user_id = $1 AND net = $2`,
+          [user.id, net, netMinutes],
+        );
+      }
       const failures = user.failed_logins + 1;
-      const minutes = failures >= LOCK_AFTER ? Math.min(2 ** (failures - LOCK_AFTER), LOCK_MAX_MINUTES) : 0;
+      const accountMinutes = lockFor(failures, ACCOUNT_LOCK_AFTER);
       await pool.query(
         `UPDATE users SET failed_logins = $2,
                 locked_until = CASE WHEN $3::int > 0 THEN now() + make_interval(mins => $3::int) ELSE locked_until END
           WHERE id = $1`,
-        [user.id, failures, minutes],
+        [user.id, failures, accountMinutes],
       );
       await audit(pool, { actor: user.username, action: 'login_recusado', ip: request.clientIp });
-      // Um aviso por sequência: no primeiro bloqueio (os seguintes só aumentam o tempo).
-      if (failures === LOCK_AFTER) await alertUser(pool, user.id, 'conta_bloqueada', { ip: request.clientIp, minutes });
+      // Um aviso por sequência: no primeiro bloqueio da rede e no da conta (os seguintes só aumentam o tempo).
+      if (t.failures === LOCK_AFTER) await alertUser(pool, user.id, 'conta_bloqueada', { ip: request.clientIp, minutes: netMinutes });
+      if (failures === ACCOUNT_LOCK_AFTER) await alertUser(pool, user.id, 'conta_fechada_redes_novas', { ip: request.clientIp, minutes: accountMinutes });
       throw fail(401, 'invalid_credentials');
     }
     await pool.query('UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = $1', [user.id]);
+    await pool.query('DELETE FROM login_throttle WHERE user_id = $1 AND net = $2', [user.id, net]);
     // Senha certa com 2FA ativo ainda não abre sessão: só um desafio curto para o segundo passo.
     if (user.totp_enabled_at) {
       const mfaToken = randomToken();
@@ -114,6 +140,7 @@ export default function authRoutes(app, {
       'UPDATE users SET password_hash = $2, must_change_password = false, failed_logins = 0, locked_until = NULL WHERE id = $1',
       [user.id, await hashPassword(request.body.newPassword)],
     );
+    await pool.query('DELETE FROM login_throttle WHERE user_id = $1', [user.id]);
     // Encerra as outras sessões: quem tinha a senha antiga perde o acesso.
     await pool.query('DELETE FROM sessions WHERE user_id = $1 AND token_hash <> $2', [user.id, request.session.tokenHash]);
     await audit(pool, { actor: user.username, action: 'senha_alterada', target: user.username, ip: request.clientIp });

@@ -334,6 +334,7 @@ export default function securityRoutes(app, {
       );
       await client.query('DELETE FROM sessions WHERE user_id = $1', [user.id]);
       await client.query('DELETE FROM mfa_challenges WHERE user_id = $1', [user.id]);
+      await client.query('DELETE FROM login_throttle WHERE user_id = $1', [user.id]);
       await client.query(
         'INSERT INTO mail_outbox (recipient, subject, body) VALUES ($1, $2, $3)',
         [user.email, 'Sua senha foi alterada', `A senha da conta "${user.username}" na Telemetria OBD foi alterada.\n\nSe não foi você, fale com o administrador.`],

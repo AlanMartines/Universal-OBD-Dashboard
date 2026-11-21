@@ -2,6 +2,8 @@ import { PASSWORD_MAX } from './security.js';
 
 export const LOCK_AFTER = 5;
 export const LOCK_MAX_MINUTES = 60;
+/** Erros somados de todas as redes até a conta fechar para redes desconhecidas (as conhecidas seguem liberadas). */
+export const ACCOUNT_LOCK_AFTER = 20;
 export const PAIRING_MINUTES = 10;
 export const MAX_LIVE_PER_USER = 5;
 export const FUTURE_TOLERANCE_MS = 5 * 60 * 1000;

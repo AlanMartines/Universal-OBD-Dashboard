@@ -46,6 +46,7 @@ export async function resetPassword(pool, username, password, { disableMfa = fal
       return false;
     }
     await client.query('DELETE FROM sessions WHERE user_id = $1', [rows[0].id]);
+    await client.query('DELETE FROM login_throttle WHERE user_id = $1', [rows[0].id]);
     if (disableMfa) {
       const off = await client.query(
         'UPDATE users SET totp_secret = NULL, totp_pending = NULL, totp_enabled_at = NULL, totp_last_step = NULL WHERE id = $1 AND totp_enabled_at IS NOT NULL',
