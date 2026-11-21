@@ -22,6 +22,8 @@ export function loadConfig(env = process.env) {
     apiUrl: env.API_URL || 'http://api:28472',
     publicOrigin,
     cookieSecure: !insecureAllowed,
+    // Senhas vazadas (Have I Been Pwned por k-anonimato). PWNED_CHECK=false desliga (sem internet, testes).
+    pwnedCheck: env.PWNED_CHECK !== 'false',
     internalKey: secret(env, 'INTERNAL_API_KEY'),
     formSecret: secret(env, 'FORM_SECRET'),
     trustProxy: env.TRUST_PROXY || '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.1/32',

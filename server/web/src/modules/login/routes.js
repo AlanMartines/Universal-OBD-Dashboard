@@ -3,7 +3,7 @@ import { checkFormToken, issueFormToken } from '../../shared/protection.js';
 
 const SIGNUP_MIN_MS = 3000;
 
-export default function loginRoutes(app, { config, api, cookieName, cookieOptions, clearSession, renderError, pageLimit, requireUser }) {
+export default function loginRoutes(app, { config, api, cookieName, cookieOptions, clearSession, renderError, pageLimit, requireUser, pwnedPassword }) {
   const MFA_COOKIE = 'obd_mfa';
   const mfaCookieOptions = { path: '/login', httpOnly: true, secure: config.cookieSecure, sameSite: 'lax', maxAge: 300 };
 
@@ -112,6 +112,7 @@ export default function loginRoutes(app, { config, api, cookieName, cookieOption
   app.post('/redefinir-senha', { logLevel: 'warn', ...pageLimit(20, '1 hour') }, async (request, reply) => {
     const { token, newPassword, confirm } = request.body ?? {};
     if (newPassword !== confirm) return resetView(reply, String(token ?? ''), 400, message('password_mismatch'));
+    if (await pwnedPassword(newPassword)) return resetView(reply, String(token ?? ''), 400, message('password_pwned'));
     try {
       await api(request, 'POST', '/internal/auth/reset', { body: { token: String(token ?? ''), newPassword: String(newPassword ?? '') } });
       clearSession(reply);
@@ -142,6 +143,7 @@ export default function loginRoutes(app, { config, api, cookieName, cookieOption
       return registerView(reply, 400, message('bad_form'));
     }
     if (password !== confirm) return registerView(reply, 400, message('password_mismatch'));
+    if (await pwnedPassword(password)) return registerView(reply, 400, message('password_pwned'));
     try {
       const { token } = await api(request, 'POST', '/internal/auth/register', {
         body: { username: String(username ?? ''), password: String(password ?? '') },

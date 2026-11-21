@@ -22,6 +22,7 @@ import loginRoutes from './modules/login/routes.js';
 import projetoRoutes from './modules/projeto/routes.js';
 import notasRoutes from './modules/notas/routes.js';
 import vehicleRoutes from './modules/vehicle/routes.js';
+import { createPwnedCheck } from './shared/pwned.js';
 
 export { checkFormToken, isSameOriginRequest, issueFormToken } from './shared/protection.js';
 
@@ -81,7 +82,7 @@ function activePageOf(url) {
   return 'painel';
 }
 
-export async function buildApp({ config, logger }) {
+export async function buildApp({ config, logger, pwned = null }) {
   const app = Fastify({
     logger: logger ?? {
       level: config.logLevel,
@@ -428,7 +429,15 @@ export async function buildApp({ config, logger }) {
   app.get('/robots.txt', async (_request, reply) => reply.type('text/plain').send('User-agent: *\nDisallow: /\n'));
   app.get('/', async (request, reply) => reply.redirect(request.cookies[cookieName] ? '/painel' : '/login'));
 
+  // Senha nova que aparece em vazamentos públicos é recusada (as rotas chamam antes de mandar à API).
+  const isPwned = pwned ?? createPwnedCheck({ enabled: config.pwnedCheck, log: app.log });
+  // Só consulta senhas que a API aceitaria pelo tamanho; as outras recebem a mensagem da própria API.
+  const pwnedPassword = async (password) => {
+    const p = String(password ?? '');
+    return p.length >= 15 && p.length <= 256 && isPwned(p);
+  };
   const shared = {
+    pwnedPassword,
     config, api, apiBinary, hasMapData, cookieName, cookieOptions, clearSession, renderError, pageLimit, requireUser, requireAdmin, context,
   };
   gatewayRoutes(app, shared);

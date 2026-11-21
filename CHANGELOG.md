@@ -7,6 +7,12 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ## [Não lançado]
 
 ### Segurança
+- **Painel: senhas vazadas recusadas.** No cadastro, na troca e na redefinição, a senha nova é conferida no Have I Been Pwned por k-anonimato (só 5 caracteres do hash saem do servidor). Se o serviço não responder, a senha passa.
+- **Painel: papéis testados rota a rota.** Um teste garante que o Usuário (atendimento) é recusado em todas as rotas de gestão e o Admin nas rotas só do Super Admin.
+- **App: componentes expostos validados.** O receptor do Bluetooth só aceita as duas ações do sistema, e o pedido de iniciar a captura só vale com um código aleatório desta instalação (o da notificação do próprio app). Um teste trava a lista de componentes expostos.
+- **Build: checksum do Gradle.** O wrapper confere o SHA-256 oficial do Gradle 9.9.1 antes de usar o arquivo baixado.
+
+### Segurança
 - **Painel: confirmar a senha em ações críticas.** Criar, desativar e excluir usuário, abrir o cadastro, mudar a exigência de 2FA, entrar em modo suporte e gerar código de pareamento, revogar ou excluir dispositivo passam a exigir a senha (e o código do autenticador, quando a conta usa 2FA) confirmada nos últimos 10 minutos. O login conta como confirmação. Sem ela, o painel pede a senha e volta à página de origem. No modo suporte, quem confirma é o Super Admin.
 
 ### Adicionado

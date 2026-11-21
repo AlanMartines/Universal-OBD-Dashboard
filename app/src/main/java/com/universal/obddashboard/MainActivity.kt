@@ -303,7 +303,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
-        if (intent?.action == ACTION_START_CAPTURE) startCapture()
+        if (intent?.action != ACTION_START_CAPTURE) return
+        // A tela é exportada (ícone): o pedido só vale com o código desta instalação (notificação do próprio app).
+        if (IntentGuard.isTrusted(this, intent)) startCapture() else Log.w(TAG, "Pedido de captura sem o código do app: ignorado")
     }
 
     // ---------------- Permissões e controle do serviço ----------------

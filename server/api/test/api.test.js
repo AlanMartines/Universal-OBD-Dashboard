@@ -719,6 +719,49 @@ describe('API', () => {
     });
   });
 
+  describe('papéis em cada rota de administração', () => {
+    test('Usuário (atendimento) e Admin são recusados onde não podem, antes de qualquer outra conferência', async () => {
+      const dono = await userToken(app, admin, 'papeldono');
+      const atend = await internal(app, 'POST', '/internal/admin/users', { token: dono, body: { username: 'papelatend', role: 'user' } });
+      const atendTok = await login(app, 'papelatend', atend.json().password);
+      await internal(app, 'POST', '/internal/auth/password', { token: atendTok, body: { currentPassword: atend.json().password, newPassword: USER_PASSWORD } });
+      const dev = (await internal(app, 'POST', '/internal/devices', { token: dono, body: { name: 'Carro dos papéis' } })).json();
+      const alvo = (await pool.query(`SELECT id FROM users WHERE username = 'papelatend'`)).rows[0].id;
+
+      // rotas de quem gerencia (Super Admin e Admin): o Usuário só visualiza
+      const deGestor = [
+        ['GET', '/internal/admin/overview'],
+        ['POST', '/internal/admin/users', { username: 'papelnovo', role: 'user' }],
+        ['POST', `/internal/admin/users/${alvo}/disabled`, { disabled: true }],
+        ['POST', `/internal/admin/users/${alvo}/delete`],
+        ['POST', '/internal/devices', { name: 'Não pode' }],
+        ['POST', `/internal/devices/${dev.id}/pairing-code`],
+        ['POST', `/internal/devices/${dev.id}/revoke`],
+        ['POST', `/internal/devices/${dev.id}/delete`],
+      ];
+      // rotas só do Super Admin: nem o dono de conta entra
+      const deSuper = [
+        ['POST', '/internal/admin/signup', { open: true }],
+        ['POST', '/internal/admin/mfa-admins', { required: true }],
+        ['POST', `/internal/admin/users/${alvo}/impersonate`],
+      ];
+      const chama = ([method, url, body], token) => internal(app, method, url, { token, ...(body ? { body } : {}) });
+      for (const rota of [...deGestor, ...deSuper]) {
+        const res = await chama(rota, atendTok);
+        assert.equal(res.statusCode, 403, `Usuário em ${rota[1]}`);
+        assert.deepEqual(res.json(), { error: 'forbidden' }, `Usuário em ${rota[1]}`);
+      }
+      for (const rota of deSuper) {
+        const res = await chama(rota, dono);
+        assert.deepEqual(res.json(), { error: 'forbidden' }, `Admin em ${rota[1]}`);
+      }
+      // nada mudou: o atendente segue ativo, o dispositivo segue lá e o cadastro segue fechado
+      assert.equal((await pool.query(`SELECT disabled FROM users WHERE username = 'papelatend'`)).rows[0].disabled, false);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: dono })).statusCode, 200);
+      assert.equal((await internal(app, 'GET', '/internal/signup')).json().open, false);
+    });
+  });
+
   describe('confirmar a senha em ações críticas', () => {
     const vence = (token) => pool.query(`UPDATE sessions SET reauth_at = now() - interval '11 minutes' WHERE token_hash = $1`, [sha256(token)]);
     const reauth = (token, body) => internal(app, 'POST', '/internal/auth/reauth', { token, body });
