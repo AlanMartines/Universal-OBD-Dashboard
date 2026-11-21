@@ -63,6 +63,7 @@
     'health.intake': ['Admissão', '', 0], 'health.idle': ['Marcha lenta', '', 0],
     'health.mixture': ['Mistura', '', 0], 'health.exhaust': ['Escape', '', 0], 'health.sensors': ['Sensores de temperatura', '', 0],
     'health.clutch': ['Embreagem', '', 0],
+    ethanol_hint_pct: ['Etanol no tanque (pista da central)', '%', 0],
     can_ac: ['Ar-condicionado (painel)', '', 0], can_lights: ['Luzes acesas (painel)', '', 0], can_defog: ['Desembaçador (painel)', '', 0],
   };
   var HEALTH_TEXT = ['Normal', 'Atenção', 'Verificar'];
@@ -121,7 +122,7 @@
   }
   var GROUPS = [
     ['Motor', ['derived.estimatedLoadPct', 'derived.vacuumKpa', 'derived.mapOffsetKpa', 'engine_load', 'map', 'maf', 'throttle', 'timing_advance', 'derived.estimatedGear', 'derived.recommendedGear', 'can_rpm', 'can_coolant_temp']],
-    ['Combustível', ['fuel_level_pct', 'can_fuel_lph', 'derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v']],
+    ['Combustível', ['fuel_level_pct', 'can_fuel_lph', 'derived.tripCost', 'derived.fuelLph', 'derived.instantKmPerL', 'derived.tripKmPerL', 'derived.tripFuelUsedL', 'derived.fuelRemainingL', 'fuel_raw', 'stft_b1', 'ltft_b1', 'lambda_v', 'ethanol_hint_pct']],
     ['Viagem', ['can_speed', 'trip_distance_km', 'derived.tripDistanceKm', 'trip_km', 'odometer_km']],
     ['Elétrica', ['can_voltage', 'can_lights', 'can_defog', 'can_ac', 'esp_batt_v', 'esp_batt_min', 'esp_batt_rest', 'esp_batt_lowest', 'derived.battRestV', 'derived.battCrankV', 'derived.battDiffV']],
     ['Movimento', ['derived.accelG', 'derived.lateralG', 'derived.slopePct', 'derived.impactG', 'derived.bumps', 'derived.maxBrakeG',

@@ -91,6 +91,14 @@ class FuelBridge(private val activity: MainActivity) {
                         .put("deviation", c.deviation.orNull()).put("suggested", c.suggestedFactor.orNull())
                 } ?: JSONObject.NULL,
             )
+            .put(
+                "ethanolHint",
+                // Só a do último abastecimento: as antigas já não dizem nada sobre o tanque de agora
+                AppSettings.ethanolHint(activity)?.takeIf { h -> h.refuelAt == list.maxOfOrNull { it.timestamp } }?.let { h ->
+                    JSONObject().put("refuelAt", h.refuelAt).put("shift", h.shiftPct).put("expected", h.expectedPct)
+                        .put("informed", h.informedPct).put("estimated", h.estimatedPct).put("samples", h.samples).put("mismatch", h.mismatch)
+                } ?: JSONObject.NULL,
+            )
             .toString()
     }
 

@@ -436,6 +436,9 @@ class HealthHistory(
 
     fun baseline(id: String): Double? = baselines[id]
 
+    /** Viagens guardadas de uma checagem, da mais antiga para a mais nova. */
+    fun entries(id: String): List<Entry> = trips[id].orEmpty()
+
     fun check(id: String): CheckState {
         val list = trips[id].orEmpty()
         if (list.isEmpty()) return CheckState(id, Level.NO_DATA, null, 0, 0)

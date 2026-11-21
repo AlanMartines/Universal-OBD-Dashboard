@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Abastecimentos: pista do % de etanol no tanque.** A central do Uno não informa a mistura, mas a revela nos primeiros minutos depois de abastecer: até aprender o combustível novo, a correção de curto prazo salta (sobe com mais etanol que antes, desce com menos). Na primeira viagem até 3 h depois de um abastecimento, o app mede esse salto em rodagem leve com o motor quente, compara com o normal do carro antes do abastecimento e estima a % de etanol no tanque. A estimativa aparece em Abastecimentos e no painel (ao vivo, grupo Combustível); quando foge muito do que foi informado, um aviso oferece aplicar a % estimada. É uma pista, não uma medida: só avisa num desvio grande.
+
 ## [0.9.63] - 2026-11-21
 
 ### Adicionado

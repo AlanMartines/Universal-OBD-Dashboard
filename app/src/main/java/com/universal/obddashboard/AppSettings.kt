@@ -234,6 +234,25 @@ object AppSettings {
             putLong(KEY_FUEL_CORR_SINCE_PREFIX + vid(context), now)
         }
 
+    private const val KEY_ETHANOL_HINT = "ethanol_hint"
+
+    /** Última pista do % de etanol medida depois de um abastecimento (por veículo). */
+    fun ethanolHint(context: Context): com.universal.obddashboard.telemetry.EthanolHint.Result? = runCatching {
+        val o = org.json.JSONObject(prefs(context).getString(sk(context, KEY_ETHANOL_HINT), null) ?: return null)
+        com.universal.obddashboard.telemetry.EthanolHint.Result(
+            o.getLong("refuelAt"), o.getDouble("shift"), o.getDouble("expected"), o.getDouble("informed"),
+            o.getDouble("estimated"), o.getInt("samples"),
+        )
+    }.getOrNull()
+
+    fun setEthanolHint(context: Context, r: com.universal.obddashboard.telemetry.EthanolHint.Result) = prefs(context).edit {
+        putString(
+            sk(context, KEY_ETHANOL_HINT),
+            org.json.JSONObject().put("refuelAt", r.refuelAt).put("shift", r.shiftPct).put("expected", r.expectedPct)
+                .put("informed", r.informedPct).put("estimated", r.estimatedPct).put("samples", r.samples).toString(),
+        )
+    }
+
     /** Correção própria do etanol; null = ainda não calibrada (vale a da gasolina, [fuelCorrection]). */
     fun fuelCorrectionEthanol(context: Context): FuelCorrection? {
         val p = prefs(context)

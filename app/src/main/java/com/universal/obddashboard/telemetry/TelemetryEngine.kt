@@ -31,6 +31,8 @@ class TelemetryEngine(
     private val fuelPricePerL: Double? = null,
     /** Último abastecimento registrado (ms): a mistura não é julgada nos primeiros minutos depois dele. */
     private val lastFuelUpAt: Long? = null,
+    /** Pista do % de etanol na primeira viagem depois de um abastecimento (null fora dela). */
+    val ethanolHint: EthanolHint? = null,
     /** Correção escolhida em Mostradores: os cronômetros usam a mesma velocidade que a tela mostra. */
     speedCorrectionPct: Double = 0.0,
     /** Orientação aprendida do sensor de movimento do ESP32 (LSM6DS3), salva entre as capturas. */
@@ -328,7 +330,7 @@ class TelemetryEngine(
         battery.update(espVolts, state.value(Slcan.ESP_BATT_REST, now), state.value(Slcan.ESP_BATT_LOWEST, now), carVolts, engine.on)
         // Pré-diagnóstico: rotação e água da rede CAN quando houver (mais rápidas), pressão do ar da melhor fonte
         val flag = { id: String -> state.value(id, now)?.let { it >= 0.5 } }
-        health.update(
+        val healthIn =
             HealthMonitor.Input(
                 now = now, dtS = dtS,
                 rpm = state.value(PhoneSensors.CAN_RPM, now, 2000) ?: rpm,
@@ -352,8 +354,9 @@ class TelemetryEngine(
                 lambdaPostV = v(roles.lambdaPostVoltage),
                 intakeC = v(roles.intakeTemp),
                 refuelAt = lastFuelUpAt,
-            ),
-        )
+            )
+        health.update(healthIn)
+        ethanolHint?.update(healthIn.now, healthIn.rpm, healthIn.speedKmh, healthIn.coolantC, healthIn.throttlePct, healthIn.stftPct)
 
         val derived = DerivedMetrics(
             fuelLph = lph,
