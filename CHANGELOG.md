@@ -6,6 +6,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Servidor: monitor com aviso por e-mail.** `server/scripts/monitor-servidor.sh`, a cada 10 min, avisa os Super Admins quando o disco passa de 85 %, a memória disponível cai abaixo de 10 %, um contêiner do painel para ou fica com a saúde ruim, ou o último backup tem mais de 26 h. Repete no máximo a cada 6 h e avisa quando normaliza.
+- **Servidor: logs fora da máquina.** O backup diário guarda os logs dos contêineres das últimas 24 h, cifrados, por 30 dias, e eles sobem junto para o armazenamento externo.
+
 ### Segurança
 - **Painel: bloqueio por tentativas conta por rede.** Antes, 5 senhas erradas bloqueavam a conta inteira, e quem soubesse o usuário podia deixar o dono do lado de fora. Agora o bloqueio vale só para a rede de onde vieram os erros (/24 no IPv4, /48 no IPv6). Um ataque espalhado, com 20 erros somados, fecha a conta só para redes que ela nunca usou, e das redes conhecidas o dono continua entrando. Os dois casos mandam aviso por e-mail.
 

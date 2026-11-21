@@ -4,6 +4,20 @@
   "date": null,
   "sections": [
    {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "Servidor: monitor com aviso por e-mail",
+      "text": "server/scripts/monitor-servidor.sh, a cada 10 min, avisa os Super Admins quando o disco passa de 85 %, a memória disponível cai abaixo de 10 %, um contêiner do painel para ou fica com a saúde ruim, ou o último backup tem mais de 26 h. Repete no máximo a cada 6 h e avisa quando normaliza."
+     },
+     {
+      "title": "Servidor: logs fora da máquina",
+      "text": "O backup diário guarda os logs dos contêineres das últimas 24 h, cifrados, por 30 dias, e eles sobem junto para o armazenamento externo."
+     }
+    ]
+   },
+   {
     "kind": "security",
     "title": "Segurança",
     "items": [
