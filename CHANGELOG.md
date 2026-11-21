@@ -6,6 +6,15 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Saúde do carro: pré-diagnóstico, fase 2.** Quatro subsistemas novos no app e no painel:
+  - **Mistura:** correção de curto prazo em marcha lenta e rodando, fora do corte de combustível e dos minutos depois de abastecer. Alta só na marcha lenta aponta ar falso; nas duas, combustível ou injeção. O estado vem da mediana das últimas 5 viagens (±15 %), porque sem a correção de longo prazo a de curto prazo varia muito de uma viagem para outra.
+  - **Escape:** sonda depois do catalisador baixa (abaixo de 0,40 V) com o motor quente, 60 s depois do último corte de combustível.
+  - **Sensores de temperatura:** ar admitido e água a até 10 °C um do outro logo depois de uma partida a frio.
+  - **Embreagem:** rotação acima do que a marcha pede sob carga (patinação), comparada também com o normal do carro.
+
+  Os limites foram conferidos com as viagens reais do Uno de 01 a 21/11. O perfil ganhou o papel `lambda_post_voltage` (sonda depois do catalisador).
+
 ## [0.9.61] - 2026-11-21
 
 ### Segurança

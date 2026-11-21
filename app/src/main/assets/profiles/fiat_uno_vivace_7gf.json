@@ -44,6 +44,7 @@
     "stft": "stft_b1",
     "ltft": null,
     "lambda_voltage": null,
+    "lambda_post_voltage": "lambda_b1s2_v",
     "mil_on": "mil_on",
     "dtc_count": "dtc_count",
     "fuel_level_pct": "fuel_level_pct",

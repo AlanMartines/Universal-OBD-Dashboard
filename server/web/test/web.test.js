@@ -118,6 +118,10 @@ describe('pré-diagnóstico do app', () => {
       { topic: 'Central (injeção)', level: 'bad' }, { topic: 'Arrefecimento', level: 'ok' }, { topic: 'Elétrica', level: 'warn' },
     ]);
     assert.deepEqual(appHealth(null), []);
+    // fase 2: mistura, escape, sensores e embreagem entram na mesma lista
+    assert.deepEqual(appHealth({ 'health.mixture': 1, 'health.clutch': 0, 'health.exhaust': 2 }), [
+      { topic: 'Mistura', level: 'warn' }, { topic: 'Escape', level: 'bad' }, { topic: 'Embreagem', level: 'ok' },
+    ]);
   });
 });
 

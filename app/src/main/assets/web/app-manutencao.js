@@ -87,7 +87,10 @@ function mtFillSelect() {
 
 /* ---------------------------------------------------------------- Saúde do carro (pré-diagnóstico) */
 const HL_LEVEL = { NO_DATA: ['Sem dados', 'pill'], LEARNING: ['Aprendendo', 'pill'], OK: ['Normal', 'pill pill-ok'], WATCH: ['Atenção', 'pill pill-warn'], ALERT: ['Verificar', 'pill pill-bad'] };
-const HL_SUB = { central: 'Central (injeção)', cooling: 'Arrefecimento', electric: 'Elétrica', intake: 'Admissão', idle: 'Marcha lenta' };
+const HL_SUB = {
+  central: 'Central (injeção)', cooling: 'Arrefecimento', electric: 'Elétrica', intake: 'Admissão', idle: 'Marcha lenta',
+  mixture: 'Mistura', exhaust: 'Escape', sensors: 'Sensores de temperatura', clutch: 'Embreagem',
+};
 /** Texto de cada checagem: o valor da última viagem e, fora do normal, o que olhar. */
 const HL_CHECK = {
   warmup: (v, f) => (f ? `Demorou ${fmt(v, 0)} min para chegar a 80 °C: a válvula termostática pode estar presa aberta (ou o dia estava muito frio).` : `Chegou a 80 °C em ${fmt(v, 0)} min depois da partida a frio.`),
@@ -99,12 +102,34 @@ const HL_CHECK = {
   idle_vacuum: (v, f) => (f ? `MAP em marcha lenta a ${fmt(v * 100, 0)}% da pressão do ar, acima do normal deste carro: vácuo fraco. Vale olhar entrada de ar falso, mangueiras, cânister e compressão.` : `MAP em marcha lenta a ${fmt(v * 100, 0)}% da pressão do ar.`),
   map_offset: (v, f) => (f ? `O sensor MAP marca ${fmt(Math.abs(v), 1)} kPa ${v > 0 ? 'acima' : 'abaixo'} da pressão do ar com o motor parado: sensor desregulado ou mangueira obstruída.` : `Sensor MAP a ${fmt(v, 1)} kPa da pressão do ar com o motor parado.`),
   idle_rpm: (v, f) => (f ? `A rotação oscila ±${fmt(v, 0)} rpm em marcha lenta quente: corpo de borboleta sujo, ar falso ou vela/cabo.` : `Rotação estável em marcha lenta (±${fmt(v, 0)} rpm).`),
+  stft_idle: (v, f) => (f
+    ? `Em marcha lenta a injeção ${v > 0 ? 'acrescenta' : 'tira'} ${fmt(Math.abs(v), 1)}% de combustível, fora do normal. Se for só na marcha lenta, o mais comum é ar falso (mangueira, junta do coletor, válvula do cânister).`
+    : `Mistura em marcha lenta com correção de ${fmt(v, 1)}%.`),
+  stft_cruise: (v, f) => (f
+    ? `Rodando, a injeção ${v > 0 ? 'acrescenta' : 'tira'} ${fmt(Math.abs(v), 1)}% de combustível, fora do normal. Se acontecer também na marcha lenta, aponta combustível ou injeção (bomba, filtro, bicos, pressão) ou um sensor.`
+    : `Mistura rodando com correção de ${fmt(v, 1)}%.`),
+  o2_post: (v, f) => (f
+    ? `A sonda depois do catalisador fica em ${fmt(v, 2)} V, baixa demais com o motor quente: costuma ser ar entrando no escapamento antes dela (junta ou furo) ou a própria sonda.`
+    : `Sonda depois do catalisador em ${fmt(v, 2)} V (catalisador trabalhando).`),
+  temp_plaus: (v, f) => (f
+    ? `Logo depois da partida a frio, o ar admitido estava ${fmt(Math.abs(v), 0)} °C ${v > 0 ? 'mais quente' : 'mais frio'} que a água; parados há horas, os dois deveriam estar perto. Um dos sensores pode estar errado (ou o carro ficou ao sol).`
+    : `Sensores de temperatura batendo na partida a frio (diferença de ${fmt(Math.abs(v), 0)} °C).`),
+  clutch_slip: (v, f) => (f
+    ? `Sob carga, a rotação sobe ${fmt(v, 1)}% acima do que a marcha pede: a embreagem pode estar patinando (disco gasto, platô ou ajuste do cabo).`
+    : `Embreagem segurando sob carga (diferença de ${fmt(v, 1)}%).`),
 };
 const HL_EMPTY = {
   warmup: 'Ainda sem partida a frio.', road_cool: 'Ainda sem trecho de estrada com o motor quente.', overheat: 'Ainda sem motor aquecido.',
   charging: 'Ainda sem trecho acima de 1.500 rpm.', rest_v: 'Tensão em repouso: precisa do divisor da bateria no ESP32.', crank_v: 'Queda na partida: precisa do divisor da bateria e do firmware 1.7 no ESP32.',
   idle_vacuum: 'Ainda sem marcha lenta quente (parado, sem A/C).', map_offset: 'Ainda sem leitura com a chave ligada e o motor parado.', idle_rpm: 'Ainda sem marcha lenta quente.',
+  stft_idle: 'Ainda sem marcha lenta quente.', stft_cruise: 'Ainda sem trecho rodando leve com o motor quente.',
+  o2_post: 'Ainda sem 5 min de motor quente (ou o perfil não lê a sonda depois do catalisador).',
+  temp_plaus: 'Ainda sem partida a frio, depois de o carro ficar parado por horas.',
+  clutch_slip: 'Ainda sem aceleração forte numa marcha (ou o perfil não tem as relações das marchas).',
 };
+// Na mistura, a atenção vem da mediana das últimas viagens (não de uma viagem só): o texto segue o estado da checagem.
+const HL_ROLLING = new Set(['stft_idle', 'stft_cruise']);
+const hlFlagged = (c) => c.lastFlagged || (HL_ROLLING.has(c.id) && c.level === 'WATCH');
 let hlData = null;
 
 /** Bateria do ESP32 fora da rede do carro na última viagem: o repouso e a partida dela foram descartados. */
@@ -149,7 +174,7 @@ function renderHealth() {
       ? hlCentralLines(hlData.central).map((t) => [t, sub.level !== 'OK'])
       : sub.checks.map((c) => {
         if (c.value == null) return [HL_EMPTY[c.id] || 'Sem dados.', false];
-        const txt = HL_CHECK[c.id] ? HL_CHECK[c.id](c.value, c.lastFlagged) : String(c.value);
+        const txt = HL_CHECK[c.id] ? HL_CHECK[c.id](c.value, hlFlagged(c)) : String(c.value);
         const rep = c.flagged ? ` Fora do normal em ${c.flagged} das últimas ${c.recent} viagens.` : c.level === 'LEARNING' ? ' Aprendendo o normal deste carro (5 viagens).' : '';
         return [txt + rep, c.level === 'WATCH' || c.level === 'ALERT'];
       });
@@ -172,7 +197,7 @@ $('hl-share').addEventListener('click', () => {
   for (const sub of hlData.subsystems) {
     lines.push(`${HL_SUB[sub.id] || sub.id}: ${HL_LEVEL[sub.level][0]}`);
     if (sub.id === 'central') hlCentralLines(hlData.central).forEach((t) => lines.push('- ' + t));
-    else sub.checks.filter((c) => c.value != null).forEach((c) => lines.push('- ' + HL_CHECK[c.id](c.value, c.lastFlagged)));
+    else sub.checks.filter((c) => c.value != null).forEach((c) => lines.push('- ' + HL_CHECK[c.id](c.value, hlFlagged(c))));
     if (sub.id === 'electric' && hlEspBattLine(hlData.espBatt)) lines.push('- ' + hlEspBattLine(hlData.espBatt));
   }
   bridge.shareHealth(lines.join('\n'));

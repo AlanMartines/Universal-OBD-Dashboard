@@ -70,7 +70,10 @@ export function healthFindings(days) {
 }
 
 /** Pré-diagnóstico do app por viagem (health.<subsistema>: 0 normal, 1 atenção, 2 verificar), da última amostra. */
-const APP_HEALTH = [['central', 'Central (injeção)'], ['cooling', 'Arrefecimento'], ['electric', 'Elétrica'], ['intake', 'Admissão'], ['idle', 'Marcha lenta']];
+const APP_HEALTH = [
+  ['central', 'Central (injeção)'], ['cooling', 'Arrefecimento'], ['electric', 'Elétrica'], ['intake', 'Admissão'], ['idle', 'Marcha lenta'],
+  ['mixture', 'Mistura'], ['exhaust', 'Escape'], ['sensors', 'Sensores de temperatura'], ['clutch', 'Embreagem'],
+];
 export function appHealth(metrics) {
   const m = metrics || {};
   return APP_HEALTH.map(([id, topic]) => {
