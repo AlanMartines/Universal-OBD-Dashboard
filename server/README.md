@@ -167,14 +167,15 @@ Resposta: `{ "received", "stored", "rejected" }`.
 
 ## Segurança
 
-- **Senhas:** Argon2id, mínimo de 15 caracteres, bloqueio progressivo por conta e resposta igual para usuário inexistente, senha errada ou conta bloqueada.
+- **Senhas:** Argon2id, mínimo de 15 caracteres e resposta igual para usuário inexistente, senha errada ou bloqueio.
+- **Bloqueio por tentativas, por rede:** as senhas erradas contam por conta e por rede de origem (/24 no IPv4, /48 no IPv6). Depois de 5 erros, só aquela rede fica bloqueada, de forma progressiva até 60 min. Assim, quem sabe o seu usuário não consegue te deixar do lado de fora. Se a conta somar 20 erros vindos de vários lugares (ataque espalhado), ela fecha só para redes que nunca usou; das redes de onde o dono já entrou no último ano, o login segue funcionando. Um login certo, a troca ou a redefinição de senha zeram a contagem.
 - **Sessão:** cookie `__Host-`, `HttpOnly`, `Secure` e `SameSite=Lax`, guardada no banco só como hash.
 - **Web:** token CSRF com conferência de `Sec-Fetch-Site` e `Origin`, CSP sem scripts ou estilos embutidos e escape automático do Handlebars. Nada vem de CDN.
 - **Banco:** consultas sempre parametrizadas, feitas por um papel sem privilégios de superusuário.
 - **Auditoria protegida:** a tabela `audit_log` pertence ao dono do banco. O papel da aplicação só consulta e registra: não apaga, não altera, não esvazia e não derruba a tabela (uma trava no banco barra o `DROP`). A limpeza do que passou de 1 ano é feita pela função `audit_purge()`. Quem invadir a API não apaga os próprios rastros.
 - **Robôs:** limites por IP, campo invisível nos formulários, token de formulário assinado e tempo mínimo de preenchimento no cadastro, que vem fechado por padrão.
 - **Alertas por e-mail:** a própria conta recebe um aviso quando:
-  - fica bloqueada por senhas erradas (um aviso por sequência);
+  - uma rede fica bloqueada por senhas erradas, ou a conta fecha para redes novas (um aviso por sequência);
   - alguém acerta a senha, mas erra o código do autenticador até o fim;
   - um Super Admin ou Admin entra de uma rede nova (outra faixa /24 no IPv4 ou /48 no IPv6), comparada com os logins do último ano;
   - um aparelho é pareado;

@@ -1,7 +1,8 @@
 // Alertas de segurança por e-mail: entram na mesma fila do mailer (mail_outbox), na mesma transação do
 // evento quando houver. Vão para o e-mail da própria conta; o Usuário (atendimento) sem e-mail avisa o dono
 // da conta. Sem e-mail cadastrado, nada é enviado. O texto nunca leva senha, código ou token.
-import { BlockList, isIPv4, isIPv6 } from 'node:net';
+import { isIPv4, isIPv6 } from 'node:net';
+import { knownNetworks, plainIp } from './networks.js';
 
 const TZ = 'America/Sao_Paulo';
 const quando = () => new Date().toLocaleString('pt-BR', { timeZone: TZ, dateStyle: 'short', timeStyle: 'short' });
@@ -12,9 +13,17 @@ const RODAPE = '\n\nEste é um aviso automático de segurança da Telemetria OBD
 export const ALERTS = {
   conta_bloqueada: ({ username, ip, at, minutes }) => [
     `Conta "${username}" bloqueada por tentativas de senha`,
-    `Em ${at}, a conta "${username}" recebeu várias senhas erradas seguidas e ficou bloqueada por ${minutes} min.\n`
+    `Em ${at}, a conta "${username}" recebeu várias senhas erradas seguidas a partir de uma mesma rede, que ficou `
+      + `bloqueada por ${minutes} min. Das outras redes o login continua funcionando.\n`
       + `${deOnde(ip)}\n\nSe não foi você, alguém pode estar tentando adivinhar a senha. Use uma senha longa e única `
       + 'e ative a verificação em duas etapas em Meus Dados.',
+  ],
+  conta_fechada_redes_novas: ({ username, ip, at, minutes }) => [
+    `Conta "${username}" fechada para redes novas`,
+    `Em ${at}, a conta "${username}" somou muitas senhas erradas vindas de vários endereços e ficou fechada por `
+      + `${minutes} min para redes que ela nunca usou. Das redes de onde você já entrou, o login continua funcionando.\n`
+      + `Última tentativa: ${ip || 'endereço não informado'}\n\nParece um ataque espalhado: use uma senha longa e única `
+      + 'e mantenha a verificação em duas etapas ligada.',
   ],
   codigo_2fa_esgotado: ({ username, ip, at }) => [
     `Senha da conta "${username}" usada com código errado`,
@@ -63,34 +72,14 @@ export async function alertUser(db, userId, kind, info = {}) {
   return true;
 }
 
-/** IPv4 escrito como IPv6 (::ffff:1.2.3.4) volta a ser IPv4; senão a faixa /48 juntaria todos os IPv4. */
-const plainIp = (ip) => {
-  const s = String(ip ?? '').trim();
-  const m = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(s);
-  return m ? m[1] : s;
-};
-
-/** Rede do endereço (/24 no IPv4, /48 no IPv6): trocar de IP dentro do mesmo provedor não é "endereço novo". */
-function addNetwork(list, ip) {
-  if (isIPv4(ip)) list.addSubnet(ip, 24, 'ipv4');
-  else if (isIPv6(ip)) list.addSubnet(ip, 48, 'ipv6');
-}
-
 /**
  * Login de Super Admin ou Admin de uma rede que a conta nunca usou (pelos logins do último ano na auditoria).
  * Chame antes de gravar o login atual. O primeiro login da conta não avisa: não há com o que comparar.
  */
 export async function alertIfNewNetwork(db, user, rawIp) {
   const ip = plainIp(rawIp);
-  if (!['superadmin', 'admin'].includes(user.role) || !ip || !(isIPv4(ip) || isIPv6(ip))) return false;
-  const { rows } = await db.query(
-    `SELECT DISTINCT ip FROM audit_log WHERE actor = $1 AND action = 'login' AND ip IS NOT NULL`,
-    [user.username],
-  );
-  const known = rows.map((r) => plainIp(r.ip)).filter((x) => isIPv4(x) || isIPv6(x));
-  if (!known.length) return false;
-  const list = new BlockList();
-  for (const k of known) addNetwork(list, k);
-  if (list.check(ip, isIPv4(ip) ? 'ipv4' : 'ipv6')) return false;
+  if (!['superadmin', 'admin'].includes(user.role) || !(isIPv4(ip) || isIPv6(ip))) return false;
+  const known = await knownNetworks(db, user.username);
+  if (!known.count || known.has(ip)) return false;
   return alertUser(db, user.id, 'login_ip_novo', { ip });
 }

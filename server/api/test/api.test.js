@@ -719,6 +719,46 @@ describe('API', () => {
     });
   });
 
+  describe('bloqueio por rede', () => {
+    const tenta = (username, password, ip) => internal(app, 'POST', '/internal/auth/login', { body: { username, password }, ip });
+    const entrou = async (username, password, ip) => Boolean((await tenta(username, password, ip)).json().token);
+
+    test('erros de uma rede só bloqueiam aquela rede; o dono segue entrando das outras', async () => {
+      await userToken(app, admin, 'bloqrede');   // primeiro login, de 127.0.0.1: rede conhecida
+      for (let i = 0; i < 6; i += 1) await tenta('bloqrede', 'senha errada de propósito', '203.0.113.10');
+      // a rede do ataque fica bloqueada até com a senha certa, e a resposta é a mesma de senha errada
+      const bloqueado = await tenta('bloqrede', USER_PASSWORD, '203.0.113.99');
+      assert.equal(bloqueado.statusCode, 401);
+      assert.deepEqual(bloqueado.json(), (await tenta('bloqrede', 'outra errada qualquer', '198.51.100.1')).json());
+      assert.equal(await entrou('bloqrede', USER_PASSWORD, '127.0.0.1'), true);       // rede conhecida
+      assert.equal(await entrou('bloqrede', USER_PASSWORD, '192.0.2.50'), true);      // outra rede, sem trava de conta
+      const linhas = (await pool.query(`SELECT net, failures FROM login_throttle t JOIN users u ON u.id = t.user_id WHERE u.username = 'bloqrede' ORDER BY net`)).rows;
+      assert.deepEqual(linhas.map((r) => r.net), ['198.51.100.0/24', '203.0.113.0/24']);
+    });
+
+    test('muitos erros espalhados fecham a conta só para redes novas; das conhecidas o dono entra', async () => {
+      await userToken(app, admin, 'bloqespalhado');
+      await pool.query(`UPDATE users SET email = 'bloqespalhado@exemplo.test' WHERE username = 'bloqespalhado'`);
+      for (let rede = 1; rede <= 5; rede += 1) {
+        for (let i = 0; i < 4; i += 1) await tenta('bloqespalhado', 'senha errada de propósito', `198.18.${rede}.7`);   // 4 por rede: nenhuma rede trava
+      }
+      assert.equal(await entrou('bloqespalhado', USER_PASSWORD, '198.18.99.1'), false);   // rede nova: fechada
+      assert.equal(await entrou('bloqespalhado', USER_PASSWORD, '127.0.0.5'), true);      // rede conhecida: abre e zera
+      assert.equal(await entrou('bloqespalhado', USER_PASSWORD, '198.18.99.1'), true);    // depois do login certo, reabre
+      const assuntos = (await pool.query(`SELECT subject FROM mail_outbox WHERE recipient = 'bloqespalhado@exemplo.test'`)).rows.map((r) => r.subject);
+      assert.equal(assuntos.filter((x) => /fechada para redes novas/.test(x)).length, 1);
+      assert.equal(assuntos.filter((x) => /bloqueada por tentativas/.test(x)).length, 0);
+    });
+
+    test('redefinir a senha (tela ou servidor) limpa os bloqueios', async () => {
+      await userToken(app, admin, 'bloqreset');
+      for (let i = 0; i < 5; i += 1) await tenta('bloqreset', 'senha errada de propósito', '203.0.113.20');
+      await resetPassword(pool, 'bloqreset', 'senha nova pelo terminal 3');
+      assert.equal((await pool.query(`SELECT count(*)::int AS n FROM login_throttle t JOIN users u ON u.id = t.user_id WHERE u.username = 'bloqreset'`)).rows[0].n, 0);
+      assert.equal(await entrou('bloqreset', 'senha nova pelo terminal 3', '203.0.113.20'), true);
+    });
+  });
+
   describe('auditoria protegida', () => {
     test('o papel da aplicação registra e limpa o que passou de 1 ano, mas não apaga, altera, esvazia nem derruba', async () => {
       const sql = readFileSync(new URL('../../scripts/proteger-auditoria.sql', import.meta.url), 'utf8');

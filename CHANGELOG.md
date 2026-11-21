@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Segurança
+- **Painel: bloqueio por tentativas conta por rede.** Antes, 5 senhas erradas bloqueavam a conta inteira, e quem soubesse o usuário podia deixar o dono do lado de fora. Agora o bloqueio vale só para a rede de onde vieram os erros (/24 no IPv4, /48 no IPv6). Um ataque espalhado, com 20 erros somados, fecha a conta só para redes que ela nunca usou, e das redes conhecidas o dono continua entrando. Os dois casos mandam aviso por e-mail.
+
 ## [0.9.60] - 2026-11-20
 
 ### Segurança
