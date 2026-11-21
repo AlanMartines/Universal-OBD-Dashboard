@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.62] - 2026-11-21
+
 ### Adicionado
 - **Saúde do carro: pré-diagnóstico, fase 2.** Quatro subsistemas novos no app e no painel:
   - **Mistura:** correção de curto prazo em marcha lenta e rodando, fora do corte de combustível e dos minutos depois de abastecer. Alta só na marcha lenta aponta ar falso; nas duas, combustível ou injeção. O estado vem da mediana das últimas 5 viagens (±15 %), porque sem a correção de longo prazo a de curto prazo varia muito de uma viagem para outra.
