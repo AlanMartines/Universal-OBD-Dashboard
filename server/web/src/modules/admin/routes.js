@@ -9,6 +9,8 @@ const AUDIT = {
   codigo_2fa_recusado: ['Código 2FA recusado', 'fa-ban', 'danger'],
   '2fa_ativado': ['2FA ativada', 'fa-shield-halved', 'success'],
   '2fa_trocado': ['Aplicativo autenticador trocado', 'fa-mobile-screen-button', 'info'],
+  reautenticacao: ['Senha confirmada para ação sensível', 'fa-user-shield', 'info'],
+  reautenticacao_recusada: ['Confirmação de senha recusada', 'fa-user-shield', 'danger'],
   '2fa_desativado': ['2FA desativada', 'fa-shield', 'warning'],
   '2fa_admins_obrigatorio': ['2FA obrigatória para os donos de conta', 'fa-shield-halved', 'success'],
   '2fa_admins_opcional': ['2FA opcional para os donos de conta', 'fa-shield', 'warning'],
@@ -84,7 +86,7 @@ export default function adminRoutes(app, {
       });
       return adminView(request, reply, 200, { created });
     } catch (error) {
-      if (!(error instanceof ApiError) || error.status >= 500 || error.status === 401) throw error;
+      if (!(error instanceof ApiError) || error.status >= 500 || error.status === 401 || error.code === 'reauth_required') throw error;
       return adminView(request, reply, error.status, { error: message(error.code) });
     }
   });

@@ -39,3 +39,9 @@ export function isSameOriginRequest(headers, publicOrigin) {
   if (origin !== undefined) return origin === publicOrigin;
   return site === 'same-origin';
 }
+
+/** Caminho interno seguro para voltar ("/x?y"); outro site, "//" ou "/\\" viram o painel (sem redirecionamento aberto). */
+export function safePath(value) {
+  const v = String(value ?? '');
+  return /^\/(?![\/\\])[^\s]*$/.test(v) && v.length <= 512 ? v : '/painel';
+}

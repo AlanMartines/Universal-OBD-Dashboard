@@ -13,7 +13,7 @@ import view from '@fastify/view';
 import Fastify from 'fastify';
 import Handlebars from 'handlebars';
 import { ApiError, message, NOTICES } from './shared/errors.js';
-import { isSameOriginRequest, safeEqualText } from './shared/protection.js';
+import { isSameOriginRequest, safeEqualText, safePath } from './shared/protection.js';
 import accountRoutes from './modules/account/routes.js';
 import adminRoutes from './modules/admin/routes.js';
 import devicesRoutes from './modules/devices/routes.js';
@@ -298,6 +298,17 @@ export async function buildApp({ config, logger }) {
     return Buffer.from(await response.arrayBuffer());
   }
 
+  // Página de onde a ação partiu (Referer), só se for deste painel; senão, o painel.
+  const backTo = (request) => {
+    try {
+      const ref = new URL(String(request.headers.referer ?? ''));
+      if (ref.origin === config.publicOrigin) {
+        ref.searchParams.delete('ok');   // o aviso da volta é o "senha confirmada"
+        return safePath(ref.pathname + ref.search);
+      }
+    } catch { /* sem Referer válido */ }
+    return '/painel';
+  };
   const clearSession = (reply) => reply.clearCookie(cookieName, { path: '/', secure: config.cookieSecure, sameSite: 'lax', httpOnly: true });
 
   function renderError(reply, status, code) {
@@ -322,6 +333,8 @@ export async function buildApp({ config, logger }) {
       }
       if (error.code === 'password_change_required') return reply.redirect('/meus-dados/senha');
       if (error.code === 'mfa_setup_required') return reply.redirect('/meus-dados#mfa', 303);
+      // Ação crítica sem senha confirmada há pouco: confirma e volta para a página de onde a ação partiu.
+      if (error.code === 'reauth_required') return reply.redirect(`/confirmar-senha?volta=${encodeURIComponent(backTo(request))}`, 303);
       return renderError(reply, error.status, error.code);
     }
     if (error.statusCode === 429) return renderError(reply, 429, 'too_many_requests');

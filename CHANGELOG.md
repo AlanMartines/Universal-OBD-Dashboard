@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Segurança
+- **Painel: confirmar a senha em ações críticas.** Criar, desativar e excluir usuário, abrir o cadastro, mudar a exigência de 2FA, entrar em modo suporte e gerar código de pareamento, revogar ou excluir dispositivo passam a exigir a senha (e o código do autenticador, quando a conta usa 2FA) confirmada nos últimos 10 minutos. O login conta como confirmação. Sem ela, o painel pede a senha e volta à página de origem. No modo suporte, quem confirma é o Super Admin.
+
 ### Adicionado
 - **Servidor: monitor com aviso por e-mail.** `server/scripts/monitor-servidor.sh`, a cada 10 min, avisa os Super Admins quando o disco passa de 85 %, a memória disponível cai abaixo de 10 %, um contêiner do painel para ou fica com a saúde ruim, ou o último backup tem mais de 26 h. Repete no máximo a cada 6 h e avisa quando normaliza.
 - **Servidor: logs fora da máquina.** O backup diário guarda os logs dos contêineres das últimas 24 h, cifrados, por 30 dias, e eles sobem junto para o armazenamento externo.

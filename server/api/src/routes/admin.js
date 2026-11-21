@@ -5,7 +5,7 @@ import { uuidParam } from '../schemas.js';
 import { generatePassword, hashPassword, isValidUsername, normalizeUsername } from '../security.js';
 
 export default function adminRoutes(app, {
-  pool, limit, requireManager, requireSuperadmin, signupOpen,
+  pool, limit, requireManager, requireSuperadmin, requireRecentAuth, signupOpen,
 }) {
   // Super Admin vê tudo; Admin vê só os usuários da própria conta, sem auditoria nem configurações.
   app.get('/internal/admin/overview', {
@@ -66,7 +66,7 @@ export default function adminRoutes(app, {
   });
 
   app.post('/internal/admin/signup', {
-    preValidation: requireSuperadmin,
+    preValidation: [requireSuperadmin, requireRecentAuth],
     schema: { body: { type: 'object', required: ['open'], additionalProperties: false, properties: { open: { type: 'boolean' } } } },
   }, async (request) => {
     await pool.query(`UPDATE settings SET value = $1::jsonb WHERE key = 'signup_open'`, [JSON.stringify(request.body.open)]);
@@ -75,7 +75,7 @@ export default function adminRoutes(app, {
   });
 
   app.post('/internal/admin/mfa-admins', {
-    preValidation: requireSuperadmin,
+    preValidation: [requireSuperadmin, requireRecentAuth],
     schema: { body: { type: 'object', required: ['required'], additionalProperties: false, properties: { required: { type: 'boolean' } } } },
   }, async (request) => {
     await pool.query(
@@ -93,7 +93,7 @@ export default function adminRoutes(app, {
 
   app.post('/internal/admin/users', {
     ...limit(30, '1 hour'),
-    preValidation: requireManager,
+    preValidation: [requireManager, requireRecentAuth],
     schema: {
       body: {
         type: 'object',
@@ -150,7 +150,7 @@ export default function adminRoutes(app, {
   }
 
   app.post('/internal/admin/users/:id/disabled', {
-    preValidation: requireManager,
+    preValidation: [requireManager, requireRecentAuth],
     schema: {
       params: uuidParam,
       body: { type: 'object', required: ['disabled'], additionalProperties: false, properties: { disabled: { type: 'boolean' } } },
@@ -163,7 +163,7 @@ export default function adminRoutes(app, {
     return { ok: true };
   });
 
-  app.post('/internal/admin/users/:id/delete', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
+  app.post('/internal/admin/users/:id/delete', { preValidation: [requireManager, requireRecentAuth], schema: { params: uuidParam } }, async (request) => {
     const target = await loadTargetUser(request);
     await pool.query('DELETE FROM users WHERE id = $1', [target.id]);
     await audit(pool, { actor: request.session.impersonatedBy ?? request.session.user.username, action: 'usuario_excluido', target: target.username, ip: request.clientIp });

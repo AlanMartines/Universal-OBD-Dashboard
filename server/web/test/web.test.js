@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -192,6 +193,7 @@ describe('fluxo pelo navegador', () => {
   const csrfOf = async (cookie, url = '/painel') => field((await web.inject({ method: 'GET', url, headers: { cookie } })).body, '_csrf');
 
   let adminCookie;
+  let adminRecovery = [];   // códigos de recuperação do Super Admin, da troca do autenticador
 
   before(async () => {
     apiCtx = await startApi();
@@ -309,7 +311,24 @@ describe('fluxo pelo navegador', () => {
     assert.notEqual(segredoNovo, secret);
     const confirmada = await post('/meus-dados/2fa/ativar', { _csrf: field(novo, '_csrf'), code: codeForStep(segredoNovo, stepAt(Date.now())) }, adminCookie);
     assert.equal(confirmada.statusCode, 200);
+    adminRecovery = [...confirmada.body.matchAll(/<li>([A-Z0-9-]{8,})<\/li>/g)].map((m) => m[1]);
+    assert.equal(adminRecovery.length, 10);
     assert.equal((await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } })).statusCode, 200);
+    // Ação crítica com a senha confirmada há mais de 10 min: confirma (senha + código) e volta para a página.
+    const tokenDoCookie = decodeURIComponent(adminCookie.split('=').slice(1).join('=').split(';')[0]);
+    await apiCtx.pool.query(`UPDATE sessions SET reauth_at = now() - interval '11 minutes' WHERE token_hash = $1`, [createHash('sha256').update(tokenDoCookie).digest()]);
+    const paginaAdmin = (await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } })).body;
+    const pede = await post('/admin/2fa-donos', { _csrf: field(paginaAdmin, '_csrf'), required: 'true' }, adminCookie, { ...browser(adminCookie), referer: `${ORIGIN}/admin?ok=signup_updated` });
+    assert.equal(pede.headers.location, '/confirmar-senha?volta=%2Fadmin');
+    const confirma = (await web.inject({ method: 'GET', url: pede.headers.location, headers: { cookie: adminCookie } })).body;
+    assert.ok(confirma.includes('Confirme sua senha') && confirma.includes('name="code"') && confirma.includes('name="volta" value="/admin"'));
+    const errada = await post('/confirmar-senha', { _csrf: field(confirma, '_csrf'), volta: '/admin', password: 'nova frase longa do administrador', code: '000000' }, adminCookie);
+    assert.equal(errada.statusCode, 400);
+    assert.ok(errada.body.includes('Senha ou código incorretos'));
+    const fora = await post('/confirmar-senha', { _csrf: field(confirma, '_csrf'), volta: '//site-mau.example/x', password: 'nova frase longa do administrador', code: codeForStep(segredoNovo, stepAt(Date.now()) + 1) }, adminCookie);
+    assert.equal(fora.headers.location, '/painel?ok=reauth_ok');   // volta para fora do painel é recusada
+    const libera = await post('/admin/2fa-donos', { _csrf: field(paginaAdmin, '_csrf'), required: 'false' }, adminCookie);
+    assert.equal(libera.headers.location, '/admin?ok=mfa_admins_updated');
     // Ajuste dos donos de conta na Administração: liga e desliga.
     const adminPage = (await web.inject({ method: 'GET', url: '/admin', headers: { cookie: adminCookie } })).body;
     assert.ok(adminPage.includes('2FA dos donos de conta') && adminPage.includes('Exigir dos donos de conta'));
@@ -755,6 +774,10 @@ describe('fluxo pelo navegador', () => {
   test('cadastro público: fechado, aberto, velocidade de robô', async () => {
     assert.equal((await web.inject({ method: 'GET', url: '/cadastro' })).statusCode, 403);
     const csrf = await csrfOf(adminCookie);
+    // depois do modo suporte a sessão do Super Admin não conta como senha confirmada: confirma com um código de recuperação
+    const confirma = (await web.inject({ method: 'GET', url: '/confirmar-senha?volta=%2Fadmin', headers: { cookie: adminCookie } })).body;
+    const ok = await post('/confirmar-senha', { _csrf: field(confirma, '_csrf'), volta: '/admin', password: 'nova frase longa do administrador', code: adminRecovery.shift() }, adminCookie);
+    assert.equal(ok.headers.location, '/admin?ok=reauth_ok');
     await post('/admin/cadastro', { _csrf: csrf, open: 'true' }, adminCookie);
     const page = await web.inject({ method: 'GET', url: '/cadastro' });
     assert.equal(page.statusCode, 200);

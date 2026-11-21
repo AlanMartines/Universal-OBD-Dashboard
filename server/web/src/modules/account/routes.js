@@ -1,6 +1,7 @@
 import { ago, describeAgent } from './user-agent.js';
 import QRCode from 'qrcode';
 import { ApiError, message } from '../../shared/errors.js';
+import { safePath } from '../../shared/protection.js';
 import { requireUuid } from '../devices/routes.js';
 
 export default function accountRoutes(app, {
@@ -41,7 +42,8 @@ export default function accountRoutes(app, {
       title: 'Meus Dados', account, pageCss: ['/modules/account/account.css'], pageScripts: ['/modules/account/account.js'], ...extra,
     }));
   };
-  const clientError = (error) => error instanceof ApiError && error.status < 500 && error.status !== 401 && error.code !== 'password_change_required' && error.code !== 'mfa_setup_required';
+  const clientError = (error) => error instanceof ApiError && error.status < 500 && error.status !== 401
+    && !['password_change_required', 'mfa_setup_required', 'reauth_required'].includes(error.code);
 
   const REDIRECT_ERRORS = ['image_too_large'];
 
@@ -93,6 +95,25 @@ export default function accountRoutes(app, {
       if (!(error instanceof ApiError) || error.status >= 500) throw error;
       const code = error.status === 429 ? 'too_many_requests' : 'email_link_invalid';
       return reply.code(error.status).view('modules/account/views/confirm-email.hbs', { title: 'Confirmar e-mail', error: message(code) });
+    }
+  });
+
+  // ---------- Confirmar a senha (ações críticas) ----------
+
+  const reauthView = (request, reply, status = 200, error = null) => reply.code(status).view('modules/account/views/reauth.hbs', context(request, {
+    title: 'Confirme sua senha', volta: safePath(request.query?.volta ?? request.body?.volta), error,
+  }));
+  app.get('/confirmar-senha', { preHandler: requireUser }, async (request, reply) => reauthView(request, reply));
+  app.post('/confirmar-senha', { preHandler: requireUser }, async (request, reply) => {
+    try {
+      await api(request, 'POST', '/internal/auth/reauth', {
+        body: { password: String(request.body?.password ?? ''), ...(request.body?.code ? { code: String(request.body.code).trim() } : {}) },
+      });
+      const volta = safePath(request.body?.volta);
+      return reply.redirect(`${volta}${volta.includes('?') ? '&' : '?'}ok=reauth_ok`, 303);
+    } catch (error) {
+      if (!clientError(error)) throw error;
+      return reauthView(request, reply, error.status, message(error.code === 'invalid_request' ? 'reauth_failed' : error.code));
     }
   });
 

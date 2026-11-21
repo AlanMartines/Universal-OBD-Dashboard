@@ -16,7 +16,7 @@ const MAIL_READY_MINUTES = 15;
 const IMPERSONATION_HOURS = 1;
 
 export default function securityRoutes(app, {
-  config, pool, limit, requireSession, requireOwnReady, requireOwnMfaSetup, requireSuperadmin, createSession,
+  config, pool, limit, requireSession, requireOwnReady, requireOwnMfaSetup, requireSuperadmin, requireRecentAuth, createSession,
 }) {
   const perUser = (request) => request.session?.user.id ?? request.clientIp;
   const codeField = { type: 'string', minLength: 6, maxLength: 16 };
@@ -83,6 +83,47 @@ export default function securityRoutes(app, {
     await alertIfNewNetwork(pool, challenge, request.clientIp);
     await audit(pool, { actor: challenge.username, action: 'login', ip: request.clientIp });
     return { token: await createSession(challenge.id, { request }) };
+  });
+
+  // ---------- Confirmar a senha (ações críticas) ----------
+
+  /**
+   * Confirma a senha (e o código do autenticador, se a conta usa 2FA) para liberar as ações críticas desta
+   * sessão por alguns minutos. No modo suporte, quem confirma é o Super Admin, com a senha e o 2FA dele.
+   */
+  app.post('/internal/auth/reauth', {
+    ...limit(10, '15 minutes', perUser),
+    preValidation: requireSession,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['password'],
+        additionalProperties: false,
+        properties: { password: passwordField, code: { type: 'string', maxLength: 16 } },
+      },
+    },
+  }, async (request) => {
+    const { session } = request;
+    const whoId = session.impersonatorId ?? session.user.id;
+    const who = session.impersonatedBy ?? session.user.username;
+    const { rows } = await pool.query('SELECT password_hash, totp_secret, totp_enabled_at FROM users WHERE id = $1', [whoId]);
+    const recusa = async () => {
+      await audit(pool, { actor: who, action: 'reautenticacao_recusada', ip: request.clientIp });
+      return fail(400, 'reauth_failed');
+    };
+    if (!rows.length || !(await verifyPassword(rows[0].password_hash, request.body.password))) throw await recusa();
+    if (rows[0].totp_enabled_at) {
+      const code = String(request.body.code ?? '').trim();
+      let ok = code.length >= 6 && (await consumeTotp(whoId, rows[0].totp_secret, code));
+      if (!ok && code.length >= 6) {
+        const used = await pool.query('DELETE FROM recovery_codes WHERE code_hash = $1 AND user_id = $2', [sha256(normalizeRecoveryCode(code)), whoId]);
+        ok = used.rowCount === 1;
+      }
+      if (!ok) throw await recusa();
+    }
+    await pool.query('UPDATE sessions SET reauth_at = now() WHERE token_hash = $1', [session.tokenHash]);
+    await audit(pool, { actor: who, action: 'reautenticacao', ip: request.clientIp });
+    return { ok: true };
   });
 
   // ---------- Configurar dois fatores ----------
@@ -354,7 +395,7 @@ export default function securityRoutes(app, {
 
   app.post('/internal/admin/users/:id/impersonate', {
     ...limit(30, '1 hour', perUser),
-    preValidation: requireSuperadmin,
+    preValidation: [requireSuperadmin, requireRecentAuth],
     schema: { params: uuidParam },
   }, async (request) => {
     const { user, tokenHash, impersonatedBy } = request.session;
@@ -375,6 +416,7 @@ export default function securityRoutes(app, {
     if (!impersonatedBy) throw fail(400, 'invalid_request');
     await pool.query('DELETE FROM sessions WHERE token_hash = $1', [tokenHash]);
     await audit(pool, { actor: impersonatedBy, action: 'personificacao_encerrada', target: user.username, ip: request.clientIp });
-    return { token: await createSession(impersonatorId, { request }) };
+    // volta do modo suporte: sessão nova do Super Admin, sem contar como senha confirmada
+    return { token: await createSession(impersonatorId, { request, freshAuth: false }) };
   });
 }
