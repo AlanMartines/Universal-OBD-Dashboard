@@ -196,6 +196,13 @@
         <p class="muted small">Compara os litros de cada intervalo entre tanques cheios com o que o app estimou. Intervalos com diferença acima de 25% (tanque não completado, % de etanol errado) ficam de fora. A correção vale para as próximas leituras; os intervalos seguintes servem para conferir. Cada combustível tem a sua: aqui entram os intervalos com menos da metade do tanque vindo da bomba de etanol.</p>
       </div>
 
+      <div class="card form" id="fu-ethanol-hint" hidden>
+        <span class="label">Etanol no tanque: pista da central</span>
+        <p id="fu-hint-text" class="small"></p>
+        <div class="row"><button id="fu-hint-apply" class="btn btn-primary" hidden>Usar no tanque</button></div>
+        <p class="muted small">A central não informa o % de etanol. Nos primeiros minutos depois de abastecer, enquanto ela aprende o combustível novo, a correção da mistura salta; comparando o salto com o esperado pelo que foi informado, dá uma estimativa. É uma pista: confirme pelo que foi colocado.</p>
+      </div>
+
       <div class="card form" id="fu-calibration-e" hidden>
         <span class="label">Calibração do consumo: etanol</span>
         <p id="fu-cal-text-e" class="small"></p>

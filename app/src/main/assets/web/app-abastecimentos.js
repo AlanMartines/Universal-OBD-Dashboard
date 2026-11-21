@@ -47,6 +47,7 @@ async function loadFuel() {
 
   renderCalibration(data.calibration);
   renderCalibration(data.calibrationEthanol, '-e');
+  renderEthanolHint(data.ethanolHint);
 
   const ib = $('fu-intervals');
   ib.innerHTML = data.intervals.length ? '' : '<p class="muted small">Precisa de dois tanques cheios com hodômetro.</p>';
@@ -113,6 +114,28 @@ $('fu-when').addEventListener('input', () => { fuWhenEdited = true; });
 setInterval(refreshFuelWhen, 30000);
 refreshFuelWhen();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshFuelWhen(); });
+
+// Pista do % de etanol medida na primeira viagem depois do último abastecimento
+let fuHint = null;
+function renderEthanolHint(h) {
+  fuHint = h;
+  $('fu-ethanol-hint').hidden = !h;
+  if (!h) return;
+  const sinal = (x) => (x > 0 ? 'a mais' : 'a menos');
+  const salto = `a mistura pediu ${fmt(Math.abs(h.shift), 0)}% de combustível ${sinal(h.shift)}`;
+  const esperado = `pelo informado (${fmt(h.informed, 0)}% de etanol da bomba no tanque), o esperado era ${fmt(Math.abs(h.expected), 0)}% ${sinal(h.expected)}`;
+  $('fu-hint-text').textContent = h.mismatch
+    ? `Depois do abastecimento de ${dt(h.refuelAt)}, ${salto}; ${esperado}. O tanque parece ter cerca de ${fmt(h.estimated, 0)}% de etanol da bomba: confira o que foi colocado (a bomba pode ter outra mistura).`
+    : `Depois do abastecimento de ${dt(h.refuelAt)}, ${salto}, perto do esperado pelo informado (${fmt(h.informed, 0)}% de etanol da bomba no tanque).`;
+  $('fu-hint-apply').hidden = !h.mismatch;
+  if (h.mismatch) $('fu-hint-apply').textContent = `Usar ${fmt(h.estimated, 0)}% no tanque`;
+}
+$('fu-hint-apply').addEventListener('click', () => {
+  if (!fuHint || !confirm(`Considerar ${fmt(fuHint.estimated, 0)}% de etanol da bomba no tanque? O consumo passa a ser calculado com essa mistura.`)) return;
+  bridge.setEthanolPercent(Math.round(fuHint.estimated));
+  toast('Mistura do tanque atualizada.');
+  loadFuel();
+});
 
 // Uma calibração por combustível: '' = gasolina, '-e' = etanol (tanque com metade ou mais de etanol da bomba)
 const fuCal = { '': null, '-e': null };

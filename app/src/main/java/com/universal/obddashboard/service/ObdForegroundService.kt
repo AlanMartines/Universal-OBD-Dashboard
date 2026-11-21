@@ -273,6 +273,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 f.pricePerLiter ?: f.totalPrice?.takeIf { f.liters > 0 }?.div(f.liters)
             },
             lastFuelUpAt = AppDatabase.get(this).fuelUpDao().all(vehicleId).maxOfOrNull { it.timestamp },
+            ethanolHint = ethanolHintFor(loaded),
             speedCorrectionPct = AppSettings.dashboard(this, loaded).speedCorrectionPct,
             imuCalibration = AppSettings.imuCalibration(this),
             compassCalibration = AppSettings.compassCalibration(this),
@@ -1167,6 +1168,26 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
     }
 
     /**
+     * Pista do % de etanol (ver [com.universal.obddashboard.telemetry.EthanolHint]): só na primeira viagem até 3 h depois
+     * de um abastecimento ainda não medido, e com o normal da correção rodando conhecido de pelo menos 3 viagens antes dele.
+     */
+    private suspend fun ethanolHintFor(loaded: LoadedProfile): com.universal.obddashboard.telemetry.EthanolHint? = runCatching {
+        val fuel = loaded.profile.fuel ?: return null
+        val ups = AppDatabase.get(this).fuelUpDao().all(vehicleId).sortedBy { it.timestamp }
+        val last = ups.lastOrNull() ?: return null
+        if (System.currentTimeMillis() - last.timestamp !in 0..com.universal.obddashboard.telemetry.EthanolHint.RECENT_MS) return null
+        if (AppSettings.ethanolHint(this)?.refuelAt == last.timestamp) return null   // esse abastecimento já foi medido
+        val chain = FuelLog.tankEthanolAfterEach(ups, fuel.tankCapacityL)
+        val before = ups.getOrNull(ups.size - 2)?.let { chain[it.id] } ?: 0.0
+        val after = chain[last.id] ?: return null
+        val base = AppSettings.health(this, vehicleId).entries(com.universal.obddashboard.telemetry.HealthMonitor.STFT_CRUISE)
+            .filter { it.at < last.timestamp }.takeLast(5).map { it.value }
+        if (base.size < 3) return null
+        val calc = com.universal.obddashboard.telemetry.FuelCalculator(fuel)
+        com.universal.obddashboard.telemetry.EthanolHint(last.timestamp, before, after, com.universal.obddashboard.telemetry.HealthMonitor.median(base)) { calc.blend(it).first }
+    }.getOrElse { Log.w(TAG, "Pista do etanol indisponível", it); null }
+
+    /**
      * Junta as observações da viagem ao histórico de saúde do veículo e guarda o estado da central (luz de injeção,
      * códigos, monitores). A viagem é regravada a cada vez (substitui a anterior), então nada se perde se o app fechar.
      */
@@ -1182,8 +1203,10 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 h.central = HealthHistory.Central(System.currentTimeMillis(), mil >= 1.0, s.confirmedDtcs, s.pendingDtcs, ready?.incomplete?.map { it.name })
             }
             AppSettings.setHealth(this, vehicleId, h)
+            // Pista do etanol: guardada assim que a janela depois do abastecimento fecha com leituras suficientes
+            val hint = eng.ethanolHint?.result()?.also { AppSettings.setEthanolHint(this, it) }
             // 0 normal, 1 atenção, 2 verificar; sem dados fica de fora
-            healthLevels = h.subsystems().associate { sub ->
+            healthLevels = listOfNotNull(hint?.let { "ethanol_hint_pct" to it.estimatedPct }).toMap() + h.subsystems().associate { sub ->
                 "health.${sub.id}" to when (sub.level) {
                     HealthHistory.Level.NO_DATA, HealthHistory.Level.LEARNING -> null
                     HealthHistory.Level.OK -> 0.0
