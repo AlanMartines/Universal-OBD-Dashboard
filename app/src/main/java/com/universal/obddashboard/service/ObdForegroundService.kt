@@ -271,6 +271,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             fuelPricePerL = AppDatabase.get(this).fuelUpDao().all(vehicleId).lastOrNull()?.let { f ->
                 f.pricePerLiter ?: f.totalPrice?.takeIf { f.liters > 0 }?.div(f.liters)
             },
+            lastFuelUpAt = AppDatabase.get(this).fuelUpDao().all(vehicleId).maxOfOrNull { it.timestamp },
             speedCorrectionPct = AppSettings.dashboard(this, loaded).speedCorrectionPct,
             imuCalibration = AppSettings.imuCalibration(this),
             compassCalibration = AppSettings.compassCalibration(this),

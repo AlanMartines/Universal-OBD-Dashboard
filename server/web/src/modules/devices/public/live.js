@@ -61,6 +61,8 @@
     // Saúde do carro: pré-diagnóstico do app por viagem (0 normal, 1 atenção, 2 verificar)
     'health.central': ['Central (injeção)', '', 0], 'health.cooling': ['Arrefecimento', '', 0], 'health.electric': ['Elétrica', '', 0],
     'health.intake': ['Admissão', '', 0], 'health.idle': ['Marcha lenta', '', 0],
+    'health.mixture': ['Mistura', '', 0], 'health.exhaust': ['Escape', '', 0], 'health.sensors': ['Sensores de temperatura', '', 0],
+    'health.clutch': ['Embreagem', '', 0],
     can_ac: ['Ar-condicionado (painel)', '', 0], can_lights: ['Luzes acesas (painel)', '', 0], can_defog: ['Desembaçador (painel)', '', 0],
   };
   var HEALTH_TEXT = ['Normal', 'Atenção', 'Verificar'];
@@ -125,7 +127,7 @@
     ['Movimento', ['derived.accelG', 'derived.lateralG', 'derived.slopePct', 'derived.impactG', 'derived.bumps', 'derived.maxBrakeG',
       'derived.maxAccelG', 'derived.maxLateralG', 'derived.imuStage', 'imu_ax', 'imu_ay', 'imu_az', 'imu_gx', 'imu_gy', 'imu_gz', 'imu_peak']],
     ['Ambiente', ['cabin_temp', 'cabin_pressure', 'intake_temp', 'derived.ambientC', 'phone_pressure']],
-    ['Saúde do carro (app)', ['health.central', 'health.cooling', 'health.electric', 'health.intake', 'health.idle']],
+    ['Saúde do carro (app)', ['health.central', 'health.cooling', 'health.electric', 'health.intake', 'health.idle', 'health.mixture', 'health.exhaust', 'health.sensors', 'health.clutch']],
     ['Fontes cruzadas', ['derived.positionEstimated', 'derived.estDistanceM', 'derived.speedFactor', 'derived.speedFactorKm', 'derived.engineOn',
       'derived.engineSource', 'derived.imuSource', 'derived.pressureSource', 'derived.slopeBaroPct', 'derived.slopeDiffDeg',
       'phone_ax', 'phone_ay', 'phone_az', 'phone_gx', 'phone_gy', 'phone_gz', 'phone_peak']],

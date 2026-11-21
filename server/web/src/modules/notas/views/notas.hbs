@@ -87,7 +87,7 @@
     <h3 class="h6 fw-semibold">Desenvolvimento</h3>
     <ul class="notas-list mb-4">
       <li><span class="badge text-bg-primary">em teste</span><span>Pré-diagnóstico, fase 1 (central, arrefecimento, elétrica, admissão e marcha lenta): limites revistos em 16/11 com as viagens de 15 e 16/11 (marcha lenta com a borboleta eletrônica em 4 a 5 %, vácuo pelo normal do próprio carro, oscilação por parada, repouso a 12,0 V, partida só com o firmware 1.7). Seguir observando.</span></li>
-      <li><span class="badge text-bg-primary">próximo</span><span>Pré-diagnóstico, fase 2: mistura (STFT por faixa), escape (sonda pós fora do corte), plausibilidade das temperaturas e embreagem patinando. Ver <a href="#prediagnostico">o pré-diagnóstico</a>.</span></li>
+      <li><span class="badge text-bg-primary">em teste</span><span>Pré-diagnóstico, fase 2 (21/11): mistura pela mediana das últimas viagens, escape 60 s depois do corte de combustível, temperaturas na partida a frio e embreagem patinando; limites conferidos com as viagens reais do Uno. Sai na próxima versão do app. Ver <a href="#prediagnostico">o pré-diagnóstico</a>.</span></li>
       <li><span class="badge text-bg-secondary">depois</span><span>Android Auto pelo teste interno da Play (o Android Auto 17.7+ recusa APK instalado à mão).</span></li>
       <li><span class="badge text-bg-secondary">depois</span><span>Consumo com etanol.</span></li>
       <li><span class="badge text-bg-success">feito</span><span>Backup do banco do painel (20/11): diário, cifrado (AES-256), com cópia fora do servidor, retenção de 7 diários, 4 semanais e 6 mensais e teste automático de restauração todo mês. O primeiro teste restaurou as 16 tabelas e as 11 migrações.</span></li>
@@ -143,13 +143,14 @@
       </table>
     </div>
     <p class="small text-body-secondary">O A/C, as luzes e o desembaçador vêm de bits da rede CAN que já eram recebidos e estavam mapeados (0x281, 0x380, 0x180); só passaram a ser lidos. A pressão do ar vem do BMP180, do barômetro do celular ou da que o app aprende com o MAP de chave ligada.</p>
-    <h3 class="h6 fw-semibold">Fase 2 (próxima)</h3>
-    <ul class="mb-4">
-      <li><b>Mistura:</b> STFT alta só em marcha lenta (ar falso) ou em todas as faixas (combustível ou injeção), fora dos minutos depois de abastecer.</li>
-      <li><b>Escape:</b> sonda pós baixa por muito tempo fora do corte de injeção (vazamento antes dela).</li>
-      <li><b>Sensores de temperatura:</b> admissão × água depois de parada longa.</li>
-      <li><b>Embreagem:</b> rotação subindo sem a velocidade acompanhar, engatado e com carga.</li>
+    <h3 class="h6 fw-semibold">Fase 2: o que é checado e quando (21/11, em teste)</h3>
+    <ul class="mb-2">
+      <li><b>Mistura:</b> correção de curto prazo (STFT) em marcha lenta e rodando leve (30 km/h ou mais, 1.500 a 3.500 rpm), com o motor quente, fora do corte de combustível, dos 10 s seguintes e dos 10 primeiros minutos depois de um abastecimento. Alta só na marcha lenta aponta ar falso; nas duas faixas, combustível ou injeção. Como o Uno não deixa ler a correção de longo prazo, a de curto prazo varia muito de uma viagem para outra: o estado vem da <b>mediana das últimas 5 viagens</b> (atenção acima de ±15 %), e uma viagem sozinha só é marcada acima de ±20 %.</li>
+      <li><b>Escape:</b> sonda depois do catalisador com o motor quente há 5 min e <b>60 s depois do último corte de combustível</b> (o catalisador fica cheio de oxigênio depois do corte). Mediana abaixo de 0,40 V aponta ar entrando antes dela; um catalisador bom deixa a sonda em 0,72 a 0,77 V.</li>
+      <li><b>Sensores de temperatura:</b> no primeiro minuto depois de uma partida a frio (água até 40 °C), ar admitido e água devem estar a até 10 °C um do outro.</li>
+      <li><b>Embreagem:</b> a marcha é reconhecida pela relação velocidade/rotação em carga leve; sob carga (borboleta a 40 % ou mais, MAP a 75 % da pressão do ar), a rotação acima do que a marcha pede é patinação. Atenção acima de 8 %, ou 4 pontos acima do normal deste carro, aprendido nas 5 primeiras viagens.</li>
     </ul>
+    <p class="small text-body-secondary mb-4">Limites conferidos com as viagens reais do Uno de 01 a 21/11 no painel. Sonda pós: contando logo depois do corte, 9 de 70 viagens sairiam marcadas; com a espera de 60 s, nenhuma. Mistura rodando: a mediana de 5 viagens ficou entre −7 e +6 %. Em marcha lenta, a mediana de 5 viagens chegou a +16 % em 11/11 (dez viagens seguidas pedindo mais combustível, no meio do tanque, que voltaram ao normal depois): é o único trecho que daria atenção. Temperaturas na partida a frio: até 10 °C de diferença. Patinação: até 6 %, em trechos curtos.</p>
     <h3 class="h6 fw-semibold">Avaliação técnica completa (15/11/2026)</h3>
     <p>A central (IAW 7GF) responde pela linha K e anuncia os PIDs 01, 03, 04, 05, 06, 07, 0B, 0C, 0D, 0E, 0F, 11, 13, 14, 15, 1C, 20 e 21. Não tem 0142 (tensão), 0133 (pressão atmosférica), 0146 (ambiente) nem 0152 (% de etanol). O 0101 mostra que ela mesma roda os monitores de catalisador, sonda, aquecedor da sonda e falha de ignição.</p>
     <p class="small text-body-secondary mb-2">Classes:

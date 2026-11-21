@@ -27,6 +27,8 @@ class TelemetryEngine(
     atmosphericKpa: Double? = null,
     /** Preço do último abastecimento, para o custo da viagem. */
     private val fuelPricePerL: Double? = null,
+    /** Último abastecimento registrado (ms): a mistura não é julgada nos primeiros minutos depois dele. */
+    private val lastFuelUpAt: Long? = null,
     /** Correção escolhida em Mostradores: os cronômetros usam a mesma velocidade que a tela mostra. */
     speedCorrectionPct: Double = 0.0,
     /** Orientação aprendida do sensor de movimento do ESP32 (LSM6DS3), salva entre as capturas. */
@@ -78,7 +80,10 @@ class TelemetryEngine(
     private val battery = BatteryWatch()
     private val vibration = ArrayDeque<Pair<Long, Double>>()
     /** Pré-diagnóstico desta viagem: só junta medidas no regime certo (ver HealthMonitor). */
-    val health = HealthMonitor(profile.profile.thermal?.let { HealthMonitor.Thermal(it.fanStage2C, it.criticalC) } ?: HealthMonitor.Thermal())
+    val health = HealthMonitor(
+        profile.profile.thermal?.let { HealthMonitor.Thermal(it.fanStage2C, it.criticalC) } ?: HealthMonitor.Thermal(),
+        gears = profile.profile.shiftIndicator?.gearKmhPer1000Rpm.orEmpty(),
+    )
     private var lastPeakAt = 0L
 
     init { setTrims(trims) }
@@ -337,6 +342,10 @@ class TelemetryEngine(
                 // (7 a 9 V numa bateria boa), não a tensão sustentada da partida. Só vale do 1.7 em diante.
                 battCrankV = battery.crankV.takeIf { firmwareAtLeast(state.canInfo?.firmware, 1, 7) },
                 espBattV = espVolts,
+                stftPct = v(roles.stft),
+                lambdaPostV = v(roles.lambdaPostVoltage),
+                intakeC = v(roles.intakeTemp),
+                refuelAt = lastFuelUpAt,
             ),
         )
 

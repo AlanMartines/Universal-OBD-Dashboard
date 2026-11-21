@@ -119,6 +119,8 @@ data class Roles(
     val stft: String? = "stft_b1",
     val ltft: String? = "ltft_b1",
     @SerialName("lambda_voltage") val lambdaVoltage: String? = "lambda_b1s1_v",
+    /** Sonda depois do catalisador (V): pré-diagnóstico do escape. */
+    @SerialName("lambda_post_voltage") val lambdaPostVoltage: String? = "lambda_b1s2_v",
     @SerialName("mil_on") val milOn: String? = "mil_on",
     @SerialName("dtc_count") val dtcCount: String? = "dtc_count",
 )
