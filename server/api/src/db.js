@@ -150,7 +150,8 @@ export async function purgeExpired(pool, retentionDays) {
   await pool.query('DELETE FROM password_resets WHERE expires_at < now()');
   await pool.query(`DELETE FROM mail_outbox WHERE created_at < now() - interval '1 day'`);
   await pool.query(`DELETE FROM telemetry_samples WHERE ts < now() - make_interval(days => $1)`, [retentionDays]);
-  await pool.query(`DELETE FROM audit_log WHERE at < now() - interval '365 days'`);
+  // auditoria: pela função (a aplicação não tem DELETE na tabela depois do scripts/proteger-auditoria.sh)
+  await pool.query('SELECT audit_purge()');
   await pool.query(`DELETE FROM fuel_ups WHERE removed_at < now() - interval '${FUEL_REMOVED_DAYS} days'`);
   await pool.query(
     `DELETE FROM devices WHERE paired_at IS NULL AND pairing_expires_at < now() - interval '1 day'`,
