@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.60] - 2026-11-20
+
 ### Segurança
 - **Painel: auditoria protegida.** O papel da aplicação passa a só consultar e registrar no `audit_log`; apagar, alterar, esvaziar e derrubar a tabela são recusados, e a limpeza de 1 ano é feita pela função `audit_purge()`. Quem invadir a API não apaga os rastros. A proteção é aplicada uma vez, como dono do banco, por `server/scripts/proteger-auditoria.sh`.
 
