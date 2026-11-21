@@ -198,6 +198,7 @@ Resposta: `{ "received", "stored", "rejected" }`.
 
 - **O que vai:** o dump do banco (`pg_dump -Fc`), os papéis (`pg_dumpall --globals-only`) e uma cópia do `.env`. Tudo é cifrado com GPG (AES-256) antes de tocar o disco.
 - **Conferência:** cada backup é decifrado por inteiro e listado pelo `pg_restore` antes de entrar na pasta.
+- **Logs:** os logs dos contêineres das últimas 24 h também entram, cifrados (levam IPs e nomes de usuário), na pasta `logs/`, por 30 dias. Se o servidor cair, os logs não se perdem com ele.
 - **Retenção:** 7 diários, 4 semanais (domingo) e 6 mensais (dia 1), em `/usr/local/obdBackup`, espelhados por `rclone` num armazenamento externo. O `--max-delete` impede que uma pasta local vazia apague o remoto.
 - **Teste de restauração:** sobe um Postgres descartável, sem rede, restaura o backup mais recente e confere as tabelas, as migrações e os usuários contra a produção.
 
@@ -237,6 +238,21 @@ docker compose start api worker web
 ```
 
 Num servidor novo, restaure antes o `.env` (`gpg -d obd-AAAA-MM-DD.env.gpg > .env`), suba só o `db` e siga os mesmos passos. O papel da aplicação é criado pelo `db/init` com a senha do `.env`.
+
+## Monitor do servidor
+
+`scripts/monitor-servidor.sh` roda pelo cron a cada 10 minutos e avisa os Super Admins por e-mail, pela mesma fila do painel (não precisa de SMTP no servidor), quando:
+
+- o disco passa de 85 % de uso (`/`, diretório do Docker e pasta dos backups);
+- a memória disponível fica abaixo de 10 %;
+- algum contêiner do painel para, fica reiniciando ou com a saúde ruim;
+- o último backup bem-sucedido tem mais de 26 h.
+
+Cada problema avisa ao aparecer e repete no máximo a cada 6 h enquanto durar. Quando normaliza, sai um aviso de "normalizado". O estado fica em `/var/lib/obd-monitor`, e o aviso só é marcado como enviado depois que a fila aceita (com o banco fora do ar, ele tenta de novo na próxima rodada). Os limites mudam por variável (`DISCO_LIMITE`, `MEMORIA_MIN`, `BACKUP_MAX_HORAS`, `REPETIR_HORAS`), e `SEM_ENVIO=1` só mostra o resultado.
+
+```cron
+*/10 * * * * /bin/bash /caminho/server/scripts/monitor-servidor.sh >> /var/log/obd-monitor.log 2>&1
+```
 
 ## Homologação
 

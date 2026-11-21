@@ -8,6 +8,8 @@
 #      Também guarda uma cópia cifrada do server/.env.
 #   3. Confere o dump: decifra e lista o conteúdo com pg_restore --list.
 #   4. Retenção local: 7 diários, 4 semanais (domingo) e 6 mensais (dia 1).
+#      Também guarda os logs dos contêineres das últimas 24 h (cifrados: levam IPs e nomes de usuário),
+#      na pasta logs/, por 30 dias: se o servidor cair, os logs não se perdem com ele.
 #   5. Espelha a pasta no armazenamento externo com rclone (REMOTO).
 #
 # A frase fica FORA do /root (se o /root também vai para a nuvem, a chave
@@ -33,6 +35,7 @@ DB_OWNER="${DB_OWNER:-obd_owner}"
 MANTER_DIARIOS=7
 MANTER_SEMANAIS=4
 MANTER_MENSAIS=6
+MANTER_LOGS=30
 
 log() { echo "$(date '+%F %T') - $*"; }
 falha() { log "[ERRO] $*"; exit 1; }
@@ -53,7 +56,7 @@ decifrar() {
   gpg --batch --quiet --pinentry-mode loopback --passphrase-file "$SENHA" -d "$1"
 }
 
-mkdir -p "$BACKUP_DIR"/{diario,semanal,mensal}
+mkdir -p "$BACKUP_DIR"/{diario,semanal,mensal,logs}
 DIA="$(date +%F)"
 BASE="obd-$DIA"
 TMP="$(mktemp -d "$BACKUP_DIR/.tmp.XXXXXX")"
@@ -65,6 +68,7 @@ log "início do backup $BASE"
 compose exec -T db pg_dump -U "$DB_OWNER" -d "$DB_NAME" -Fc | cifrar "$TMP/$BASE.dump.gpg"
 compose exec -T db pg_dumpall -U "$DB_OWNER" --globals-only | cifrar "$TMP/$BASE.papeis.sql.gpg"
 cifrar "$TMP/$BASE.env.gpg" < "$SERVER_DIR/.env"
+compose logs --no-color --timestamps --since 24h 2>&1 | gzip -9 | cifrar "$TMP/logs-$DIA.txt.gz.gpg"
 
 # 3. Conferência: o arquivo decifra por inteiro (o GPG valida a integridade)
 #    e o pg_restore reconhece as tabelas. O --list lê só o índice e fecha o
@@ -76,6 +80,7 @@ TABELAS="$( (decifrar "$TMP/$BASE.dump.gpg" 2>/dev/null || true) |
 log "dump conferido: $TABELAS tabelas com dados, $(du -h "$TMP/$BASE.dump.gpg" | cut -f1)"
 
 # 4. Retenção.
+mv -f "$TMP/logs-$DIA.txt.gz.gpg" "$BACKUP_DIR/logs/obd-$DIA.logs.txt.gz.gpg"
 mv -f "$TMP"/"$BASE".* "$BACKUP_DIR/diario/"
 if [ "$(date +%u)" = 7 ]; then cp -f "$BACKUP_DIR/diario/$BASE".* "$BACKUP_DIR/semanal/"; fi
 if [ "$(date +%d)" = 01 ]; then cp -f "$BACKUP_DIR/diario/$BASE".* "$BACKUP_DIR/mensal/"; fi
@@ -87,6 +92,7 @@ podar() {  # podar <pasta> <quantos dias manter>
 podar "$BACKUP_DIR/diario" "$MANTER_DIARIOS"
 podar "$BACKUP_DIR/semanal" "$MANTER_SEMANAIS"
 podar "$BACKUP_DIR/mensal" "$MANTER_MENSAIS"
+podar "$BACKUP_DIR/logs" "$MANTER_LOGS"
 
 date '+%F %T' > "$BACKUP_DIR/ULTIMO_OK"
 
