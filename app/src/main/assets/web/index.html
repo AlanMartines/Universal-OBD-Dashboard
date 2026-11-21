@@ -187,13 +187,23 @@
       <div id="fu-intervals" class="list"></div>
 
       <div class="card form" id="fu-calibration">
-        <span class="label">Calibração do consumo</span>
+        <span class="label">Calibração do consumo: gasolina</span>
         <p id="fu-cal-text" class="small"></p>
         <div class="row">
           <button id="fu-cal-apply" class="btn btn-primary" hidden>Aplicar correção</button>
           <button id="fu-cal-reset" class="btn" hidden>Voltar ao padrão do perfil</button>
         </div>
-        <p class="muted small">Compara os litros de cada intervalo entre tanques cheios com o que o app estimou. Intervalos com diferença acima de 25% (tanque não completado, % de etanol errado) ficam de fora. A correção vale para as próximas leituras; os intervalos seguintes servem para conferir.</p>
+        <p class="muted small">Compara os litros de cada intervalo entre tanques cheios com o que o app estimou. Intervalos com diferença acima de 25% (tanque não completado, % de etanol errado) ficam de fora. A correção vale para as próximas leituras; os intervalos seguintes servem para conferir. Cada combustível tem a sua: aqui entram os intervalos com menos da metade do tanque vindo da bomba de etanol.</p>
+      </div>
+
+      <div class="card form" id="fu-calibration-e" hidden>
+        <span class="label">Calibração do consumo: etanol</span>
+        <p id="fu-cal-text-e" class="small"></p>
+        <div class="row">
+          <button id="fu-cal-apply-e" class="btn btn-primary" hidden>Aplicar correção</button>
+          <button id="fu-cal-reset-e" class="btn" hidden>Voltar a seguir a gasolina</button>
+        </div>
+        <p class="muted small">Intervalos com metade ou mais do tanque vindo da bomba de etanol. Enquanto não houver correção própria, o etanol usa a da gasolina.</p>
       </div>
 
       <div class="row-between history-head">

@@ -23,6 +23,8 @@ class TelemetryEngine(
     var fuelLevelL: Double?,
     /** Correção do consumo calibrada com abastecimentos reais (Abastecimentos → Calibração); 1 = perfil. */
     var fuelCorrection: Double = 1.0,
+    /** Correção própria do etanol; null = segue [fuelCorrection] (ver FuelCalibration.Corrections). */
+    var fuelCorrectionEthanol: Double? = null,
     userAlerts: List<CompiledAlert> = emptyList(),
     atmosphericKpa: Double? = null,
     /** Preço do último abastecimento, para o custo da viagem. */
@@ -80,6 +82,10 @@ class TelemetryEngine(
     private val battery = BatteryWatch()
     private val vibration = ArrayDeque<Pair<Long, Double>>()
     /** Pré-diagnóstico desta viagem: só junta medidas no regime certo (ver HealthMonitor). */
+    /** Correção do consumo do combustível que está no tanque agora (gasolina ou etanol, pela mistura). */
+    fun currentFuelCorrection(): Double =
+        com.universal.obddashboard.fuel.FuelCalibration.Corrections(fuelCorrection, fuelCorrectionEthanol).forTank(ethanolPercent)
+
     val health = HealthMonitor(
         profile.profile.thermal?.let { HealthMonitor.Thermal(it.fanStage2C, it.criticalC) } ?: HealthMonitor.Thermal(),
         gears = profile.profile.shiftIndicator?.gearKmhPer1000Rpm.orEmpty(),
@@ -154,7 +160,7 @@ class TelemetryEngine(
             ltftPct = v(roles.ltft),
             ethanolPct = ethanolPercent,
             vars = baseVars,
-        )?.times(fuelCorrection)
+        )?.times(currentFuelCorrection())
 
         val consumedL = (lph ?: 0.0) * dtS / 3600.0
         fuelLevelL = fuelLevelL?.let { (it - consumedL).coerceAtLeast(0.0) }

@@ -46,6 +46,7 @@ async function loadFuel() {
     : 'Registre tanques cheios com etanol e com gasolina para calcular quando o etanol compensa neste carro.';
 
   renderCalibration(data.calibration);
+  renderCalibration(data.calibrationEthanol, '-e');
 
   const ib = $('fu-intervals');
   ib.innerHTML = data.intervals.length ? '' : '<p class="muted small">Precisa de dois tanques cheios com hodômetro.</p>';
@@ -113,13 +114,17 @@ setInterval(refreshFuelWhen, 30000);
 refreshFuelWhen();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshFuelWhen(); });
 
-let fuCal = null;
-function renderCalibration(c) {
-  fuCal = c;
-  if (!c) { $('fu-calibration').hidden = true; return; }
-  $('fu-calibration').hidden = false;
+// Uma calibração por combustível: '' = gasolina, '-e' = etanol (tanque com metade ou mais de etanol da bomba)
+const fuCal = { '': null, '-e': null };
+function renderCalibration(c, sfx = '') {
+  fuCal[sfx] = c;
+  if (!c) { $('fu-calibration' + sfx).hidden = true; return; }
+  $('fu-calibration' + sfx).hidden = false;
   const pct = (x) => (x > 0 ? '+' : '') + fmt(x * 100, 1) + '%';
-  const factor = `Fator atual: ${fmt(c.factor, 3)}${c.factor !== 1 && c.since ? ' (desde ' + dt(c.since) + ')' : ' (padrão do perfil)'}.`;
+  const ethanol = sfx === '-e';
+  const factor = ethanol && !c.own
+    ? `Sem correção própria: segue a da gasolina (fator ${fmt(c.factor, 3)}).`
+    : `Fator atual: ${fmt(c.factor, 3)}${(c.factor !== 1 || ethanol) && c.since ? ' (desde ' + dt(c.since) + ')' : ' (padrão do perfil)'}.`;
   let msg;
   if (c.suggested != null) {
     msg = `Em ${c.used} intervalos, o app estimou ${pct(c.deviation)} em relação aos litros reais. Correção sugerida: fator ${fmt(c.suggested, 3)}.`;
@@ -130,20 +135,34 @@ function renderCalibration(c) {
     msg = `Em ${c.used} intervalos, o app está a ${pct(c.deviation)} dos litros reais: não precisa de correção.`;
   }
   if (c.ignored) msg += ` ${c.ignored} intervalo(s) ignorado(s) por diferença grande.`;
-  $('fu-cal-text').textContent = msg + ' ' + factor;
-  $('fu-cal-apply').hidden = c.suggested == null;
-  if (c.suggested != null) $('fu-cal-apply').textContent = `Aplicar fator ${fmt(c.suggested, 3)}`;
-  $('fu-cal-reset').hidden = c.factor === 1;
+  $('fu-cal-text' + sfx).textContent = msg + ' ' + factor;
+  $('fu-cal-apply' + sfx).hidden = c.suggested == null;
+  if (c.suggested != null) $('fu-cal-apply' + sfx).textContent = `Aplicar fator ${fmt(c.suggested, 3)}`;
+  $('fu-cal-reset' + sfx).hidden = ethanol ? !c.own : c.factor === 1;
 }
 $('fu-cal-apply').addEventListener('click', () => {
-  if (!fuCal || fuCal.suggested == null || !confirm(`Aplicar o fator ${fmt(fuCal.suggested, 3)} ao consumo calculado?`)) return;
-  const r = bridge.setFuelCorrection(fuCal.suggested);
+  const c = fuCal[''];
+  if (!c || c.suggested == null || !confirm(`Aplicar o fator ${fmt(c.suggested, 3)} ao consumo calculado com gasolina?`)) return;
+  const r = bridge.setFuelCorrection(c.suggested);
   if (r !== 'ok') alert(r);
   loadFuel();
 });
 $('fu-cal-reset').addEventListener('click', () => {
   if (!confirm('Voltar ao consumo calculado só pelo perfil (fator 1,000)?')) return;
   const r = bridge.setFuelCorrection(1);
+  if (r !== 'ok') alert(r);
+  loadFuel();
+});
+$('fu-cal-apply-e').addEventListener('click', () => {
+  const c = fuCal['-e'];
+  if (!c || c.suggested == null || !confirm(`Aplicar o fator ${fmt(c.suggested, 3)} ao consumo calculado com etanol?`)) return;
+  const r = bridge.setFuelCorrectionEthanol(c.suggested);
+  if (r !== 'ok') alert(r);
+  loadFuel();
+});
+$('fu-cal-reset-e').addEventListener('click', () => {
+  if (!confirm('O etanol volta a usar a correção da gasolina?')) return;
+  const r = bridge.setFuelCorrectionEthanol(0);
   if (r !== 'ok') alert(r);
   loadFuel();
 });

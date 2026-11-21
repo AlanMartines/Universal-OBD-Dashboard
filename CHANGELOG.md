@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Abastecimentos: calibração do consumo por combustível.** A correção calibrada com os abastecimentos passa a ser separada entre gasolina e etanol (tanque com metade ou mais vindo da bomba de etanol), para um tanque de etanol não estragar a calibração da gasolina e vice-versa. Cada intervalo entre tanques cheios é classificado pela mistura do tanque, acompanhada a cada abastecimento. A correção da gasolina é a que já existia; a do etanol segue a da gasolina até ter três intervalos próprios. O consumo ao vivo usa a do combustível que está no tanque.
+
 ## [0.9.62] - 2026-11-21
 
 ### Adicionado

@@ -37,4 +37,24 @@ class FuelCalibrationTest {
         assertEquals(1, r.missing)
         assertNull(r.suggestedFactor)
     }
+
+    // ---------------- Por combustível
+
+    @Test
+    fun fuelClassFollowsTheTankMix() {
+        assertEquals(FuelCalibration.Fuel.GASOLINE, FuelCalibration.fuelOf(0.0))
+        assertEquals(FuelCalibration.Fuel.GASOLINE, FuelCalibration.fuelOf(49.9))
+        assertEquals(FuelCalibration.Fuel.ETHANOL, FuelCalibration.fuelOf(50.0))
+        assertEquals(FuelCalibration.Fuel.ETHANOL, FuelCalibration.fuelOf(100.0))
+    }
+
+    @Test
+    fun ethanolUsesItsOwnCorrectionOrFollowsGasoline() {
+        val sem = FuelCalibration.Corrections(gasoline = 1.02)
+        assertEquals(1.02, sem.forTank(0.0), 1e-9)
+        assertEquals(1.02, sem.forTank(80.0), 1e-9)             // etanol sem correção própria: a da gasolina
+        val com = FuelCalibration.Corrections(gasoline = 1.02, ethanol = 0.95)
+        assertEquals(1.02, com.forTank(30.0), 1e-9)
+        assertEquals(0.95, com.forTank(80.0), 1e-9)
+    }
 }
