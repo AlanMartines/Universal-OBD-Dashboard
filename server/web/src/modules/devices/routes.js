@@ -247,7 +247,7 @@ export default function devicesRoutes(app, {
       const created = await api(request, 'POST', `/internal/devices/${requireUuid(request)}/pairing-code`);
       return reply.view('modules/devices/views/pairing.hbs', context(request, { title: 'Novo código de pareamento', ...created, ...DEVICE_ASSETS }));
     } catch (error) {
-      if (!(error instanceof ApiError) || error.status >= 500 || error.status === 401) throw error;
+      if (!(error instanceof ApiError) || error.status >= 500 || error.status === 401 || error.code === 'reauth_required') throw error;
       return panelView(request, reply, error.status, message(error.code));
     }
   });

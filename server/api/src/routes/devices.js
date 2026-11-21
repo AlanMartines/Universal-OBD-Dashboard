@@ -11,7 +11,7 @@ const ROUTE_MAX_POINTS = 2000;
 /** Viagem reproduzida no painel: leituras a cada 2 s dão ~11 h antes de resumir. */
 const REPLAY_MAX_SAMPLES = 20000;
 
-export default function devicesRoutes(app, { config, pool, live, limit, requireReady, requireManager, loadDevice, publicDevice, locationAllowed }) {
+export default function devicesRoutes(app, { config, pool, live, limit, requireReady, requireManager, requireRecentAuth, loadDevice, publicDevice, locationAllowed }) {
   const matcher = createMatcher({ url: config.osrmUrl });
   app.get('/internal/devices', {
     preValidation: requireReady,
@@ -406,7 +406,7 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
   // Novo código para um dispositivo que já existe (troca de celular, app reinstalado, identificador novo):
   // o histórico continua no mesmo dispositivo. O app atual segue enviando até o novo parear, e aí o
   // token antigo deixa de valer (o pareamento grava um token novo).
-  app.post('/internal/devices/:id/pairing-code', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
+  app.post('/internal/devices/:id/pairing-code', { preValidation: [requireManager, requireRecentAuth], schema: { params: uuidParam } }, async (request) => {
     const device = await loadDevice(request);
     if (device.revoked_at) throw fail(409, 'device_is_revoked');
     const code = generatePairingCode();
@@ -418,7 +418,7 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     return { id: device.id, name: device.name, pairingCode: formatPairingCode(code), expiresInMinutes: PAIRING_MINUTES, repair: true };
   });
 
-  app.post('/internal/devices/:id/revoke', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
+  app.post('/internal/devices/:id/revoke', { preValidation: [requireManager, requireRecentAuth], schema: { params: uuidParam } }, async (request) => {
     const device = await loadDevice(request);
     await pool.query(
       `UPDATE devices SET revoked_at = COALESCE(revoked_at, now()), token_hash = NULL, pairing_code_hash = NULL WHERE id = $1`,
@@ -428,7 +428,7 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     return { ok: true };
   });
 
-  app.post('/internal/devices/:id/delete', { preValidation: requireManager, schema: { params: uuidParam } }, async (request) => {
+  app.post('/internal/devices/:id/delete', { preValidation: [requireManager, requireRecentAuth], schema: { params: uuidParam } }, async (request) => {
     const device = await loadDevice(request);
     await pool.query('DELETE FROM devices WHERE id = $1', [device.id]);
     await audit(pool, { actor: request.session.impersonatedBy ?? request.session.user.username, action: 'dispositivo_excluido', target: device.id, ip: request.clientIp });

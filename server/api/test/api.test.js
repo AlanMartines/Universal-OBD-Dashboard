@@ -719,6 +719,79 @@ describe('API', () => {
     });
   });
 
+  describe('confirmar a senha em ações críticas', () => {
+    const vence = (token) => pool.query(`UPDATE sessions SET reauth_at = now() - interval '11 minutes' WHERE token_hash = $1`, [sha256(token)]);
+    const reauth = (token, body) => internal(app, 'POST', '/internal/auth/reauth', { token, body });
+
+    test('login vale por 10 min; depois, ações críticas pedem a senha (e o 2FA) de novo', async () => {
+      const created = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username: 'reauthraiz', role: 'superadmin' } });
+      let tok = await login(app, 'reauthraiz', created.json().password);
+      await internal(app, 'POST', '/internal/auth/password', { token: tok, body: { currentPassword: created.json().password, newPassword: USER_PASSWORD } });
+      const { secret, recoveryCodes } = await enableMfa(app, tok, USER_PASSWORD);
+      const dev = (await internal(app, 'POST', '/internal/devices', { token: tok, body: { name: 'Celular reauth' } })).json();
+      // logo depois do login, a ação crítica passa
+      assert.equal((await internal(app, 'POST', `/internal/devices/${dev.id}/pairing-code`, { token: tok })).statusCode, 200);
+
+      await vence(tok);
+      for (const [url, body] of [
+        [`/internal/devices/${dev.id}/pairing-code`], [`/internal/devices/${dev.id}/revoke`], [`/internal/devices/${dev.id}/delete`],
+        ['/internal/admin/signup', { open: false }], ['/internal/admin/mfa-admins', { required: false }],
+        ['/internal/admin/users', { username: 'reauthnovo', role: 'admin' }],
+      ]) {
+        assert.deepEqual((await internal(app, 'POST', url, { token: tok, ...(body ? { body } : {}) })).json(), { error: 'reauth_required' }, url);
+      }
+      // ações comuns seguem livres
+      assert.equal((await internal(app, 'GET', '/internal/devices', { token: tok })).statusCode, 200);
+
+      assert.deepEqual((await reauth(tok, { password: 'senha errada mesmo' })).json(), { error: 'reauth_failed' });
+      assert.deepEqual((await reauth(tok, { password: USER_PASSWORD })).json(), { error: 'reauth_failed' });            // falta o código
+      assert.deepEqual((await reauth(tok, { password: USER_PASSWORD, code: '000000' })).json(), { error: 'reauth_failed' });
+      assert.equal((await reauth(tok, { password: USER_PASSWORD, code: codeForStep(secret, stepAt(Date.now()) + 1) })).statusCode, 200);
+      assert.equal((await internal(app, 'POST', `/internal/devices/${dev.id}/revoke`, { token: tok })).statusCode, 200);
+
+      await vence(tok);
+      assert.equal((await reauth(tok, { password: USER_PASSWORD, code: recoveryCodes[0] })).statusCode, 200);   // código de recuperação também vale
+      assert.equal((await internal(app, 'POST', `/internal/devices/${dev.id}/delete`, { token: tok })).statusCode, 200);
+      const acoes = (await pool.query(`SELECT action FROM audit_log WHERE actor = 'reauthraiz' AND action LIKE 'reautenticacao%' ORDER BY id`)).rows.map((r) => r.action);
+      assert.deepEqual(acoes, ['reautenticacao_recusada', 'reautenticacao_recusada', 'reautenticacao_recusada', 'reautenticacao', 'reautenticacao']);
+      tok = null;
+    });
+
+    test('conta sem 2FA confirma só com a senha', async () => {
+      const tok = await userToken(app, admin, 'reauthdono');
+      const dev = (await internal(app, 'POST', '/internal/devices', { token: tok, body: { name: 'Carro do dono' } })).json();
+      await vence(tok);
+      assert.deepEqual((await internal(app, 'POST', `/internal/devices/${dev.id}/delete`, { token: tok })).json(), { error: 'reauth_required' });
+      assert.equal((await reauth(tok, { password: USER_PASSWORD })).statusCode, 200);
+      assert.equal((await internal(app, 'POST', `/internal/devices/${dev.id}/delete`, { token: tok })).statusCode, 200);
+    });
+
+    test('modo suporte: quem confirma é o Super Admin, e a volta não conta como confirmação', async () => {
+      const created = await internal(app, 'POST', '/internal/admin/users', { token: admin, body: { username: 'reauthsup', role: 'superadmin' } });
+      const sup = await login(app, 'reauthsup', created.json().password);
+      await internal(app, 'POST', '/internal/auth/password', { token: sup, body: { currentPassword: created.json().password, newPassword: USER_PASSWORD } });
+      const { secret, recoveryCodes } = await enableMfa(app, sup, USER_PASSWORD);
+      await userToken(app, admin, 'reauthalvo');
+      const alvo = (await pool.query(`SELECT id FROM users WHERE username = 'reauthalvo'`)).rows[0].id;
+
+      await vence(sup);
+      assert.deepEqual((await internal(app, 'POST', `/internal/admin/users/${alvo}/impersonate`, { token: sup })).json(), { error: 'reauth_required' });
+      assert.equal((await reauth(sup, { password: USER_PASSWORD, code: codeForStep(secret, stepAt(Date.now()) + 1) })).statusCode, 200);
+      const visita = (await internal(app, 'POST', `/internal/admin/users/${alvo}/impersonate`, { token: sup })).json().token;
+      assert.ok(visita);
+      const dev = (await internal(app, 'POST', '/internal/devices', { token: visita, body: { name: 'Carro visitado' } })).json();
+      // a sessão de suporte nasce sem confirmação; a senha do visitado não vale, a do Super Admin (com 2FA) sim
+      assert.deepEqual((await internal(app, 'POST', `/internal/devices/${dev.id}/revoke`, { token: visita })).json(), { error: 'reauth_required' });
+      assert.deepEqual((await reauth(visita, { password: USER_PASSWORD })).json(), { error: 'reauth_failed' });
+      // o código do app desta janela já foi gasto (não vale duas vezes): o de recuperação serve
+      assert.equal((await reauth(visita, { password: USER_PASSWORD, code: recoveryCodes[0] })).statusCode, 200);
+      assert.equal((await internal(app, 'POST', `/internal/devices/${dev.id}/revoke`, { token: visita })).statusCode, 200);
+
+      const volta = (await internal(app, 'POST', '/internal/auth/impersonate/stop', { token: visita })).json().token;
+      assert.deepEqual((await internal(app, 'POST', '/internal/admin/signup', { token: volta, body: { open: false } })).json(), { error: 'reauth_required' });
+    });
+  });
+
   describe('bloqueio por rede', () => {
     const tenta = (username, password, ip) => internal(app, 'POST', '/internal/auth/login', { body: { username, password }, ip });
     const entrou = async (username, password, ip) => Boolean((await tenta(username, password, ip)).json().token);

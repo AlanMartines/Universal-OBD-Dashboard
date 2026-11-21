@@ -4,6 +4,16 @@
   "date": null,
   "sections": [
    {
+    "kind": "security",
+    "title": "Segurança",
+    "items": [
+     {
+      "title": "Painel: confirmar a senha em ações críticas",
+      "text": "Criar, desativar e excluir usuário, abrir o cadastro, mudar a exigência de 2FA, entrar em modo suporte e gerar código de pareamento, revogar ou excluir dispositivo passam a exigir a senha (e o código do autenticador, quando a conta usa 2FA) confirmada nos últimos 10 minutos. O login conta como confirmação. Sem ela, o painel pede a senha e volta à página de origem. No modo suporte, quem confirma é o Super Admin."
+     }
+    ]
+   },
+   {
     "kind": "added",
     "title": "Adicionado",
     "items": [

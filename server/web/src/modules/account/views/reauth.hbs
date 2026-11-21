@@ -1,0 +1,23 @@
+<div class="row justify-content-center">
+  <div class="col-sm-10 col-md-6 col-lg-4">
+    <h1 class="page-title mb-3"><span class="page-title-icon" aria-hidden="true"><i class="fa-solid fa-user-shield"></i></span>Confirme sua senha</h1>
+    <p class="text-body-secondary">Esta é uma ação sensível. Confirme {{#if user.impersonatedBy}}a sua senha de Super Admin{{else}}sua senha{{/if}} para continuar: depois disso, ações como esta ficam liberadas por 10 minutos.</p>
+    {{> formError}}
+    <form method="post" action="/confirmar-senha" data-validate>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="volta" value="{{volta}}">
+      <div class="mb-3">
+        <label class="form-label required-mark" for="reauthPassword">Senha</label>
+        <input class="form-control" id="reauthPassword" name="password" type="password" autocomplete="current-password" required autofocus>
+      </div>
+      {{#if user.reauthNeedsCode}}
+      <div class="mb-3">
+        <label class="form-label required-mark" for="reauthCode">Código do aplicativo ou de recuperação</label>
+        <input class="form-control" id="reauthCode" name="code" autocomplete="one-time-code" minlength="6" maxlength="16" required>
+      </div>
+      {{/if}}
+      <button class="btn btn-primary w-100" type="submit">Confirmar</button>
+      <a class="btn btn-outline-secondary w-100 mt-2" href="{{volta}}">Cancelar</a>
+    </form>
+  </div>
+</div>
