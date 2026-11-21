@@ -85,4 +85,25 @@ class FuelLogTest {
         assertEquals(FuelLog.GASOLINE, one.fuelType)
         assertTrue(runCatching { FuelLog.fromCsv("data_hora,litros\nontem,40\n", "p", ms) }.exceptionOrNull() is FuelLog.CsvException)
     }
+
+    @Test
+    fun tankEthanolChainsTheMixAfterEachFuelUp() {
+        fun up(id: Long, t: Long, liters: Double, type: String, full: Boolean = true, pct: Double? = null) =
+            com.universal.obddashboard.db.FuelUpEntity(id = id, timestamp = t, profileId = "p", liters = liters, fuelType = type, fullTank = full, ethanolPct = pct)
+        val chain = FuelLog.tankEthanolAfterEach(
+            listOf(
+                up(1, 100, 40.0, FuelLog.GASOLINE),                      // cheio de gasolina: 0 %
+                up(2, 200, 40.0, FuelLog.ETHANOL),                       // 8 L de gasolina + 40 L de etanol: 83,3 %
+                up(3, 300, 24.0, FuelLog.GASOLINE),                      // 24 L restantes (83,3 %) + 24 L de gasolina: 41,7 %
+                up(4, 400, 20.0, FuelLog.MIX, full = false, pct = 50.0), // parcial sem nível: vale o que entrou
+            ),
+            48.0,
+        )
+        assertEquals(0.0, chain.getValue(1), 1e-9)
+        assertEquals(40.0 / 48 * 100, chain.getValue(2), 1e-6)
+        assertEquals(24.0 * (40.0 / 48 * 100) / 48, chain.getValue(3), 1e-6)
+        assertEquals(50.0, chain.getValue(4), 1e-9)
+        assertEquals(FuelCalibration.Fuel.ETHANOL, FuelCalibration.fuelOf(chain.getValue(2)))
+        assertEquals(FuelCalibration.Fuel.GASOLINE, FuelCalibration.fuelOf(chain.getValue(3)))
+    }
 }

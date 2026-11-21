@@ -19,6 +19,22 @@ object FuelCalibration {
     const val MAX_FACTOR = 1.3
     private const val MAX_GAP_S = 10.0
 
+    /**
+     * Correção por combustível: o fator calibrado com gasolina não serve para o etanol (outra relação ar/combustível e
+     * outra densidade; a injeção não é a mesma). Tanque com essa % ou mais de etanol da bomba usa a correção do etanol.
+     */
+    const val ETHANOL_CLASS_MIN_PCT = 50.0
+
+    enum class Fuel { GASOLINE, ETHANOL }
+
+    fun fuelOf(tankEthanolPct: Double): Fuel = if (tankEthanolPct >= ETHANOL_CLASS_MIN_PCT) Fuel.ETHANOL else Fuel.GASOLINE
+
+    /** Correções em vigor: a do etanol, enquanto não for calibrada, segue a da gasolina. */
+    data class Corrections(val gasoline: Double, val ethanol: Double? = null) {
+        fun forTank(tankEthanolPct: Double): Double =
+            if (fuelOf(tankEthanolPct) == Fuel.ETHANOL) ethanol ?: gasoline else gasoline
+    }
+
     /** Litros consumidos segundo o app no período (lacunas acima de 10 s não contam). */
     fun integrateLiters(samples: List<FuelSample>): Double {
         var liters = 0.0

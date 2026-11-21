@@ -20,7 +20,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   listProfiles: () => '[]', selectProfile: () => 'ok', importProfile: () => '{"ok":false,"error":"sem app"}',
   getSettings: () => '{"ethanolPct":0}', getAppInfo: () => '{"versionName":"pré-visualização","versionCode":0,"buildType":"debug"}', setEthanolPercent() {}, setFuelLevel() {}, markTankFull: () => 48,
   setAdapterNames() {}, setExtraTriggers() {}, getTrips: () => '[]', getDtcHistory: () => '[]',
-  exportTrip: () => 'Exportação disponível só no app', exportAllTrips: () => 'Exportação disponível só no app',
+  exportTrip: () => 'Exportação disponível só no app', exportAllTrips: () => 'Exportação disponível só no app', setFuelCorrectionEthanol: () => 'ok',
   exportAllDiagnostics: () => 'Exportação disponível só no app',
   deleteTrip: () => 'ok', deleteAllHistory: () => 'ok', openNotificationSettings() {},
   requestBackgroundLocation() {}, openAppSettings() {}, setIdleTimeoutMin() {}, setResumeWindowMin() {}, setDashMode() {},

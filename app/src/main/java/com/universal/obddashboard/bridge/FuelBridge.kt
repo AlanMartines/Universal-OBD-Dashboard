@@ -38,8 +38,18 @@ class FuelBridge(private val activity: MainActivity) {
                 FuelCalibration.integrateLiters(db.tripDao().fuelSamples(iv.from.timestamp, iv.to.timestamp, Vehicles.selectedId(activity))))
         }
         val profileId = runCatching { activity.currentProfile().id }.getOrDefault(AppSettings.selectedProfileId(activity))
+        // Cada intervalo é do combustível que estava no tanque logo depois do abastecimento que o abriu
+        val capacity = runCatching { activity.currentProfile().profile.fuel?.tankCapacityL }.getOrNull() ?: 48.0
+        val tankPct = FuelLog.tankEthanolAfterEach(list, capacity)
+        val fuelOfInterval = s.intervals.map { FuelCalibration.fuelOf(tankPct[it.from.id] ?: 0.0) }
         val corr = AppSettings.fuelCorrection(activity)
-        val cal = FuelCalibration.evaluate(checks, corr.factor, corr.since)
+        val corrE = AppSettings.fuelCorrectionEthanol(activity)
+        fun checksOf(fuel: FuelCalibration.Fuel) = checks.filterIndexed { i, _ -> fuelOfInterval[i] == fuel }
+        val cal = FuelCalibration.evaluate(checksOf(FuelCalibration.Fuel.GASOLINE), corr.factor, corr.since)
+        // Etanol sem correção própria: os litros estimados usaram a da gasolina
+        val effE = corrE ?: corr
+        val ethChecks = checksOf(FuelCalibration.Fuel.ETHANOL)
+        val calE = if (ethChecks.isNotEmpty() || corrE != null) FuelCalibration.evaluate(ethChecks, effE.factor, effE.since) else null
         JSONObject()
             .put("items", JSONArray().apply { list.asReversed().forEach { put(fuelUpJson(it)) } })
             .put(
@@ -52,13 +62,16 @@ class FuelBridge(private val activity: MainActivity) {
             .put(
                 "intervals",
                 JSONArray().apply {
-                    s.intervals.zip(checks).asReversed().forEach { (iv, check) ->
+                    s.intervals.zip(checks).withIndex().reversed().forEach { (i, pair) ->
+                        val (iv, check) = pair
                         val est = check.estimatedL
                         put(
                             JSONObject().put("from", iv.from.timestamp).put("to", iv.to.timestamp).put("km", iv.distanceKm)
                                 .put("liters", iv.liters).put("kmPerL", iv.kmPerL).put("cost", iv.cost.orNull())
                                 .put("costPerKm", iv.costPerKm.orNull()).put("fuelType", iv.fuelType)
-                                .put("estimatedLiters", est.takeIf { it > 0.5 }.orNull()),
+                                .put("estimatedLiters", est.takeIf { it > 0.5 }.orNull())
+                                .put("tankEthanolPct", tankPct[iv.from.id].orNull())
+                                .put("fuelClass", if (fuelOfInterval[i] == FuelCalibration.Fuel.ETHANOL) "ethanol" else "gasoline"),
                         )
                     }
                 },
@@ -70,6 +83,14 @@ class FuelBridge(private val activity: MainActivity) {
                     .put("used", cal.used.size).put("ignored", cal.ignored.size).put("missing", cal.missing)
                     .put("deviation", cal.deviation.orNull()).put("suggested", cal.suggestedFactor.orNull()),
             )
+            .put(
+                "calibrationEthanol",
+                calE?.let { c ->
+                    JSONObject().put("factor", c.currentFactor).put("since", effE.since).put("own", corrE != null)
+                        .put("used", c.used.size).put("ignored", c.ignored.size).put("missing", c.missing)
+                        .put("deviation", c.deviation.orNull()).put("suggested", c.suggestedFactor.orNull())
+                } ?: JSONObject.NULL,
+            )
             .toString()
     }
 
@@ -80,6 +101,17 @@ class FuelBridge(private val activity: MainActivity) {
         val profileId = activity.currentProfile().id
         AppSettings.setFuelCorrection(activity, factor)
         TelemetryHub.requestFuelOverride(TelemetryHub.FuelOverride(fuelCorrection = factor))
+        "ok"
+    } catch (e: Exception) {
+        e.message ?: "erro"
+    }
+
+    /** Correção própria do etanol (Abastecimentos → Calibração do etanol); 0 volta a seguir a da gasolina. */
+    @JavascriptInterface
+    fun setFuelCorrectionEthanol(factor: Double): String = try {
+        require(factor == 0.0 || factor in FuelCalibration.MIN_FACTOR..FuelCalibration.MAX_FACTOR) { "Fator fora da faixa" }
+        AppSettings.setFuelCorrectionEthanol(activity, factor.takeIf { it > 0 })
+        TelemetryHub.requestFuelOverride(TelemetryHub.FuelOverride(fuelCorrectionEthanol = factor))
         "ok"
     } catch (e: Exception) {
         e.message ?: "erro"

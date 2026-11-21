@@ -41,6 +41,9 @@ object AppSettings {
     const val MARK_FUEL_UP = "fuel"
     private const val KEY_FUEL_CORR_PREFIX = "fuel_correction_"
     private const val KEY_FUEL_CORR_SINCE_PREFIX = "fuel_correction_since_"
+    /** Correção do consumo própria do etanol (tanque com metade ou mais de etanol da bomba), por veículo. */
+    private const val KEY_FUEL_CORR_E = "fuel_correction_ethanol"
+    private const val KEY_FUEL_CORR_E_SINCE = "fuel_correction_ethanol_since"
     private const val KEY_DASHBOARD_PREFIX = "dashboard_"
     private const val KEY_USER_ALARMS_PREFIX = "user_alarms_"
     private const val KEY_TIMED_RUNS_PREFIX = "timed_runs_"
@@ -229,6 +232,26 @@ object AppSettings {
         prefs(context).edit {
             putFloat(KEY_FUEL_CORR_PREFIX + vid(context), factor.toFloat())
             putLong(KEY_FUEL_CORR_SINCE_PREFIX + vid(context), now)
+        }
+
+    /** Correção própria do etanol; null = ainda não calibrada (vale a da gasolina, [fuelCorrection]). */
+    fun fuelCorrectionEthanol(context: Context): FuelCorrection? {
+        val p = prefs(context)
+        val key = sk(context, KEY_FUEL_CORR_E)
+        if (!p.contains(key)) return null
+        return FuelCorrection(p.getFloat(key, 1f).toDouble(), p.getLong(sk(context, KEY_FUEL_CORR_E_SINCE), 0L))
+    }
+
+    /** [factor] null volta a seguir a correção da gasolina. */
+    fun setFuelCorrectionEthanol(context: Context, factor: Double?, now: Long = System.currentTimeMillis()) =
+        prefs(context).edit {
+            if (factor == null) {
+                remove(sk(context, KEY_FUEL_CORR_E))
+                remove(sk(context, KEY_FUEL_CORR_E_SINCE))
+            } else {
+                putFloat(sk(context, KEY_FUEL_CORR_E), factor.toFloat())
+                putLong(sk(context, KEY_FUEL_CORR_E_SINCE), now)
+            }
         }
 
     /** Grava tráfego OBD bruto, varredura da ECU e eventos em arquivos JSON Lines (ver DiagnosticRecorder). */

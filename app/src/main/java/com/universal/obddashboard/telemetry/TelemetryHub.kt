@@ -218,7 +218,13 @@ object TelemetryHub {
     fun update(transform: (DashboardState) -> DashboardState) = _state.update(transform)
 
     /** Ajustes de combustível feitos pelo usuário durante a captura (consumidos pelo serviço). */
-    data class FuelOverride(val ethanolPercent: Double? = null, val fuelLevelL: Double? = null, val fuelCorrection: Double? = null)
+    /** [fuelCorrectionEthanol] 0 = voltar a seguir a correção da gasolina; null = sem mudança. */
+    data class FuelOverride(
+        val ethanolPercent: Double? = null,
+        val fuelLevelL: Double? = null,
+        val fuelCorrection: Double? = null,
+        val fuelCorrectionEthanol: Double? = null,
+    )
 
     private val fuelOverride = AtomicReference<FuelOverride?>(null)
 
@@ -228,6 +234,7 @@ object TelemetryHub {
                 ethanolPercent = override.ethanolPercent ?: prev?.ethanolPercent,
                 fuelLevelL = override.fuelLevelL ?: prev?.fuelLevelL,
                 fuelCorrection = override.fuelCorrection ?: prev?.fuelCorrection,
+                fuelCorrectionEthanol = override.fuelCorrectionEthanol ?: prev?.fuelCorrectionEthanol,
             )
         }
     }

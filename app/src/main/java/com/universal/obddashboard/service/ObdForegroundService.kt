@@ -266,6 +266,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
             ethanolPercent = AppSettings.ethanolPercent(this, loaded.profile.fuel?.defaultEthanolPct ?: 0.0),
             fuelLevelL = AppSettings.fuelLevel(this),
             fuelCorrection = AppSettings.fuelCorrection(this).factor,
+            fuelCorrectionEthanol = AppSettings.fuelCorrectionEthanol(this)?.factor,
             userAlerts = userAlerts,
             atmosphericKpa = AppSettings.atmosphericKpa(this),
             fuelPricePerL = AppDatabase.get(this).fuelUpDao().all(vehicleId).lastOrNull()?.let { f ->
@@ -507,10 +508,12 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 o.ethanolPercent?.let { eng.ethanolPercent = it }
                 o.fuelLevelL?.let { eng.fuelLevelL = it }
                 o.fuelCorrection?.let { eng.fuelCorrection = it }
+                o.fuelCorrectionEthanol?.let { eng.fuelCorrectionEthanol = it.takeIf { f -> f > 0 } }
                 recorder?.event("fuel_settings") {
                     o.ethanolPercent?.let { put("ethanol_pct", it) }
                     o.fuelLevelL?.let { put("fuel_level_l", it) }
                     o.fuelCorrection?.let { put("fuel_correction", it) }
+                    o.fuelCorrectionEthanol?.let { put("fuel_correction_ethanol", it) }
                 }
             }
 
@@ -992,6 +995,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                 // Ajustes que mudam o consumo calculado: sem eles, a gravação não explica o km/l da viagem
                 put("ethanol_pct", AppSettings.ethanolPercent(this@ObdForegroundService, loaded.profile.fuel?.defaultEthanolPct ?: 0.0))
                 put("fuel_correction", AppSettings.fuelCorrection(this@ObdForegroundService).factor)
+                AppSettings.fuelCorrectionEthanol(this@ObdForegroundService)?.let { put("fuel_correction_ethanol", it.factor) }
                 put("fuel_level_l", AppSettings.fuelLevel(this@ObdForegroundService))
                 putJsonArray("adapter_names") {
                     AppSettings.adapterNames(this@ObdForegroundService, loaded.profile.adapter.deviceNames)

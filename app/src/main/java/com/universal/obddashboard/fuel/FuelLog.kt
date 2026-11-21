@@ -77,6 +77,20 @@ object FuelLog {
         return TankAfter(level, pct)
     }
 
+    /**
+     * % de etanol da bomba no tanque logo depois de cada abastecimento (por id), encadeando as misturas desde o primeiro
+     * registro. Parcial sem o nível de antes conta como tanque vazio (o que entrou manda na mistura).
+     */
+    fun tankEthanolAfterEach(list: List<FuelUpEntity>, capacityL: Double): Map<Long, Double> {
+        var pct = 0.0
+        val out = LinkedHashMap<Long, Double>()
+        for (f in list.sortedBy { it.timestamp }) {
+            pct = tankAfter(f, capacityL, null, pct).ethanolPct
+            out[f.id] = pct
+        }
+        return out
+    }
+
     fun intervals(list: List<FuelUpEntity>): List<Interval> {
         val sorted = list.sortedBy { it.timestamp }
         val out = mutableListOf<Interval>()
