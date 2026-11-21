@@ -4,6 +4,16 @@
   "date": null,
   "sections": [
    {
+    "kind": "security",
+    "title": "Segurança",
+    "items": [
+     {
+      "title": "Painel: auditoria protegida",
+      "text": "O papel da aplicação passa a só consultar e registrar no audit_log; apagar, alterar, esvaziar e derrubar a tabela são recusados, e a limpeza de 1 ano é feita pela função audit_purge(). Quem invadir a API não apaga os rastros. A proteção é aplicada uma vez, como dono do banco, por server/scripts/proteger-auditoria.sh."
+     }
+    ]
+   },
+   {
     "kind": "added",
     "title": "Adicionado",
     "items": [

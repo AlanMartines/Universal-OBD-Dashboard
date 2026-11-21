@@ -89,6 +89,16 @@ O login aceita usuário ou e-mail. Em **Meus Dados**, a pessoa altera nome, foto
 - **Esqueci minha senha:** link de 1 hora para o e-mail confirmado. A resposta não revela se o e-mail existe.
 - **Modo suporte:** o Super Admin entra como outra conta por até 1 hora, com faixa visível e registro na auditoria. Senha, e-mail, 2FA e dados pessoais ficam bloqueados.
 
+### Proteger a auditoria (uma vez por instalação)
+
+Depois que a API aplicar a migração 012, rode como dono do banco:
+
+```bash
+sudo scripts/proteger-auditoria.sh
+```
+
+O script passa a tabela e a função de limpeza para o dono e cria a trava contra o `DROP`. Pode rodar de novo sem problema, e a proteção vai junto no backup. Uma migração futura que precise alterar o `audit_log` tem de rodar como dono.
+
 ## Reset de senha
 
 Vale para qualquer usuário, desde que o nome esteja correto:
@@ -161,6 +171,7 @@ Resposta: `{ "received", "stored", "rejected" }`.
 - **Sessão:** cookie `__Host-`, `HttpOnly`, `Secure` e `SameSite=Lax`, guardada no banco só como hash.
 - **Web:** token CSRF com conferência de `Sec-Fetch-Site` e `Origin`, CSP sem scripts ou estilos embutidos e escape automático do Handlebars. Nada vem de CDN.
 - **Banco:** consultas sempre parametrizadas, feitas por um papel sem privilégios de superusuário.
+- **Auditoria protegida:** a tabela `audit_log` pertence ao dono do banco. O papel da aplicação só consulta e registra: não apaga, não altera, não esvazia e não derruba a tabela (uma trava no banco barra o `DROP`). A limpeza do que passou de 1 ano é feita pela função `audit_purge()`. Quem invadir a API não apaga os próprios rastros.
 - **Robôs:** limites por IP, campo invisível nos formulários, token de formulário assinado e tempo mínimo de preenchimento no cadastro, que vem fechado por padrão.
 - **Alertas por e-mail:** a própria conta recebe um aviso quando:
   - fica bloqueada por senhas erradas (um aviso por sequência);

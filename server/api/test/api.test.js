@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { after, before, describe, test } from 'node:test';
 import { loadConfig } from '../src/config.js';
@@ -715,6 +716,59 @@ describe('API', () => {
       assert.equal((await off({ currentPassword: USER_PASSWORD, code })).statusCode, 200);
       const actions = (await pool.query(`SELECT action FROM audit_log WHERE action LIKE '2fa_admins_%' ORDER BY id`)).rows.map((r) => r.action);
       assert.deepEqual(actions, ['2fa_admins_obrigatorio', '2fa_admins_opcional']);
+    });
+  });
+
+  describe('auditoria protegida', () => {
+    test('o papel da aplicação registra e limpa o que passou de 1 ano, mas não apaga, altera, esvazia nem derruba', async () => {
+      const sql = readFileSync(new URL('../../scripts/proteger-auditoria.sql', import.meta.url), 'utf8');
+      const c = await pool.connect();
+      const recusa = async (q) => {
+        await c.query('SAVEPOINT s');
+        try {
+          await c.query(q);
+          assert.fail(`deveria recusar: ${q}`);
+        } catch (error) {
+          if (error.code === 'ERR_ASSERTION') throw error;
+          await c.query('ROLLBACK TO SAVEPOINT s');
+          return error.message;
+        }
+      };
+      try {
+        // como na produção: o papel da aplicação é dono do schema, da tabela e da função (aplicou as migrações)
+        await c.query('DROP ROLE IF EXISTS app_auditoria');
+        await c.query('CREATE ROLE app_auditoria NOLOGIN');
+        await c.query('ALTER SCHEMA public OWNER TO app_auditoria');
+        await c.query('ALTER TABLE audit_log OWNER TO app_auditoria');
+        await c.query('ALTER FUNCTION audit_purge() OWNER TO app_auditoria');
+        await c.query(sql);
+        await c.query(`INSERT INTO audit_log (actor, action, at) VALUES ('teste', 'antigo', now() - interval '400 days'), ('teste', 'recente', now() - interval '10 days')`);
+
+        await c.query('BEGIN');
+        await c.query('SET LOCAL ROLE app_auditoria');
+        await c.query(`INSERT INTO audit_log (actor, action) VALUES ('teste', 'novo')`);
+        assert.ok((await c.query('SELECT count(*)::int AS n FROM audit_log')).rows[0].n >= 3);
+        assert.match(await recusa('DELETE FROM audit_log'), /permission denied/);
+        assert.match(await recusa(`UPDATE audit_log SET actor = 'outro'`), /permission denied/);
+        assert.match(await recusa('TRUNCATE audit_log'), /permission denied/);
+        // quem não é dono pode até pedir GRANT: o Postgres só avisa e não concede nada
+        await c.query('GRANT ALL ON audit_log TO app_auditoria');
+        assert.match(await recusa('DELETE FROM audit_log'), /permission denied/);
+        assert.match(await recusa('DROP TABLE audit_log'), /protegida/);
+        assert.match(await recusa('DROP EVENT TRIGGER protege_auditoria'), /must be owner|permission denied/);
+        assert.equal((await c.query('SELECT audit_purge() AS n')).rows[0].n, '1');
+        const sobrou = (await c.query(`SELECT action FROM audit_log WHERE actor = 'teste' ORDER BY id`)).rows.map((r) => r.action);
+        assert.deepEqual(sobrou, ['recente', 'novo']);
+        await c.query('COMMIT');
+      } finally {
+        await c.query('ROLLBACK').catch(() => {});
+        await c.query('DROP EVENT TRIGGER IF EXISTS protege_auditoria');
+        await c.query('ALTER SCHEMA public OWNER TO CURRENT_USER');
+        await c.query('REASSIGN OWNED BY app_auditoria TO CURRENT_USER');
+        await c.query('DROP OWNED BY app_auditoria');
+        await c.query('DROP ROLE IF EXISTS app_auditoria');
+        c.release();
+      }
     });
   });
 
