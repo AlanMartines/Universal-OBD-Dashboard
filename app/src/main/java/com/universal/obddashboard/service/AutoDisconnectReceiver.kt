@@ -15,6 +15,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import com.universal.obddashboard.AppSettings
+import com.universal.obddashboard.IntentGuard
 import com.universal.obddashboard.Vehicles
 import com.universal.obddashboard.MainActivity
 import com.universal.obddashboard.R
@@ -36,6 +37,9 @@ import com.universal.obddashboard.obd.ProfileParser
 class AutoDisconnectReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        // O receptor é exportado: só as duas ações do Bluetooth, que o Android só deixa o sistema enviar.
+        // Um Intent direto de outro app, sem uma delas, é ignorado antes de ler qualquer dado dele.
+        if (intent.action != BluetoothDevice.ACTION_ACL_CONNECTED && intent.action != BluetoothDevice.ACTION_ACL_DISCONNECTED) return
         val device = IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
             ?: return
         val name = deviceName(context, device)
@@ -95,7 +99,7 @@ class AutoDisconnectReceiver : BroadcastReceiver() {
         ObdForegroundService.createChannels(context)
         val open = PendingIntent.getActivity(
             context, 0,
-            Intent(context, MainActivity::class.java).setAction(MainActivity.ACTION_START_CAPTURE),
+            IntentGuard.attach(context, Intent(context, MainActivity::class.java).setAction(MainActivity.ACTION_START_CAPTURE)),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val notification = NotificationCompat.Builder(context, ObdForegroundService.CHANNEL_ALERTS)

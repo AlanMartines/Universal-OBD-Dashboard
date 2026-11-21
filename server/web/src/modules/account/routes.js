@@ -5,7 +5,7 @@ import { safePath } from '../../shared/protection.js';
 import { requireUuid } from '../devices/routes.js';
 
 export default function accountRoutes(app, {
-  api, apiBinary, cookieName, cookieOptions, clearSession, requireUser, context,
+  api, apiBinary, cookieName, cookieOptions, clearSession, requireUser, context, pwnedPassword,
 }) {
   const passwordView = (request, reply, status = 200, error = null) => reply.code(status).view('modules/account/views/password.hbs', context(request, {
     title: 'Trocar senha',
@@ -23,6 +23,7 @@ export default function accountRoutes(app, {
   app.post('/meus-dados/senha', { preHandler: requireUser }, async (request, reply) => {
     const { currentPassword, newPassword, confirm } = request.body ?? {};
     if (newPassword !== confirm) return passwordView(request, reply, 400, message('password_mismatch'));
+    if (await pwnedPassword(newPassword)) return passwordView(request, reply, 400, message('password_pwned'));
     try {
       await api(request, 'POST', '/internal/auth/password', {
         body: { currentPassword: String(currentPassword ?? ''), newPassword: String(newPassword ?? '') },

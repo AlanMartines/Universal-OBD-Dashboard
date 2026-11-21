@@ -8,6 +8,7 @@ export const MESSAGES = {
   password_too_short: 'A senha precisa ter pelo menos 15 caracteres. Uma frase longa é uma boa opção.',
   password_too_long: 'A senha passa de 256 caracteres.',
   password_common: 'Essa senha é fácil demais de adivinhar.',
+  password_pwned: 'Essa senha já apareceu em vazamentos de dados públicos e pode ser tentada por robôs. Escolha outra (uma frase longa e só sua é uma boa opção).',
   password_contains_username: 'A senha não pode conter o nome do usuário.',
   password_unchanged: 'A nova senha precisa ser diferente da atual.',
   password_mismatch: 'As duas senhas não conferem.',

@@ -16,6 +16,7 @@ import { codeForStep, stepAt } from '../../api/src/totp.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ORIGIN = 'https://painel.exemplo.test';
+const SENHA_VAZADA = 'uma frase que apareceu num vazamento';
 const SECRET = 'segredo-de-formulario-de-teste-com-muitos-caracteres';
 
 function collectFiles(dir) {
@@ -76,6 +77,27 @@ describe('relatórios do dispositivo', () => {
     assert.equal(nov.kmPerL, 10.25);
     assert.ok(!r.monthly.some((m) => m.label === '10/2026'), 'abastecimento removido não entra');
     assert.equal(r.lastPrice, 6.5);
+  });
+});
+
+describe('senhas vazadas (k-anonimato)', () => {
+  test('só o prefixo do hash sai; preenchimento com 0 não conta; falha do serviço deixa passar', async () => {
+    const { createPwnedCheck } = await import('../src/shared/pwned.js');
+    const sha1 = createHash('sha1').update('frase de teste vazada aqui').digest('hex').toUpperCase();
+    const pedidos = [];
+    const resposta = (corpo) => async (url, opts) => { pedidos.push({ url, opts }); return { ok: true, text: async () => corpo }; };
+    const vazada = createPwnedCheck({ fetchImpl: resposta(`0018A45C4D1DEF81644B54AB7F969B88D65:3\r\n${sha1.slice(5)}:42\r\nFFFFF00000000000000000000000000000:0`), log: {} });
+    assert.equal(await vazada('frase de teste vazada aqui'), true);
+    assert.equal(pedidos[0].url, `https://api.pwnedpasswords.com/range/${sha1.slice(0, 5)}`);
+    assert.ok(!pedidos[0].url.includes(sha1.slice(5)), 'o resto do hash não pode sair');
+    assert.equal(pedidos[0].opts.headers['Add-Padding'], 'true');
+    const preenchida = createPwnedCheck({ fetchImpl: resposta(`${sha1.slice(5)}:0`), log: {} });
+    assert.equal(await preenchida('frase de teste vazada aqui'), false);
+    const fora = createPwnedCheck({ fetchImpl: async () => { throw new Error('sem rede'); }, log: {} });
+    assert.equal(await fora('frase de teste vazada aqui'), false);
+    const erro = createPwnedCheck({ fetchImpl: async () => ({ ok: false, status: 503, text: async () => '' }), log: {} });
+    assert.equal(await erro('frase de teste vazada aqui'), false);
+    assert.equal(await createPwnedCheck({ enabled: false })('qualquer'), false);
   });
 });
 
@@ -203,6 +225,8 @@ describe('fluxo pelo navegador', () => {
     web = await buildApp({
       logger: false,
       config: loadConfig({ APP_URL: ORIGIN, INTERNAL_API_KEY: KEY, FORM_SECRET: SECRET, API_URL: apiUrl, RATE_LIMIT_FACTOR: '1000', MAP_DATA_DIR: mapDir }),
+      // sem internet nos testes: só esta frase conta como vazada
+      pwned: async (password) => password === SENHA_VAZADA,
     });
   });
   after(async () => {
@@ -279,6 +303,10 @@ describe('fluxo pelo navegador', () => {
     const panel = await web.inject({ method: 'GET', url: '/painel', headers: { cookie: adminCookie } });
     assert.equal(panel.headers.location, '/meus-dados/senha');
     const csrf = await csrfOf(adminCookie, '/meus-dados/senha');
+    // senha que apareceu em vazamentos é recusada antes de chegar à API
+    const vazada = await post('/meus-dados/senha', { _csrf: csrf, currentPassword: ADMIN.password, newPassword: SENHA_VAZADA, confirm: SENHA_VAZADA }, adminCookie);
+    assert.equal(vazada.statusCode, 400);
+    assert.ok(vazada.body.includes('já apareceu em vazamentos'));
     const changed = await post('/meus-dados/senha', { _csrf: csrf, currentPassword: ADMIN.password, newPassword: 'nova frase longa do administrador', confirm: 'nova frase longa do administrador' }, adminCookie);
     assert.equal(changed.statusCode, 303);
     // Super Admin: 2FA obrigatório. Até ativar, tudo leva a Meus Dados, com o formulário já aberto.

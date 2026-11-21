@@ -84,6 +84,8 @@ services:
       FORM_SECRET: ${FORM_SECRET:?defina FORM_SECRET no .env}
       # Só na homologação (acesso por http://localhost no túnel SSH): cookie sem o Secure.
       ALLOW_INSECURE_COOKIE: ${ALLOW_INSECURE_COOKIE:-false}
+      # Recusa senha nova que aparece em vazamentos (Have I Been Pwned; só 5 caracteres do hash saem). false desliga.
+      PWNED_CHECK: ${PWNED_CHECK:-true}
       TRUST_PROXY: ${TRUST_PROXY:-}
       SESSION_MAX_DAYS: ${SESSION_MAX_DAYS:-7}
       RATE_LIMIT_FACTOR: ${RATE_LIMIT_FACTOR:-1}

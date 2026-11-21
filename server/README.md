@@ -168,6 +168,8 @@ Resposta: `{ "received", "stored", "rejected" }`.
 ## Segurança
 
 - **Senhas:** Argon2id, mínimo de 15 caracteres e resposta igual para usuário inexistente, senha errada ou bloqueio.
+- **Senhas vazadas:** no cadastro, na troca e na redefinição, a senha nova é conferida no Have I Been Pwned por k-anonimato: só os 5 primeiros caracteres do SHA-1 saem do servidor (pelo contêiner `web`, o único com saída). Se ela aparece em vazamentos, é recusada. Se o serviço não responde, a senha passa. `PWNED_CHECK=false` desliga.
+- **Papéis testados rota a rota:** um teste confere que o Usuário (atendimento) é recusado em todas as rotas de gestão e que o Admin é recusado nas rotas só do Super Admin.
 - **Confirmar a senha em ações críticas:** criar, desativar ou excluir usuário, abrir o cadastro, mudar a exigência de 2FA dos donos de conta, entrar em modo suporte e gerar código de pareamento, revogar ou excluir dispositivo exigem que a senha (e o código do autenticador, se a conta usa 2FA) tenha sido confirmada nos últimos 10 minutos. O login conta como confirmação; o modo suporte e a volta dele não. Sem confirmação recente, o painel leva a "Confirme sua senha" e volta à página de onde a ação partiu (só para endereços do próprio painel). No modo suporte, quem confirma é o Super Admin, com a senha e o 2FA dele. Confirmações e recusas ficam na auditoria.
 - **Bloqueio por tentativas, por rede:** as senhas erradas contam por conta e por rede de origem (/24 no IPv4, /48 no IPv6). Depois de 5 erros, só aquela rede fica bloqueada, de forma progressiva até 60 min. Assim, quem sabe o seu usuário não consegue te deixar do lado de fora. Se a conta somar 20 erros vindos de vários lugares (ataque espalhado), ela fecha só para redes que nunca usou; das redes de onde o dono já entrou no último ano, o login segue funcionando. Um login certo, a troca ou a redefinição de senha zeram a contagem.
 - **Sessão:** cookie `__Host-`, `HttpOnly`, `Secure` e `SameSite=Lax`, guardada no banco só como hash.
@@ -187,7 +189,6 @@ Resposta: `{ "received", "stored", "rejected" }`.
 
 ### Limitações atuais
 
-- Ainda não há consulta a bases de senhas vazadas; existe só uma lista local de senhas comuns.
 - Sem e-mail, o cadastro revela se um nome de usuário já existe. O limite de tentativas reduz esse risco, mas não o elimina.
 - O limite por IP não segura uma rede grande de robôs. Antes de abrir o cadastro ao público, avalie proteção adicional no proxy.
 - Os dados, incluindo GPS, não são cifrados campo a campo. Cifre o disco da VPS e os backups.

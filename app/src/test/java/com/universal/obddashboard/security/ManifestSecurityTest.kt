@@ -1,6 +1,8 @@
 package com.universal.obddashboard.security
 
+import com.universal.obddashboard.IntentGuard
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -22,6 +24,33 @@ class ManifestSecurityTest {
         assertTrue("allowBackup precisa ser false", """android:allowBackup="false"""" in manifest)
         assertTrue("fullBackupContent precisa ser false", """android:fullBackupContent="false"""" in manifest)
         assertTrue("faltam as regras de extração", """android:dataExtractionRules="@xml/data_extraction_rules"""" in manifest)
+    }
+
+    /** Componente exportado novo é porta de entrada para outros apps: o teste obriga a revisar e validar. */
+    @Test fun onlyReviewedComponentsAreExported() {
+        val exported = Regex("""<(activity|service|receiver|provider)\b[^>]*?android:name="([^"]+)"[^>]*?android:exported="true"""", RegexOption.DOT_MATCHES_ALL)
+            .findAll(manifest).map { it.groupValues[2] }.toSet()
+        assertEquals(setOf(".MainActivity", ".service.AutoDisconnectReceiver", ".car.DashboardCarAppService"), exported)
+    }
+
+    @Test fun exportedComponentsValidateWhatArrives() {
+        val src = File("src/main/java/com/universal/obddashboard")
+        val receiver = File(src, "service/AutoDisconnectReceiver.kt").readText()
+        val onReceive = receiver.substringAfter("override fun onReceive").substringBefore("getParcelableExtra")
+        assertTrue("o receptor precisa filtrar a ação antes de ler o Intent", "ACTION_ACL_CONNECTED" in onReceive && "return" in onReceive)
+        val main = File(src, "MainActivity.kt").readText()
+        assertTrue("iniciar captura precisa do código do app", "IntentGuard.isTrusted(this, intent)" in main.substringAfter("private fun handleIntent"))
+        val car = File(src, "car/DashboardCarAppService.kt").readText()
+        assertTrue("Android Auto: release só com a lista de hosts", "addAllowedHosts(R.array.car_hosts_allowlist)" in car)
+    }
+
+    @Test fun intentTokenComparison() {
+        assertTrue(IntentGuard.matches("abc123", "abc123"))
+        assertFalse(IntentGuard.matches("abc123", "abc124"))
+        assertFalse(IntentGuard.matches("abc123", null))
+        assertFalse(IntentGuard.matches("abc123", ""))
+        assertFalse(IntentGuard.matches(null, null))
+        assertFalse(IntentGuard.matches("", ""))
     }
 
     @Test fun cloudBackupAndDeviceTransferExcludeEverything() {
