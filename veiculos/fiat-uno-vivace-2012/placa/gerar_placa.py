@@ -268,6 +268,28 @@ class Svg:
                 f'viewBox="{-p} {-p} {self.w + 2 * p} {self.h + 2 * p}">\n' + '\n'.join(self.o) + '\n</svg>\n')
 
 
+# Numeração impressa na placa comprada (5 x 7 cm, 18 x 24, foto do Alan em 22/11/2026): colunas com letras B a Q e as
+# duas das pontas sem letra; linhas de 24 (em cima, do lado das letras) a 01 (embaixo, do lado do "5CM*7CM"). Na
+# orientação dos desenhos (cabo OBD embaixo), as colunas batem e as linhas se invertem: linha r do desenho = 25 - r
+# impressa. Os desenhos mostram as duas numerações; a impressa em azul.
+SILK = '#1565c0'
+
+
+def silk_col(c):
+    """Letra impressa da coluna c (1 a 18); as das pontas não têm letra."""
+    return chr(ord('A') + c - 1) if 2 <= c <= COLS - 1 else ''
+
+
+def silk_row(r):
+    """Número impresso da linha r do desenho."""
+    return ROWS + 1 - r
+
+
+def silk(c, r):
+    """Coordenada impressa, ex.: (16, 24) → 'O01'; nas colunas sem letra, '–01'."""
+    return f'{silk_col(c) or "–"}{silk_row(r):02d}'
+
+
 def board(s, mirror=False, labels=True):
     X = (lambda x: W - x) if mirror else (lambda x: x)
     s.add(f'<rect x="0" y="0" width="{W}" height="{H}" rx="1.5" fill="#efe3c2" stroke="#8d6e63" stroke-width="0.35"/>')
@@ -279,9 +301,13 @@ def board(s, mirror=False, labels=True):
         for c in range(1, COLS + 1):
             x, _ = hp(c, 1)
             s.text(X(x), -1.0, str(c), 1.3, '#6d4c41')
+            if silk_col(c):
+                s.text(X(x), -2.8, silk_col(c), 1.3, SILK, weight='bold')
         for r in range(1, ROWS + 1):
             _, y = hp(1, r)
-            s.text(-1.8 if not mirror else W + 1.8, y + 0.45, str(r), 1.3, '#6d4c41')
+            # a nossa numeração à esquerda e a impressa à direita, nas duas vistas (no cobre ela fica à direita)
+            s.text(-1.8, y + 0.45, str(r), 1.3, '#6d4c41')
+            s.text(W + 1.9, y + 0.45, f'{silk_row(r):02d}', 1.2, SILK, weight='bold')
     return X
 
 

@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Documentação
+- **Placa do Uno: numeração impressa na placa comprada.** A placa perfurada que chegou (5 × 7 cm, 18 × 24) tem letras de B a Q nas colunas e linhas de 24 a 01, invertidas em relação aos desenhos. Os desenhos de montagem passam a mostrar as duas numerações (a impressa em azul), e o README da placa ganhou a regra de conversão (linha do desenho = 25 − número impresso) e uma tabela com os pontos principais, como (16,24) = O01.
+
 ## [0.9.68] - 2026-11-22
 
 ### Alterado

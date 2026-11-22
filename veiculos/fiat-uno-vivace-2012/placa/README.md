@@ -39,6 +39,51 @@ O app funciona só com o ELM327. Cada peça recomendada acrescenta informação 
 
 Cores: vermelho 12 V e 5 V, roxo 12 V depois do fusível, preto GND, laranja 3V3, amarelo RX e D21, azul CAN, ciano e verde o I2C do BMP180 (SDA e SCL). Furos indicados como (coluna, linha), na numeração das bordas. Em tamanho real (1:1), para imprimir em 100%: [`etapa1-real.svg`](etapa1-real.svg), [`etapa2-real.svg`](etapa2-real.svg) e [`baixo-real.svg`](baixo-real.svg).
 
+### Numeração impressa na placa
+
+A placa comprada (5 × 7 cm, 18 × 24 furos, fenolite com ilhas soltas só numa face; foto do Alan em 22/11/2026) tem a própria numeração: **colunas com letras de B a Q**, e as duas das pontas sem letra; **linhas de 24 a 01**. Com a placa na orientação dos desenhos (face dos componentes para cima, letras em cima e o "5CM*7CM" embaixo, do lado do cabo OBD):
+
+- **colunas batem:** coluna 2 = B, 3 = C … 17 = Q; a 1 e a 18 não têm letra;
+- **linhas se invertem:** linha do desenho = **25 − número impresso** (a linha 2 do desenho é a 23 impressa; a 24 do desenho, a 01).
+
+Os desenhos mostram as duas: a do projeto em marrom (colunas em cima, linhas à esquerda) e a impressa em azul (letras acima, números à direita). Na vista de baixo, as letras ficam de Q a B, como no lado do cobre. Fenolite: solde rápido (ferro a 320–340 °C), porque a ilha descola com calor demais.
+
+Pontos principais da versão com o TJA1050 (– = coluna sem letra):
+
+| Peça | Desenho = impresso |
+|---|---|
+| Barras fêmea do ESP32 | linha 2 e linha 12, colunas 2 a 16 → impressas **23** e **13**, de B a P |
+| ESP32 D21 | (6,2) = **F23** |
+| ESP32 3V3 | (16,2) = **P23** |
+| ESP32 D34 | (5,12) = **E13** |
+| ESP32 D25 | (9,12) = **I13** |
+| ESP32 D26 | (10,12) = **J13** |
+| ESP32 GND | (15,12) = **O13** |
+| ESP32 VIN | (16,12) = **P13** |
+| R1 | (7,3) = **G22** → (11,3) = **K22** |
+| R2 | (6,4) = **F21** → (6,8) = **F17** |
+| R3 | (7,8) = **G17** → (11,8) = **K17** |
+| R4 | (16,3) = **P22** → (16,7) = **P18** |
+| R5 | (4,22) = **D03** → (4,18) = **D07** |
+| R6 | (5,18) = **E07** → (9,18) = **I07** |
+| C1 (104) | (5,19) = **E06** → (7,19) = **G06** |
+| TJA1050 (barra de 4) | VCC (11,19) = **K06**, TX (11,20) = **K05**, RX (11,21) = **K04**, GND (11,22) = **K03** |
+| CANH / CANL (barra de 2) | CANH (16,24) = **P01**, CANL (17,24) = **Q01** |
+| RT8272 | EN (8,14) = **H11**, IN- (8,15) = **H10**, IN+ (8,16) = **H09**, OUT- (1,20) = **–05**, OUT+ (1,21) = **–04** |
+| Fusível AS-06 (alargar para 1,5 mm) | saída (1,24) = **–01**, entrada (9,24) = **I01** |
+| Cabo OBD | pino 16 (11,24) = **K01**, pino 4 (12,24) = **L01**, pino 5 (13,24) = **M01**, pino 14 (18,24) = **–01** |
+| Conector do GY-273 | SDA (12,15) = **L10**, SCL (13,15) = **M10**, GND (14,15) = **N10**, VCC (15,15) = **O10** |
+| Conector do LSM6DS3 | SDA (12,16) = **L09**, SCL (13,16) = **M09**, GND (14,16) = **N09**, VCC (15,16) = **O09** |
+| Conector do BMP180 | SDA (12,17) = **L08**, SCL (13,17) = **M08**, GND (14,17) = **N08**, VCC (15,17) = **O08** |
+| Conector do LED | COM (8,1) = **H24**, R (10,1) = **J24**, G (11,1) = **K24**, B (12,1) = **L24** |
+| TP1 (12 V) | (11,23) = **K02** |
+| TP2 (5 V) | (16,14) = **P11** |
+| TP3 (GND) | (12,13) = **L12** |
+| TP4 (GND) | (10,21) = **J04** |
+| Fio J1 | (11,3) = **K22** → (17,3) = **Q22** → (17,17) = **Q08** |
+| Fio J2 | (16,7) = **P18** → (18,7) = **–18** → (18,17) = **–08** |
+| Fio J3 | (2,13) = **B12** → (9,13) = **I12** → (9,17) = **I08** → (10,17) = **J08** |
+
 Para gerar de novo (desenhos e modelo 3D): `python3 veiculos/fiat-uno-vivace-2012/placa/gerar_placa.py`.
 
 ## Modelo 3D

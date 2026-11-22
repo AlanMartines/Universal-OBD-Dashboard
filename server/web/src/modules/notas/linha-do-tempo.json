@@ -1,5 +1,21 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "other",
+    "title": "Documentação",
+    "items": [
+     {
+      "title": "Placa do Uno: numeração impressa na placa comprada",
+      "text": "A placa perfurada que chegou (5 × 7 cm, 18 × 24) tem letras de B a Q nas colunas e linhas de 24 a 01, invertidas em relação aos desenhos. Os desenhos de montagem passam a mostrar as duas numerações (a impressa em azul), e o README da placa ganhou a regra de conversão (linha do desenho = 25 − número impresso) e uma tabela com os pontos principais, como (16,24) = O01."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.68",
   "date": "2026-11-22",
   "sections": [
