@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.67] - 2026-11-21
+
 ### Adicionado
 - **Mostradores: luzes do painel pela escuta CAN e alerta ativo.** Quatro ícones novos, nos seis temas, no app e no painel web: farol ou lanterna acesos (verde, como no painel do carro), ar-condicionado ligado e desembaçador traseiro, todos lidos da rede CAN (somem sem a escuta), e um triângulo que acende com qualquer alerta ativo do app (amarelo para atenção, vermelho para crítico).
 - **Placa 3D: botão Ilhada ou PCB de fábrica.** Na página /projeto/placa, a placa perfurada pode ser trocada pela PCB de duas faces: máscara verde, ilhas douradas, trilhas nas duas faces e plano de GND embaixo, sem fios estanhados nem jumpers, com R4 e TP3 nos lugares da PCB. Os dados vêm do `gerar_pcb.py`, exportados pelo `gerar_3d.py`.
