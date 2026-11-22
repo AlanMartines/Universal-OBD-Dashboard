@@ -402,9 +402,9 @@
     {
       "id": "fuel_trim_high",
       "level": "warning",
-      "condition": "abs(stft_b1) > 25",
-      "message": "Correção de mistura elevada ({stft_b1}%). Normal logo após abastecer (adaptação flex); persistindo, verifique entrada falsa de ar/injetores.",
-      "sustain_ms": 60000,
+      "condition": "coolant_temp >= 70 && abs(stft_b1) > 25",
+      "message": "Correção de mistura elevada ({stft_b1}%) com o motor quente. Pode acontecer nos minutos depois de abastecer (adaptação flex); persistindo, verifique entrada falsa de ar/injetores.",
+      "sustain_ms": 120000,
       "notify": false
     },
     {
