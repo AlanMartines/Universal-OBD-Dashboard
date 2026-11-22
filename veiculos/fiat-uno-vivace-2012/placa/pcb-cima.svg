@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="970" height="960" viewBox="0 0 970 960" font-family="DejaVu Sans, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#f4f6f8"/>
+<text x="60" y="46" font-size="24" font-weight="bold" fill="#1d2733">PCB de duas faces: face de cima (componentes)</text>
+<text x="60" y="76" font-size="14" fill="#4b5a6b">Exemplo de versão 2 para fábrica · 50 × 70 mm, posições da placa ilhada · SN65HVD230 · trilhas coloridas por rede</text>
+<rect x="60.0" y="120.0" width="550.0" height="770.0" rx="22.0" fill="#1f6b3a" stroke="#0f3a20" stroke-width="2"/>
+<circle cx="87.5" cy="147.5" r="24.200000000000003" fill="none" stroke="#ffffff" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>
+<circle cx="582.5" cy="147.5" r="24.200000000000003" fill="none" stroke="#ffffff" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>
+<circle cx="87.5" cy="862.5" r="24.200000000000003" fill="none" stroke="#ffffff" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>
+<circle cx="582.5" cy="862.5" r="24.200000000000003" fill="none" stroke="#ffffff" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>
+<path d="M376.9,826.3 L321.0,826.3" fill="none" stroke="#ff7043" stroke-width="11.0" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M97.5,826.3 L97.5,798.4 L293.1,798.4 L293.1,602.8" fill="none" stroke="#ab47bc" stroke-width="11.0" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M293.1,798.4 L376.9,798.4" fill="none" stroke="#ab47bc" stroke-width="8.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M181.3,798.4 L181.3,770.4" fill="none" stroke="#ab47bc" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M97.5,742.5 L125.5,742.5 L125.5,527.4 L516.6,527.4 L516.6,491.0" fill="none" stroke="#ef5350" stroke-width="8.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M516.6,527.4 L516.6,574.9 L488.7,574.9 L488.7,630.7" fill="none" stroke="#ef5350" stroke-width="6.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M516.6,211.6 L544.5,211.6 L544.5,714.5 L432.8,714.5 L432.8,798.4" fill="none" stroke="#ffa726" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M544.5,211.6 L572.5,211.6 L572.5,239.6" fill="none" stroke="#ffa726" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M488.7,714.5 L488.7,798.4" fill="none" stroke="#ffa726" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M572.5,351.3 L572.5,770.4 L544.5,770.4 L544.5,798.4" fill="none" stroke="#42a5f5" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M572.5,798.4 L572.5,826.3" fill="none" stroke="#29b6f6" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M237.2,211.6 L237.2,253.5 L474.7,253.5 L474.7,449.1" fill="none" stroke="#ffee58" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M181.3,658.7 L209.3,658.7 L209.3,686.6" fill="none" stroke="#a1887f" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M293.1,183.7 L293.1,211.6" fill="none" stroke="#e0e0e0" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M349.0,183.7 L349.0,211.6" fill="none" stroke="#e0e0e0" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M376.9,183.7 L376.9,211.6" fill="none" stroke="#e0e0e0" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M404.9,183.7 L404.9,211.6" fill="none" stroke="#e0e0e0" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="116.1" y="202.3" width="18.7" height="18.7" fill="#d9d9d9"/>
+<circle cx="125.5" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="153.4" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="153.4" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="181.3" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="181.3" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="209.3" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="209.3" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="237.2" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="237.2" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="265.1" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="265.1" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="293.1" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="293.1" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="321.0" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="321.0" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="349.0" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="349.0" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="376.9" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="376.9" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="404.9" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="404.9" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="432.8" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="432.8" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="460.7" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="460.7" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="488.7" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="488.7" cy="211.6" r="5.0" fill="#0d1117"/>
+<circle cx="516.6" cy="211.6" r="9.3" fill="#d9d9d9"/>
+<circle cx="516.6" cy="211.6" r="5.0" fill="#0d1117"/>
+<rect x="116.1" y="481.7" width="18.7" height="18.7" fill="#d9d9d9"/>
+<circle cx="125.5" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="153.4" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="153.4" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="181.3" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="181.3" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="209.3" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="209.3" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="237.2" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="237.2" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="265.1" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="265.1" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="293.1" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="293.1" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="321.0" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="321.0" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="349.0" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="349.0" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="376.9" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="376.9" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="404.9" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="404.9" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="432.8" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="432.8" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="460.7" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="460.7" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="488.7" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="488.7" cy="491.0" r="5.0" fill="#0d1117"/>
+<circle cx="516.6" cy="491.0" r="9.3" fill="#d9d9d9"/>
+<circle cx="516.6" cy="491.0" r="5.0" fill="#0d1117"/>
+<rect x="284.3" y="174.9" width="17.6" height="17.6" fill="#d9d9d9"/>
+<circle cx="293.1" cy="183.7" r="5.0" fill="#0d1117"/>
+<circle cx="321.0" cy="183.7" r="8.8" fill="#d9d9d9"/>
+<circle cx="321.0" cy="183.7" r="5.0" fill="#0d1117"/>
+<circle cx="349.0" cy="183.7" r="8.8" fill="#d9d9d9"/>
+<circle cx="349.0" cy="183.7" r="5.0" fill="#0d1117"/>
+<circle cx="376.9" cy="183.7" r="8.8" fill="#d9d9d9"/>
+<circle cx="376.9" cy="183.7" r="5.0" fill="#0d1117"/>
+<circle cx="404.9" cy="183.7" r="8.8" fill="#d9d9d9"/>
+<circle cx="404.9" cy="183.7" r="5.0" fill="#0d1117"/>
+<circle cx="572.5" cy="239.6" r="8.8" fill="#d9d9d9"/>
+<circle cx="572.5" cy="239.6" r="5.0" fill="#0d1117"/>
+<circle cx="572.5" cy="351.3" r="8.8" fill="#d9d9d9"/>
+<circle cx="572.5" cy="351.3" r="5.0" fill="#0d1117"/>
+<circle cx="293.1" cy="546.9" r="9.9" fill="#d9d9d9"/>
+<circle cx="293.1" cy="546.9" r="5.0" fill="#0d1117"/>
+<circle cx="293.1" cy="574.9" r="9.9" fill="#d9d9d9"/>
+<circle cx="293.1" cy="574.9" r="5.0" fill="#0d1117"/>
+<rect x="283.2" y="592.9" width="19.8" height="19.8" fill="#d9d9d9"/>
+<circle cx="293.1" cy="602.8" r="5.0" fill="#0d1117"/>
+<circle cx="97.5" cy="714.5" r="9.9" fill="#d9d9d9"/>
+<circle cx="97.5" cy="714.5" r="5.0" fill="#0d1117"/>
+<rect x="87.6" y="732.6" width="19.8" height="19.8" fill="#d9d9d9"/>
+<circle cx="97.5" cy="742.5" r="5.0" fill="#0d1117"/>
+<circle cx="97.5" cy="826.3" r="15.4" fill="#d9d9d9"/>
+<circle cx="97.5" cy="826.3" r="8.2" fill="#0d1117"/>
+<circle cx="321.0" cy="826.3" r="15.4" fill="#d9d9d9"/>
+<circle cx="321.0" cy="826.3" r="8.2" fill="#0d1117"/>
+<rect x="364.8" y="814.2" width="24.2" height="24.2" fill="#d9d9d9"/>
+<circle cx="376.9" cy="826.3" r="5.5" fill="#0d1117"/>
+<circle cx="404.9" cy="826.3" r="12.1" fill="#d9d9d9"/>
+<circle cx="404.9" cy="826.3" r="5.5" fill="#0d1117"/>
+<circle cx="432.8" cy="826.3" r="12.1" fill="#d9d9d9"/>
+<circle cx="432.8" cy="826.3" r="5.5" fill="#0d1117"/>
+<circle cx="572.5" cy="826.3" r="12.1" fill="#d9d9d9"/>
+<circle cx="572.5" cy="826.3" r="5.5" fill="#0d1117"/>
+<rect x="424.0" y="789.6" width="17.6" height="17.6" fill="#d9d9d9"/>
+<circle cx="432.8" cy="798.4" r="5.0" fill="#0d1117"/>
+<circle cx="460.7" cy="798.4" r="8.8" fill="#d9d9d9"/>
+<circle cx="460.7" cy="798.4" r="5.0" fill="#0d1117"/>
+<circle cx="488.7" cy="798.4" r="8.8" fill="#d9d9d9"/>
+<circle cx="488.7" cy="798.4" r="5.0" fill="#0d1117"/>
+<circle cx="516.6" cy="798.4" r="8.8" fill="#d9d9d9"/>
+<circle cx="516.6" cy="798.4" r="5.0" fill="#0d1117"/>
+<circle cx="544.5" cy="798.4" r="8.8" fill="#d9d9d9"/>
+<circle cx="544.5" cy="798.4" r="5.0" fill="#0d1117"/>
+<circle cx="572.5" cy="798.4" r="8.8" fill="#d9d9d9"/>
+<circle cx="572.5" cy="798.4" r="5.0" fill="#0d1117"/>
+<circle cx="181.3" cy="770.4" r="8.8" fill="#d9d9d9"/>
+<circle cx="181.3" cy="770.4" r="5.0" fill="#0d1117"/>
+<circle cx="181.3" cy="658.7" r="8.8" fill="#d9d9d9"/>
+<circle cx="181.3" cy="658.7" r="5.0" fill="#0d1117"/>
+<circle cx="209.3" cy="658.7" r="8.8" fill="#d9d9d9"/>
+<circle cx="209.3" cy="658.7" r="5.0" fill="#0d1117"/>
+<circle cx="321.0" cy="658.7" r="8.8" fill="#d9d9d9"/>
+<circle cx="321.0" cy="658.7" r="5.0" fill="#0d1117"/>
+<circle cx="209.3" cy="686.6" r="8.2" fill="#d9d9d9"/>
+<circle cx="209.3" cy="686.6" r="5.0" fill="#0d1117"/>
+<circle cx="265.1" cy="686.6" r="8.2" fill="#d9d9d9"/>
+<circle cx="265.1" cy="686.6" r="5.0" fill="#0d1117"/>
+<circle cx="376.9" cy="798.4" r="10.4" fill="#d9d9d9"/>
+<circle cx="376.9" cy="798.4" r="5.0" fill="#0d1117"/>
+<circle cx="516.6" cy="546.9" r="10.4" fill="#d9d9d9"/>
+<circle cx="516.6" cy="546.9" r="5.0" fill="#0d1117"/>
+<circle cx="376.9" cy="686.6" r="10.4" fill="#d9d9d9"/>
+<circle cx="376.9" cy="686.6" r="5.0" fill="#0d1117"/>
+<circle cx="349.0" cy="742.5" r="10.4" fill="#d9d9d9"/>
+<circle cx="349.0" cy="742.5" r="5.0" fill="#0d1117"/>
+<rect x="396.1" y="566.1" width="17.6" height="17.6" fill="#d9d9d9"/>
+<circle cx="404.9" cy="574.9" r="5.0" fill="#0d1117"/>
+<circle cx="432.8" cy="574.9" r="8.8" fill="#d9d9d9"/>
+<circle cx="432.8" cy="574.9" r="5.0" fill="#0d1117"/>
+<circle cx="460.7" cy="574.9" r="8.8" fill="#d9d9d9"/>
+<circle cx="460.7" cy="574.9" r="5.0" fill="#0d1117"/>
+<circle cx="488.7" cy="574.9" r="8.8" fill="#d9d9d9"/>
+<circle cx="488.7" cy="574.9" r="5.0" fill="#0d1117"/>
+<rect x="396.1" y="594.0" width="17.6" height="17.6" fill="#d9d9d9"/>
+<circle cx="404.9" cy="602.8" r="5.0" fill="#0d1117"/>
+<circle cx="432.8" cy="602.8" r="8.8" fill="#d9d9d9"/>
+<circle cx="432.8" cy="602.8" r="5.0" fill="#0d1117"/>
+<circle cx="460.7" cy="602.8" r="8.8" fill="#d9d9d9"/>
+<circle cx="460.7" cy="602.8" r="5.0" fill="#0d1117"/>
+<circle cx="488.7" cy="602.8" r="8.8" fill="#d9d9d9"/>
+<circle cx="488.7" cy="602.8" r="5.0" fill="#0d1117"/>
+<rect x="396.1" y="621.9" width="17.6" height="17.6" fill="#d9d9d9"/>
+<circle cx="404.9" cy="630.7" r="5.0" fill="#0d1117"/>
+<circle cx="432.8" cy="630.7" r="8.8" fill="#d9d9d9"/>
+<circle cx="432.8" cy="630.7" r="5.0" fill="#0d1117"/>
+<circle cx="460.7" cy="630.7" r="8.8" fill="#d9d9d9"/>
+<circle cx="460.7" cy="630.7" r="5.0" fill="#0d1117"/>
+<circle cx="488.7" cy="630.7" r="8.8" fill="#d9d9d9"/>
+<circle cx="488.7" cy="630.7" r="5.0" fill="#0d1117"/>
+<circle cx="474.7" cy="449.1" r="4.4" fill="#d9d9d9"/>
+<circle cx="474.7" cy="449.1" r="1.6" fill="#0d1117"/>
+<rect x="21.0" y="197.3" width="550.0" height="308.0" rx="4" fill="none" stroke="#ffffff" stroke-width="1.4" opacity=".85"/>
+<rect x="81.0" y="530.4" width="231.0" height="231.0" rx="4" fill="none" stroke="#ffffff" stroke-width="1.4" opacity=".85"/>
+<rect x="66.3" y="773.5" width="286.0" height="105.6" rx="4" fill="none" stroke="#ffffff" stroke-width="1.4" opacity=".85"/>
+<rect x="419.6" y="658.7" width="172.7" height="152.9" rx="4" fill="none" stroke="#ffffff" stroke-width="1.4" opacity=".85"/>
+<text x="321.0" y="363.7" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">ESP32 DevKit V1 (barras fêmea)</text>
+<text x="186.9" y="419.6" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">antena: fora da placa ←</text>
+<text x="195.3" y="640.3" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">RT8272 5 V</text>
+<text x="209.3" y="875.0" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">Fusível 1,5 A</text>
+<text x="502.6" y="757.7" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">SN65HVD230</text>
+<text x="502.6" y="855.5" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">OBD</text>
+<text x="354.6" y="578.9" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">GY-273</text>
+<text x="354.6" y="606.8" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">LSM6DS3</text>
+<text x="354.6" y="634.7" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">BMP180</text>
+<text x="242.8" y="187.7" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">LED RGB</text>
+<text x="585.5" y="243.6" font-size="10.5" fill="#fff59d" font-weight="bold">R4</text>
+<text x="194.3" y="774.4" font-size="10.5" fill="#fff59d" font-weight="bold">R5</text>
+<text x="222.3" y="662.7" font-size="10.5" fill="#fff59d" font-weight="bold">R6</text>
+<text x="222.3" y="690.6" font-size="10.5" fill="#fff59d" font-weight="bold">C1</text>
+<text x="389.9" y="802.4" font-size="10.5" fill="#fff59d" font-weight="bold">TP1</text>
+<text x="529.6" y="550.9" font-size="10.5" fill="#fff59d" font-weight="bold">TP2</text>
+<text x="389.9" y="690.6" font-size="10.5" fill="#fff59d" font-weight="bold">TP3</text>
+<text x="362.0" y="746.5" font-size="10.5" fill="#fff59d" font-weight="bold">TP4</text>
+<text x="376.9" y="852.3" font-size="10" fill="#ffffff" text-anchor="middle">16</text>
+<text x="404.9" y="852.3" font-size="10" fill="#ffffff" text-anchor="middle">4</text>
+<text x="432.8" y="852.3" font-size="10" fill="#ffffff" text-anchor="middle">5</text>
+<text x="572.5" y="852.3" font-size="10" fill="#ffffff" text-anchor="middle">14</text>
+<text x="640.0" y="130" font-size="15" font-weight="bold" fill="#1d2733">Redes</text>
+<rect x="640.0" y="144" width="22" height="12" rx="3" fill="#ff7043"/>
+<text x="670.0" y="155" font-size="13" fill="#1d2733">12 V do OBD (pino 16), antes do fusível</text>
+<rect x="640.0" y="170" width="22" height="12" rx="3" fill="#ab47bc"/>
+<text x="670.0" y="181" font-size="13" fill="#1d2733">12 V depois do fusível</text>
+<rect x="640.0" y="196" width="22" height="12" rx="3" fill="#ef5350"/>
+<text x="670.0" y="207" font-size="13" fill="#1d2733">5 V do RT8272</text>
+<rect x="640.0" y="222" width="22" height="12" rx="3" fill="#ffa726"/>
+<text x="670.0" y="233" font-size="13" fill="#1d2733">3,3 V do ESP32 (e CTX preso)</text>
+<rect x="640.0" y="248" width="22" height="12" rx="3" fill="#42a5f5"/>
+<text x="670.0" y="259" font-size="13" fill="#1d2733">CANH (3,3 V por R4)</text>
+<rect x="640.0" y="274" width="22" height="12" rx="3" fill="#29b6f6"/>
+<text x="670.0" y="285" font-size="13" fill="#1d2733">CANL → OBD pino 14</text>
+<rect x="640.0" y="300" width="22" height="12" rx="3" fill="#ffee58"/>
+<text x="670.0" y="311" font-size="13" fill="#1d2733">CRX → D21 (passa por baixo)</text>
+<rect x="640.0" y="326" width="22" height="12" rx="3" fill="#a1887f"/>
+<text x="670.0" y="337" font-size="13" fill="#1d2733">divisor da bateria → D34</text>
+<text x="640.0" y="378" font-size="12" fill="#4b5a6b"><tspan x="640.0" dy="0">Cinza claro: ilhas (furo metalizado).</tspan><tspan x="640.0" dy="18">Quadrada: pino 1.</tspan><tspan x="640.0" dy="18">Ponto pequeno: via (passa de face).</tspan><tspan x="640.0" dy="18">Tracejado nos cantos: apoios</tspan><tspan x="640.0" dy="18">da caixa, sem cobre.</tspan><tspan x="640.0" dy="18">Trilhas: 1,0 mm (12 V), 0,8 mm (5 V),</tspan><tspan x="640.0" dy="18">0,3 a 0,5 mm (sinais).</tspan></text>
+</svg>

@@ -260,6 +260,25 @@ O que muda em relação à versão principal (fusível, RT8272, BMP180 e cabo OB
 
 **Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (9,24), (11,24), (2,13), (16,12), (17,2), (16,22), (17,23) ou (18,23). Entre (17,23) e (18,23) também não pode haver continuidade (se houver cerca de 120 Ω, é o R2). O D21 (6,2) tem continuidade com o CRX (16,23), e o CTX (15,23) com o 3V3 (16,2).
 
+## PCB de duas faces (versão 2, para fábrica)
+
+Exemplo de placa com trilhas fixas (21/11/2026), para encomendar numa fábrica como a JLCPCB ou a PCBWay: duas faces e furos metalizados. É a versão 2 da placa ilhada, para depois de ela ser validada no carro. Mesmas peças e mesmas posições da versão com o SN65HVD230, mesmo tamanho (50 × 70 mm, cabe na mesma caixa sobre os apoios dos cantos) e os módulos continuam encaixados em barras fêmea. O [`gerar_pcb.py`](gerar_pcb.py) lê as posições do `gerar_placa.py` (que também o chama): mudou a placa ilhada, a PCB acompanha. Uma conferência simples para a geração com erro se uma trilha ficar solta ou encostar numa ilha de outra rede.
+
+| Face de cima (componentes) | Face de baixo (espelhada, como se vê virando a placa) |
+|---|---|
+| ![PCB, face de cima: alimentação, CAN, 3V3 e LED](pcb-cima.svg) | ![PCB, face de baixo: plano de GND e as trilhas de I2C, D34 e CRX](pcb-baixo.svg) |
+
+O que muda em relação à placa ilhada:
+
+- **Face de cima:** 12 V com trilha de 1,0 mm (antes e depois do fusível), 5 V com 0,8 mm, sinais (3V3, CANH, CANL, LED) com 0,3 a 0,5 mm. O CTX continua preso no 3V3: o transceptor nunca transmite.
+- **Face de baixo:** plano de GND em quase toda a face (menos ruído na leitura da bateria e na CAN), ligado às ilhas de GND com alívio térmico. Só quatro sinais passam por baixo, onde cruzariam a alimentação: SDA (D25), SCL (D26), D34 (divisor da bateria) e CRX (D21, por uma via embaixo do ESP32).
+- **Sem fios J1 a J3:** viram trilhas.
+- **R4 na coluna 18** (18,3)–(18,7), ao lado do USB do ESP32: na coluna 16 o CANH cruzaria o 3V3.
+- **TP3 em (11,19):** na posição da placa ilhada passa a trilha do 5 V.
+- **R2 "121" do módulo SN65HVD230:** tirar, como na placa ilhada.
+
+**Situação:** só exemplo, sem conferência de fábrica (DRC) e sem os arquivos Gerber. Para encomendar: desenhar no KiCad a partir deste exemplo, depois das medições pelos pontos de teste, do ajuste do divisor da bateria e da instalação do GY-273. Uma versão de uma face só (corrosão caseira ou CNC) também é possível: o plano de GND fica, e os quatro sinais de baixo viram fios por cima.
+
 ## Medidas dos componentes
 
 Preencha com o paquímetro e anote a data. Distâncias de centro a centro dos pinos.

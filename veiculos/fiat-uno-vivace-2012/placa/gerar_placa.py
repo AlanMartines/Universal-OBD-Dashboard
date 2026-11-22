@@ -846,3 +846,5 @@ if __name__ == '__main__':
         import subprocess
         import sys
         subprocess.run([sys.executable, os.path.abspath(__file__)], env={**os.environ, 'PLACA_VARIANTE': 'sn65'}, check=True)
+        # PCB de duas faces (versão 2, para fábrica), com as posições da versão SN65HVD230
+        subprocess.run([sys.executable, os.path.join(OUT, 'gerar_pcb.py')], check=True)

@@ -1,5 +1,21 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "other",
+    "title": "Documentação",
+    "items": [
+     {
+      "title": "Placa do Uno: exemplo de PCB de duas faces (versão 2, para fábrica)",
+      "text": "Desenho das faces de cima e de baixo de uma placa com trilhas fixas, para encomendar numa fábrica como a JLCPCB ou a PCBWay depois de a placa ilhada ser validada no carro: mesmas peças, posições e tamanho (versão SN65HVD230, cabe na mesma caixa), plano de GND embaixo e trilhas largas na alimentação. O gerar_pcb.py lê as posições do gerar_placa.py (que também o chama), para as duas acompanharem o projeto, e para com erro se uma trilha ficar solta ou encostar em outra rede."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.66",
   "date": "2026-11-21",
   "sections": [
