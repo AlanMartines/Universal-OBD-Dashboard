@@ -224,7 +224,7 @@ async function loadMaintenance() {
   $('mt-soon').textContent = data.items.filter((i) => i.status.level === 'SOON').length;
   mtItems = {};
   const lb = $('mt-list');
-  lb.innerHTML = data.items.length ? '' : '<p class="muted small">Nenhum item ainda. Escolha um item no formulário e anote a próxima troca.</p>';
+  lb.innerHTML = html`${data.items.length ? '' : emptyState('maint', 'Nenhum item ainda', 'Escolha um item no formulário e anote a próxima troca: o app avisa pelo hodômetro ou pela data.')}`;
   data.items.forEach((it) => {
     mtItems[it.id] = it;
     const lv = MT_LEVEL[it.status.level] || MT_LEVEL.UNKNOWN;
@@ -238,10 +238,10 @@ async function loadMaintenance() {
       ${it.records.length ? html`<details class="small"><summary>Histórico (${it.records.length})</summary>${it.records.map((r) =>
         html`<div class="kv"><span>${dateOnly(r.timestamp)}</span><span>${r.odometerKm != null ? fmt(r.odometerKm, 0) + ' km' : 'sem km'}</span>
         <span>${r.cost != null ? 'R$ ' + fmt(r.cost, 2) : ''}</span><span>${r.notes || ''}</span>
-        <button class="btn btn-small btn-danger" data-mt-rdel="${r.id}">Apagar</button></div>`)}</details>` : ''}
+        <button class="btn btn-small btn-danger-outline" data-mt-rdel="${r.id}">Apagar</button></div>`)}</details>` : ''}
       <div class="actions"><button class="btn btn-small btn-primary" data-mt-done="${it.id}">Feito</button>
       <button class="btn btn-small" data-mt-edit="${it.id}">Editar</button>
-      <button class="btn btn-small btn-danger" data-mt-del="${it.id}">Apagar</button></div>`;
+      <button class="btn btn-small btn-danger-outline" data-mt-del="${it.id}">Apagar</button></div>`;
     lb.appendChild(el);
   });
 }

@@ -86,7 +86,29 @@ $('vehicle-delete').addEventListener('click', async () => {
   vehicleMessage('Veículo excluído.', false);
 });
 
+/**
+ * Índice dos Ajustes: um botão por cartão visível, com o nome curto da seção, que rola até ele. Refeito a cada
+ * abertura da aba, porque alguns cartões aparecem ou somem conforme o veículo (escuta CAN, por exemplo).
+ */
+function buildSettingsIndex() {
+  const page = $('tab-settings');
+  const nav = $('settings-index');
+  nav.replaceChildren();
+  const smooth = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  page.querySelectorAll(':scope > .card').forEach((card) => {
+    const t = card.querySelector('.label');
+    if (card.hidden || !t) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.textContent = t.textContent.split(/[:(]/)[0].replace(/ deste veículo$/, '').replace(/ \(ESP32\)$/, '').trim();
+    b.addEventListener('click', () => card.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' }));
+    nav.appendChild(b);
+  });
+}
+
 function loadSettings() {
+  queueMicrotask(buildSettingsIndex);
   loadAiSettings();
   const profiles = parse(bridge.listProfiles(), []);
   loadVehicles(profiles);
@@ -160,7 +182,7 @@ function loadAlarms() {
     const text = document.createElement('span');
     text.textContent = `${a.name} ${a.above ? 'acima de' : 'abaixo de'} ${fmt(a.value, Number.isInteger(a.value) ? 0 : 1)} ${a.unit}${a.critical ? ' · crítico' : ''}`;
     const del = document.createElement('button');
-    del.className = 'btn btn-small btn-danger';
+    del.className = 'btn btn-small btn-danger-outline';
     del.textContent = 'Apagar';
     del.addEventListener('click', () => { okOrToast(bridge.deleteUserAlarm(a.id), 'Alarme apagado.'); loadAlarms(); });
     row.append(text, del);
@@ -372,7 +394,7 @@ function renderDiagnostics() {
   $('diag-enabled').checked = !!d.enabled;
   $('script-entry').hidden = !d.enabled;
   const box = $('diag-files');
-  box.innerHTML = d.files.length ? '' : '<p class="muted small">Nenhum arquivo gravado.</p>';
+  box.innerHTML = html`${d.files.length ? '' : emptyState('file', 'Nenhum arquivo gravado', 'As gravações de diagnóstico aparecem aqui depois da primeira captura.')}`;
   diagFiles = d.files;
   // Exportar tudo vale com qualquer gravação; apagar todas, só se houver alguma parada.
   $('diag-clear-row').hidden = !d.files.length;
@@ -390,7 +412,7 @@ function renderDiagnostics() {
     const actions = document.createElement('div');
     actions.className = 'actions';
     actions.innerHTML = html`<button class="btn btn-small" data-diag-export>Exportar .gz</button>${
-      f.active ? '' : html`<button class="btn btn-small btn-danger" data-diag-delete>Apagar</button>`}`;
+      f.active ? '' : html`<button class="btn btn-small btn-danger-outline" data-diag-delete>Apagar</button>`}`;
     actions.querySelectorAll('button').forEach((b) => { b.dataset.name = f.name; });
     el.appendChild(actions);
     box.appendChild(el);

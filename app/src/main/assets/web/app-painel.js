@@ -394,7 +394,7 @@ function renderMonitors(r) {
   const box = $('monitors');
   box.className = 'monitors';
   box.innerHTML = html`${r.monitors.length ? r.monitors.map((m) =>
-    html`<span class="mon ${m.complete ? 'ok' : 'pending'}">${m.complete ? '✓' : '⏳'} ${m.name}</span>`) : 'A ECU não informa monitores.'}`;
+    html`<span class="mon ${m.complete ? 'ok' : 'pending'}">${mark(m.complete ? 'ok' : 'wait')} ${m.name}</span>`) : 'A ECU não informa monitores.'}`;
 }
 
 const dtcText = (code) => dtcDescribe(code, meta.dtcDescriptions).text;

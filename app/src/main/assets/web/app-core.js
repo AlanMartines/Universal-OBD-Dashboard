@@ -113,6 +113,20 @@ const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&':
 const htmlPart = (v) => (v instanceof SafeHtml ? v.s : Array.isArray(v) ? v.map(htmlPart).join('') : esc(v));
 const html = (strings, ...values) => new SafeHtml(strings.reduce((out, s, i) => out + s + (i < values.length ? htmlPart(values[i]) : ''), ''));
 
+/** Lista vazia: ícone, o que vai aparecer ali e como começar (os desenhos são fixos, do próprio app). */
+const EMPTY_ICON = {
+  route: '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16"/>',
+  fuel: '<path d="M4.5 20V5.5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1V20M3 20h12M7 8.5h4M13.5 10.5h2a1 1 0 0 1 1 1v5a1.5 1.5 0 0 0 3 0V9l-3-3"/>',
+  maint: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
+  file: '<path d="M14 3.5H6.5a1 1 0 0 0-1 1v15a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/>',
+  check: '<circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.2l2.5 2.5 5-5"/>',
+};
+const emptyState = (icon, title, text) => html`<div class="empty"><svg class="empty-icon" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${new SafeHtml(EMPTY_ICON[icon])}</svg>
+  <b>${title}</b><p>${text}</p></div>`;
+/** Marca de estado no lugar de emoji: ok, warn, bad ou wait (desenho em style.css). */
+const mark = (kind) => html`<span class="st st-${kind}" aria-hidden="true"></span>`;
+
 /*
  * Avisos rápidos na parte de baixo da tela, empilhados (até 3; o mais novo embaixo). Cada um tem ícone
  * pelo tipo, barra do tempo que falta e some sozinho; tocar fecha, arrastar para o lado dispensa e
@@ -191,9 +205,21 @@ let meta = parse(bridge.getProfileMeta(), {});
 let lastState = null;
 
 /* ---------------------------------------------------------------- Abas */
+// Barra embaixo: quatro abas e o "Mais", que abre as outras quatro num menu e fica marcado quando uma delas está aberta.
+const navMore = $('nav-more');
+const moreMenu = $('more-menu');
+const setMoreOpen = (open) => {
+  moreMenu.hidden = !open;
+  navMore.setAttribute('aria-expanded', String(open));
+};
+navMore.addEventListener('click', (e) => { e.stopPropagation(); setMoreOpen(moreMenu.hidden); });
+document.addEventListener('click', (e) => { if (!moreMenu.hidden && !moreMenu.contains(e.target)) setMoreOpen(false); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !moreMenu.hidden) { setMoreOpen(false); navMore.focus(); } });
+
 document.querySelectorAll('.tab').forEach((btn) => btn.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b === btn));
-  btn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  navMore.classList.toggle('active', moreMenu.contains(btn));
+  setMoreOpen(false);
   document.querySelectorAll('.tab-page').forEach((p) => p.classList.toggle('active', p.id === 'tab-' + btn.dataset.tab));
   if (btn.dataset.tab === 'history' || btn.dataset.tab === 'faults') loadHistory();
   if (btn.dataset.tab === 'settings') loadSettings();

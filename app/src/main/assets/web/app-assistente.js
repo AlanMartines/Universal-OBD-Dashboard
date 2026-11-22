@@ -230,7 +230,7 @@ window.onAiResult = (r) => {
 };
 
 function renderPermissions(p) {
-  const items = Object.entries(p).map(([k, v]) => html`<div>${v ? '✅' : '⛔'} ${k}</div>`);
+  const items = Object.entries(p).map(([k, v]) => html`<div>${mark(v ? 'ok' : 'bad')} ${k}</div>`);
   $('permissions').innerHTML = html`${items.length ? items : html`<span class="muted">--</span>`}`;
 }
 window.onPermissions = renderPermissions;

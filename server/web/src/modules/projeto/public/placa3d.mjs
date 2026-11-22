@@ -9,6 +9,27 @@ const canvas = document.getElementById('cena');
 const aviso = document.getElementById('aviso');
 const dica = document.getElementById('dica3d');
 
+// Modo PCB (/projeto/placa?placa=pcb): a placa perfurada dá lugar à PCB de duas faces (versão 2, para fábrica). As
+// trilhas viram cobre sob a máscara verde; somem os fios estanhados, os fios isolados de baixo e os jumpers J1 a J3;
+// R4 e TP3 vão para os lugares da PCB (dados de gerar_pcb.py, exportados por gerar_3d.py em 'pcb').
+const PCB = !!(X && X.pcb && canvas && canvas.dataset.placa === 'pcb');
+if (PCB) {
+  const mesmo = (p, q) => Math.abs(p[0] - q[0]) < 0.01 && Math.abs(p[1] - q[1]) < 0.01;
+  const mover = (de, para) => { X.solda = X.solda.filter((p) => !de.some((q) => mesmo(p, q))).concat(para); };
+  const r4 = X.resistores.find((r) => r.n.startsWith('R4 '));
+  if (r4) {
+    mover([r4.a, r4.b], X.pcb.r4);
+    [r4.a, r4.b] = X.pcb.r4;
+  }
+  for (const tp of X.pontos_teste) {
+    const novo = X.pcb.tp[tp.nome];
+    if (novo) { mover([tp.p], [novo]); tp.p = novo; }
+  }
+  X.trilhas = [];
+  X.fios_baixo = [];
+  X.fios = X.fios.filter((f) => !/^J\d/.test(f.n));
+}
+
 function falhou() {
   if (aviso) aviso.hidden = false;
 }
@@ -308,8 +329,9 @@ function iniciar() {
     return m;
   }
 
-  // placa perfurada
-  {
+  // placa perfurada (no modo PCB, a placa de fábrica logo abaixo)
+  const trilhasPcb = [];
+  if (!PCB) {
     const g = new THREE.Group();
     const placa = new THREE.Mesh(new THREE.BoxGeometry(D.W, A.T, D.H), M.placa);
     placa.position.y = A.T / 2;
@@ -338,6 +360,55 @@ function iniciar() {
     poe(g, 'placa', 'Placa perfurada 5 × 7 cm (18 × 24 furos)');
     ilhas.castShadow = false;
     furos.castShadow = false;
+  } else {
+    const Q = X.pcb;
+    const g = new THREE.Group();
+    const placa = new THREE.Mesh(new THREE.BoxGeometry(D.W, A.T, D.H), std(0x1f6b3a, 0.5));
+    placa.position.y = A.T / 2;
+    g.add(placa);
+    // plano de GND da face de baixo: cobre sob a máscara, um tom mais claro, recuado da borda
+    const plano = new THREE.Mesh(new THREE.BoxGeometry(D.W - 1.2, 0.03, D.H - 1.2), std(0x2a7a46, 0.5));
+    plano.position.y = -0.016;
+    g.add(plano);
+    poe(g, 'placa', 'PCB de duas faces 5 × 7 cm (versão 2, para fábrica): máscara verde, ilhas douradas e plano de GND embaixo');
+    // trilhas: faixas planas de cobre sob a máscara, na face de cima e na de baixo
+    const base = std(0x3f9a5c, 0.45);
+    for (const [lista, z, face] of [[Q.cima, A.T + 0.02, 'cima'], [Q.baixo, -0.04, 'baixo']]) {
+      for (const t of lista) {
+        const mat = base.clone();
+        mat.userData = { cor: new THREE.Color(t.cor), base: base.color.clone(), metal: 0, rugoso: 0.45 };
+        trilhasPcb.push(mat);
+        const tg = new THREE.Group();
+        for (let i = 1; i < t.pts.length; i++) {
+          const [x1, y1] = t.pts[i - 1], [x2, y2] = t.pts[i];
+          const comp = Math.hypot(x2 - x1, y2 - y1);
+          const seg = new THREE.Mesh(new THREE.BoxGeometry(comp + t.w, 0.03, t.w), mat);
+          seg.position.copy(W((x1 + x2) / 2, (y1 + y2) / 2, z));
+          seg.rotation.y = -Math.atan2(y2 - y1, x2 - x1);
+          tg.add(seg);
+        }
+        poe(tg, 'trilhas', `Trilha da PCB (face de ${face}): ${t.n}`);
+      }
+    }
+    // ilhas douradas (acabamento ENIG) com furo metalizado, nas duas faces; vias menores
+    const ouro = std(0xd4b25a, 0.3, 1);
+    const redondas = Q.ilhas.filter((il) => !il.q), quadradas = Q.ilhas.filter((il) => il.q);
+    const m4 = new THREE.Matrix4(), q0 = new THREE.Quaternion(), faces = [A.T + 0.03, -0.045];
+    const instancias = (geo, mat, lista, escala) => {
+      const inst = new THREE.InstancedMesh(geo, mat, lista.length * 2);
+      let i = 0;
+      for (const il of lista) for (const z of faces) inst.setMatrixAt(i++, m4.compose(W(il.p[0], il.p[1], z), q0, escala(il)));
+      return inst;
+    };
+    const ilhas = new THREE.Group();
+    ilhas.add(instancias(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 24), ouro, redondas, (il) => new THREE.Vector3(il.d, 1, il.d)));
+    ilhas.add(instancias(new THREE.BoxGeometry(1, 0.05, 1), ouro, quadradas, (il) => new THREE.Vector3(il.d, 1, il.d)));
+    const furo = (il) => (il.d >= 2.8 ? 1.5 : il.d >= 2 ? 1.0 : 0.9);
+    ilhas.add(instancias(new THREE.CylinderGeometry(0.5, 0.5, 0.07, 14), M.furo, Q.ilhas, (il) => new THREE.Vector3(furo(il), 1, furo(il))));
+    const vias = Q.vias.map((p) => ({ p, d: 0.8 }));
+    ilhas.add(instancias(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 16), ouro, vias, () => new THREE.Vector3(0.8, 1, 0.8)));
+    ilhas.add(instancias(new THREE.CylinderGeometry(0.5, 0.5, 0.07, 10), M.furo, vias, () => new THREE.Vector3(0.3, 1, 0.3)));
+    poe(ilhas, 'placa', 'Ilhas da PCB: douradas, com furo metalizado; os pontos menores são as vias (passagem de uma face à outra)');
   }
 
   // ------------------------------------------------------------ barras fêmea e ESP32
@@ -1498,7 +1569,7 @@ function iniciar() {
   }
 
   // ------------------------------------------------------------ lado de baixo: fio estanhado e solda
-  const trilhas = [];
+  const trilhas = [...trilhasPcb];
   for (const t of X.trilhas) {
     const pts = t.pts.map(([x, y]) => [x, y, A.BOT_Z]);
     const mat = M.estanho.clone();
@@ -2057,9 +2128,10 @@ function iniciar() {
   if (cores) {
     cores.addEventListener('change', () => {
       for (const mat of trilhas) {
-        mat.color.copy(cores.checked ? mat.userData.cor : M.estanho.color);
-        mat.metalness = cores.checked ? 0.3 : 1;
-        mat.roughness = cores.checked ? 0.45 : 0.22;
+        // fio estanhado (placa ilhada) ou cobre sob a máscara (PCB), conforme o material de cada trilha
+        mat.color.copy(cores.checked ? mat.userData.cor : mat.userData.base || M.estanho.color);
+        mat.metalness = cores.checked ? 0.3 : mat.userData.metal ?? 1;
+        mat.roughness = cores.checked ? 0.45 : mat.userData.rugoso ?? 0.22;
       }
       pedir();
     });

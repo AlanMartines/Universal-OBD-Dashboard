@@ -15,13 +15,16 @@ export default function projetoRoutes(app) {
   }));
 
   // ?versao=sn65 mostra a versão alternativa, com o SN65HVD230 no lugar do TJA1050; qualquer outro valor, a principal.
+  // ?placa=pcb troca a placa perfurada pela PCB de duas faces (versão 2, para fábrica), desenhada para o SN65HVD230.
   app.get('/projeto/placa', async (request, reply) => {
-    const sn65 = request.query?.versao === 'sn65';
+    const pcb = request.query?.placa === 'pcb';
+    const sn65 = pcb || request.query?.versao === 'sn65';
     return reply.view('modules/projeto/views/placa.hbs', {
       ...PAGE,
       title: 'Placa em 3D',
       activeTab: 'placa',
       sn65,
+      pcb,
       transceptor: sn65 ? 'SN65HVD230' : 'TJA1050',
       // Posições geradas por veiculos/fiat-uno-vivace-2012/placa/gerar_3d.py (o teste confere se a cópia está igual);
       // placa3d.mjs monta as peças com detalhe usando o Three.js local.

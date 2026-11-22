@@ -6,6 +6,21 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Mostradores: luzes do painel pela escuta CAN e alerta ativo.** Quatro ícones novos, nos seis temas, no app e no painel web: farol ou lanterna acesos (verde, como no painel do carro), ar-condicionado ligado e desembaçador traseiro, todos lidos da rede CAN (somem sem a escuta), e um triângulo que acende com qualquer alerta ativo do app (amarelo para atenção, vermelho para crítico).
+- **Placa 3D: botão Ilhada ou PCB de fábrica.** Na página /projeto/placa, a placa perfurada pode ser trocada pela PCB de duas faces: máscara verde, ilhas douradas, trilhas nas duas faces e plano de GND embaixo, sem fios estanhados nem jumpers, com R4 e TP3 nos lugares da PCB. Os dados vêm do `gerar_pcb.py`, exportados pelo `gerar_3d.py`.
+
+### Alterado
+- **Visual do app e do painel com a mesma cara.** A cor de destaque passa a ser o azul dos mostradores (antes, o verde do app e do painel); o verde fica para "deu certo". Títulos, rótulos e números usam as fontes dos mostradores (Barlow Semi Condensed e Chakra Petch); o texto corrido continua igual.
+- **App: navegação embaixo, ao alcance do polegar.** Painel, Abastecer, Histórico e Ajustes com ícone, e "Mais" com Detalhes, Sensores, Manutenção e Falhas (antes, oito abas numa faixa que cortava nas pontas).
+- **App: listas vazias explicam o que vai aparecer e como começar;** os cartões de Abastecimentos mostram o que falta em vez de "--"; marcas de estado desenhadas no lugar de emoji; botões de apagar só com contorno vermelho; índice de seções no topo dos Ajustes.
+- **Mostradores:** na tela Viagem, custo e velocidade média no lugar de distância e tempo, que já aparecem fixos em todos os temas; no Minimal, os campos ocupam a altura toda.
+- **Painel web:** fundo liso no tema claro (sai a textura listrada) e gráficos em azul e laranja, o par que se distingue também com daltonismo.
+
+### Corrigido
+- **Tema Cápsula:** a linha de baixo (Viagem, Tempo, Total) encostava na moldura e cortava letras.
+- **Notas do projeto:** o tempo por pedido do ELM327 é cerca de 330 ms (310 a 350 ms nas gravações), não 200 ms.
+
 ### Documentação
 - **Placa do Uno: exemplo de PCB de duas faces (versão 2, para fábrica).** Desenho das faces de cima e de baixo de uma placa com trilhas fixas, para encomendar numa fábrica como a JLCPCB ou a PCBWay depois de a placa ilhada ser validada no carro: mesmas peças, posições e tamanho (versão SN65HVD230, cabe na mesma caixa), plano de GND embaixo e trilhas largas na alimentação. O `gerar_pcb.py` lê as posições do `gerar_placa.py` (que também o chama), para as duas acompanharem o projeto, e para com erro se uma trilha ficar solta ou encostar em outra rede.
 

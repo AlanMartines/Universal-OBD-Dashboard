@@ -18,7 +18,7 @@
   <!-- ELM327 -->
   <rect x="80" y="170" width="300" height="96" rx="10" fill="#e3f2fd" stroke="#1565c0" stroke-width="1.5"/>
   <text x="230" y="198" text-anchor="middle" font-size="16" font-weight="bold" fill="#0d47a1">ELM327 (Bluetooth)</text>
-  <text x="230" y="220" text-anchor="middle" font-size="12" fill="#1565c0">KWP2000 (ATSP5), ≈ 200 ms por pedido</text>
+  <text x="230" y="220" text-anchor="middle" font-size="12" fill="#1565c0">KWP2000 (ATSP5), ≈ 330 ms por pedido</text>
   <text x="230" y="238" text-anchor="middle" font-size="12" fill="#1565c0">PIDs do modo 01, falhas (03/07/0A)</text>
   <text x="230" y="256" text-anchor="middle" font-size="12" fill="#1565c0">e a tensão (ATRV)</text>
 

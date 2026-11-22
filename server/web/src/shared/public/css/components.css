@@ -354,7 +354,7 @@
   .auth-hero li { display: flex; gap: 0.75rem; align-items: center; }
   .auth-hero li i {
     display: inline-flex; flex: none; align-items: center; justify-content: center; width: 2rem; height: 2rem;
-    color: #3ddc84; background: rgba(61, 220, 132, 0.12); border-radius: 50%;
+    color: #6fd3ff; background: rgba(111, 211, 255, 0.12); border-radius: 50%;
   }
   .auth-hero + .auth-card .auth-brand { display: none; }
 }
@@ -400,7 +400,7 @@
   border-color: var(--app-brand);
 }
 .form-switch .form-check-input:focus:not(:checked) {
-  --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%2861, 220, 132, 0.6%29'/%3e%3c/svg%3e");
+  --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%28111, 211, 255, 0.6%29'/%3e%3c/svg%3e");
 }
 .pagination {
   --bs-pagination-active-bg: var(--app-brand);
@@ -551,4 +551,32 @@
 @keyframes vt-entrada { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(conteudo), ::view-transition-new(conteudo) { animation: none; }
+}
+
+/* ---------------------------------------------------------------- Tipografia comum com o app
+   Mesmas fontes dos mostradores: Chakra Petch nos números grandes e Barlow Semi Condensed nos títulos,
+   rótulos e abas. O texto corrido continua em Inter, melhor para ler parágrafos. */
+.page-title,
+.stat-group-title,
+.nav-tabs .nav-link,
+.notas-nav .nav-link {
+  font-family: var(--app-font-label);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.page-title { font-size: 1.85rem; }
+.nav-tabs .nav-link, .notas-nav .nav-link { font-size: 1.02rem; }
+.stat-label,
+.notas-stats span {
+  font-family: var(--app-font-label);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.stat-value,
+.metric-value,
+.notas-stats b {
+  font-family: var(--app-font-num);
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }

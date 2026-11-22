@@ -1,7 +1,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
   <div>
     <h1 class="h3 mb-1">Placa da escuta CAN em 3D</h1>
-    <p class="text-body-secondary mb-0">ESP32, transceptor {{transceptor}} e conversor RT8272 numa placa ilhada de 5 × 7 cm. Posições do desenho; alturas estimadas.</p>
+    <p class="text-body-secondary mb-0">ESP32, transceptor {{transceptor}} e conversor RT8272 numa {{#if pcb}}PCB de duas faces{{else}}placa ilhada{{/if}} de 5 × 7 cm. Posições do desenho; alturas estimadas.</p>
   </div>
   <a class="btn btn-outline-secondary btn-sm" href="{{placaUrl}}" target="_blank" rel="noopener"><i class="fa-brands fa-github me-1" aria-hidden="true"></i>Desenhos e montagem</a>
 </div>
@@ -14,10 +14,18 @@
         <a class="btn btn-outline-primary{{#unless sn65}} active{{/unless}}" href="/projeto/placa"{{#unless sn65}} aria-current="page"{{/unless}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>TJA1050 (principal)</a>
         <a class="btn btn-outline-primary{{#if sn65}} active{{/if}}" href="/projeto/placa?versao=sn65"{{#if sn65}} aria-current="page"{{/if}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>SN65HVD230 (alternativa)</a>
       </div>
+      <span class="small text-body-secondary ms-md-2">Placa:</span>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Tipo de placa">
+        <a class="btn btn-outline-primary{{#unless pcb}} active{{/unless}}" href="/projeto/placa{{#if sn65}}?versao=sn65{{/if}}"{{#unless pcb}} aria-current="page"{{/unless}}><i class="fa-solid fa-border-all me-1" aria-hidden="true"></i>Ilhada (perfurada)</a>
+        <a class="btn btn-outline-primary{{#if pcb}} active{{/if}}" href="/projeto/placa?versao=sn65&amp;placa=pcb"{{#if pcb}} aria-current="page"{{/if}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>PCB de fábrica</a>
+      </div>
     </div>
-    {{#if sn65}}
-    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>Versão alternativa: o SN65HVD230 trabalha em 3,3 V e dispensa o divisor do RX (R1, R2 e R3). O CTX fica preso no 3V3, então ele nunca transmite. No módulo do projeto, a medida entre CANH e CANL deu 120 Ω (10/11/2026): o R2 ("121") está ligado e precisa sair antes de ligar no carro. Ainda não testada no carro.</p>
+    {{#if pcb}}
+    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>PCB de duas faces (versão 2, para encomendar numa fábrica como a JLCPCB ou a PCBWay): as mesmas peças e posições da versão com o SN65HVD230, trilhas no lugar dos fios estanhados e plano de GND na face de baixo. O R4 fica na coluna 18 e o TP3 em (11, 19). Ainda é um exemplo: será desenhada no KiCad depois de a placa ilhada ser validada no carro.</p>
     {{/if}}
+    {{#if sn65}}{{#unless pcb}}
+    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>Versão alternativa: o SN65HVD230 trabalha em 3,3 V e dispensa o divisor do RX (R1, R2 e R3). O CTX fica preso no 3V3, então ele nunca transmite. No módulo do projeto, a medida entre CANH e CANL deu 120 Ω (10/11/2026): o R2 ("121") está ligado e precisa sair antes de ligar no carro. Ainda não testada no carro.</p>
+    {{/unless}}{{/if}}
     <div class="d-flex flex-wrap align-items-center gap-2 gap-md-3 mb-2">
       <div class="btn-group btn-group-sm flex-wrap" role="group" aria-label="Vista">
         <button type="button" class="btn btn-outline-secondary" data-vista="perspectiva"><i class="fa-solid fa-cube me-1" aria-hidden="true"></i>Perspectiva</button>
@@ -55,7 +63,7 @@
       </div>
     </div>
     <div class="placa3d-palco">
-      <canvas id="cena" class="placa3d-cena" aria-label="Modelo 3D da placa"></canvas>
+      <canvas id="cena" class="placa3d-cena" data-placa="{{#if pcb}}pcb{{else}}ilhada{{/if}}" aria-label="Modelo 3D da placa"></canvas>
       <div id="dica3d" class="placa3d-dica" role="status" hidden></div>
       <details id="legenda3d" class="placa3d-legenda" hidden>
         <summary><i class="fa-solid fa-list me-1" aria-hidden="true"></i>Legenda dos fios e LEDs</summary>

@@ -12,7 +12,7 @@
 
   function draw() {
     if (chart) chart.destroy();
-    var brand = css('--app-brand') || '#128a49';
+    var brand = css('--app-brand') || '#0072ad';
     var muted = css('--bs-secondary-color') || '#6c757d';
     var grid = css('--bs-border-color') || 'rgba(0,0,0,.1)';
     var ethanol = css('--bs-warning') || '#ffc107';

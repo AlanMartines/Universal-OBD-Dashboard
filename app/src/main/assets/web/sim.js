@@ -129,6 +129,8 @@ window.ObdSim = (function () {
       // escuta CAN e sensor do ESP32: parcial do painel, temperatura interna e pressão
       trip_km: 1234.5 + v.tripKm, cabin_temp: 27.4, cabin_pressure: 1013.25 * Math.pow(1 - v.alt / 44330, 5.255),
       esp_batt_v: v.rpm > 300 ? 14.12 : 12.55,
+      // luzes do painel e ar-condicionado pela escuta CAN (desembaçador desligado)
+      can_lights: 1, can_ac: Math.floor(tt / 40) % 2, can_defog: 0,
     };
 
     const alerts = [];
@@ -145,7 +147,7 @@ window.ObdSim = (function () {
       readings,
       derived: {
         fuelLph: lph, instantKmPerL: lph > 0.05 && v.speed > 5 ? v.speed / lph : null,
-        tripKmPerL: v.tripFuelL > 0.02 ? v.tripKm / v.tripFuelL : null, tripFuelUsedL: v.tripFuelL,
+        tripKmPerL: v.tripFuelL > 0.02 ? v.tripKm / v.tripFuelL : null, tripFuelUsedL: v.tripFuelL, tripCost: v.tripFuelL * 6.49,
         fuelRemainingL: v.fuelL, recommendedGear: rec, estimatedGear: est, shiftUp,
         // sensor de movimento do ESP32 (LSM6DS3), já calibrado
         imuStage: 2, accelG: accelerating ? 0.17 + noise(0.02) : fuelCut ? -0.11 + noise(0.02) : noise(0.02),
