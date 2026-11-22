@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.70] - 2026-11-22
+
 ### Corrigido
 - **Tema Minimal: luzes de aviso no alto.** Farol, ar-condicionado, injeção, temperatura, bateria, reserva, eletroventilador e alerta ficavam no rodapé, depois da temperatura e da pressão; agora ficam centralizados logo abaixo do conta-giros, como no painel do carro (os outros temas já os mostravam no alto). A faixa de alerta desce um pouco para não cobrir os ícones.
 
