@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.66] - 2026-11-21
+
 ### Alterado
 - **Dinâmica: bússola mais legível.** Letras e números do anel ficam sempre de pé enquanto ele gira (antes acompanhavam a curva e ficavam de lado ou de cabeça para baixo). N, L, S e O maiores e em negrito, com o N e o triângulo do norte em vermelho; NE, SE, SO e NO menores; números a cada 30° maiores, sem o "°". O rumo ("L 86°") fica grande e centralizado acima da seta fixa. Vale no app e no painel web.
 
