@@ -70,7 +70,7 @@ sh scripts/preparar-rotas.sh
 docker compose up -d
 ```
 
-O script baixa as ruas do Brasil do OpenStreetMap (~1,8 GB, pela Geofabrik) e processa com o perfil de carro: 30 a 60 minutos, ~10 GB de disco. O contêiner `osrm` usa alguns GB de memória e só a API fala com ele, por rede interna. Para atualizar as ruas, rode o script de novo: o serviço no ar segue com os dados antigos até o fim do processamento. Trecho que não encaixa (estacionamento, rua nova, sinal ruim) aparece como o traço do GPS.
+O script baixa as ruas do Brasil do OpenStreetMap (~1,8 GB, pela Geofabrik) e processa com o perfil de carro: 30 a 60 minutos. Com o Brasil inteiro, o contêiner `osrm` ocupa cerca de 9 GB de memória e 13 GB de disco; para gastar menos, use só a sua região (`OSRM_PBF_URL` com um recorte da Geofabrik, como `south-america/brazil/<região>-latest.osm.pbf`) ou acrescente `--mmap` ao comando do `osrm` no compose, que lê o mapa do disco sob demanda. Só a API fala com ele, por rede interna. Sem o OSRM, o painel desenha o traço do GPS e nada mais muda. Para atualizar as ruas, rode o script de novo: o serviço no ar segue com os dados antigos até o fim do processamento. Trecho que não encaixa (estacionamento, rua nova, sinal ruim) aparece como o traço do GPS.
 
 ## Conta
 

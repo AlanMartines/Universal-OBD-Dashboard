@@ -1,5 +1,21 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "other",
+    "title": "Documentação",
+    "items": [
+     {
+      "title": "Encaixe do percurso nas ruas (OSRM) segue opcional e o README do servidor mostra o custo real",
+      "text": "com o mapa do Brasil, cerca de 9 GB de memória e 13 GB de disco, e como reduzir (recorte regional ou --mmap). É só desenho: sem ele, o painel mostra o traço do GPS e nada mais muda."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.70",
   "date": "2026-11-22",
   "sections": [
