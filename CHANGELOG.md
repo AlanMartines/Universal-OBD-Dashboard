@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.68] - 2026-11-22
+
 ### Alterado
 - **Cor de destaque de volta ao verde** no app e no painel (botões principais, abas, links e gráficos), a pedido. O resto do visual da v0.9.67 continua: fontes, navegação, fundo, ícones e telas vazias. Os mostradores mantêm o azul próprio deles.
 
