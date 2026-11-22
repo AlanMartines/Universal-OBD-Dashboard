@@ -1,5 +1,21 @@
 [
  {
+  "version": "0.9.65",
+  "date": "2026-11-21",
+  "sections": [
+   {
+    "kind": "fixed",
+    "title": "Corrigido",
+    "items": [
+     {
+      "title": "Perfil do Uno: alerta \"Correção de mistura elevada\" sem disparo falso",
+      "text": "A central do Uno tira de 20 a 40 % de combustível na marcha lenta enquanto o motor esquenta, e às vezes logo depois de ligar com o motor quente (vapor do cânister), e o alerta disparava nessas partidas. Agora só vale com o motor quente (70 °C ou mais) e com o desvio por 2 min seguidos. Nas viagens reais de 16 a 21/11 deixou de disparar nas 4 partidas em que aparecia, sem perder uma falha de verdade, que não some em 2 min com o motor quente."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.64",
   "date": "2026-11-21",
   "sections": [

@@ -6,6 +6,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.65] - 2026-11-21
+
+### Corrigido
+- **Perfil do Uno: alerta "Correção de mistura elevada" sem disparo falso.** A central do Uno tira de 20 a 40 % de combustível na marcha lenta enquanto o motor esquenta, e às vezes logo depois de ligar com o motor quente (vapor do cânister), e o alerta disparava nessas partidas. Agora só vale com o motor quente (70 °C ou mais) e com o desvio por 2 min seguidos. Nas viagens reais de 16 a 21/11 deixou de disparar nas 4 partidas em que aparecia, sem perder uma falha de verdade, que não some em 2 min com o motor quente.
+
 ## [0.9.64] - 2026-11-21
 
 ### Adicionado
