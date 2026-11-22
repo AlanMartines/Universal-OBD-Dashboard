@@ -136,14 +136,19 @@
 .cluster[data-look="minimal"] {
   column-gap: 3cqmin; row-gap: 1.6cqmin; padding: 2cqmin 3cqmin 1.6cqmin;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  grid-template-areas: "rpm rpm rpm" "left center right" "foot foot foot";
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas: "rpm rpm rpm" "lights lights lights" "left center right" "foot foot foot";
 }
+/* Luzes de aviso do Minimal no alto, centralizadas logo abaixo do conta-giros, como no painel do carro. A linha
+   guarda a altura de um ícone mesmo sem nenhum aceso, para nada pular quando um acende. O alerta em faixa desce
+   para não cobrir os ícones. */
+.cl-lights-top { grid-area: lights; justify-content: center; flex-wrap: wrap; min-height: clamp(16px, 5cqmin, 32px); }
+.cluster[data-look="minimal"] .cl-alert { top: 26cqh; }
 @container dash (orientation: portrait) {
   .cluster[data-look="minimal"] {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
-    grid-template-areas: "rpm rpm" "center center" "left right" "foot foot";
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "rpm rpm" "lights lights" "center center" "left right" "foot foot";
     row-gap: 3cqmin;
   }
   /* Retrato: campos maiores e distribuídos na altura que sobra (antes ficava um vão embaixo) */

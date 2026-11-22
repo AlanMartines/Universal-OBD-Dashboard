@@ -330,6 +330,7 @@ window.Dash = (function () {
         <div class="cl-rpm" data-ui="rpm"><div class="cl-rpm-bar"><svg data-ui="rpmSvg" viewBox="0 0 1000 48" preserveAspectRatio="none" role="img" aria-label="Conta-giros"></svg>
           <div class="cl-rpm-scale" data-ui="rpmScale" aria-hidden="true"></div></div>
           <div class="cl-rpm-num"><span data-ui="rpmNum">--</span><small>RPM</small></div></div>
+        <div class="cl-lights cl-lights-top" data-ui="lights" aria-label="Luzes de aviso"></div>
         <div class="cl-side cl-left">${fields(3)}</div>
         <div class="cl-center">
           <div class="cl-gear" data-ui="gear"><b data-ui="gearNum">–</b><small data-ui="gearSub">câmbio</small></div>
@@ -338,7 +339,7 @@ window.Dash = (function () {
           <div class="cl-eco"><span class="in-trip">Viagem <b data-ui="tripKm">--</b><em>km</em></span>${ecoLeaf()}<span class="in-trip">Tempo <b data-ui="tripTime">--</b></span></div>
         </div>
         <div class="cl-side cl-right">${fields(3)}</div>
-        ${foot({ lights: true })}`;
+        ${foot({})}`;
     },
     build() {
       const d = dashCfg();
