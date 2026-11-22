@@ -62,29 +62,28 @@
 }
 
 /* ---------------------------------------------------------------- Cor da marca
-   O mesmo azul dos mostradores e do app (assets/web/dash.css e style.css): no claro um azul fechado, que dá
-   contraste com texto branco; no escuro o azul-ciano vivo, com texto escuro por cima. O verde fica para
-   "deu certo" (success do Bootstrap). Séries dos gráficos: azul e laranja, o par que se distingue também
-   com daltonismo. */
+   O mesmo verde do app (assets/web/style.css): no claro um verde mais fechado, que dá contraste com
+   texto branco; no escuro o verde vivo do app, com texto escuro por cima. Substitui o azul do Bootstrap.
+   (Na v0.9.67 virou o azul dos mostradores; voltou ao verde a pedido do Alan em 22/11/2026.) */
 :root,
 [data-bs-theme="light"] {
-  --app-brand: #0072ad;
-  /* séries dos gráficos: azul da marca e laranja (contraste com o cartão claro acima de 3:1) */
-  --app-series-1: #0072ad;
-  --app-series-2: #c25e00;
-  --app-brand-rgb: 0, 114, 173;
-  --app-brand-hover: #005f91;
-  --app-brand-active: #004f79;
+  --app-brand: #128a49;
+  /* séries dos gráficos (validadas: faixa de luminosidade, daltonismo e contraste com o cartão) */
+  --app-series-1: #128a49;
+  --app-series-2: #2a78d6;
+  --app-brand-rgb: 18, 138, 73;
+  --app-brand-hover: #0f7a40;
+  --app-brand-active: #0c6a37;
   --app-on-brand: #fff;
   --bs-primary: var(--app-brand);
   --bs-primary-rgb: var(--app-brand-rgb);
-  --bs-primary-text-emphasis: #004a70;
-  --bs-primary-bg-subtle: #dbeef8;
-  --bs-primary-border-subtle: #9fd0ea;
+  --bs-primary-text-emphasis: #0b5530;
+  --bs-primary-bg-subtle: #dcf2e5;
+  --bs-primary-border-subtle: #a6dbbd;
   --bs-link-color: var(--app-brand);
   --bs-link-color-rgb: var(--app-brand-rgb);
   --bs-link-hover-color: var(--app-brand-active);
-  --bs-link-hover-color-rgb: 0, 79, 121;
+  --bs-link-hover-color-rgb: 12, 106, 55;
   --bs-focus-ring-color: rgba(var(--app-brand-rgb), 0.3);
   --app-card-bg: #fff;
   /* Fundo claro liso, um tom abaixo do cartão, para os cartões se destacarem sem textura */
@@ -106,22 +105,22 @@
   --bs-secondary-bg-rgb: 20, 27, 35;
   --bs-border-color: rgb(255 255 255 / 9%);
   --app-card-bg: #141b23;
-  --app-brand: #6fd3ff;
-  --app-series-1: #4fb8ea;
-  --app-series-2: #f0a030;
-  --app-brand-rgb: 111, 211, 255;
-  --app-brand-hover: #8fdcff;
-  --app-brand-active: #4fc4f5;
-  --app-on-brand: #04202d;
+  --app-brand: #3ddc84;
+  --app-series-1: #25ad63;
+  --app-series-2: #3987e5;
+  --app-brand-rgb: 61, 220, 132;
+  --app-brand-hover: #5be49a;
+  --app-brand-active: #2fc372;
+  --app-on-brand: #062b16;
   --bs-primary: var(--app-brand);
   --bs-primary-rgb: var(--app-brand-rgb);
-  --bs-primary-text-emphasis: #b5e8ff;
-  --bs-primary-bg-subtle: #0b2734;
-  --bs-primary-border-subtle: #1d5470;
+  --bs-primary-text-emphasis: #8debb6;
+  --bs-primary-bg-subtle: #0e2a1b;
+  --bs-primary-border-subtle: #1c5a37;
   --bs-link-color: var(--app-brand);
   --bs-link-color-rgb: var(--app-brand-rgb);
   --bs-link-hover-color: var(--app-brand-hover);
-  --bs-link-hover-color-rgb: 143, 220, 255;
+  --bs-link-hover-color-rgb: 91, 228, 154;
   --bs-focus-ring-color: rgba(var(--app-brand-rgb), 0.3);
 }
 

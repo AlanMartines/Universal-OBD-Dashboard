@@ -4,6 +4,16 @@
   "date": null,
   "sections": [
    {
+    "kind": "changed",
+    "title": "Alterado",
+    "items": [
+     {
+      "title": "Cor de destaque de volta ao verde",
+      "text": "no app e no painel (botões principais, abas, links e gráficos), a pedido. O resto do visual da v0.9.67 continua: fontes, navegação, fundo, ícones e telas vazias. Os mostradores mantêm o azul próprio deles."
+     }
+    ]
+   },
+   {
     "kind": "fixed",
     "title": "Corrigido",
     "items": [

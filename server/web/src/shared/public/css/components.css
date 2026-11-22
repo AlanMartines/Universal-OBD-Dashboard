@@ -354,7 +354,7 @@
   .auth-hero li { display: flex; gap: 0.75rem; align-items: center; }
   .auth-hero li i {
     display: inline-flex; flex: none; align-items: center; justify-content: center; width: 2rem; height: 2rem;
-    color: #6fd3ff; background: rgba(111, 211, 255, 0.12); border-radius: 50%;
+    color: #3ddc84; background: rgba(61, 220, 132, 0.12); border-radius: 50%;
   }
   .auth-hero + .auth-card .auth-brand { display: none; }
 }
@@ -400,7 +400,7 @@
   border-color: var(--app-brand);
 }
 .form-switch .form-check-input:focus:not(:checked) {
-  --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%28111, 211, 255, 0.6%29'/%3e%3c/svg%3e");
+  --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%2861, 220, 132, 0.6%29'/%3e%3c/svg%3e");
 }
 .pagination {
   --bs-pagination-active-bg: var(--app-brand);

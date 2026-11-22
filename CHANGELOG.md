@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Cor de destaque de volta ao verde** no app e no painel (botões principais, abas, links e gráficos), a pedido. O resto do visual da v0.9.67 continua: fontes, navegação, fundo, ícones e telas vazias. Os mostradores mantêm o azul próprio deles.
+
 ### Corrigido
 - **Painel, placa 3D:** a página da versão principal (TJA1050) mostrava "o navegador precisa de WebGL" desde a v0.9.67. O modo PCB novo usava um nome que já existia no visor e entrava sem os dados da PCB. As três páginas (TJA1050, SN65HVD230 e PCB) voltaram a abrir.
 
