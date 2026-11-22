@@ -1,5 +1,21 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "fixed",
+    "title": "Corrigido",
+    "items": [
+     {
+      "title": "Painel, placa 3D",
+      "text": "a página da versão principal (TJA1050) mostrava \"o navegador precisa de WebGL\" desde a v0.9.67. O modo PCB novo usava um nome que já existia no visor e entrava sem os dados da PCB. As três páginas (TJA1050, SN65HVD230 e PCB) voltaram a abrir."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.67",
   "date": "2026-11-21",
   "sections": [

@@ -9,11 +9,11 @@ const canvas = document.getElementById('cena');
 const aviso = document.getElementById('aviso');
 const dica = document.getElementById('dica3d');
 
-// Modo PCB (/projeto/placa?placa=pcb): a placa perfurada dá lugar à PCB de duas faces (versão 2, para fábrica). As
+// Modo PCB (/projeto/placa?placa=pcb; MODO_PCB, porque PCB já é o nome das cores das plaquinhas dos módulos): a placa perfurada dá lugar à PCB de duas faces (versão 2, para fábrica). As
 // trilhas viram cobre sob a máscara verde; somem os fios estanhados, os fios isolados de baixo e os jumpers J1 a J3;
 // R4 e TP3 vão para os lugares da PCB (dados de gerar_pcb.py, exportados por gerar_3d.py em 'pcb').
-const PCB = !!(X && X.pcb && canvas && canvas.dataset.placa === 'pcb');
-if (PCB) {
+const MODO_PCB = !!(X && X.pcb && canvas && canvas.dataset.placa === 'pcb');
+if (MODO_PCB) {
   const mesmo = (p, q) => Math.abs(p[0] - q[0]) < 0.01 && Math.abs(p[1] - q[1]) < 0.01;
   const mover = (de, para) => { X.solda = X.solda.filter((p) => !de.some((q) => mesmo(p, q))).concat(para); };
   const r4 = X.resistores.find((r) => r.n.startsWith('R4 '));
@@ -331,7 +331,7 @@ function iniciar() {
 
   // placa perfurada (no modo PCB, a placa de fábrica logo abaixo)
   const trilhasPcb = [];
-  if (!PCB) {
+  if (!MODO_PCB) {
     const g = new THREE.Group();
     const placa = new THREE.Mesh(new THREE.BoxGeometry(D.W, A.T, D.H), M.placa);
     placa.position.y = A.T / 2;
