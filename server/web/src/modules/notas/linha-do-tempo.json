@@ -4,6 +4,16 @@
   "date": null,
   "sections": [
    {
+    "kind": "fixed",
+    "title": "Corrigido",
+    "items": [
+     {
+      "title": "Dinâmica, celular em pé",
+      "text": "a bola da Força G saía cortada embaixo do cartão; agora fica ao lado dos valores, do tamanho da altura que sobra. O rumo (\"L 87°\") voltou a ficar centralizado acima da bússola, que uma regra antiga do retrato deslocava para a direita."
+     }
+    ]
+   },
+   {
     "kind": "other",
     "title": "Documentação",
     "items": [

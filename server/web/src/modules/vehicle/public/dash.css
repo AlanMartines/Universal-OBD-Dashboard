@@ -652,13 +652,13 @@
     grid-template-areas: "gear status" "dial dial" "incl amb" "g turn" "btnl btnr";
   }
   .dyn-gear { justify-content: flex-start; }
-  .dyn-head { right: 0; transform: none; }
   .dyn-card { justify-content: flex-start; }
   .dyn-v { font-size: clamp(14px, 6.4cqw, 34px); }
   .dyn-k { min-width: 0; font-size: clamp(9px, 2.8cqw, 15px); }
   .dyn-row { flex-wrap: wrap; column-gap: .5em; row-gap: .1em; }
-  .dyn-gbox { flex-direction: column; align-items: stretch; }
-  .dyn-ball { width: clamp(48px, 20cqw, 110px); align-self: center; }
+  /* Força G: valores à esquerda e a bola à direita, do tamanho da altura que sobra no cartão (empilhados, a bola era cortada) */
+  .dyn-g .dyn-gbox { flex: 1; min-height: 0; align-items: center; }
+  .dyn-ball { height: 100%; width: auto; aspect-ratio: 1 / 1; max-width: 48%; max-height: clamp(56px, 30cqw, 160px); }
   .dyn-msg { bottom: auto; top: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .dyn-hz, .dyn-roll-ptr, .dyn-compass, .dyn-upright { transition: none; } }
