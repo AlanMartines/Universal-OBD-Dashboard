@@ -18,7 +18,8 @@ function renderReadiness() {
     row.className = 'ready-item';
     row.dataset.ok = String(!!it.ok);
     const mark = document.createElement('span');
-    mark.textContent = it.ok ? '✅' : '⚠️';
+    mark.className = 'st st-' + (it.ok ? 'ok' : 'warn');
+    mark.setAttribute('aria-hidden', 'true');
     const label = document.createElement('span');
     label.textContent = it.label;
     row.append(mark, label);

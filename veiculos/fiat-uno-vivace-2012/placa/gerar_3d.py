@@ -671,6 +671,24 @@ DET = {
     'fios_baixo': [{'n': f'{name}: {desc}', 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts, desc in g.BOTTOM_WIRES],
 }
 
+# ---------------------------------------------------------------- PCB de duas faces (gerar_pcb.py), só na versão SN65HVD230
+# O visor troca a placa perfurada por ela: trilhas e ilhas da PCB, R4 e TP3 nos lugares dela, sem fios estanhados.
+if g.VARIANTE == 'sn65':
+    import gerar_pcb as pcb  # noqa: E402  (mesmas posições: lê o gerar_placa.py já carregado nesta versão)
+    pcb.check()
+
+    def _pcb_tracks(tracks):
+        return [{'n': net, 'w': w, 'cor': pcb.NET_COL.get(net, '#e0e0e0'), 'pts': [rr(xy(c, r)) for c, r in pts]} for net, w, pts in tracks]
+
+    DET['pcb'] = {
+        'cima': _pcb_tracks(pcb.TOP),
+        'baixo': _pcb_tracks(pcb.BOTTOM),
+        'vias': [rr(xy(c, r)) for c, r, _ in pcb.VIAS],
+        'ilhas': [{'p': rr(xy(c, r)), 'd': d, 'q': sq, 'gnd': net == 'GND'} for _, c, r, net, d, sq in pcb.pads],
+        'r4': [rr(xy(*pcb.R4[0])), rr(xy(*pcb.R4[1]))],
+        'tp': {nome: rr(xy(*cr)) for nome, cr in pcb.TP_AT.items()},
+    }
+
 # ---------------------------------------------------------------- Caixa de proteção (caixa.py)
 # A mesma caixa serve às duas versões da placa; as posições de referência vêm deste modelo.
 CAIXA_REF = {

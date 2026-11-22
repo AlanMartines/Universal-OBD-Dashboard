@@ -21,7 +21,7 @@ async function loadHistory() {
   if (seq !== historySeq) return; // outra atualização começou depois desta
   const trips = parse(tripsJson, []);
   const box = $('trips');
-  box.innerHTML = trips.length ? '' : '<p class="muted small">Nenhuma viagem gravada.</p>';
+  box.innerHTML = html`${trips.length ? '' : emptyState('route', 'Nenhuma viagem ainda', 'Cada captura vira uma viagem aqui, com distância, consumo e percurso. Toque em Iniciar ou ligue o carro com o gatilho do Bluetooth.')}`;
   trips.forEach((t) => {
     const mins = t.endTime ? Math.round((t.endTime - t.startTime) / 60000) : null;
     const el = document.createElement('div');
@@ -33,7 +33,7 @@ async function loadHistory() {
       <div class="actions"><button class="btn btn-small" data-summary="${t.id}">Resumo</button>
       <button class="btn btn-small" data-export="csv" data-trip="${t.id}">CSV</button>
       <button class="btn btn-small" data-export="gpx" data-trip="${t.id}">GPX</button>
-      <button class="btn btn-small btn-danger" data-delete-trip="${t.id}">Apagar</button></div>`;
+      <button class="btn btn-small btn-danger-outline" data-delete-trip="${t.id}">Apagar</button></div>`;
     if (aiReady() && t.distanceKm >= 0.5) {
       const b = document.createElement('button');
       b.className = 'btn btn-small';
@@ -46,7 +46,7 @@ async function loadHistory() {
 
   const dtcs = parse(dtcsJson, []);
   const dbox = $('dtc-history');
-  dbox.innerHTML = dtcs.length ? '' : '<p class="muted small">Nenhuma falha registrada.</p>';
+  dbox.innerHTML = html`${dtcs.length ? '' : emptyState('check', 'Nenhuma falha registrada', 'Os códigos que a central informar durante as capturas ficam guardados aqui, com data e hora.')}`;
   dtcs.forEach((d) => {
     const el = document.createElement('div');
     el.className = 'item';

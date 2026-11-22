@@ -67,13 +67,13 @@ function consoleFormat(raw) {
 function consoleRenderHistory() {
   const box = $('console-history');
   const files = parse(bridge.getDiagnostics(), { files: [] }).files.filter((f) => f.name.includes('_console-'));
-  box.innerHTML = files.length ? '' : '<p class="muted small">Nenhuma escuta gravada.</p>';
+  box.innerHTML = html`${files.length ? '' : emptyState('file', 'Nenhuma escuta gravada', 'As gravações da escuta CAN aparecem aqui para exportar.')}`;
   files.forEach((f) => {
     const el = document.createElement('div');
     el.className = 'item';
     el.innerHTML = html`<b></b><div class="kv"><span>${mb(f.size)}</span><span>${dt(f.modified)}</span>${f.active ? html`<span class="rec">● gravando</span>` : ''}</div>
       <div class="actions"><button class="btn btn-small" data-c-view>Ver</button><button class="btn btn-small" data-diag-export>Exportar .gz</button>${
-      f.active ? '' : html`<button class="btn btn-small btn-danger" data-diag-delete>Apagar</button>`}</div>`;
+      f.active ? '' : html`<button class="btn btn-small btn-danger-outline" data-diag-delete>Apagar</button>`}</div>`;
     el.querySelector('b').textContent = f.name;
     el.querySelectorAll('button').forEach((b) => { b.dataset.name = f.name; });
     box.appendChild(el);

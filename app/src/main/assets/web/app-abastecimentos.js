@@ -33,12 +33,14 @@ async function loadFuel() {
   const data = parse(json, { items: [], summary: {}, intervals: [] });
   const s = data.summary || {};
   const last = data.intervals[0];
-  $('fu-kml').textContent = s.avgKmPerL != null ? fmt(s.avgKmPerL, 1) + ' km/l' : '--';
-  $('fu-kml-note').textContent = last ? `último: ${fmt(last.kmPerL, 1)} km/l` : 'entre tanques cheios';
-  $('fu-rkm').textContent = s.costPerKm != null ? brl(s.costPerKm) : '--';
+  // Valor que ainda não dá para calcular: frase curta do que falta, no lugar de "--"
+  const tile = (id, v, missing) => { const b = $(id); b.textContent = v != null ? v : missing; b.classList.toggle('missing', v == null); };
+  tile('fu-kml', s.avgKmPerL != null ? fmt(s.avgKmPerL, 1) + ' km/l' : null, 'falta 2º tanque cheio');
+  $('fu-kml-note').textContent = last ? `último: ${fmt(last.kmPerL, 1)} km/l` : s.avgKmPerL != null ? 'entre tanques cheios' : '';
+  tile('fu-rkm', s.costPerKm != null ? brl(s.costPerKm) : null, 'com o preço pago');
   const months = Object.entries(s.costByMonth || {});
   const cur = months.length ? months[months.length - 1] : null;
-  $('fu-month').textContent = cur ? brl(cur[1]) : '--';
+  tile('fu-month', cur ? brl(cur[1]) : null, 'nenhum este mês');
   $('fu-month-note').textContent = cur ? cur[0].split('-').reverse().join('/') : '';
   $('fu-rkm-note').textContent = s.totalCost ? `${brl(s.totalCost)} no total` : '';
   $('fu-breakeven').textContent = s.ethanolBreakEven != null
@@ -66,7 +68,7 @@ async function loadFuel() {
 
   fuItems = Object.fromEntries(data.items.map((f) => [String(f.id), f]));
   const lb = $('fu-list');
-  lb.innerHTML = data.items.length ? '' : '<p class="muted small">Nenhum abastecimento registrado.</p>';
+  lb.innerHTML = html`${data.items.length ? '' : emptyState('fuel', 'Nenhum abastecimento ainda', 'Registre cada abastecimento no formulário. Com dois tanques cheios, o app calcula o consumo real e o custo por km.')}`;
   data.items.forEach((f) => {
     const el = document.createElement('div');
     el.className = 'item';
@@ -74,7 +76,7 @@ async function loadFuel() {
       <div class="kv"><span>${f.odometerKm != null ? fmt(f.odometerKm, 0) + ' km' : 'sem hodômetro'}</span><span>${brl(f.pricePerLiter, 3)}/L</span>
       <span>${FUEL_NAMES[f.fuelType] || f.fuelType}${f.ethanolPct != null ? ' ' + fmt(f.ethanolPct, 0) + '% etanol' : ''}</span><span>${f.station || ''}</span></div>
       <div class="actions"><button class="btn btn-small" data-fu-edit="${f.id}">Editar</button>
-      <button class="btn btn-small btn-danger" data-fu-delete="${f.id}">Apagar</button></div>`;
+      <button class="btn btn-small btn-danger-outline" data-fu-delete="${f.id}">Apagar</button></div>`;
     lb.appendChild(el);
   });
   refreshFuelWhen();

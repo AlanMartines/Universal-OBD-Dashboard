@@ -147,7 +147,6 @@
     row-gap: 3cqmin;
   }
   /* Retrato: campos maiores e distribuídos na altura que sobra (antes ficava um vão embaixo) */
-  .cluster[data-look="minimal"] .cl-side { justify-content: space-evenly; }
   .cluster[data-look="minimal"] .cl-field-value { font-size: clamp(20px, 9cqw, 60px); }
   .cluster[data-look="minimal"] .cl-field-label { font-size: clamp(10px, 3cqw, 18px); }
   .cluster[data-look="minimal"] .cl-field-note { font-size: clamp(10px, 2.8cqw, 16px); }
@@ -186,6 +185,7 @@
   .cl-speed b { font-size: clamp(48px, 34cqw, 260px); }
 }
 .cl-side { min-width: 0; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 2.6cqmin; }
+.cluster[data-look="minimal"] .cl-side { justify-content: space-evenly; }
 .cl-left { grid-area: left; }
 .cl-right { grid-area: right; }
 .cl-right .cl-field { text-align: right; }
@@ -241,7 +241,7 @@
 .cap-outline { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .cap-outline path { fill: var(--c-bg); stroke: var(--c-line); stroke-width: 2; }
 .cap-box > :not(.cap-outline) { position: relative; }
-.cap-lights { justify-content: center; padding-bottom: 1.6cqmin; border-bottom: 1px solid var(--c-line); }
+.cap-lights { justify-content: center; flex-wrap: wrap; gap: 1.2cqmin 2cqmin; padding: 0 4.5cqmin 1.6cqmin; border-bottom: 1px solid var(--c-line); }
 .cap-bars { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 2cqmin; }
 .cap-sep { width: 1px; align-self: stretch; background: var(--c-line); }
 .cap-cells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.8cqmin 0; }
@@ -249,7 +249,7 @@
 .cap-cells .cl-field:nth-child(3n + 1) { border-left: 0; }
 .cap-cells .cl-field-value { font-size: clamp(15px, 5.6cqmin, 40px); }
 .cap-cells .cl-fbar, .cap-cells .cl-fbar-ends { align-self: stretch; }
-.cap-trip { display: flex; justify-content: space-between; gap: 2cqmin; font-size: clamp(10px, 2.8cqmin, 18px); color: var(--c-muted); text-transform: uppercase; letter-spacing: .08em; padding-top: 1.4cqmin; border-top: 1px solid var(--c-line); }
+.cap-trip { display: flex; justify-content: space-between; gap: 2cqmin; font-size: clamp(10px, 2.8cqmin, 18px); color: var(--c-muted); text-transform: uppercase; letter-spacing: .06em; padding: 1.4cqmin 4.5cqmin 0; white-space: nowrap; border-top: 1px solid var(--c-line); }
 .cap-trip b { color: var(--c-text); font-family: var(--f-num); margin-left: .3em; }
 .cluster[data-look="capsule"] .cl-light:not([data-on]) { opacity: .45; }
 @container dash (orientation: portrait) { .cap-box { padding: 4cqmin 6cqmin; } }

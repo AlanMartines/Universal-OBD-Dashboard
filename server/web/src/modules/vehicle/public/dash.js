@@ -74,6 +74,10 @@ window.Dash = (function () {
     engine: '<path d="M2.5 11v5M2.5 13.5h2.5M5 9.5h3V7.5h5v2h2.5l2 2H20V10h1.5v7H20v-2h-1.5l-3 3H8l-3-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>',
     // Folha aberta do indicador de economia (desenho próprio do projeto); preenchida com a cor do estado
     leaf: '<path d="M17.4 2C20.2 4.8 20.6 10.4 16.6 13.3C14.3 15 10.7 15.2 7.8 16.2C5.4 17 3.5 19.4 2.4 22.6C2.7 18.6 4.6 15.8 7.9 14.4C10.9 13.3 14 13.5 15.9 11.8C18.2 9.7 18.4 5.9 16.6 3.1Z"/><path d="M17.4 2C13.6 3.3 10 3.4 7.6 5.5C6.1 6.8 4.9 8.6 4.4 10.6C5.5 9 7 7.8 8.7 7C11.4 5.7 14.5 5.4 16.6 3.1Z"/><path d="M15.2 7.4C14 10 11.7 10.9 9.3 12C6.9 13.1 5 14.9 3.8 17.6C5.5 15.9 7.4 14.8 9.8 13.9C12.6 12.8 14.8 10.6 15.2 7.4Z"/>',
+    beam: '<path d="M11.5 5.5C7.4 5.5 4.5 8.4 4.5 12s2.9 6.5 7 6.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.5 7.5l6 1.6M14.5 11.2l6 1.6M14.5 14.9l6 1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    ac: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.6 4.6 12 7l2.4-2.4M9.6 19.4 12 17l2.4 2.4M4.4 11l3.3.9-.9 3.3M19.6 13l-3.3-.9.9-3.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+    defog: '<path d="M3.5 9.5h17l-2 9h-13z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 7.5c-1-1 1-2 0-3M12 7.5c-1-1 1-2 0-3M15.5 7.5c-1-1 1-2 0-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+    alert: '<path d="M12 3.5 21.5 20h-19z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4.5M12 17.3v.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
     fuel: '<path d="M4.5 20V5.5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1V20M3 20h12M7 8.5h4M13.5 10.5h2a1 1 0 0 1 1 1v5a1.5 1.5 0 0 0 3 0V9l-3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>',
   };
   const icon = (id) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[id]}</svg>`;
@@ -83,6 +87,9 @@ window.Dash = (function () {
   const LIGHTS = [
     ['link', 'OBD desconectado'], ['engine', 'Injeção (MIL)'], ['temp', 'Temperatura do motor'],
     ['battery', 'Carga da bateria'], ['fuel', 'Reserva'], ['fan', 'Eletroventilador ligado'],
+    // Da escuta CAN (somem sem ela) e o alerta ativo mais grave do app
+    ['beam', 'Farol ou lanterna acesos'], ['ac', 'Ar-condicionado ligado'], ['defog', 'Desembaçador traseiro ligado'],
+    ['alert', 'Alerta ativo'],
   ];
 
   /* ================================================================ Estado */
@@ -111,6 +118,7 @@ window.Dash = (function () {
     rpm: 'rpm', speed: 'speed', coolant: 'coolant_temp', voltage: 'battery_volts', throttle: 'throttle', map: 'map',
     intake: 'intake_temp', engineLoad: 'engine_load', timing: 'timing_advance', stft: 'stft_b1', ltft: 'ltft_b1',
     lambda: 'lambda_b1s1_v', milOn: 'mil_on', dtcCount: 'dtc_count', cabinTemp: 'cabin_temp', cabinPressure: 'cabin_pressure', carTrip: 'trip_km',
+    lights: 'can_lights', ac: 'can_ac', defog: 'can_defog',
   }, meta.roles || {});
   const reading = (key) => {
     const id = roles()[key];
@@ -195,8 +203,16 @@ window.Dash = (function () {
       bar: () => { const t = trimTotal(); return t == null ? null : { zero: clamp(t / 25, -1, 1), ends: ['−25%', '+25%'] }; },
     },
     dist: { label: 'Distância', value: (s) => [num(s.tripDistanceKm, 1), 'km'] },
+    cost: {
+      label: 'Custo', value: (s, d) => [d.tripCost == null ? '--' : num(d.tripCost, 2), 'R$'],
+      note: (s, d) => (d.tripCost == null ? 'sem preço do combustível' : s.tripDistanceKm > 0.5 ? 'R$ ' + num(d.tripCost / s.tripDistanceKm, 2) + ' por km' : 'estimado'),
+    },
+    vavg: {
+      label: 'Vel. média', value: (s) => { const h = tripHours(s); return [h && s.tripDistanceKm != null ? num(s.tripDistanceKm / h) : '--', 'km/h']; },
+      note: () => 'desde o início',
+    },
     time: { label: 'Tempo', value: (s) => [elapsed(s), 'h'] },
-    used: { label: 'Combustível', value: (s, d) => [num(d.tripFuelUsedL, 2), 'L'], note: (s, d) => (d.tripCost != null ? 'custo estimado R$ ' + num(d.tripCost, 2) : 'usado na viagem') },
+    used: { label: 'Combustível', value: (s, d) => [num(d.tripFuelUsedL, 2), 'L'], note: () => 'usado na viagem' },
     tank: {
       label: 'Tanque', value: (s, d) => [num(d.fuelRemainingL, 1), 'L'], state: (s, d) => reserve(d) ? 'warn' : null,
       note: (s, d) => reserve(d) ? 'reserva' : meta.fuel ? 'de ' + num(meta.fuel.tankCapacityL) + ' L' : '',
@@ -240,7 +256,7 @@ window.Dash = (function () {
   const LAYOUT = {
     road: ['kml', 'avg', 'range', 'coolant', 'iat', 'volts'],
     engine: ['tps', 'map', 'load', 'timing', 'lambda', 'trim'],
-    trip: ['dist', 'time', 'used', 'avg', 'tank', 'gps'],
+    trip: ['cost', 'vavg', 'used', 'avg', 'tank', 'gps'],
     motion: ['accel', 'lateral', 'slope', 'impact', 'bumps', 'gmax'],
   };
   const pageShown = () => true;
@@ -266,6 +282,13 @@ window.Dash = (function () {
   /** Hora do quadro: a da gravação quando o painel reproduz uma viagem (state.now), senão a do relógio. */
   const nowOf = (s) => (s && typeof s.now === 'number' ? s.now : Date.now());
   /** Duração da viagem; sem captura em andamento não há relógio correndo (antes seguia contando). */
+  /** Horas desde o início da viagem (mínimo de 1 min, para a média não explodir na largada). */
+  function tripHours(s) {
+    if (!s.tripStartedAt || !s.running) return null;
+    const ms = nowOf(s) - s.tripStartedAt;
+    return ms >= 60000 ? ms / 3600000 : null;
+  }
+
   function elapsed(s) {
     if (!s.tripStartedAt || !s.running) return '--';
     const m = Math.max(0, Math.floor((nowOf(s) - s.tripStartedAt) / 60000));
@@ -521,7 +544,7 @@ window.Dash = (function () {
   const pathOf = (pts, close) => 'M ' + pts.map((a) => a[0].toFixed(1) + ' ' + a[1].toFixed(1)).join(' L ') + (close ? ' Z' : '');
 
   const hud = {
-    lightSlot: (id) => (['engine', 'battery', 'temp'].includes(id) ? 'lightsL' : 'lightsR'),
+    lightSlot: (id) => (['engine', 'battery', 'temp', 'alert'].includes(id) ? 'lightsL' : 'lightsR'),
     markup() {
       return `
         <div class="hud-stage" data-ui="stage">
@@ -1511,6 +1534,13 @@ window.Dash = (function () {
     setLight('battery', voltNote()[0] === 'bad' ? 'bad' : null);
     setLight('fuel', reserve(d) ? 'warn' : null);
     setLight('fan', cool != null && t && cool >= t.fanStage1C ? 'info' : null);
+    // Farol, ar e desembaçador vêm da escuta CAN: sem a leitura, o ícone some em todos os temas
+    const can = (key, on) => { const v = reading(key); setLight(key === 'lights' ? 'beam' : key, v != null && v >= 1 ? on : null, false, v == null); };
+    can('lights', 'ok');
+    can('ac', 'info');
+    can('defog', 'info');
+    const top = (s.alerts || []).find((a) => a.level !== 'INFO');
+    setLight('alert', top ? (top.level === 'CRITICAL' ? 'bad' : 'warn') : null);
 
     // Alerta mais grave, por cima de qualquer tela
     ui.alert.hidden = !c.alert;
@@ -1545,10 +1575,10 @@ window.Dash = (function () {
     }
   }
 
-  function setLight(id, on, blink) {
+  function setLight(id, on, blink, absent) {
     const l = ui['light_' + id];
     if (!l) return;
-    l.hidden = !on && !theme.dimLights;
+    l.hidden = !!absent || (!on && !theme.dimLights);
     if (on) l.dataset.on = on; else delete l.dataset.on;
     if (blink) l.dataset.blink = ''; else delete l.dataset.blink;
   }

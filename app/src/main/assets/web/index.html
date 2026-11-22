@@ -23,16 +23,6 @@
     <button id="toggle" class="btn btn-primary">Iniciar</button>
   </header>
 
-  <nav class="tabs" role="tablist">
-    <button class="tab active" data-tab="dash">Painel</button>
-    <button class="tab" data-tab="panel">Detalhes</button>
-    <button class="tab" data-tab="sensors">Sensores</button>
-    <button class="tab" data-tab="fuel">Abastecimentos</button>
-    <button class="tab" data-tab="maint">Manutenção</button>
-    <button class="tab" data-tab="history">Histórico</button>
-    <button class="tab" data-tab="faults">Falhas</button>
-    <button class="tab" data-tab="settings">Ajustes</button>
-  </nav>
 
   <main>
     <div id="notices">
@@ -143,9 +133,9 @@
     <!-- ===================== ABASTECIMENTOS ===================== -->
     <section id="tab-fuel" class="tab-page split">
       <div class="tiles fuel-tiles span">
-        <div class="card tile"><span class="label">Consumo real</span><b id="fu-kml">--</b><small id="fu-kml-note">entre tanques cheios</small></div>
-        <div class="card tile"><span class="label">Custo por km</span><b id="fu-rkm">--</b><small id="fu-rkm-note">&nbsp;</small></div>
-        <div class="card tile"><span class="label">Gasto no mês</span><b id="fu-month">--</b><small id="fu-month-note">&nbsp;</small></div>
+        <div class="card tile"><span class="label">Consumo</span><b id="fu-kml">--</b><small id="fu-kml-note">entre tanques cheios</small></div>
+        <div class="card tile"><span class="label">Custo/km</span><b id="fu-rkm">--</b><small id="fu-rkm-note">&nbsp;</small></div>
+        <div class="card tile"><span class="label">No mês</span><b id="fu-month">--</b><small id="fu-month-note">&nbsp;</small></div>
       </div>
       <p id="fu-breakeven" class="muted small span"></p>
 
@@ -319,7 +309,7 @@
         <div class="history-actions">
           <button id="ask-ai" class="btn btn-small" hidden>Perguntar à IA</button>
           <button id="export-history" class="btn btn-small">Exportar todos</button>
-          <button id="clear-history" class="btn btn-small btn-danger">Apagar histórico</button>
+          <button id="clear-history" class="btn btn-small btn-danger-outline">Apagar histórico</button>
         </div>
       </div>
       <p id="history-result" class="small muted"></p>
@@ -352,6 +342,8 @@
 
     <!-- ===================== AJUSTES ===================== -->
     <section id="tab-settings" class="tab-page">
+      <!-- Índice: um botão por cartão visível (app-ajustes.js, buildSettingsIndex) -->
+      <nav id="settings-index" class="settings-index" aria-label="Seções dos Ajustes"></nav>
       <div class="card">
         <div class="row-between"><span class="label">Pronto para viajar</span><span id="ready-summary" class="pill"></span></div>
         <div id="readiness" class="readiness"></div>
@@ -406,7 +398,7 @@
         <div class="row">
           <button id="vehicle-save" class="btn">Salvar nome</button>
           <button id="vehicle-new" class="btn">Novo veículo</button>
-          <button id="vehicle-delete" class="btn btn-danger">Excluir</button>
+          <button id="vehicle-delete" class="btn btn-danger-outline">Excluir</button>
         </div>
         <div id="vehicle-new-form" hidden>
           <label>Nome do novo veículo
@@ -573,7 +565,7 @@
           Gravar tráfego OBD bruto, varredura da ECU, eventos e GPS (1×/s) para análise</label>
         <p class="muted small">Vale a partir da próxima captura. Cerca de 5–10 MB por hora; arquivos com mais de 30 dias são apagados. Exporte cada arquivo em .gz ou todos de uma vez em .zip.</p>
         <div id="diag-files" class="list"></div>
-        <div class="row" id="diag-clear-row" hidden><button id="diag-export-all" class="btn btn-small">Exportar tudo (.zip)</button><button id="diag-clear" class="btn btn-small btn-danger">Apagar todas as gravações</button></div>
+        <div class="row" id="diag-clear-row" hidden><button id="diag-export-all" class="btn btn-small">Exportar tudo (.zip)</button><button id="diag-clear" class="btn btn-small btn-danger-outline">Apagar todas as gravações</button></div>
         <div id="script-entry" hidden>
           <p class="muted small">Roteiro de captura: passos guiados por voz (portas, luzes, pedais, ventilação…) que marcam no arquivo de diagnóstico o instante exato de cada ação, para mapear a rede do carro. Só marca e lê: nada é enviado ao carro.</p>
           <button id="script-open" class="btn">Abrir roteiro de captura</button>
@@ -585,7 +577,7 @@
         <p class="muted small">Um arquivo .zip com viagens, telemetria, falhas, abastecimentos, respostas da IA, ajustes e perfis importados, para guardar ou levar para outro celular. Leva também a configuração da IA e o endereço do painel. Por segurança, ficam de fora a chave de API da IA e o pareamento com o painel: depois de restaurar, cole a chave e pareie de novo (no painel, Dispositivos → novo código). Arquivos de diagnóstico ficam de fora (exporte-os à parte).</p>
         <div class="row">
           <button id="backup-export" class="btn btn-primary">Gerar backup</button>
-          <button id="backup-restore" class="btn btn-danger">Restaurar backup…</button>
+          <button id="backup-restore" class="btn btn-danger-outline">Restaurar backup…</button>
         </div>
         <p id="backup-result" class="small"></p>
       </div>
@@ -605,7 +597,7 @@
           <label class="check"><input id="remote-gps" type="checkbox"> Incluir localização GPS</label>
           <div class="row">
             <button id="remote-send" class="btn">Enviar agora</button>
-            <button id="remote-unpair" class="btn btn-danger">Remover pareamento</button>
+            <button id="remote-unpair" class="btn btn-danger-outline">Remover pareamento</button>
           </div>
         </div>
         <p class="muted small">ID desta instalação: <span id="remote-install"></span></p>
@@ -627,7 +619,7 @@
         <div class="row">
           <button id="ai-save" class="btn btn-primary">Salvar</button>
           <button id="ai-test" class="btn">Testar conexão</button>
-          <button id="ai-clear" class="btn btn-danger">Remover chave</button>
+          <button id="ai-clear" class="btn btn-danger-outline">Remover chave</button>
         </div>
         <p id="ai-result" class="small"></p>
       </div>
@@ -664,6 +656,21 @@
       </div>
     </section>
   </main>
+
+  <!-- Navegação embaixo: quatro abas principais e "Mais" com as outras quatro (todas são .tab, app-core.js) -->
+  <nav class="tabs" aria-label="Telas do app">
+    <button class="tab active" data-tab="dash" aria-label="Painel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4.2-4.2"/><circle cx="12" cy="16" r="1.3"/><path d="M6.6 10.6l1 1M12 7.5v1.4M17.4 10.6l-1 1"/></svg><span>Painel</span></button>
+    <button class="tab" data-tab="fuel" aria-label="Abastecer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 20V5.5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1V20M3 20h12M7 8.5h4M13.5 10.5h2a1 1 0 0 1 1 1v5a1.5 1.5 0 0 0 3 0V9l-3-3"/></svg><span>Abastecer</span></button>
+    <button class="tab" data-tab="history" aria-label="Histórico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16"/></svg><span>Histórico</span></button>
+    <button class="tab" data-tab="settings" aria-label="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>Ajustes</span></button>
+    <button type="button" class="nav-more" id="nav-more" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18.5" cy="12" r="1.2"/></svg><span>Mais</span></button>
+    <div class="more-menu" id="more-menu" hidden>
+      <button class="tab" data-tab="panel" aria-label="Detalhes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span>Detalhes</span></button>
+      <button class="tab" data-tab="sensors" aria-label="Sensores"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span>Sensores</span></button>
+      <button class="tab" data-tab="maint" aria-label="Manutenção"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/></svg><span>Manutenção</span></button>
+      <button class="tab" data-tab="faults" aria-label="Falhas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5M12 17.3v.2"/></svg><span>Falhas</span></button>
+    </div>
+  </nav>
 
   <div id="sc-help" class="ai-panel" hidden role="dialog" aria-label="Como fazer o ajuste fino">
     <div class="console-bar">

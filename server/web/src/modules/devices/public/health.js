@@ -13,7 +13,7 @@
   function line(id, series, opts) {
     var canvas = document.getElementById(id);
     if (!canvas) return;
-    var colors = [css('--app-series-1', '#128a49'), css('--app-series-2', '#2a78d6')];
+    var colors = [css('--app-series-1', '#0072ad'), css('--app-series-2', '#c25e00')];
     charts.push(new window.Chart(canvas, {
       type: 'line',
       data: {
