@@ -584,9 +584,9 @@
 
 .dyn-dial { grid-area: dial; position: relative; align-self: center; justify-self: center; width: var(--dial); height: var(--dial); }
 .dyn-dial svg { width: 100%; height: 100%; display: block; overflow: visible; }
-.dyn-head { position: absolute; top: 2%; right: -2%; transform: translateX(40%); display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
-.dyn-head b { font-family: var(--f-num); font-weight: 700; font-size: clamp(14px, 5cqmin, 38px); color: var(--dyn-head); white-space: nowrap; }
-.dyn-head small { font-size: clamp(8px, 2cqmin, 13px); color: var(--c-muted); text-transform: uppercase; letter-spacing: .12em; margin-top: .3em; }
+.dyn-head { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); display: flex; align-items: baseline; gap: .8cqmin; line-height: 1; margin-bottom: .4cqmin; }
+.dyn-head b { font-family: var(--f-num); font-weight: 700; font-size: clamp(16px, 6cqmin, 44px); color: var(--dyn-head); white-space: nowrap; }
+.dyn-head small { font-size: clamp(8px, 2cqmin, 13px); color: var(--c-muted); text-transform: uppercase; letter-spacing: .12em; white-space: nowrap; }
 .dyn-head[data-state="off"] b { color: var(--c-muted); }
 
 .dyn-ring-a { stop-color: var(--c-accent); }
@@ -596,10 +596,12 @@
 .dyn-rim.in { stroke: var(--c-line); stroke-width: 2; }
 .dyn-tick { stroke: var(--c-muted); stroke-width: 1.2; }
 .dyn-tick.major { stroke: var(--c-text); stroke-width: 2.6; }
-.dyn-card-pt { fill: var(--c-text); font-family: var(--f-num); font-weight: 700; font-size: 22px; text-anchor: middle; dominant-baseline: central; }
-.dyn-card-pt.mid { fill: var(--c-muted); font-size: 15px; }
-.dyn-deg { fill: var(--c-muted); font-family: var(--f-label); font-size: 11px; text-anchor: middle; dominant-baseline: central; }
-.dyn-north { fill: var(--c-accent); }
+.dyn-upright { transform-box: fill-box; transform-origin: center; transition: transform .5s ease-out; }
+.dyn-card-pt { fill: var(--c-text); font-family: var(--f-num); font-weight: 800; font-size: 28px; text-anchor: middle; dominant-baseline: central; }
+.dyn-card-pt.n { fill: var(--c-bad); }
+.dyn-card-pt.mid { fill: var(--c-muted); font-weight: 700; font-size: 15px; }
+.dyn-deg { fill: var(--c-text); opacity: .75; font-family: var(--f-num); font-weight: 600; font-size: 14px; text-anchor: middle; dominant-baseline: central; }
+.dyn-north { fill: var(--c-bad); }
 .dyn-head-arc { fill: none; stroke: var(--dyn-head); stroke-width: 4; stroke-linecap: round; }
 .dyn-head-ptr { fill: var(--dyn-head); filter: drop-shadow(0 0 4px var(--dyn-head)); }
 .dyn-compass { transition: transform .5s ease-out; }
@@ -659,4 +661,4 @@
   .dyn-ball { width: clamp(48px, 20cqw, 110px); align-self: center; }
   .dyn-msg { bottom: auto; top: 0; }
 }
-@media (prefers-reduced-motion: reduce) { .dyn-hz, .dyn-roll-ptr, .dyn-compass { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .dyn-hz, .dyn-roll-ptr, .dyn-compass, .dyn-upright { transition: none; } }
