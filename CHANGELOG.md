@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.69] - 2026-11-22
+
 ### Corrigido
 - **Dinâmica, celular em pé:** a bola da Força G saía cortada embaixo do cartão; agora fica ao lado dos valores, do tamanho da altura que sobra. O rumo ("L 87°") voltou a ficar centralizado acima da bússola, que uma regra antiga do retrato deslocava para a direita.
 
