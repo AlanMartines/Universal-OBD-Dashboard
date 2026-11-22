@@ -5,18 +5,20 @@ body {
   padding: 0;
   margin: 0;
   background-color: var(--bs-body-bg);
-  /* Fundo liso com um brilho discreto da cor da marca no canto (antes, textura listrada no claro) */
-  background-image: radial-gradient(1200px 600px at 100% -10%, rgba(var(--app-brand-rgb), 0.07), transparent 60%);
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  /* Textura listrada no tema claro (bg01, ladrilho de 8×8) */
+  background-image: url('/assets/images/body/bg01.png');
+  background-repeat: repeat;
+  background-position: top left;
+  background-size: auto;
 }
 
-/* No escuro, o mesmo degradê, um pouco mais visível. */
+/* No escuro, a textura escura (bg02, em teste), também em ladrilho. */
 [data-bs-theme="dark"] body,
 html[data-bs-theme="dark"] {
-  background-image: radial-gradient(1200px 600px at 100% -10%, rgba(var(--app-brand-rgb), 0.08), transparent 60%);
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-image: url('/assets/images/body/bg02.png');
+  background-repeat: repeat;
+  background-position: top left;
+  background-size: auto;
 }
 
 html {

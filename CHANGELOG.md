@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Painel: fundo com textura de novo.** No tema claro volta a textura listrada de antes (`bg01.png`); no escuro, em teste, a textura escura do menu lateral (`bg02.png`), ambas em ladrilho, no lugar do degradê liso.
+
 ### Documentação
 - **Encaixe do percurso nas ruas (OSRM) segue opcional e o README do servidor mostra o custo real:** com o mapa do Brasil, cerca de 9 GB de memória e 13 GB de disco, e como reduzir (recorte regional ou `--mmap`). É só desenho: sem ele, o painel mostra o traço do GPS e nada mais muda.
 
