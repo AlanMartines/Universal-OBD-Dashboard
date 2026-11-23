@@ -22,6 +22,7 @@
     tip.backgroundColor = css('--app-card-bg', '#fff');
     tip.titleColor = css('--bs-body-color', '#212529');
     tip.bodyColor = css('--bs-body-color', '#212529');
+    tip.footerColor = css('--bs-body-color', '#212529');
     tip.borderColor = css('--bs-border-color', 'rgba(0,0,0,.1)');
     tip.borderWidth = 1;
     tip.padding = 10;

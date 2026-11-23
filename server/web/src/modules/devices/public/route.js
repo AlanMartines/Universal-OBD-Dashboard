@@ -138,6 +138,22 @@ if (card) {
       });
       // Mexer no mapa com a mão para de seguir o carro, até tocar em "Seguir" de novo.
       map.on('dragstart', (e) => { if (e.originalEvent && car) setFollow(false); });
+      // Mapa → gráfico: o ponto do trajeto mais perto do mouse (ou do toque) aparece nos dois.
+      let pending = 0;
+      map.on('mousemove', (e) => {
+        if (pending) return;
+        pending = requestAnimationFrame(() => {
+          pending = 0;
+          const i = nearestPoint(e.point);
+          if (i >= 0) showCursor(i, 'map');
+          else if (cursorFrom === 'map') hideCursor();
+        });
+      });
+      map.on('click', (e) => {
+        const i = nearestPoint(e.point);
+        if (i >= 0) showCursor(i, 'map'); else hideCursor();
+      });
+      map.getCanvas().addEventListener('mouseleave', () => { if (cursorFrom === 'map') hideCursor(); });
     });
   }
 
@@ -195,6 +211,7 @@ if (card) {
         map.getSource('route-ends')?.setData(EMPTY);
       }
       box.hidden = true;
+      drawProfile();
       say('Sem localização neste período. Para registrar o percurso, ligue "Incluir localização GPS" em Ajustes → Telemetria remota, no app.');
       return;
     }
@@ -212,6 +229,8 @@ if (card) {
     points = data.points.concat(liveTail);
     points.gapMs = Math.max(data.gapSeconds, 60) * 1000;
     draw();
+    hideCursor();
+    drawProfile();
     const bounds = points.reduce((b, p) => b.extend([p.lon, p.lat]), new LngLatBounds([points[0].lon, points[0].lat], [points[0].lon, points[0].lat]));
     lastBounds = bounds;
     // Recarga do mesmo período (botão das ruas, buraco de sinal, re-encaixe ao vivo) não mexe na câmera.
@@ -245,6 +264,144 @@ if (card) {
     if (isLive() && car) endsData = { type: 'FeatureCollection', features: endsData.features.slice(0, 1) };
     map.getSource('route')?.setData(routeData);
     map.getSource('route-ends')?.setData(endsData);
+  }
+
+  /* ---------------------------------------------------------------- Gráfico do trajeto, ligado ao mapa */
+  // Velocidade e rotação ao longo das posições do mapa. Passar o mouse (ou tocar) no gráfico marca o
+  // ponto no mapa; no mapa, o ponto mais perto do mouse aparece no gráfico, com hora e valores.
+  const profile = document.getElementById('route-profile');
+  const profileCanvas = document.getElementById('route-chart');
+  const cursorText = document.getElementById('route-cursor');
+  const CURSOR_HINT = cursorText ? cursorText.textContent : '';
+  let profileChart = null;
+  let cursor = null;
+  let cursorFrom = null;
+  const nf = (v, digits = 0) => (Number.isFinite(v)
+    ? v.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits }) : '—');
+  const clock = (ms) => new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const FALLBACK = { 1: '#128a49', 2: '#2a78d6' };
+  const seriesColor = (i) => (window.chartTheme ? window.chartTheme.css(`--app-series-${i}`, FALLBACK[i]) : FALLBACK[i]);
+
+  function profileSets() {
+    const xy = (key) => points.map((p) => ({ x: new Date(p.t).getTime(), y: Number.isFinite(p[key]) ? p[key] : null }));
+    return [
+      { label: 'Velocidade (km/h)', key: 'speed', data: xy('speed'), yAxisID: 'y', borderColor: seriesColor(2), backgroundColor: seriesColor(2), spanGaps: points.gapMs },
+      { label: 'Rotação (rpm)', key: 'rpm', data: xy('rpm'), yAxisID: 'y2', borderColor: seriesColor(1), backgroundColor: seriesColor(1), spanGaps: points.gapMs },
+    ];
+  }
+
+  function drawProfile() {
+    if (!profile || !window.Chart) return;
+    if (points.length < 2) {
+      profile.hidden = true;
+      return;
+    }
+    profile.hidden = false;
+    if (profileChart) {
+      profileChart.data.datasets = profileSets();
+      profileChart.update('none');
+      return;
+    }
+    profileChart = new window.Chart(profileCanvas, {
+      type: 'line',
+      data: { datasets: profileSets() },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        parsing: false,
+        normalized: true,
+        interaction: { mode: 'index', axis: 'x', intersect: false },
+        onHover: (_event, active) => {
+          if (active.length) showCursor(active[0].index, 'chart');
+          else if (cursorFrom === 'chart') hideCursor();
+        },
+        plugins: {
+          legend: { position: 'top', align: 'end', labels: { boxWidth: 12, boxHeight: 2 } },
+          tooltip: {
+            callbacks: {
+              title: (items) => (items.length ? clock(items[0].parsed.x) : ''),
+              label: (item) => (item.dataset.key === 'speed' ? `Velocidade: ${nf(item.parsed.y)} km/h` : `Rotação: ${nf(item.parsed.y)} rpm`),
+              footer: (items) => {
+                const p = items.length ? points[items[0].dataIndex] : null;
+                return p && Number.isFinite(p.kmpl) ? `Consumo: ${nf(p.kmpl, 1)} km/l` : '';
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            bounds: 'data',
+            grid: { display: false },
+            ticks: { maxTicksLimit: 6, maxRotation: 0, callback: (v) => new Date(v).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) },
+          },
+          y: { beginAtZero: true, ticks: { maxTicksLimit: 4, callback: (v) => nf(v) } },
+          y2: { position: 'right', beginAtZero: true, grid: { display: false }, ticks: { maxTicksLimit: 4, callback: (v) => nf(v) } },
+        },
+      },
+    });
+    profileCanvas.addEventListener('mouseleave', () => { if (cursorFrom === 'chart') hideCursor(); });
+  }
+
+  document.addEventListener('app-theme', () => {
+    if (!profileChart) return;
+    profileChart.data.datasets.forEach((set, i) => {
+      const color = seriesColor(i === 0 ? 2 : 1);
+      set.borderColor = color;
+      set.backgroundColor = color;
+    });
+    profileChart.update('none');
+  });
+
+  /** Índice da posição mais perto de um ponto da tela (até 30 px), ou -1. */
+  function nearestPoint(at) {
+    let best = -1;
+    let bestD = 30 * 30;
+    for (let i = 0; i < points.length; i += 1) {
+      const q = map.project([points[i].lon, points[i].lat]);
+      const d = (q.x - at.x) ** 2 + (q.y - at.y) ** 2;
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  function showCursor(i, from) {
+    const p = points[i];
+    if (!p || !map) return;
+    cursorFrom = from;
+    if (!cursor) {
+      const el = document.createElement('div');
+      el.className = 'route-cursor-mark';
+      cursor = new Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(map);
+    } else {
+      cursor.setLngLat([p.lon, p.lat]);
+    }
+    if (cursorText) {
+      const parts = [clock(new Date(p.t).getTime()), `${nf(p.speed)} km/h`];
+      if (Number.isFinite(p.rpm)) parts.push(`${nf(p.rpm)} rpm`);
+      if (Number.isFinite(p.kmpl)) parts.push(`${nf(p.kmpl, 1)} km/l`);
+      cursorText.textContent = parts.join(' · ');
+    }
+    if (from === 'map' && profileChart && !profile.hidden) {
+      const active = profileChart.data.datasets.map((_set, d) => ({ datasetIndex: d, index: i }));
+      const el = profileChart.getDatasetMeta(0).data[i];
+      profileChart.setActiveElements(active);
+      profileChart.tooltip.setActiveElements(active, el ? { x: el.x, y: el.y } : { x: 0, y: 0 });
+      profileChart.update('none');
+    }
+  }
+
+  function hideCursor() {
+    if (cursor) cursor.remove();
+    cursor = null;
+    if (cursorText) cursorText.textContent = CURSOR_HINT;
+    if (cursorFrom === 'map' && profileChart) {
+      profileChart.setActiveElements([]);
+      profileChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+      profileChart.update('none');
+    }
+    cursorFrom = null;
   }
 
   /* ---------------------------------------------------------------- Ao vivo */
@@ -357,7 +514,10 @@ if (card) {
     const gps = sample && sample.gps;
     if (!gps || !Number.isFinite(gps.lat) || !Number.isFinite(gps.lon) || !started || !isLive()) return;
     const at = new Date(sample.ts).getTime();
-    const p = { t: sample.ts, lat: gps.lat, lon: gps.lon, speed: sample.metrics?.speed ?? gps.speedKmh ?? null };
+    const p = {
+      t: sample.ts, lat: gps.lat, lon: gps.lon, speed: sample.metrics?.speed ?? gps.speedKmh ?? null,
+      rpm: sample.metrics?.rpm ?? null, kmpl: sample.metrics?.['derived.instantKmPerL'] ?? null,
+    };
     const prev = points[points.length - 1];
     if (prev && at <= new Date(prev.t).getTime()) return;
     // Sinal voltou depois de um buraco: as posições gravadas no meio chegam pelos lotes do app
@@ -379,6 +539,7 @@ if (card) {
     }
     summary.textContent = '';
     draw();
+    drawProfile();
     placeCar(p, true);
     // A ponta ao vivo chega bruta; de tempos em tempos o trecho é encaixado de novo nas ruas.
     if (snapOn && snapButton.hidden === false && !resnapTimer) {

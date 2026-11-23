@@ -376,15 +376,17 @@ export default function devicesRoutes(app, { config, pool, live, limit, maps, re
     const { rows: [{ total }] } = await pool.query(`SELECT count(*)::int AS total FROM telemetry_samples WHERE ${scope}`, [device.id, tripId, minutes]);
     const step = Math.max(1, Math.ceil(total / ROUTE_MAX_POINTS));
     const { rows } = await pool.query(
-      `SELECT ts, latitude, longitude, speed, accuracy FROM (
+      `SELECT ts, latitude, longitude, speed, accuracy, rpm, kmpl FROM (
          SELECT ts, latitude, longitude, COALESCE((metrics->>'speed')::double precision, gps_speed) AS speed, gps_accuracy AS accuracy,
+                (metrics->>'rpm')::double precision AS rpm, (metrics->>'derived.instantKmPerL')::double precision AS kmpl,
                 row_number() OVER (ORDER BY ts) AS n, count(*) OVER () AS c
            FROM telemetry_samples WHERE ${scope}
        ) t WHERE n % $4 = 1 OR $4 = 1 OR n = c ORDER BY ts`,
       [device.id, tripId, minutes, step],
     );
     const gapSeconds = Math.max(60, step * 10);
-    const points = rows.map((r) => ({ t: r.ts, lat: r.latitude, lon: r.longitude, speed: r.speed }));
+    // Rotação e consumo instantâneo vão junto para o gráfico do trajeto, ligado ao mapa.
+    const points = rows.map((r) => ({ t: r.ts, lat: r.latitude, lon: r.longitude, speed: r.speed, rpm: r.rpm, kmpl: r.kmpl }));
     // Encaixe nas ruas, só para desenhar. Sem OSRM configurado: "off"; fora do ar: "unavailable".
     let snapped = null;
     let snapStatus = 'off';
