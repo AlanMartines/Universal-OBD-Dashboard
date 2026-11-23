@@ -9,6 +9,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ### Adicionado
 - **Painel do veículo segue o tema do app.** O tema dos mostradores, o dia/noite e a cor da Cápsula escolhidos no app vão com a leitura ao vivo e ficam guardados no veículo; o painel web abre e troca junto, também na simulação de viagem. A opção **Seguir o app** (ligada por padrão) fica ao lado do estado; trocar o tema pelos botões do painel web desliga a opção só naquele navegador.
 - **App com fundo de textura:** fibra de carbono no tema escuro e listras no claro, as mesmas do painel web.
+- **Página Mapas no painel (Super Admin):** baixar, atualizar e excluir o mapa base e o encaixe do percurso nas ruas, de qualquer área do mundo (catálogo da Geofabrik: continentes, países, regiões e o planeta). Mostra o tamanho da área e, no encaixe, a estimativa de disco e de memória, com aviso nas áreas grandes; acompanha o trabalho ao vivo. Baixar e excluir pedem a senha confirmada há pouco e ficam na auditoria. O trabalho roda no novo contêiner `mapas`, já no ar, sem acesso ao Docker, sem root e com saída para a internet só para fontes públicas de uma lista fixa. O `osrm` fica sempre ligado e troca de mapa sozinho; sem mapa, fica parado. Na instalação: `chown -R 1000:1000 data/maps data/osrm` (README do servidor).
+
+### Segurança
+- **OSRM atualizado para a v26.4.0** (a v5.27.1 usava um Debian sem suporte) e **pmtiles compilado com as dependências corrigidas**; a imagem do `mapas`, usada também pelo `osrm`, entra na verificação do Trivy no CI.
 
 ### Alterado
 - **Painel: fundo com textura de novo.** No tema claro volta a textura listrada de antes (`bg01.png`); no escuro, em teste, a textura escura do menu lateral (`bg02.png`), ambas em ladrilho, no lugar do degradê liso.

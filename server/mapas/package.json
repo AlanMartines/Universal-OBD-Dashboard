@@ -1,0 +1,10 @@
+{
+  "name": "obd-mapas",
+  "private": true,
+  "type": "module",
+  "description": "Baixa e prepara os mapas do painel (mapa base e encaixe nas ruas), pedidos pelo painel.",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  }
+}

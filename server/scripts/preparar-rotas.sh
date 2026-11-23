@@ -2,11 +2,12 @@
 # Prepara o OSRM, que encaixa o percurso nas ruas do mapa, rodando no próprio servidor.
 # Dados: OpenStreetMap (recorte do Brasil da Geofabrik, ~1,8 GB). Processamento: 30–60 min,
 # ~10 GB de disco e alguns GB de memória. Rode de novo de tempos em tempos para atualizar as ruas.
+# Alternativa à página Mapas do painel (que faz o mesmo para qualquer área do mundo).
 # Uso: sh scripts/preparar-rotas.sh [pasta de destino]
 set -eu
 DEST="${1:-$(dirname "$0")/../data/osrm}"
 PBF_URL="${OSRM_PBF_URL:-https://download.geofabrik.de/south-america/brazil-latest.osm.pbf}"
-IMAGE="ghcr.io/project-osrm/osrm-backend:v5.27.1"
+IMAGE="ghcr.io/project-osrm/osrm-backend:v26.4.0@sha256:d01fa0c7b74cea5ef89565222840e66c7359e0db1d8a2ff59eb62dec1dc6858e"
 mkdir -p "$DEST"
 DEST="$(cd "$DEST" && pwd)"
 
@@ -27,8 +28,10 @@ rm -f "$WORK/regiao.osm.pbf"
 rm -f "$DEST"/regiao.osrm*
 mv "$WORK"/regiao.osrm* "$DEST/"
 rmdir "$WORK"
+# O serviço osrm roda sem root: os arquivos precisam ser legíveis por ele (o OSRM grava alguns só para o dono).
+chmod -R a+rX "$DEST"
 # O arquivo baixado só serve para o processamento: a próxima atualização baixa de novo.
 rm -f "$DEST/regiao.osm.pbf"
 
 du -sh "$DEST"
-echo "Pronto. No .env: COMPOSE_PROFILES=rotas e OSRM_URL=http://osrm:5000; depois: docker compose up -d"
+echo "Pronto. O serviço osrm (sempre ligado) carrega o mapa sozinho em alguns segundos."

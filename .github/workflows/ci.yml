@@ -142,6 +142,11 @@ jobs:
         working-directory: server/web
         run: npm test
 
+      # Contêiner de mapas: só a biblioteca padrão do Node, sem dependências.
+      - name: Testes do serviço de mapas
+        working-directory: server/mapas
+        run: npm test
+
   # Segredos no histórico, dependências e imagens com falhas conhecidas. Ferramentas em imagens
   # oficiais presas por digest, sem Action de terceiros.
   seguranca:
@@ -170,7 +175,8 @@ jobs:
         run: |
           docker build -q -t obd-api:ci server/api
           docker build -q -t obd-web:ci server/web
-          for img in obd-api:ci obd-web:ci; do
+          docker build -q -t obd-mapas:ci server/mapas
+          for img in obd-api:ci obd-web:ci obd-mapas:ci; do
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$RUNNER_TEMP/trivy:/root/.cache" "$TRIVY" image \
               --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$img"
           done

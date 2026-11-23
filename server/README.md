@@ -11,8 +11,10 @@ Recebe do app Universal OBD os dados já tratados e mostra tudo em um painel web
 | `worker` | Limpeza periódica; se parar, o resto continua | `backend` |
 | `mailer` | Envio de e-mails por SMTP, a partir de uma fila no banco; se parar, só os envios ficam pendentes | `backend`, `mail` |
 | `db` | PostgreSQL, sem porta publicada | `backend` |
+| `mapas` | Baixa e prepara os mapas pedidos na página Mapas; sem acesso ao Docker | `mapas`, `download` |
+| `osrm` | Encaixe do percurso nas ruas; sem mapa, fica parado e quase não gasta memória | `routing` |
 
-A `web` não alcança o banco. A `api`, o `worker` e o `db` não têm saída para a internet; só o `mailer` e a `web` têm. O HTTPS fica no seu proxy reverso.
+A `web` não alcança o banco. A `api`, o `worker`, o `db` e o `osrm` não têm saída para a internet; só o `mailer`, a `web` e o `mapas` têm (o `mapas` só baixa dos servidores da lista que fica no código dele). O HTTPS fica no seu proxy reverso.
 
 ## Área pública
 
@@ -51,26 +53,23 @@ Com `HTTP_BIND=0.0.0.0`, libere `HTTP_PORT` no firewall só para o proxy. O Dock
 
 ## Mapa do percurso
 
-O percurso usa um mapa do próprio servidor: as posições não saem para nenhum serviço externo. Para instalar, rode uma vez, dentro de `server/`:
+O percurso usa mapas do próprio servidor: as posições não saem para nenhum serviço externo. Os dois mapas são opcionais e o Super Admin cuida deles na página **Mapas** do painel:
+
+- **Mapa base:** o fundo do mapa (ruas e nomes), recortado do Protomaps para a área escolhida. Fica só no disco.
+- **Encaixe nas ruas:** o GPS do celular costuma ficar alguns metros fora da rua, e entre duas posições a linha corta as esquinas. Com o encaixe, o painel ajusta o traço às ruas (OSRM, perfil de carro). É só desenho: as posições gravadas, a distância e o consumo não mudam, e o botão **Ajustar às ruas** mostra o traço bruto do GPS. Ocupa memória enquanto estiver instalado.
+
+A página lista as áreas do catálogo da Geofabrik, do mundo inteiro: continentes, países, regiões e o planeta. Para cada área, mostra o tamanho e, no encaixe, uma estimativa de disco e de memória, com aviso nas áreas grandes. O ideal é baixar só onde os carros rodam: um estado ou uma região do Brasil ocupa pouco; o Brasil inteiro, cerca de 9 GB de memória no encaixe; o planeta, centenas de GB. Baixar de novo a mesma área atualiza o mapa; outra área substitui a atual. Baixar e excluir pedem a senha confirmada há pouco e ficam na auditoria.
+
+O trabalho roda no contêiner `mapas`, que já fica no ar e só grava nas duas pastas dos mapas. Ele e o `osrm` rodam com o usuário 1000, então as pastas precisam ser dele (uma vez, dentro de `server/`):
 
 ```bash
-sh scripts/baixar-mapa.sh
-docker compose up -d web
+mkdir -p data/maps data/osrm
+chown -R 1000:1000 data/maps data/osrm
 ```
 
-O script precisa de Docker e de alguns GB livres, e o tempo depende da internet. Sem o arquivo, o traçado aparece sem as ruas. O Super Admin só vê a localização de outras contas no modo suporte, que fica registrado na auditoria. Dados do mapa: © OpenStreetMap, por meio do Protomaps.
+Limites de memória no `.env`: `OSRM_MEM` (padrão 12g, o encaixe no ar) e `MAPAS_MEM` (padrão 16g, o processamento). O `osrm` troca de mapa sozinho, sem reiniciar, e o anterior segue no ar até o novo ficar pronto. Trecho que não encaixa (estacionamento, rua nova, sinal ruim) aparece como o traço do GPS.
 
-### Percurso nas ruas (opcional)
-
-O GPS do celular costuma ficar alguns metros fora da rua, e entre duas posições a linha corta as esquinas. Com o **OSRM** rodando no próprio servidor, o painel encaixa o traço nas ruas, como os apps de entrega. É só desenho: as posições gravadas, a distância e o consumo não mudam, e o botão **Ajustar às ruas** mostra o traço bruto do GPS.
-
-```bash
-sh scripts/preparar-rotas.sh
-# no .env: COMPOSE_PROFILES=rotas e OSRM_URL=http://osrm:5000
-docker compose up -d
-```
-
-O script baixa as ruas do Brasil do OpenStreetMap (~1,8 GB, pela Geofabrik) e processa com o perfil de carro: 30 a 60 minutos. Com o Brasil inteiro, o contêiner `osrm` ocupa cerca de 9 GB de memória e 13 GB de disco; para gastar menos, use só a sua região (`OSRM_PBF_URL` com um recorte da Geofabrik, como `south-america/brazil/<região>-latest.osm.pbf`) ou acrescente `--mmap` ao comando do `osrm` no compose, que lê o mapa do disco sob demanda. Só a API fala com ele, por rede interna. Sem o OSRM, o painel desenha o traço do GPS e nada mais muda. Para atualizar as ruas, rode o script de novo: o serviço no ar segue com os dados antigos até o fim do processamento. Trecho que não encaixa (estacionamento, rua nova, sinal ruim) aparece como o traço do GPS.
+Pelo terminal, os scripts `scripts/baixar-mapa.sh` (mapa base do Brasil) e `scripts/preparar-rotas.sh` (encaixe; `OSRM_PBF_URL` escolhe a área) seguem valendo. Dados do mapa: © OpenStreetMap, por meio do Protomaps e da Geofabrik.
 
 ## Conta
 

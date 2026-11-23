@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -76,6 +76,7 @@ export function createHandlebars() {
 /** Item do menu destacado em cada página. */
 function activePageOf(url) {
   if (url.startsWith('/painel-veiculo')) return 'vehicle';
+  if (url.startsWith('/admin/mapas')) return 'mapas';
   if (url.startsWith('/admin')) return 'admin';
   if (url.startsWith('/meus-dados/sessoes')) return 'sessoes';
   if (url.startsWith('/meus-dados')) return 'conta';
@@ -183,8 +184,15 @@ export async function buildApp({ config, logger, pwned = null }) {
 
   // Mapa próprio: só para quem tem sessão válida. A validação fica em cache curto,
   // porque cada tela pede dezenas de trechos do arquivo.
-  const mapFile = join(config.mapDir, 'brasil.pmtiles');
-  const hasMapData = () => existsSync(mapFile);
+  // Mapa base: o baixado pela página Mapas (base.pmtiles) ou o do script antigo (brasil.pmtiles).
+  const mapFileName = () => ['base.pmtiles', 'brasil.pmtiles'].find((n) => existsSync(join(config.mapDir, n))) ?? null;
+  const hasMapData = () => Boolean(mapFileName());
+  // Versão do mapa base no endereço: trocado o arquivo (mesmo nome), o navegador não mistura trechos
+  // guardados do mapa antigo com o novo.
+  const mapVersion = () => {
+    const name = mapFileName();
+    try { return name ? String(Math.floor(statSync(join(config.mapDir, name)).mtimeMs)) : ''; } catch { return ''; }
+  };
   const validSessions = new Map();
   if (existsSync(config.mapDir)) {
     await app.register(async (scope) => {
@@ -438,7 +446,7 @@ export async function buildApp({ config, logger, pwned = null }) {
   };
   const shared = {
     pwnedPassword,
-    config, api, apiBinary, hasMapData, cookieName, cookieOptions, clearSession, renderError, pageLimit, requireUser, requireAdmin, context,
+    config, api, apiBinary, hasMapData, mapFileName, mapVersion, cookieName, cookieOptions, clearSession, renderError, pageLimit, requireUser, requireAdmin, context,
   };
   gatewayRoutes(app, shared);
   loginRoutes(app, shared);

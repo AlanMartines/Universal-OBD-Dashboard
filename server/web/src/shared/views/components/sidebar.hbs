@@ -33,6 +33,7 @@
     <p class="sidebar-group sidebar-label">Administração</p>
     <ul class="sidebar-nav">
       <li><a href="/admin" title="{{#if (eq user.role "superadmin")}}Configurações{{else}}Usuários{{/if}}" class="{{#if (eq activePage "admin")}}active{{/if}}" {{#if (eq activePage "admin")}}aria-current="page"{{/if}}><i class="fa-solid fa-gear fa-fw" aria-hidden="true"></i><span class="sidebar-label">{{#if (eq user.role "superadmin")}}Configurações{{else}}Usuários{{/if}}</span></a></li>
+      {{#if (eq user.role "superadmin")}}<li><a href="/admin/mapas" title="Mapas" class="{{#if (eq activePage "mapas")}}active{{/if}}" {{#if (eq activePage "mapas")}}aria-current="page"{{/if}}><i class="fa-solid fa-map-location-dot fa-fw" aria-hidden="true"></i><span class="sidebar-label">Mapas</span></a></li>{{/if}}
     </ul>
     {{/if}}
   </div>
