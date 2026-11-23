@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.73] - 2026-11-23
+
 ### Adicionado
 - **Perfil Mecânico (oficina).** O dono da conta cria em Usuários, marca os veículos que ele pode ver e escolhe um prazo (ou nenhum). O mecânico só lê: painel ao vivo, falhas, saúde, histórico, viagens e manutenção, **sem a localização** e só dos veículos marcados. Vencido o prazo, o login e as sessões deixam de valer.
 - **Link para a oficina, sem cadastro.** Na página do veículo, o dono gera um link de 1 a 30 dias, que aparece uma única vez, com botões para copiar e enviar pelo WhatsApp. Quem abre vê o veículo como o mecânico, sem senha e sem "Meus Dados"; cancelar o link derruba quem estiver com ele aberto. Tudo fica na auditoria.
