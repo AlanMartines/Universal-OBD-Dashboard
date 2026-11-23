@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.72] - 2026-11-23
+
 ### Adicionado
 - **Percurso: gráfico do trajeto ligado ao mapa.** Embaixo do mapa, a velocidade e a rotação ao longo das posições. Passar o mouse (ou tocar) no gráfico marca no mapa onde o carro estava naquele instante; no mapa, o ponto mais perto aparece no gráfico, com hora, velocidade, rotação e consumo. Segue também ao vivo.
 - **Teste de tela no CI:** abre no Chrome do GitHub as páginas públicas, as do dono e as do Super Admin, o modelo 3D nas três variações e a tela do app em todos os temas, de dia e de noite, e falha com erro de JavaScript ou tela em branco. As capturas ficam no artefato `telas`.
