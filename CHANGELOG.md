@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Página Mapas: barra de andamento também no mapa base.** O recorte do mapa base mostrava a barra em texto do `pmtiles`, repetida linha a linha no registro; agora o percentual vai para a mesma barra do encaixe, e o texto da fase mostra o tamanho, a velocidade e quanto falta. O registro fica só com as outras mensagens.
+
 ## [0.9.73] - 2026-11-23
 
 ### Adicionado

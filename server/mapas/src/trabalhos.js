@@ -14,6 +14,7 @@ import { access, chmod, mkdir, readdir, readFile, rename, rm, stat, statfs, writ
 import { join } from 'node:path';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import { lerProgresso, textoProgresso } from './progresso.js';
 import {
   bboxDoPoly, discoEstimadoEncaixe, enderecoPermitido, polyUrl, ultimaVersaoProtomaps,
 } from './catalogo.js';
@@ -63,12 +64,19 @@ async function textoDe(url) {
   return res.text();
 }
 
-/** Roda uma ferramenta, guardando as últimas linhas da saída para mostrar se falhar. */
-function rodar(cmd, args, { cwd, entrada } = {}) {
+/**
+ * Roda uma ferramenta, guardando as últimas linhas da saída para mostrar se falhar. Com [progresso], as
+ * linhas de barra em texto (pmtiles) vão para ela, e não para o registro.
+ */
+function rodar(cmd, args, { cwd, entrada, progresso } = {}) {
   return new Promise((resolve, reject) => {
     anotar(`$ ${cmd} ${args.join(' ')}`);
     const filho = spawn(cmd, args, { cwd, stdio: [entrada ? 'pipe' : 'ignore', 'pipe', 'pipe'] });
-    const ler = (fluxo) => fluxo.on('data', (d) => String(d).split(/[\r\n]+/).forEach(anotar));
+    const linha = (texto) => {
+      const p = progresso ? lerProgresso(texto) : null;
+      if (p) progresso(p); else anotar(texto);
+    };
+    const ler = (fluxo) => fluxo.on('data', (d) => String(d).split(/[\r\n]+/).forEach(linha));
     ler(filho.stdout);
     ler(filho.stderr);
     if (entrada) entrada(filho.stdin).catch(reject);
@@ -165,7 +173,14 @@ async function trabalhoBase(area) {
 
   atual.fase = 'Recortando o mapa base (pode levar bastante tempo)';
   const tmp = join(MAPS, 'base.tmp.pmtiles');
-  await rodar('pmtiles', ['extract', `https://build.protomaps.com/${versao}`, tmp, `--bbox=${bbox.join(',')}`, `--maxzoom=${ZOOM_MAX}`]);
+  await rodar('pmtiles', ['extract', `https://build.protomaps.com/${versao}`, tmp, `--bbox=${bbox.join(',')}`, `--maxzoom=${ZOOM_MAX}`], {
+    // A barra do painel segue o pmtiles, como no encaixe: percentual, tamanho, velocidade e quanto falta
+    progresso: (p) => {
+      atual.progresso = p.pct / 100;
+      atual.fase = `Recortando o mapa base: ${textoProgresso(p)}`;
+    },
+  });
+  atual.progresso = null;
 
   atual.fase = 'Baixando fontes e ícones do mapa';
   const assetsTmp = join(MAPS, 'assets.tmp');
