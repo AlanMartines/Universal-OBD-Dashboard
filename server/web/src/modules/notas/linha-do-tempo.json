@@ -4,6 +4,16 @@
   "date": null,
   "sections": [
    {
+    "kind": "changed",
+    "title": "Alterado",
+    "items": [
+     {
+      "title": "Painel: fundo com textura de novo",
+      "text": "No tema claro volta a textura listrada de antes (bg01.png); no escuro, em teste, a textura escura do menu lateral (bg02.png), ambas em ladrilho, no lugar do degradê liso."
+     }
+    ]
+   },
+   {
     "kind": "other",
     "title": "Documentação",
     "items": [
