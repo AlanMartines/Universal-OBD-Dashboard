@@ -48,6 +48,8 @@
   --ease: cubic-bezier(.2, .8, .2, 1);
   --dur: 160ms;
 }
+:root[data-app-theme="light"] body,
+:root[data-app-theme="light"] { background-image: url("img/bg01.png"); }
 :root[data-app-theme="light"] {
   color-scheme: light;
   --bg: #eef2f6;
@@ -85,7 +87,8 @@
 
 html, body {
   margin: 0;
-  background: var(--bg);
+  /* Fundo com textura, igual ao painel web: fibra de carbono no escuro (bg02), listras no claro (bg01) */
+  background: var(--bg) url("img/bg02.png") repeat top left;
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-tap-highlight-color: transparent;

@@ -4,6 +4,20 @@
   "date": null,
   "sections": [
    {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "Painel do veículo segue o tema do app",
+      "text": "O tema dos mostradores, o dia/noite e a cor da Cápsula escolhidos no app vão com a leitura ao vivo e ficam guardados no veículo; o painel web abre e troca junto, também na simulação de viagem. A opção Seguir o app (ligada por padrão) fica ao lado do estado; trocar o tema pelos botões do painel web desliga a opção só naquele navegador."
+     },
+     {
+      "title": "App com fundo de textura",
+      "text": "fibra de carbono no tema escuro e listras no claro, as mesmas do painel web."
+     }
+    ]
+   },
+   {
     "kind": "changed",
     "title": "Alterado",
     "items": [

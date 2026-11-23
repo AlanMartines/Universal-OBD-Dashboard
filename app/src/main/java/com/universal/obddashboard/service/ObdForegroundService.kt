@@ -739,6 +739,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
                         ) + dynamicsForRemote(d) + pc.metrics(),
                         s.alerts.map { RemotePayload.LiveAlert(it.level.name, it.message) },
                         BuildConfig.VERSION_NAME,
+                        AppSettings.dashPrefs(c),
                     )
                 }
                 val viewers = withContext(Dispatchers.IO) { RemoteClient(RemoteSettings.baseUrl(c)).live(token, body) }

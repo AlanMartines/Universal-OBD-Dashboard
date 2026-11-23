@@ -162,6 +162,31 @@
   window.Dash.setMeta(metaFrom());
   metaKey = JSON.stringify(metaFrom());
 
+  // Tema do app: com "Seguir o app" ligado, os mostradores usam o tema, o dia/noite e a cor escolhidos no
+  // celular. Trocar pelos botões daqui desliga a opção só neste navegador.
+  var follow = document.getElementById('vehicle-follow');
+  var appPrefs = null;
+  try { appPrefs = JSON.parse(root.dataset.prefs); } catch (e) { /* app ainda não mandou */ }
+  function following() {
+    try { return localStorage.getItem('dash.followApp') !== '0'; } catch (e) { return true; }
+  }
+  function setFollowing(on) {
+    try { localStorage.setItem('dash.followApp', on ? '1' : '0'); } catch (e) { /* sem armazenamento */ }
+    if (follow) follow.checked = on;
+    if (on) window.Dash.applyPrefs(appPrefs);
+  }
+  function appPrefsChanged(p) {
+    if (!p || typeof p !== 'object') return;
+    appPrefs = p;
+    if (following()) window.Dash.applyPrefs(p);
+  }
+  if (follow) {
+    follow.checked = following();
+    follow.addEventListener('change', function () { setFollowing(follow.checked); });
+  }
+  window.Dash.onUserPrefs(function () { if (following()) setFollowing(false); });
+  if (following()) window.Dash.applyPrefs(appPrefs);
+
   var fullscreen = document.getElementById('vehicle-fullscreen');
   if (fullscreen && root.requestFullscreen) {
     fullscreen.addEventListener('click', function () { root.requestFullscreen().catch(function () {}); });
@@ -199,7 +224,11 @@
 
   var source = new EventSource('/dispositivos/' + encodeURIComponent(root.dataset.deviceId) + '/ao-vivo');
   source.addEventListener('sample', function (event) {
-    try { apply(JSON.parse(event.data)); } catch (e) { /* quadro inválido é ignorado */ }
+    try {
+      var frame = JSON.parse(event.data);
+      apply(frame);
+      appPrefsChanged(frame.dash);
+    } catch (e) { /* quadro inválido é ignorado */ }
     tick();
   });
 

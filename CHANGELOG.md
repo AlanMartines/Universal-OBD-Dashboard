@@ -6,6 +6,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Painel do veículo segue o tema do app.** O tema dos mostradores, o dia/noite e a cor da Cápsula escolhidos no app vão com a leitura ao vivo e ficam guardados no veículo; o painel web abre e troca junto, também na simulação de viagem. A opção **Seguir o app** (ligada por padrão) fica ao lado do estado; trocar o tema pelos botões do painel web desliga a opção só naquele navegador.
+- **App com fundo de textura:** fibra de carbono no tema escuro e listras no claro, as mesmas do painel web.
+
 ### Alterado
 - **Painel: fundo com textura de novo.** No tema claro volta a textura listrada de antes (`bg01.png`); no escuro, em teste, a textura escura do menu lateral (`bg02.png`), ambas em ladrilho, no lugar do degradê liso.
 

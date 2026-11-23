@@ -74,6 +74,10 @@ Dash.mount($('dash-host'));
 Dash.setMeta(meta);
 // Dinâmica: Zerar nível e Calibrar frente mexem só na orientação guardada no app (nada vai ao ESP32 nem ao carro)
 Dash.setImuAction((kind) => bridge.imuCalibrate(kind) !== false);
+// Tema, dia/noite e cor vão ao app, que os manda com a leitura ao vivo para o painel web seguir.
+const sendDashPrefs = (p) => bridge.setDashPrefs(JSON.stringify(p));
+Dash.onUserPrefs(sendDashPrefs);
+sendDashPrefs(Dash.prefs);
 updateDashMode();
 window.onTelemetry = onTelemetry;
 // O app só envia o estado quando ele muda; com a captura parada, pede o atual ao abrir.

@@ -18,6 +18,8 @@
  *   Dash.setLook('minimal'|'capsule'|'hud'|'sport'|'classic'|'horizon'), Dash.setMode('auto'|'day'|'night'),
  *   Dash.setPage('road'|'engine'|'trip'|'motion'), Dash.setAutoPage(bool)
  *   Dash.setImuAction(fn): liga os botões Zerar nível / Calibrar frente da Dinâmica (fn('level'|'forward'))
+ *   Dash.prefs / Dash.applyPrefs({ look, mode, tint }) / Dash.onUserPrefs(fn): escolha de tema, dia/noite e cor,
+ *   que o app manda ao painel web; fn só é chamada quando a pessoa troca pelos botões
  */
 window.Dash = (function () {
   const SVGNS = 'http://www.w3.org/2000/svg';
@@ -105,6 +107,7 @@ window.Dash = (function () {
   let autoPage = store.get('autoPage', '1') === '1';
   /** Cor dos mostradores da Cápsula: verde ou vermelho. */
   const TINTS = [['green', 'Verde'], ['red', 'Vermelho']];
+  let onPrefs = null;
   let tint = TINTS.some((t) => t[0] === store.get('tint', 'green')) ? store.get('tint', 'green') : 'green';
   let page = userPage;
   let stoppedSince = null;
@@ -1341,14 +1344,15 @@ window.Dash = (function () {
       ui['light_' + id] = l;
       slot.appendChild(l);
     });
-    ui.modeBtn.addEventListener('click', () => setMode(MODES[(MODES.indexOf(mode) + 1) % MODES.length]));
+    ui.modeBtn.addEventListener('click', () => { setMode(MODES[(MODES.indexOf(mode) + 1) % MODES.length]); userPrefs(); });
     ui.autoBtn.addEventListener('click', () => setAutoPage(!autoPage));
     ui.lookBtn.addEventListener('click', () => {
       const i = LOOKS.findIndex((l) => l[0] === look);
       setLook(LOOKS[(i + 1) % LOOKS.length][0]);
+      userPrefs();
     });
     ui.lookBtn.textContent = LOOKS.find((l) => l[0] === look)[1];
-    if (ui.tintBtn) ui.tintBtn.addEventListener('click', () => setTint(tint === 'green' ? 'red' : 'green'));
+    if (ui.tintBtn) ui.tintBtn.addEventListener('click', () => { setTint(tint === 'green' ? 'red' : 'green'); userPrefs(); });
     applyTint();
 
     theme.build();
@@ -1378,6 +1382,16 @@ window.Dash = (function () {
   }
 
   function setLook(l) { if (THEMES[l] && root) { look = l; store.set('look', l); applyLook(); } }
+  /** Tema, dia/noite e cor da Cápsula: o app manda ao painel web, que pode seguir a mesma escolha. */
+  function prefs() { return { look, mode, tint }; }
+  /** Avisa só a troca feita pela pessoa nos botões (não a aplicada por applyPrefs). */
+  function userPrefs() { if (onPrefs) onPrefs(prefs()); }
+  function applyPrefs(p) {
+    if (!p || typeof p !== 'object') return;
+    if (p.look && p.look !== look) setLook(p.look);
+    if (p.mode && p.mode !== mode) setMode(p.mode);
+    if (p.tint && p.tint !== tint) setTint(p.tint);
+  }
   function applyTint() {
     if (!root) return;
     root.dataset.tint = tint;
@@ -1607,7 +1621,9 @@ window.Dash = (function () {
   function paint() { if (theme && theme.paint) theme.paint(shown); }
 
   return {
-    mount, setMeta, update, setLook, setMode, setPage, setAutoPage,
+    mount, setMeta, update, setLook, setMode, setPage, setAutoPage, applyPrefs,
+    onUserPrefs(fn) { onPrefs = typeof fn === 'function' ? fn : null; },
+    get prefs() { return prefs(); },
     setImuAction(fn) { onImuAction = typeof fn === 'function' ? fn : null; if (root && state) render(); },
     get look() { return look; }, get mode() { return mode; }, get page() { return page; }, get autoPage() { return autoPage; },
   };

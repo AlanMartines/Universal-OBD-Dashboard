@@ -293,6 +293,17 @@ export default function deviceRoutes(app, { pool, live, limit }) {
         properties: {
           ts: sampleSchema.properties.ts,
           appVersion: { type: 'string', maxLength: 32, pattern: '^[A-Za-z0-9._+-]+$' },
+          // Tema, dia/noite e cor escolhidos no app: o painel web pode seguir a mesma tela.
+          dash: {
+            type: 'object',
+            required: ['look'],
+            additionalProperties: false,
+            properties: {
+              look: { enum: ['minimal', 'capsule', 'hud', 'sport', 'classic', 'horizon'] },
+              mode: { enum: ['auto', 'day', 'night'] },
+              tint: { enum: ['green', 'red'] },
+            },
+          },
           metrics: sampleSchema.properties.metrics,
           dtcs: sampleSchema.properties.dtcs,
           gps: sampleSchema.properties.gps,
@@ -313,7 +324,7 @@ export default function deviceRoutes(app, { pool, live, limit }) {
       },
     },
   }, async (request) => {
-    const { ts, metrics, dtcs, gps, alerts, appVersion } = request.body;
+    const { ts, metrics, dtcs, gps, alerts, appVersion, dash } = request.body;
     if (appVersion) {
       // O pareamento grava a versão uma vez; daqui em diante, ela acompanha as atualizações do app.
       await pool.query('UPDATE devices SET app_version = $2 WHERE id = $1 AND app_version IS DISTINCT FROM $2', [request.device.id, appVersion]);
@@ -347,12 +358,20 @@ export default function deviceRoutes(app, { pool, live, limit }) {
         [request.device.id, JSON.stringify(limits)],
       );
     }
+    const prefs = dash ? { look: dash.look, mode: dash.mode ?? 'auto', tint: dash.tint ?? 'green' } : null;
+    if (prefs) {
+      await pool.query(
+        'UPDATE devices SET dash_prefs = $2::jsonb WHERE id = $1 AND dash_prefs IS DISTINCT FROM $2::jsonb',
+        [request.device.id, JSON.stringify(prefs)],
+      );
+    }
     live.emit(request.device.id, {
       ts: new Date(ts).toISOString(),
       metrics,
       dtcs: dtcs ?? [],
       // Alertas só seguem ao vivo: não vão ao banco
       alerts: alerts ?? [],
+      dash: prefs,
       gps: gps ? { lat: gps.lat, lon: gps.lon, speedKmh: gps.speedKmh ?? null } : null,
     });
     return { viewers: live.listenerCount(request.device.id), accepted: true };
