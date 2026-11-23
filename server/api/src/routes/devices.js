@@ -178,21 +178,35 @@ export default function devicesRoutes(app, { config, pool, live, limit, maps, re
   });
 
   // Viagens montadas a partir das amostras guardadas (90 dias): distância e combustível somados no tempo.
-  app.get('/internal/devices/:id/trips', { preValidation: requireReady, schema: { params: uuidParam } }, async (request) => {
+  app.get('/internal/devices/:id/trips', {
+    preValidation: requireReady,
+    schema: {
+      params: uuidParam,
+      // tripId: só aquela viagem (a página da viagem abre também as que já saíram das 50 últimas)
+      querystring: { type: 'object', additionalProperties: false, properties: { tripId: { type: 'string', pattern: '^[0-9]{1,15}$' } } },
+    },
+  }, async (request) => {
     const device = await loadDevice(request);
+    const tripId = request.query.tripId ?? null;
     const { rows } = await pool.query(
       `WITH s AS (
          SELECT trip_id, ts, (metrics->>'speed')::float AS speed, (metrics->>'derived.fuelLph')::float AS lph,
                 (metrics->>'coolant_temp')::float AS coolant,
                 extract(epoch FROM ts - lag(ts) OVER (PARTITION BY trip_id ORDER BY ts)) AS dt
-           FROM telemetry_samples WHERE device_id = $1 AND trip_id IS NOT NULL)
+           FROM telemetry_samples WHERE device_id = $1 AND trip_id IS NOT NULL AND ($2::bigint IS NULL OR trip_id = $2::bigint))
        SELECT trip_id, min(ts) AS started, max(ts) AS ended, max(speed) AS max_speed, max(coolant) AS max_coolant,
               sum(CASE WHEN dt <= 30 THEN coalesce(speed, 0) * dt / 3600 END) AS km,
               sum(CASE WHEN dt <= 30 THEN coalesce(lph, 0) * dt / 3600 END) AS liters
          FROM s GROUP BY trip_id ORDER BY started DESC LIMIT 50`,
-      [device.id],
+      [device.id, tripId],
     );
+    // Uma viagem só: junto vão os códigos de falha lidos durante ela
+    const dtcs = tripId && rows.length ? (await pool.query(
+      `SELECT DISTINCT unnest(dtcs) AS code FROM telemetry_samples WHERE device_id = $1 AND trip_id = $2::bigint ORDER BY code`,
+      [device.id, tripId],
+    )).rows.map((r) => r.code) : undefined;
     return {
+      ...(dtcs ? { dtcs } : {}),
       trips: rows.map((r) => {
         const km = r.km ?? 0;
         const liters = r.liters ?? 0;
@@ -280,6 +294,47 @@ export default function devicesRoutes(app, { config, pool, live, limit, maps, re
       samples: rows.map((r) => ({
         ts: r.ts, metrics: r.metrics, dtcs: r.dtcs,
         gps: r.gps_speed === null ? null : { speedKmh: r.gps_speed, accuracyM: r.gps_accuracy },
+      })),
+    };
+  });
+
+  // Exportar a viagem (CSV e GPX, montados pelo painel): as leituras inteiras, até o mesmo limite da simulação.
+  // As posições só vão para quem pode ver a localização (nunca para o mecânico nem para o Super Admin em conta alheia).
+  app.get('/internal/devices/:id/trips/:tripId/export', {
+    preValidation: requireReady,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id', 'tripId'],
+        additionalProperties: false,
+        properties: { id: uuidParam.properties.id, tripId: { type: 'string', pattern: '^[0-9]{1,15}$' } },
+      },
+    },
+  }, async (request) => {
+    const device = await loadDevice(request);
+    const allowed = locationAllowed(request.session, device);
+    const tripId = request.params.tripId;
+    const { rows: [{ total }] } = await pool.query(
+      'SELECT count(*)::int AS total FROM telemetry_samples WHERE device_id = $1 AND trip_id = $2::bigint',
+      [device.id, tripId],
+    );
+    if (!total) throw fail(404, 'not_found');
+    const step = Math.max(1, Math.ceil(total / REPLAY_MAX_SAMPLES));
+    const { rows } = await pool.query(
+      `SELECT ts, metrics, dtcs, gps_speed, gps_accuracy, latitude, longitude FROM (
+         SELECT ts, metrics, coalesce(dtcs, '{}') AS dtcs, gps_speed, gps_accuracy, latitude, longitude,
+                row_number() OVER (ORDER BY ts) AS n, count(*) OVER () AS c
+           FROM telemetry_samples WHERE device_id = $1 AND trip_id = $2::bigint
+       ) t WHERE n % $3 = 1 OR $3 = 1 OR n = c ORDER BY ts`,
+      [device.id, tripId, step],
+    );
+    return {
+      trip: { id: Number(tripId), start: rows[0].ts, end: rows[rows.length - 1].ts, total },
+      step,
+      locationAllowed: allowed,
+      samples: rows.map((r) => ({
+        ts: r.ts, metrics: r.metrics, dtcs: r.dtcs, gpsSpeed: r.gps_speed, gpsAccuracy: r.gps_accuracy,
+        ...(allowed ? { lat: r.latitude, lon: r.longitude } : {}),
       })),
     };
   });

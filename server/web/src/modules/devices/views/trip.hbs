@@ -1,0 +1,67 @@
+<div class="page-header device-head">
+  <div class="page-header-text">
+    <h1 class="page-title"><span class="page-title-icon" aria-hidden="true"><i class="fa-solid fa-road"></i></span><span class="text-break">Viagem {{trip.id}}</span></h1>
+    <p class="page-subtitle"><a href="/dispositivos/{{device.id}}#viagens">{{device.name}}</a> · {{date trip.start}} até {{date trip.end}}</p>
+  </div>
+  <div class="page-header-actions">
+    <a class="btn btn-outline-primary btn-sm" href="/painel-veiculo?dispositivo={{device.id}}&amp;viagem={{trip.id}}"><i class="fa-solid fa-circle-play me-1" aria-hidden="true"></i>Simular no painel</a>
+    <a class="btn btn-outline-secondary btn-sm" href="/dispositivos/{{device.id}}/viagens/{{trip.id}}/csv" download><i class="fa-solid fa-file-csv me-1" aria-hidden="true"></i>CSV</a>
+    {{#if locationAllowed}}<a class="btn btn-outline-secondary btn-sm" href="/dispositivos/{{device.id}}/viagens/{{trip.id}}/gpx" download><i class="fa-solid fa-map-location-dot me-1" aria-hidden="true"></i>GPX</a>{{/if}}
+  </div>
+</div>
+
+<div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-3" aria-label="Resumo da viagem">
+  <div class="col"><div class="stat-panel h-100"><div class="small text-body-secondary">Duração</div><div class="h4 mb-0">{{trip.minutes}} <small class="fs-6 text-body-secondary">min</small></div></div></div>
+  <div class="col"><div class="stat-panel h-100"><div class="small text-body-secondary">Distância</div><div class="h4 mb-0">{{num trip.km 1}} <small class="fs-6 text-body-secondary">km</small></div></div></div>
+  <div class="col"><div class="stat-panel h-100"><div class="small text-body-secondary">Combustível</div><div class="h4 mb-0">{{num trip.liters 2}} <small class="fs-6 text-body-secondary">L</small></div></div></div>
+  <div class="col"><div class="stat-panel h-100"><div class="small text-body-secondary">Consumo</div><div class="h4 mb-0">{{#if trip.kmPerL}}{{num trip.kmPerL 1}} <small class="fs-6 text-body-secondary">km/l</small>{{else}}—{{/if}}</div></div></div>
+  <div class="col"><div class="stat-panel h-100"><div class="small text-body-secondary">Custo estimado</div><div class="h4 mb-0">{{#if trip.cost}}{{brl trip.cost}}{{else}}—{{/if}}</div></div></div>
+  <div class="col"><div class="stat-panel h-100"><div class="small text-body-secondary">Vel. média</div><div class="h4 mb-0">{{#if trip.avgSpeed}}{{num trip.avgSpeed 0}} <small class="fs-6 text-body-secondary">km/h</small>{{else}}—{{/if}}</div></div></div>
+  <div class="col"><div class="stat-panel h-100"><div class="small text-body-secondary">Vel. máxima</div><div class="h4 mb-0">{{num trip.maxSpeed 0}} <small class="fs-6 text-body-secondary">km/h</small></div></div></div>
+  <div class="col"><div class="stat-panel h-100"><div class="small text-body-secondary">Temp. máxima</div><div class="h4 mb-0">{{num trip.maxCoolant 0}} <small class="fs-6 text-body-secondary">°C</small></div></div></div>
+</div>
+<p class="small text-body-secondary mb-3">Distância e combustível estimados pela velocidade e pelo consumo instantâneo; custo pelo último preço por litro registrado.</p>
+
+{{#if locationAllowed}}
+<section class="stat-panel mb-3" id="route-card" data-device-id="{{device.id}}" data-trip="{{trip.id}}" data-has-map="{{hasMap}}" data-map-file="{{mapFile}}" data-map-version="{{mapVersion}}" aria-labelledby="route-title">
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <h2 class="h6 mb-0 me-auto" id="route-title">Percurso <span class="small fw-normal text-body-secondary" id="route-summary"></span></h2>
+    <span class="route-live" id="route-live" data-state="live" role="status" hidden><span class="route-live-dot" aria-hidden="true"></span><span id="route-live-text">Ao vivo</span></span>
+    <button type="button" class="btn btn-sm btn-outline-primary" id="route-snap" aria-pressed="true" title="Encaixar o traço nas ruas do mapa" hidden><i class="fa-solid fa-road me-1" aria-hidden="true"></i>Ajustar às ruas</button>
+    <button type="button" class="btn btn-sm btn-outline-primary" id="route-follow" aria-pressed="true" hidden><i class="fa-solid fa-location-crosshairs me-1" aria-hidden="true"></i>Seguir</button>
+    <select id="route-trip" class="d-none" aria-hidden="true" tabindex="-1"><option value=""></option></select>
+    <div class="d-none" id="route-range"><button type="button" data-minutes="10080" class="active"></button></div>
+  </div>
+  <p class="small text-body-secondary" id="route-notice" hidden></p>
+  <div class="skeleton route-skeleton" id="route-loading" aria-hidden="true"></div>
+  <div class="route-map" id="route-map" hidden></div>
+  <p class="route-legend small text-body-secondary mt-2 mb-0">
+    <span class="route-dot route-slow"></span>até 30 km/h <span class="route-dot route-mid"></span>até 60 <span class="route-dot route-fast"></span>até 90 <span class="route-dot route-top"></span>acima de 90
+  </p>
+  <div class="route-profile mt-3" id="route-profile" hidden>
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+      <h3 class="h6 mb-0 me-auto">Ao longo do trajeto</h3>
+      <span class="small text-body-secondary" id="route-cursor" aria-live="polite">Passe o mouse ou toque no gráfico ou no mapa</span>
+    </div>
+    <div class="route-chart-box"><canvas id="route-chart" role="img" aria-label="Velocidade e rotação ao longo do trajeto"></canvas></div>
+  </div>
+</section>
+{{else}}
+<p class="small text-body-secondary"><i class="fa-solid fa-lock me-1" aria-hidden="true"></i>{{#if (eq user.role "mechanic")}}O percurso não é compartilhado com a oficina.{{else}}O percurso de outras contas só fica disponível no modo suporte, registrado na auditoria.{{/if}}</p>
+{{/if}}
+
+<section class="stat-panel mb-3" aria-labelledby="trip-faults-title">
+  <h2 class="h6 mb-3" id="trip-faults-title"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Falhas lidas nesta viagem</h2>
+  {{#if dtcs.length}}
+  <div class="table-responsive">
+    <table class="table table-sm table-striped table-hover table-stack align-middle mb-0">
+      <thead class="table-dark"><tr><th scope="col">Código</th><th scope="col">Descrição</th></tr></thead>
+      <tbody>
+        {{#each dtcs}}<tr><td data-label="Código" class="font-monospace fw-semibold">{{this}}</td><td data-label="Descrição" data-dtc-describe="{{this}}">—</td></tr>{{/each}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  {{> emptyState icon="fa-circle-check" tone="ok" title="Nenhuma falha" text="O app não leu nenhum código de falha durante esta viagem."}}
+  {{/if}}
+</section>

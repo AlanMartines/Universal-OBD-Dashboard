@@ -8,6 +8,8 @@ if (card) {
   // base.pmtiles (página Mapas) ou brasil.pmtiles (script antigo); só os dois nomes conhecidos.
   const mapFile = ['base.pmtiles', 'brasil.pmtiles'].includes(card.dataset.mapFile) ? card.dataset.mapFile : 'base.pmtiles';
   const mapVersion = /^\d+$/.test(card.dataset.mapVersion || '') ? `?v=${card.dataset.mapVersion}` : '';
+  // Página da viagem: o cartão já vem preso numa viagem (sem período, sem escolha de viagem e sem ao vivo).
+  const fixedTrip = /^\d{1,15}$/.test(card.dataset.trip || '') ? card.dataset.trip : null;
   const range = document.getElementById('route-range');
   const tripSelect = document.getElementById('route-trip');
   const summary = document.getElementById('route-summary');
@@ -166,7 +168,8 @@ if (card) {
   async function load(keepView = false) {
     if (!shownOnce && loading) loading.hidden = false;
     const query = new URLSearchParams({ minutes: String(minutes), ruas: snapOn ? '1' : '0' });
-    if (tripSelect.value) query.set('viagem', tripSelect.value);
+    const trip = fixedTrip || tripSelect.value;
+    if (trip) query.set('viagem', trip);
     let data;
     try {
       const response = await fetch(`/dispositivos/${encodeURIComponent(deviceId)}/percurso?${query}`, { credentials: 'same-origin' });
@@ -178,13 +181,15 @@ if (card) {
       return;
     }
     if (loading) loading.hidden = true;
-    const selected = tripSelect.value;
-    tripSelect.replaceChildren(new Option('Todas as viagens do período', ''));
-    data.trips.forEach((trip) => {
-      const start = new Date(trip.start).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-      tripSelect.add(new Option(`Viagem ${trip.id} · ${start}`, String(trip.id)));
-    });
-    tripSelect.value = selected;
+    if (!fixedTrip) {
+      const selected = tripSelect.value;
+      tripSelect.replaceChildren(new Option('Todas as viagens do período', ''));
+      data.trips.forEach((t) => {
+        const start = new Date(t.start).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        tripSelect.add(new Option(`Viagem ${t.id} · ${start}`, String(t.id)));
+      });
+      tripSelect.value = selected;
+    }
     if (pendingTrip) {
       if ([...tripSelect.options].some((o) => o.value === pendingTrip)) {
         selectPendingTrip();
@@ -406,7 +411,7 @@ if (card) {
 
   /* ---------------------------------------------------------------- Ao vivo */
   /** Ao vivo só no período até agora; uma viagem escolhida é histórico. */
-  const isLive = () => !tripSelect.value;
+  const isLive = () => !fixedTrip && !tripSelect.value;
 
   function carElement() {
     const el = document.createElement('div');

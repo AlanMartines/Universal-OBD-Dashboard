@@ -3,6 +3,7 @@ import { appHealth, buildHealth } from './health.js';
 import { Readable } from 'node:stream';
 import { ApiError, message } from '../../shared/errors.js';
 import { pageParam, pagerFor } from '../../shared/pagination.js';
+import { tripCsv, tripFileName, tripGpx } from './trip-export.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -260,6 +261,61 @@ export default function devicesRoutes(app, {
   });
   app.post('/dispositivos/:id/revogar', { preHandler: requireUser }, deviceAction('revoke', 'device_revoked'));
   app.post('/dispositivos/:id/excluir', { preHandler: requireUser }, deviceAction('delete', 'device_deleted'));
+
+  // ---------- Página de uma viagem ----------
+  const tripParam = (request) => {
+    const v = String(request.params.viagem ?? '');
+    if (!/^[0-9]{1,15}$/.test(v)) throw new ApiError(404, 'not_found');
+    return v;
+  };
+  app.get('/dispositivos/:id/viagens/:viagem', { preHandler: requireUser }, async (request, reply) => {
+    const id = requireUuid(request);
+    const tripId = tripParam(request);
+    const [data, found, fuel] = await Promise.all([
+      api(request, 'GET', `/internal/devices/${id}`),
+      api(request, 'GET', `/internal/devices/${id}/trips?tripId=${tripId}`),
+      api(request, 'GET', `/internal/devices/${id}/fuel-ups`).catch(() => null),
+    ]);
+    const trip = found.trips[0];
+    if (!trip) throw new ApiError(404, 'not_found');
+    // Custo pelo último preço por litro registrado (estimativa, como na lista de viagens)
+    const priced = fuel?.items.find((f) => !f.removedAt && f.totalPrice && f.liters > 0);
+    const price = priced ? priced.totalPrice / priced.liters : null;
+    const allowed = data.locationAllowed;
+    return reply.view('modules/devices/views/trip.hbs', context(request, {
+      title: `Viagem ${trip.id} · ${data.device.name}`,
+      device: data.device,
+      trip: {
+        ...trip,
+        avgSpeed: trip.minutes >= 1 && trip.km > 0.2 ? trip.km / (trip.minutes / 60) : null,
+        cost: price && trip.liters > 0 ? trip.liters * price : null,
+      },
+      dtcs: found.dtcs ?? [],
+      locationAllowed: allowed,
+      hasMap: hasMapData(),
+      mapFile: mapFileName(),
+      mapVersion: mapVersion(),
+      pageScripts: ['/vendor/chartjs/chart.umd.min.js', '/static/js/chart-theme.js', '/static/js/dtc-sae.js', '/modules/devices/faults.js', ...(allowed ? ['/vendor/pmtiles/pmtiles.js', '/vendor/basemaps/basemaps.js'] : [])],
+      pageModules: allowed ? ['/modules/devices/route.js'] : [],
+      pageCss: ['/modules/devices/devices.css', ...(allowed ? ['/vendor/maplibre/maplibre-gl.css'] : [])],
+    }));
+  });
+
+  // Arquivos da viagem, no formato do app. O GPX só existe para quem pode ver a localização.
+  app.get('/dispositivos/:id/viagens/:viagem/:formato', { preHandler: requireUser }, async (request, reply) => {
+    const id = requireUuid(request);
+    const tripId = tripParam(request);
+    const formato = String(request.params.formato);
+    if (!['csv', 'gpx'].includes(formato)) throw new ApiError(404, 'not_found');
+    const data = await api(request, 'GET', `/internal/devices/${id}/trips/${tripId}/export`);
+    if (formato === 'gpx' && !data.locationAllowed) throw new ApiError(404, 'not_found');
+    const body = formato === 'csv' ? tripCsv(data.samples) : tripGpx(data.trip, data.samples);
+    return reply
+      .header('content-type', formato === 'csv' ? 'text/csv; charset=utf-8' : 'application/gpx+xml; charset=utf-8')
+      .header('content-disposition', `attachment; filename="${tripFileName(data.trip, formato)}"`)
+      .header('cache-control', 'private, no-store')
+      .send(body);
+  });
 
   // ---------- Link para a oficina ----------
   // O link só aparece uma vez, nesta resposta: o banco guarda o hash e nenhuma outra tela o mostra.

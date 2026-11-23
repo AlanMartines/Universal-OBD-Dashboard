@@ -9,6 +9,7 @@ import { buildApp, checkFormToken, isSameOriginRequest, issueFormToken } from '.
 import { loadConfig } from '../src/config.js';
 import { ago, describeAgent } from '../src/modules/account/user-agent.js';
 import { buildMaintenance, buildReport } from '../src/modules/devices/routes.js';
+import { number, tripCsv, tripFileName, tripGpx } from '../src/modules/devices/trip-export.js';
 import { buildHealth, healthFindings } from '../src/modules/devices/health.js';
 // A API real, com banco real: o teste atravessa a mesma fronteira da produção.
 import { ADMIN, KEY, pairDevice, sample, send, startApi } from '../../api/test/helpers.js';
@@ -199,6 +200,26 @@ describe('arquivos', () => {
       assert.ok(!/ on[a-z]+="/.test(raw), file);
       assert.ok(!/innerHTML|eval\(|document\.write/.test(raw), file);
     }
+  });
+});
+
+describe('exportar viagem (CSV e GPX, formato do app)', () => {
+  test('aspas no CSV, números sem notação científica e GPX em segmentos', () => {
+    assert.equal(number(0.0000001), '0');
+    assert.equal(number(12.5), '12.5');
+    assert.equal(number(3), '3');
+    assert.equal(number(null), '');
+    const t0 = Date.UTC(2026, 10, 23, 12, 0, 0);
+    const amostras = [
+      { ts: new Date(t0).toISOString(), metrics: { 'a,b': 1 }, dtcs: [], lat: -10, lon: -20 },
+      { ts: new Date(t0 + 5000).toISOString(), metrics: { 'a,b': 2 }, dtcs: ['P0301'], lat: -10.001, lon: -20 },
+      { ts: new Date(t0 + 120000).toISOString(), metrics: {}, dtcs: [], lat: -10.002, lon: -20 },
+    ];
+    const csv = tripCsv(amostras);
+    assert.match(csv.split('\r\n')[0], /,"a,b",/);
+    const gpx = tripGpx({ id: 1, start: amostras[0].ts }, amostras);
+    assert.equal((gpx.match(/<trkseg>/g) ?? []).length, 2, 'buraco de 2 min abre outro segmento');
+    assert.equal(tripFileName({ id: 7, start: t0 }, 'csv'), 'viagem_7_20261123-0900.csv');
   });
 });
 
@@ -747,6 +768,59 @@ describe('fluxo pelo navegador', () => {
     const depois = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}`, headers: { cookie: oficina } });
     assert.notEqual(depois.statusCode, 200);
     assert.equal((await web.inject({ method: 'GET', url: caminho })).statusCode, 404);
+  });
+
+  test('página da viagem: resumo, falhas, mapa preso na viagem e arquivos CSV e GPX', async () => {
+    const enter = async (username, password, newPassword) => {
+      const cookie = cookieOf(await signIn(username, password));
+      const c = await csrfOf(cookie, '/meus-dados/senha');
+      await post('/meus-dados/senha', { _csrf: c, currentPassword: password, newPassword, confirm: newPassword }, cookie);
+      return cookie;
+    };
+    const senhaDe = (body) => /user-select-all[^"]*">([^<]+)</.exec(body)[1];
+    const feito = await post('/admin/usuarios', { _csrf: await csrfOf(adminCookie), username: 'donoviagem', role: 'admin' }, adminCookie);
+    const dono = await enter('donoviagem', senhaDe(feito.body), 'uma frase longa para esta conta');
+    const carro = await pairDevice(apiCtx.app, dono.slice(dono.indexOf('=') + 1), 'efefefef-1111-4111-8111-efefefefefef');
+    const agora = Date.now();
+    await send(apiCtx.app, carro.deviceToken, Array.from({ length: 5 }, (_, i) => sample(i + 1, {
+      ts: agora - (10 - i) * 5000, tripId: 5, ...(i === 2 ? { dtcs: ['P0301'] } : {}),
+      metrics: { speed: 20 + i, rpm: 1500 + i * 10, 'derived.instantKmPerL': 12.25 }, gps: { lat: -10 - i / 1000, lon: -20, speedKmh: 20 + i, accuracyM: 4 },
+    })));
+    const pagina = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/viagens/5`, headers: { cookie: dono } });
+    assert.equal(pagina.statusCode, 200);
+    assert.match(pagina.body, /Viagem 5/);
+    assert.match(pagina.body, /data-trip="5"/);
+    assert.match(pagina.body, /data-dtc-describe="P0301"/);
+    assert.match(pagina.body, /viagens\/5\/gpx/);
+    const lista = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}`, headers: { cookie: dono } });
+    assert.ok(lista.body.includes(`href="/dispositivos/${carro.id}/viagens/5"`));
+    assert.equal((await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/viagens/99`, headers: { cookie: dono } })).statusCode, 404);
+
+    const csv = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/viagens/5/csv`, headers: { cookie: dono } });
+    assert.equal(csv.statusCode, 200);
+    assert.match(csv.headers['content-type'], /text\/csv/);
+    assert.match(csv.headers['content-disposition'], /filename="viagem_5_\d{8}-\d{4}\.csv"/);
+    const linhas = csv.body.trim().split('\r\n');
+    assert.equal(linhas.length, 6);
+    assert.match(linhas[0], /^timestamp_ms,time_utc,/);
+    assert.ok(linhas[0].includes('derived.instantKmPerL'));
+    assert.ok(linhas[1].includes(',12.25,'), 'ponto decimal, sem notação científica');
+    assert.ok(linhas[0].includes('latitude,longitude'));
+    assert.ok(linhas[3].endsWith(',P0301'));
+    const gpx = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/viagens/5/gpx`, headers: { cookie: dono } });
+    assert.equal(gpx.statusCode, 200);
+    assert.equal((gpx.body.match(/<trkpt /g) ?? []).length, 5);
+    assert.match(gpx.body, /<wpt [^>]+><time>[^<]+<\/time><name>P0301<\/name>/);
+    assert.match(gpx.body, /<obd:rpm>1500<\/obd:rpm>/);
+
+    // Super Admin numa conta alheia: a viagem abre, mas sem mapa, sem GPX e sem posição no CSV
+    const doSuper = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/viagens/5`, headers: { cookie: adminCookie } });
+    assert.equal(doSuper.statusCode, 200);
+    assert.ok(!doSuper.body.includes('id="route-card"'));
+    assert.ok(!doSuper.body.includes('/gpx"'));
+    assert.equal((await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/viagens/5/gpx`, headers: { cookie: adminCookie } })).statusCode, 404);
+    const csvSuper = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/viagens/5/csv`, headers: { cookie: adminCookie } });
+    assert.ok(!csvSuper.body.split('\r\n')[0].includes('latitude'));
   });
 
   test('página Mapas: sem o serviço configurado avisa, sem quebrar; item ativo no menu', async () => {
