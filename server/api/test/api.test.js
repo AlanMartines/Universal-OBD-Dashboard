@@ -1213,7 +1213,7 @@ describe('API', () => {
       dev = await pairDevice(app, dono, 'dddddddd-1111-4111-8111-dddddddddddd');
       const now = Date.now();
       const samples = [];
-      for (let i = 1; i <= 30; i += 1) samples.push(sample(i, { ts: now - (40 - i) * 1000, tripId: i <= 20 ? 1 : 2, metrics: { speed: i }, gps: { lat: -10 - i / 1000, lon: -20 - i / 1000 } }));
+      for (let i = 1; i <= 30; i += 1) samples.push(sample(i, { ts: now - (40 - i) * 1000, tripId: i <= 20 ? 1 : 2, metrics: { speed: i, rpm: 1000 + i, ...(i === 1 ? { 'derived.instantKmPerL': 12.5 } : {}) }, gps: { lat: -10 - i / 1000, lon: -20 - i / 1000 } }));
       samples.push(sample(31, { ts: now - 5000, tripId: 2, metrics: { speed: 9 } }));
       await send(app, dev.deviceToken, samples);
     });
@@ -1222,6 +1222,10 @@ describe('API', () => {
       const all = (await route(dono)).json();
       assert.equal(all.total, 30);
       assert.equal(all.points[0].lat, -10.001);
+      // Rotação e consumo seguem com cada posição, para o gráfico ligado ao mapa
+      assert.equal(all.points[0].rpm, 1001);
+      assert.equal(all.points[0].kmpl, 12.5);
+      assert.equal(all.points[1].kmpl, null);
       assert.equal(all.trips.length, 2);
       assert.equal((await route(dono, 'minutes=1440&tripId=1')).json().total, 20);
     });

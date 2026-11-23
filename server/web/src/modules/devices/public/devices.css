@@ -54,6 +54,21 @@
 .route-fast { background: #fd7e14; }
 .route-top { background: #dc3545; }
 
+/* Gráfico do trajeto, ligado ao mapa: o cursor marca no mapa o ponto do gráfico, e vice-versa */
+.route-chart-box {
+  position: relative;
+  height: 180px;
+}
+.route-cursor-mark {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  background: var(--app-series-2);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--app-series-2), 0 1px 4px rgb(0 0 0 / 45%);
+}
+
 /* ---------- Tela do dispositivo ---------- */
 .min-w-0 {
   min-width: 0;

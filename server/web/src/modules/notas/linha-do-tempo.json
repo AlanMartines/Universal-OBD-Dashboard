@@ -1,5 +1,35 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "Percurso: gráfico do trajeto ligado ao mapa",
+      "text": "Embaixo do mapa, a velocidade e a rotação ao longo das posições. Passar o mouse (ou tocar) no gráfico marca no mapa onde o carro estava naquele instante; no mapa, o ponto mais perto aparece no gráfico, com hora, velocidade, rotação e consumo. Segue também ao vivo."
+     },
+     {
+      "title": "Teste de tela no CI",
+      "text": "abre no Chrome do GitHub as páginas públicas, as do dono e as do Super Admin, o modelo 3D nas três variações e a tela do app em todos os temas, de dia e de noite, e falha com erro de JavaScript ou tela em branco. As capturas ficam no artefato telas."
+     }
+    ]
+   },
+   {
+    "kind": "fixed",
+    "title": "Corrigido",
+    "items": [
+     {
+      "title": "Gráficos do painel",
+      "text": "o rodapé do balão (como o consumo) ficava branco no fundo branco; agora segue a cor do texto."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.71",
   "date": "2026-11-22",
   "sections": [

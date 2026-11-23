@@ -147,6 +147,20 @@ jobs:
         working-directory: server/mapas
         run: npm test
 
+      # Abre as páginas do painel e a tela do app no Chrome do runner e falha com erro de JavaScript,
+      # erro no console ou tela em branco (pega o que os testes acima não veem, como o modelo 3D).
+      - name: Telas no navegador
+        working-directory: server/web
+        run: node test/telas.mjs
+
+      - name: Capturas das telas
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: telas
+          path: server/web/test/telas-capturas/
+          if-no-files-found: ignore
+
   # Segredos no histórico, dependências e imagens com falhas conhecidas. Ferramentas em imagens
   # oficiais presas por digest, sem Action de terceiros.
   seguranca:

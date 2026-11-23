@@ -117,6 +117,13 @@
     <p class="route-legend small text-body-secondary mt-2 mb-0">
       <span class="route-dot route-slow"></span>até 30 km/h <span class="route-dot route-mid"></span>até 60 <span class="route-dot route-fast"></span>até 90 <span class="route-dot route-top"></span>acima de 90
     </p>
+    <div class="route-profile mt-3" id="route-profile" hidden>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+        <h3 class="h6 mb-0 me-auto">Ao longo do trajeto</h3>
+        <span class="small text-body-secondary" id="route-cursor" aria-live="polite">Passe o mouse ou toque no gráfico ou no mapa</span>
+      </div>
+      <div class="route-chart-box"><canvas id="route-chart" role="img" aria-label="Velocidade e rotação ao longo do trajeto"></canvas></div>
+    </div>
   </section>
   </div>
   {{/if}}
