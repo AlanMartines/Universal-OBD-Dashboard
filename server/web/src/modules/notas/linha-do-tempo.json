@@ -4,6 +4,20 @@
   "date": null,
   "sections": [
    {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "Página de cada viagem no painel",
+      "text": "Resumo (duração, distância, combustível, consumo, custo, velocidades e temperatura máxima), o percurso com o gráfico ligado ao mapa, as falhas lidas durante a viagem e o botão \"Simular no painel\", num endereço próprio. Abre pela lista de Viagens (data ou botão) e vale também para viagens antigas, fora das 50 últimas."
+     },
+     {
+      "title": "Exportar a viagem pelo painel",
+      "text": "CSV com a telemetria e GPX com o trajeto, no mesmo formato do app. O GPX e as posições no CSV só saem para quem pode ver a localização (nunca para o mecânico)."
+     }
+    ]
+   },
+   {
     "kind": "fixed",
     "title": "Corrigido",
     "items": [

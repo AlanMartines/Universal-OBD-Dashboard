@@ -6,6 +6,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Página de cada viagem no painel.** Resumo (duração, distância, combustível, consumo, custo, velocidades e temperatura máxima), o percurso com o gráfico ligado ao mapa, as falhas lidas durante a viagem e o botão "Simular no painel", num endereço próprio. Abre pela lista de Viagens (data ou botão) e vale também para viagens antigas, fora das 50 últimas.
+- **Exportar a viagem pelo painel:** CSV com a telemetria e GPX com o trajeto, no mesmo formato do app. O GPX e as posições no CSV só saem para quem pode ver a localização (nunca para o mecânico).
+
 ### Corrigido
 - **Página Mapas: barra de andamento também no mapa base.** O recorte do mapa base mostrava a barra em texto do `pmtiles`, repetida linha a linha no registro; agora o percentual vai para a mesma barra do encaixe, e o texto da fase mostra o tamanho, a velocidade e quanto falta. O registro fica só com as outras mensagens.
 

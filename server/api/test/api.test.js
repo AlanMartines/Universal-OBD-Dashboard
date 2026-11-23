@@ -1243,6 +1243,25 @@ describe('API', () => {
       assert.equal((await route(dono, 'minutes=1440&tripId=1')).json().total, 20);
     });
 
+    test('uma viagem só (com as falhas lidas nela) e exportação sem posição para quem não pode ver', async () => {
+      await send(app, dev.deviceToken, [sample(60, { ts: Date.now() - 3000, tripId: 2, dtcs: ['P0301'], metrics: { speed: 5 }, gps: { lat: -10.1, lon: -20.1 } })]);
+      const uma = (await internal(app, 'GET', `/internal/devices/${dev.id}/trips?tripId=2`, { token: dono })).json();
+      assert.equal(uma.trips.length, 1);
+      assert.equal(uma.trips[0].id, 2);
+      assert.deepEqual(uma.dtcs, ['P0301']);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}/trips?tripId=x`, { token: dono })).statusCode, 400);
+      const exp = (await internal(app, 'GET', `/internal/devices/${dev.id}/trips/1/export`, { token: dono })).json();
+      assert.equal(exp.locationAllowed, true);
+      assert.equal(exp.samples.length, 20);
+      assert.equal(exp.samples[0].lat, -10.001);
+      assert.equal(exp.samples[0].metrics.speed, 1);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${dev.id}/trips/999/export`, { token: dono })).statusCode, 404);
+      const superTok = await adminLogin(app);
+      const semPosicao = (await internal(app, 'GET', `/internal/devices/${dev.id}/trips/1/export`, { token: superTok })).json();
+      assert.equal(semPosicao.locationAllowed, false);
+      assert.ok(!('lat' in semPosicao.samples[0]));
+    });
+
     test('super admin não vê localização de outra conta, em nenhum caminho', async () => {
       const superTok = await adminLogin(app);
       const res = await route(superTok);

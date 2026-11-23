@@ -209,6 +209,14 @@ for (const escuro of [false, true]) {
     const ok = await aba.avaliar(`!document.getElementById('route-map').hidden && !document.getElementById('route-profile').hidden`);
     if (!ok) throw new Error('mapa ou gráfico do trajeto não apareceu');
   });
+  for (const [nome, largura, altura] of [['viagem', 1280, 900], ['celular-viagem', 390, 844]]) {
+    await conferir(`${tema}-${nome}`, async () => {
+      await aba.ir(u(`/dispositivos/${painel.dev.id}/viagens/1`), { escuro, largura, altura, ...dono });
+      await esperar(1500);
+      const ok = await aba.avaliar(`!document.getElementById('route-map').hidden && !document.getElementById('route-profile').hidden`);
+      if (!ok) throw new Error('mapa ou gráfico da viagem não apareceu');
+    });
+  }
   await conferir(`${tema}-usuarios-do-dono`, () => aba.ir(u('/admin'), { escuro, ...dono }));
   // A oficina abre o link sem login: cai no veículo, só leitura e sem o Percurso
   await conferir(`${tema}-oficina-link`, async () => {
