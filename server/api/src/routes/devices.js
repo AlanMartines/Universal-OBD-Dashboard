@@ -11,7 +11,7 @@ const ROUTE_MAX_POINTS = 2000;
 /** Viagem reproduzida no painel: leituras a cada 2 s dão ~11 h antes de resumir. */
 const REPLAY_MAX_SAMPLES = 20000;
 
-export default function devicesRoutes(app, { config, pool, live, limit, requireReady, requireManager, requireRecentAuth, loadDevice, publicDevice, locationAllowed }) {
+export default function devicesRoutes(app, { config, pool, live, limit, maps, requireReady, requireManager, requireRecentAuth, loadDevice, publicDevice, locationAllowed }) {
   const matcher = createMatcher({ url: config.osrmUrl });
   app.get('/internal/devices', {
     preValidation: requireReady,
@@ -388,7 +388,9 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
     // Encaixe nas ruas, só para desenhar. Sem OSRM configurado: "off"; fora do ar: "unavailable".
     let snapped = null;
     let snapStatus = 'off';
-    if (request.query.snap === '1' && matcher.enabled && rows.length > 1) {
+    // Com o serviço de mapas, o encaixe só vale com um mapa instalado (sem ele o OSRM fica parado).
+    const snapOn = matcher.enabled && (await maps.encaixeInstalado()) !== false;
+    if (request.query.snap === '1' && snapOn && rows.length > 1) {
       try {
         snapped = await matcher.match(rows.map((r) => ({ t: r.ts, lat: r.latitude, lon: r.longitude, speed: r.speed, accuracy: r.accuracy })), gapSeconds * 1000);
         snapStatus = 'ok';
@@ -396,11 +398,11 @@ export default function devicesRoutes(app, { config, pool, live, limit, requireR
         request.log.warn({ err: error }, 'osrm indisponível');
         snapStatus = 'unavailable';
       }
-    } else if (request.query.snap === '1' && matcher.enabled) {
+    } else if (request.query.snap === '1' && snapOn) {
       snapStatus = 'ok';
       snapped = [];
     }
-    return { total, gapSeconds, trips, points, snapped, snapStatus, snapAvailable: matcher.enabled };
+    return { total, gapSeconds, trips, points, snapped, snapStatus, snapAvailable: snapOn };
   });
 
   // Novo código para um dispositivo que já existe (troca de celular, app reinstalado, identificador novo):

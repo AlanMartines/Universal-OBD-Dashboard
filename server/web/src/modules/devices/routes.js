@@ -73,7 +73,7 @@ export function buildReport(fuel, trips) {
 }
 
 export default function devicesRoutes(app, {
-  config, api, cookieName, requireUser, context, hasMapData,
+  config, api, cookieName, requireUser, context, hasMapData, mapFileName, mapVersion,
 }) {
   const DEVICE_ASSETS = { pageCss: ['/modules/devices/devices.css'] };
 
@@ -183,6 +183,8 @@ export default function devicesRoutes(app, {
       pageCss: ['/modules/devices/devices.css', ...(data.locationAllowed ? ['/vendor/maplibre/maplibre-gl.css'] : [])],
       locationAllowed: data.locationAllowed,
       hasMap: hasMapData(),
+      mapFile: mapFileName(),
+      mapVersion: mapVersion(),
     }));
   });
 

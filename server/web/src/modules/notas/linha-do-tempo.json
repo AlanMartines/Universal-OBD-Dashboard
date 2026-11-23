@@ -4,6 +4,26 @@
   "date": null,
   "sections": [
    {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "Página Mapas no painel (Super Admin)",
+      "text": "baixar, atualizar e excluir o mapa base e o encaixe do percurso nas ruas, de qualquer área do mundo (catálogo da Geofabrik: continentes, países, regiões e o planeta). Mostra o tamanho da área e, no encaixe, a estimativa de disco e de memória, com aviso nas áreas grandes; acompanha o trabalho ao vivo. Baixar e excluir pedem a senha confirmada há pouco e ficam na auditoria. O trabalho roda no novo contêiner mapas, já no ar, sem acesso ao Docker, sem root e com saída para a internet só para fontes públicas de uma lista fixa. O osrm fica sempre ligado e troca de mapa sozinho; sem mapa, fica parado. Na instalação: chown -R 1000:1000 data/maps data/osrm (README do servidor)."
+     }
+    ]
+   },
+   {
+    "kind": "security",
+    "title": "Segurança",
+    "items": [
+     {
+      "title": "OSRM atualizado para a v26.4.0",
+      "text": "(a v5.27.1 usava um Debian sem suporte) e pmtiles compilado com as dependências corrigidas; a imagem do mapas, usada também pelo osrm, entra na verificação do Trivy no CI."
+     }
+    ]
+   },
+   {
     "kind": "changed",
     "title": "Alterado",
     "items": [

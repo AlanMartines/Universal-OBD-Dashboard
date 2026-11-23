@@ -39,6 +39,11 @@ export const MESSAGES = {
   forbidden: 'Você não tem acesso a esta página.',
   bad_form: 'O formulário expirou. Recarregue a página e tente de novo.',
   internal_error: 'Algo deu errado. Tente novamente.',
+  maps_unconfigured: 'O serviço de mapas não está configurado neste servidor (MAPAS_URL vazio).',
+  maps_unavailable: 'O serviço de mapas não respondeu. Confira se o contêiner "mapas" está no ar.',
+  maps_busy: 'Já há um mapa sendo baixado ou processado. Espere terminar.',
+  maps_area_not_found: 'Área não encontrada no catálogo de mapas.',
+  maps_no_permission: 'O serviço de mapas não consegue gravar nas pastas dos mapas. No servidor, rode: chown -R 1000:1000 data/maps data/osrm (na pasta server/).',
 };
 
 // Avisos de sucesso depois de um redirecionamento. Lista fechada: o texto nunca vem da URL.
@@ -47,6 +52,8 @@ export const NOTICES = {
   device_deleted: 'Dispositivo e dados excluídos.',
   user_updated: 'Usuário atualizado.',
   user_deleted: 'Usuário excluído.',
+  map_started: 'Pedido enviado. O andamento aparece abaixo e a página atualiza sozinha.',
+  map_deleted: 'Mapa excluído.',
   signup_updated: 'Cadastro público atualizado.',
   reauth_ok: 'Senha confirmada. Repita a ação: ações sensíveis ficam liberadas por 10 minutos.',
   mfa_admins_updated: 'Exigência de 2FA para os donos de conta atualizada.',

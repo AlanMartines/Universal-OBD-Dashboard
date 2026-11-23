@@ -5,6 +5,9 @@ const card = document.getElementById('route-card');
 if (card) {
   const deviceId = card.dataset.deviceId;
   const hasMap = card.dataset.hasMap === 'true';
+  // base.pmtiles (página Mapas) ou brasil.pmtiles (script antigo); só os dois nomes conhecidos.
+  const mapFile = ['base.pmtiles', 'brasil.pmtiles'].includes(card.dataset.mapFile) ? card.dataset.mapFile : 'base.pmtiles';
+  const mapVersion = /^\d+$/.test(card.dataset.mapVersion || '') ? `?v=${card.dataset.mapVersion}` : '';
   const range = document.getElementById('route-range');
   const tripSelect = document.getElementById('route-trip');
   const summary = document.getElementById('route-summary');
@@ -85,7 +88,7 @@ if (card) {
       sources: {
         protomaps: {
           type: 'vector',
-          url: `pmtiles://${window.location.origin}/mapa/brasil.pmtiles`,
+          url: `pmtiles://${window.location.origin}/mapa/${mapFile}${mapVersion}`,
           attribution: '© OpenStreetMap · Protomaps',
         },
       },

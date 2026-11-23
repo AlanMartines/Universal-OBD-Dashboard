@@ -1,0 +1,121 @@
+{{#> pageHeader title="Mapas" icon="fa-map-location-dot" subtitle="Mapa base e encaixe do percurso nas ruas, de qualquer lugar do mundo"}}{{/pageHeader}}
+
+{{> formError}}
+
+<div class="alert alert-info d-flex gap-2" role="note">
+  <i class="fa-solid fa-circle-info mt-1" aria-hidden="true"></i>
+  <div>
+    Os dois mapas são opcionais. O <b>mapa base</b> é o fundo do mapa (ruas e nomes) e fica só no disco. O <b>encaixe nas ruas</b> ajusta o desenho do percurso às ruas e ocupa memória enquanto estiver instalado; distância, consumo e velocidade não dependem dele.
+    O ideal é baixar só a região onde os carros rodam: um estado ou uma região ocupa pouco; um país grande, muitos GB; o planeta inteiro, centenas de GB de disco e de memória.
+  </div>
+</div>
+
+{{#if indisponivel}}
+<div class="alert alert-warning" role="alert"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>{{indisponivel}}</div>
+{{/if}}
+
+{{#if estado}}
+{{#unless estado.gravavel.mapas}}<div class="alert alert-warning" role="alert"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>O serviço de mapas não consegue gravar nas pastas dos mapas. No servidor, na pasta <code>server/</code>, rode <code>chown -R 1000:1000 data/maps data/osrm</code>.</div>{{else}}{{#unless estado.gravavel.encaixe}}<div class="alert alert-warning" role="alert"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>O serviço de mapas não consegue gravar na pasta do encaixe. No servidor, na pasta <code>server/</code>, rode <code>chown -R 1000:1000 data/osrm</code>.</div>{{/unless}}{{/unless}}
+<section id="mapas-trabalho" class="card mb-4" {{#unless estado.trabalho}}hidden{{/unless}} aria-live="polite">
+  <div class="card-header d-flex justify-content-between align-items-center gap-2">
+    <h2 class="h6 fw-semibold mb-0"><i class="fa-solid fa-gears me-2" aria-hidden="true"></i>Trabalho de mapa</h2>
+    <span id="mapas-trabalho-badge" class="badge text-bg-secondary">{{#if estado.trabalho.erro}}Falhou{{else if estado.trabalho.fim}}Concluído{{else}}Em andamento{{/if}}</span>
+  </div>
+  <div class="card-body">
+    <p class="mb-1"><b id="mapas-trabalho-area">{{estado.trabalho.nome}}</b> · <span id="mapas-trabalho-mapa">{{#if (eq estado.trabalho.mapa "base")}}Mapa base{{else}}Encaixe nas ruas{{/if}}</span></p>
+    <p class="mb-2 text-body-secondary" id="mapas-trabalho-fase">{{estado.trabalho.fase}}</p>
+    <div class="progress mb-2" id="mapas-trabalho-barra" role="progressbar" aria-label="Andamento" hidden>
+      <div class="progress-bar" id="mapas-trabalho-barra-fill"></div>
+    </div>
+    <p class="text-danger mb-2" id="mapas-trabalho-erro" {{#unless estado.trabalho.erro}}hidden{{/unless}}>{{estado.trabalho.erro}}</p>
+    <details>
+      <summary class="small text-body-secondary">Últimas linhas do registro</summary>
+      <pre class="mapas-registro small mb-0" id="mapas-trabalho-registro">{{#each estado.trabalho.registro}}{{this}}
+{{/each}}</pre>
+    </details>
+  </div>
+</section>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <section class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center gap-2">
+        <h2 class="h6 fw-semibold mb-0"><i class="fa-solid fa-map me-2" aria-hidden="true"></i>Mapa base</h2>
+        {{#if estado.base.instalado}}<span class="badge text-bg-success">Instalado</span>{{else}}<span class="badge text-bg-secondary">Não instalado</span>{{/if}}
+      </div>
+      <div class="card-body">
+        {{#if estado.base.instalado}}
+        <dl class="mapas-dados mb-3">
+          <dt>Área</dt><dd>{{estado.base.nome}}</dd>
+          <dt>Disco</dt><dd>{{estado.base.tamanho}}</dd>
+          <dt>Atualizado</dt><dd>{{date estado.base.atualizado}}</dd>
+        </dl>
+        <form method="post" action="/admin/mapas/excluir" data-confirm="Excluir o mapa base? O percurso passa a aparecer sem as ruas ao fundo." data-confirm-label="Excluir" data-confirm-tone="danger">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <input type="hidden" name="map" value="base">
+          <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fa-solid fa-trash me-1" aria-hidden="true"></i>Excluir</button>
+        </form>
+        {{else}}
+        <p class="text-body-secondary mb-0">Sem mapa base, o percurso aparece sem as ruas ao fundo.</p>
+        {{/if}}
+        <p class="small text-body-secondary mt-3 mb-0">Livre na pasta dos mapas: {{#if estado.discoMapas}}{{estado.discoMapas}}{{else}}—{{/if}}</p>
+      </div>
+    </section>
+  </div>
+  <div class="col-lg-6">
+    <section class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center gap-2">
+        <h2 class="h6 fw-semibold mb-0"><i class="fa-solid fa-route me-2" aria-hidden="true"></i>Encaixe nas ruas</h2>
+        {{#if estado.encaixe.instalado}}<span class="badge text-bg-success">Instalado</span>{{else}}<span class="badge text-bg-secondary">Não instalado</span>{{/if}}
+      </div>
+      <div class="card-body">
+        {{#if estado.encaixe.instalado}}
+        <dl class="mapas-dados mb-3">
+          <dt>Área</dt><dd>{{estado.encaixe.nome}}</dd>
+          <dt>Disco</dt><dd>{{estado.encaixe.tamanho}}</dd>
+          <dt>Memória</dt><dd>{{#if estado.encaixe.memoriaTxt}}cerca de {{estado.encaixe.memoriaTxt}}{{else}}—{{/if}}</dd>
+          <dt>Atualizado</dt><dd>{{date estado.encaixe.atualizado}}</dd>
+        </dl>
+        <form method="post" action="/admin/mapas/excluir" data-confirm="Excluir o encaixe nas ruas? A memória é liberada e o percurso volta a ser o traço do GPS." data-confirm-label="Excluir" data-confirm-tone="danger">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <input type="hidden" name="map" value="encaixe">
+          <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fa-solid fa-trash me-1" aria-hidden="true"></i>Excluir</button>
+        </form>
+        {{else}}
+        <p class="text-body-secondary mb-0">Sem o encaixe, o percurso aparece como o traço do GPS e o serviço de encaixe fica parado, sem ocupar memória.</p>
+        {{/if}}
+        <p class="small text-body-secondary mt-3 mb-0">Livre na pasta do encaixe: {{#if estado.discoEncaixe}}{{estado.discoEncaixe}}{{else}}—{{/if}}</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<section class="card mb-4">
+  <div class="card-header"><h2 class="h6 fw-semibold mb-0"><i class="fa-solid fa-download me-2" aria-hidden="true"></i>Baixar ou atualizar</h2></div>
+  <div class="card-body">
+    <form method="post" action="/admin/mapas/baixar" id="mapas-form" data-confirm="Baixar o mapa desta área? Pode levar de minutos a horas, conforme o tamanho." data-confirm-label="Baixar" data-confirm-tone="primary">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="area" id="mapas-area" value="">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="mapas-tipo">Mapa</label>
+          <select class="form-select" name="map" id="mapas-tipo">
+            <option value="base">Mapa base (fundo do mapa)</option>
+            <option value="encaixe">Encaixe nas ruas</option>
+          </select>
+        </div>
+        <div class="col-md-8">
+          <span class="form-label d-block" id="mapas-area-rotulo">Área</span>
+          <div class="d-flex flex-wrap gap-2" id="mapas-niveis" aria-labelledby="mapas-area-rotulo">
+            <span class="text-body-secondary small" id="mapas-carregando">Carregando o catálogo de áreas…</span>
+          </div>
+        </div>
+      </div>
+      <p class="small mt-3 mb-2" id="mapas-tamanho" aria-live="polite"></p>
+      <p class="small text-warning-emphasis mb-3" id="mapas-alerta" hidden></p>
+      <button class="btn btn-primary" type="submit" id="mapas-baixar" disabled><i class="fa-solid fa-download me-1" aria-hidden="true"></i>Baixar</button>
+      <span class="small text-body-secondary ms-2">Baixar de novo a mesma área atualiza o mapa; outra área substitui a atual.</span>
+    </form>
+  </div>
+</section>
+{{/if}}

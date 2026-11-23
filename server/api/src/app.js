@@ -3,12 +3,14 @@ import Fastify from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import { HttpError, fail } from './errors.js';
 import { safeEqual } from './security.js';
+import { createMapsClient } from './maps.js';
 import { createAccess } from './session.js';
 import accountRoutes from './routes/account.js';
 import adminRoutes from './routes/admin.js';
 import authRoutes from './routes/auth.js';
 import deviceRoutes from './routes/device.js';
 import devicesRoutes from './routes/devices.js';
+import mapsRoutes from './routes/maps.js';
 import securityRoutes from './routes/security.js';
 
 export async function buildApp({ config, pool, logger }) {
@@ -79,13 +81,15 @@ export async function buildApp({ config, pool, logger }) {
     return { status: 'ok' };
   });
 
-  const context = { config, pool, live, limit, ...createAccess({ config, pool }) };
+  const maps = createMapsClient({ url: config.mapsUrl });
+  const context = { config, pool, live, limit, maps, ...createAccess({ config, pool }) };
   deviceRoutes(app, context);
   authRoutes(app, context);
   accountRoutes(app, context);
   securityRoutes(app, context);
   devicesRoutes(app, context);
   adminRoutes(app, context);
+  mapsRoutes(app, context);
 
   return app;
 }
