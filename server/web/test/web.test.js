@@ -735,6 +735,8 @@ describe('fluxo pelo navegador', () => {
     assert.match(visto.body, /não é compartilhada com a oficina/);
     assert.ok(!visto.body.includes('id="oficina"'));
     assert.equal((await web.inject({ method: 'GET', url: `/dispositivos/${outro.id}`, headers: { cookie: mec } })).statusCode, 404);
+    assert.equal((await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/ficha`, headers: { cookie: mec } })).statusCode, 200);
+    assert.equal((await web.inject({ method: 'GET', url: `/dispositivos/${outro.id}/ficha`, headers: { cookie: mec } })).statusCode, 404);
     assert.equal((await web.inject({ method: 'GET', url: '/admin', headers: { cookie: mec } })).statusCode, 403);
     const lista = await web.inject({ method: 'GET', url: '/admin', headers: { cookie: dono } });
     assert.match(lista.body, /Mecânicos: veículos e prazo/);
@@ -821,6 +823,18 @@ describe('fluxo pelo navegador', () => {
     assert.equal((await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/viagens/5/gpx`, headers: { cookie: adminCookie } })).statusCode, 404);
     const csvSuper = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/viagens/5/csv`, headers: { cookie: adminCookie } });
     assert.ok(!csvSuper.body.split('\r\n')[0].includes('latitude'));
+
+    // Ficha para a oficina: uma folha com falhas, leituras, manutenção e viagens, sem localização
+    assert.ok(lista.body.includes(`href="/dispositivos/${carro.id}/ficha"`));
+    const ficha = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}/ficha`, headers: { cookie: dono } });
+    assert.equal(ficha.statusCode, 200);
+    assert.match(ficha.body, /Ficha do veículo para a oficina/);
+    assert.match(ficha.body, /data-dtc-describe="P0301"/);
+    assert.match(ficha.body, /id="ficha-imprimir"/);
+    assert.match(ficha.body, /\/modules\/devices\/ficha\.css/);
+    assert.match(ficha.body, /Rotação<\/td><td class="text-end">1\.5\d\d RPM/);
+    assert.ok(!/route|latitude|-10\.00/.test(ficha.body.replace(/<script[^]*?<\/script>/g, '')), 'sem localização');
+    assert.equal((await web.inject({ method: 'GET', url: '/modules/devices/ficha.js' })).statusCode, 200);
   });
 
   test('página Mapas: sem o serviço configurado avisa, sem quebrar; item ativo no menu', async () => {

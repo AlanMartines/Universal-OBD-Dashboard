@@ -1,5 +1,21 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "Ficha para a oficina",
+      "text": "Na página do veículo, o botão \"Ficha para a oficina\" abre uma folha só com o que interessa ao mecânico: códigos de falha com a descrição, saúde do carro, últimas leituras válidas, manutenção, últimas viagens e um quadro para anotações. \"Imprimir ou salvar PDF\" usa o próprio navegador; no papel saem só a folha e as cores claras, mesmo com o painel no tema escuro. Sem a localização, e vale também para o mecânico e para o link da oficina."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.74",
   "date": "2026-11-23",
   "sections": [

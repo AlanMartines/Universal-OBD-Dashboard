@@ -20,6 +20,15 @@ const DAY = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', da
  * dos últimos 6 meses (km das viagens enviadas, litros e gasto dos abastecimentos, km/l dos tanques fechados no mês).
  */
 const MT_LABEL = { DUE: ['Vencido', 'bad', 'fa-circle-exclamation'], SOON: ['Perto de vencer', 'warn', 'fa-triangle-exclamation'], OK: ['Em dia', 'ok', 'fa-circle-check'], UNKNOWN: ['Sem registro', 'info', 'fa-circle-info'] };
+/** Leituras da ficha da oficina: último valor válido das últimas 24 h, na ordem em que o mecânico olha. */
+const FICHA_LEITURAS = [
+  ['rpm', 'Rotação', 'RPM', 0], ['coolant_temp', 'Arrefecimento', '°C', 0], ['intake_temp', 'Ar admitido', '°C', 0],
+  ['battery_volts', 'Tensão da bateria', 'V', 2], ['map', 'Pressão do coletor (MAP)', 'kPa', 0],
+  ['derived.vacuumKpa', 'Vácuo do coletor', 'kPa', 0], ['throttle', 'Borboleta', '%', 1], ['engine_load', 'Carga', '%', 0],
+  ['timing_advance', 'Avanço de ignição', '°', 1], ['stft_b1', 'Correção curta (STFT)', '%', 1], ['ltft_b1', 'Correção longa (LTFT)', '%', 1],
+  ['lambda_v', 'Sonda lambda', 'V', 2], ['can_coolant_temp', 'Temperatura do motor (painel)', '°C', 0],
+  ['can_voltage', 'Tensão (painel)', 'V', 1], ['derived.instantKmPerL', 'Consumo instantâneo', 'km/l', 1],
+];
 const ptDate = (ms) => new Date(ms).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 const ptNum = (v) => Math.round(v).toLocaleString('pt-BR');
 
@@ -261,6 +270,43 @@ export default function devicesRoutes(app, {
   });
   app.post('/dispositivos/:id/revogar', { preHandler: requireUser }, deviceAction('revoke', 'device_revoked'));
   app.post('/dispositivos/:id/excluir', { preHandler: requireUser }, deviceAction('delete', 'device_deleted'));
+
+  // ---------- Ficha para a oficina (para imprimir ou salvar em PDF pelo navegador) ----------
+  // Só o que interessa ao mecânico, numa folha: falhas, saúde, últimas leituras, manutenção e viagens.
+  // Nunca a localização. Vale para todos os perfis, inclusive o mecânico e o link da oficina.
+  app.get('/dispositivos/:id/ficha', { preHandler: requireUser }, async (request, reply) => {
+    const id = requireUuid(request);
+    const [data, { faults }, healthData, maintenance, { trips }] = await Promise.all([
+      api(request, 'GET', `/internal/devices/${id}`),
+      api(request, 'GET', `/internal/devices/${id}/faults`),
+      api(request, 'GET', `/internal/devices/${id}/health`).catch(() => ({ days: [] })),
+      api(request, 'GET', `/internal/devices/${id}/maintenance`).catch(() => ({ items: [], totalCost: 0, due: 0, soon: 0, odometerKm: null })),
+      api(request, 'GET', `/internal/devices/${id}/trips`),
+    ]);
+    const valid = data.lastValid ?? {};
+    const readings = FICHA_LEITURAS
+      .filter(([key]) => valid[key])
+      .map(([key, label, unit, digits]) => ({ label, unit, digits, value: valid[key].v, at: valid[key].t }));
+    const odo = valid['app.odometer_km'] ?? valid.odometer_km ?? null;
+    const maint = buildMaintenance(maintenance);
+    return reply.view('modules/devices/views/ficha.hbs', context(request, {
+      title: `Ficha para a oficina · ${data.device.name}`,
+      device: data.device,
+      geradaEm: new Date(),
+      odometerKm: odo ? odo.v : maint.odometerKm ?? null,
+      faults,
+      faultsActive: faults.filter((f) => f.active),
+      faultsOld: faults.filter((f) => !f.active),
+      appHealth: appHealth(data.latest?.metrics),
+      health: buildHealth(healthData.days),
+      readings,
+      maintenance: maint,
+      maintenanceAttention: maint.items.filter((i) => i.tone === 'bad' || i.tone === 'warn'),
+      trips: trips.slice(0, 5),
+      pageScripts: ['/static/js/dtc-sae.js', '/modules/devices/faults.js', '/modules/devices/ficha.js'],
+      pageCss: ['/modules/devices/devices.css', '/modules/devices/ficha.css'],
+    }));
+  });
 
   // ---------- Página de uma viagem ----------
   const tripParam = (request) => {
