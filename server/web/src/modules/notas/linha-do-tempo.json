@@ -16,6 +16,16 @@
       "text": "CSV com a telemetria e GPX com o trajeto, no mesmo formato do app. O GPX e as posições no CSV só saem para quem pode ver a localização (nunca para o mecânico)."
      }
     ]
+   },
+   {
+    "kind": "fixed",
+    "title": "Corrigido",
+    "items": [
+     {
+      "title": "Página Mapas: barra de andamento também no mapa base",
+      "text": "O recorte do mapa base mostrava a barra em texto do pmtiles, repetida linha a linha no registro; agora o percentual vai para a mesma barra do encaixe, e o texto da fase mostra o tamanho, a velocidade e quanto falta. O registro fica só com as outras mensagens."
+     }
+    ]
    }
   ]
  },
