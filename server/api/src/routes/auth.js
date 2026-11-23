@@ -27,7 +27,9 @@ export default function authRoutes(app, {
       `SELECT u.id, u.username, u.role, u.password_hash, u.failed_logins, u.locked_until, u.totp_enabled_at,
               u.disabled OR COALESCE(owner.disabled, false) AS disabled
          FROM users u LEFT JOIN users owner ON owner.id = u.account_id
-        WHERE u.${username.includes('@') ? 'email' : 'username'} = $1`,
+        WHERE u.${username.includes('@') ? 'email' : 'username'} = $1
+          -- O mecânico do link temporário só entra pelo link; o vencido também não entra
+          AND NOT u.via_link AND (u.access_until IS NULL OR u.access_until > now())`,
       [username],
     );
     const user = rows[0];

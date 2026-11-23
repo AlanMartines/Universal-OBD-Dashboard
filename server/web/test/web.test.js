@@ -11,7 +11,7 @@ import { ago, describeAgent } from '../src/modules/account/user-agent.js';
 import { buildMaintenance, buildReport } from '../src/modules/devices/routes.js';
 import { buildHealth, healthFindings } from '../src/modules/devices/health.js';
 // A API real, com banco real: o teste atravessa a mesma fronteira da produção.
-import { ADMIN, KEY, sample, startApi } from '../../api/test/helpers.js';
+import { ADMIN, KEY, pairDevice, sample, send, startApi } from '../../api/test/helpers.js';
 import { codeForStep, stepAt } from '../../api/src/totp.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -679,6 +679,74 @@ describe('fluxo pelo navegador', () => {
     assert.ok(!panel.body.includes('Revogar'));
     const conta = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie } });
     assert.ok(!conta.body.includes('action="/meus-dados/excluir"'));
+  });
+
+  test('mecânico e link da oficina: só leitura, só o veículo liberado, sem localização', async () => {
+    const enter = async (username, password, newPassword) => {
+      const cookie = cookieOf(await signIn(username, password));
+      const c = await csrfOf(cookie, '/meus-dados/senha');
+      await post('/meus-dados/senha', { _csrf: c, currentPassword: password, newPassword, confirm: newPassword }, cookie);
+      return cookie;
+    };
+    const senhaDe = (body) => /user-select-all[^"]*">([^<]+)</.exec(body)[1];
+    const madeAdmin = await post('/admin/usuarios', { _csrf: await csrfOf(adminCookie), username: 'donoficina', role: 'admin' }, adminCookie);
+    const dono = await enter('donoficina', senhaDe(madeAdmin.body), 'uma frase longa para esta conta');
+    const sessao = dono.slice(dono.indexOf('=') + 1);
+    const carro = await pairDevice(apiCtx.app, sessao, 'abababab-1111-4111-8111-abababababab');
+    const outro = await pairDevice(apiCtx.app, sessao, 'abababab-2222-4222-8222-abababababab');
+    await send(apiCtx.app, carro.deviceToken, [sample(1, { gps: { lat: -10, lon: -20 } })]);
+
+    // Conta de mecânico: o dono marca os veículos e o prazo
+    const admin = await web.inject({ method: 'GET', url: '/admin', headers: { cookie: dono } });
+    assert.match(admin.body, /<option value="mechanic">Mecânico \(oficina\)<\/option>/);
+    assert.match(admin.body, new RegExp(`name="deviceIds" value="${carro.id}"`));
+    const feito = await post('/admin/usuarios', { _csrf: field(admin.body, '_csrf'), username: 'mecoficina', role: 'mechanic', deviceIds: carro.id, accessDays: '30' }, dono);
+    assert.equal(feito.statusCode, 200);
+    const mec = await enter('mecoficina', senhaDe(feito.body), 'uma frase longa do mecanico');
+    const painel = await web.inject({ method: 'GET', url: '/painel', headers: { cookie: mec } });
+    assert.ok(painel.body.includes(`/dispositivos/${carro.id}`));
+    assert.ok(!painel.body.includes(`/dispositivos/${outro.id}`));
+    assert.match(painel.body, /Mecânico/);
+    assert.match(painel.body, /Acesso até/);
+    const visto = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}`, headers: { cookie: mec } });
+    assert.equal(visto.statusCode, 200);
+    assert.ok(!visto.body.includes('id="pane-route"'));
+    assert.match(visto.body, /não é compartilhada com a oficina/);
+    assert.ok(!visto.body.includes('id="oficina"'));
+    assert.equal((await web.inject({ method: 'GET', url: `/dispositivos/${outro.id}`, headers: { cookie: mec } })).statusCode, 404);
+    assert.equal((await web.inject({ method: 'GET', url: '/admin', headers: { cookie: mec } })).statusCode, 403);
+    const lista = await web.inject({ method: 'GET', url: '/admin', headers: { cookie: dono } });
+    assert.match(lista.body, /Mecânicos: veículos e prazo/);
+
+    // Link temporário: aparece uma vez, abre sem login e cai quando o dono cancela
+    const doDono = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}`, headers: { cookie: dono } });
+    assert.match(doDono.body, /id="oficina"/);
+    const gerado = await post(`/dispositivos/${carro.id}/oficina`, { _csrf: field(doDono.body, '_csrf'), days: '3', label: 'Oficina do Zé' }, dono);
+    assert.equal(gerado.statusCode, 200);
+    const url = /value="(https:\/\/[^"]+\/oficina\/[A-Za-z0-9_-]+)"/.exec(gerado.body)[1];
+    assert.match(gerado.body, /wa\.me/);
+    const caminho = new URL(url).pathname;
+    const aberto = await web.inject({ method: 'GET', url: caminho });
+    assert.equal(aberto.statusCode, 303);
+    assert.equal(aberto.headers.location, `/dispositivos/${carro.id}`);
+    const oficina = cookieOf(aberto);
+    const pelaOficina = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}`, headers: { cookie: oficina } });
+    assert.equal(pelaOficina.statusCode, 200);
+    assert.ok(!pelaOficina.body.includes('id="pane-route"'));
+    assert.match(pelaOficina.body, /Oficina \(link\)/);
+    assert.ok(!pelaOficina.body.includes('href="/meus-dados"'));
+    const conta = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie: oficina } });
+    assert.equal(conta.headers.location, '/painel');
+    const invalido = await web.inject({ method: 'GET', url: `/oficina/${'x'.repeat(43)}` });
+    assert.equal(invalido.statusCode, 404);
+    assert.match(invalido.body, /venceu, foi cancelado/);
+    const comLink = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}#oficina`, headers: { cookie: dono } });
+    const acao = /action="(\/dispositivos\/[^"]+\/oficina\/[0-9a-f-]+\/cancelar)"/.exec(comLink.body)[1];
+    const cancelado = await post(acao, { _csrf: field(comLink.body, '_csrf') }, dono);
+    assert.equal(cancelado.statusCode, 303);
+    const depois = await web.inject({ method: 'GET', url: `/dispositivos/${carro.id}`, headers: { cookie: oficina } });
+    assert.notEqual(depois.statusCode, 200);
+    assert.equal((await web.inject({ method: 'GET', url: caminho })).statusCode, 404);
   });
 
   test('página Mapas: sem o serviço configurado avisa, sem quebrar; item ativo no menu', async () => {

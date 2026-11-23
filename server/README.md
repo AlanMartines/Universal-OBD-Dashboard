@@ -71,6 +71,19 @@ Limites de memória no `.env`: `OSRM_MEM` (padrão 12g, o encaixe no ar) e `MAPA
 
 Pelo terminal, os scripts `scripts/baixar-mapa.sh` (mapa base do Brasil) e `scripts/preparar-rotas.sh` (encaixe; `OSRM_PBF_URL` escolhe a área) seguem valendo. Dados do mapa: © OpenStreetMap, por meio do Protomaps e da Geofabrik.
 
+## Perfis
+
+| Perfil | Vê | Altera |
+|---|---|---|
+| Super Admin | tudo; a localização de outras contas só no modo suporte | tudo, mais Mapas, cadastro e 2FA dos donos |
+| Admin (dono de conta) | a própria conta | veículos, usuários e links da própria conta |
+| Usuário (atendimento) | a conta inteira à qual está vinculado | nada |
+| Mecânico (oficina) | só os veículos que o dono marcou, **sem a localização**; acesso com prazo opcional | nada |
+
+**Mecânico com login:** o dono cria em **Usuários**, marca os veículos e escolhe o prazo (sem prazo, 7, 15, 30 ou 90 dias, ou 1 ano); depois troca os veículos e o prazo ali mesmo. Vencido o prazo, o login e as sessões deixam de valer.
+
+**Link para a oficina, sem cadastro:** na página do veículo, cartão **Acesso da oficina**, o dono gera um link de 1 a 30 dias. O link aparece uma única vez (o banco guarda só o hash), com botão para copiar e para enviar pelo WhatsApp. Quem abre entra numa sessão só de leitura daquele veículo (painel ao vivo, falhas, saúde, histórico e manutenção), sem a localização, sem "Meus Dados" e sem senha. Cancelar o link derruba quem estiver com ele aberto. Criar, cancelar e cada abertura ficam na auditoria. O link vale como senha: se vazar, cancele.
+
 ## Conta
 
 O login aceita usuário ou e-mail. Em **Meus Dados**, a pessoa altera nome, foto, e-mail e senha.
@@ -168,7 +181,7 @@ Resposta: `{ "received", "stored", "rejected" }`.
 
 - **Senhas:** Argon2id, mínimo de 15 caracteres e resposta igual para usuário inexistente, senha errada ou bloqueio.
 - **Senhas vazadas:** no cadastro, na troca e na redefinição, a senha nova é conferida no Have I Been Pwned por k-anonimato: só os 5 primeiros caracteres do SHA-1 saem do servidor (pelo contêiner `web`, o único com saída). Se ela aparece em vazamentos, é recusada. Se o serviço não responde, a senha passa. `PWNED_CHECK=false` desliga.
-- **Papéis testados rota a rota:** um teste confere que o Usuário (atendimento) é recusado em todas as rotas de gestão e que o Admin é recusado nas rotas só do Super Admin.
+- **Papéis testados rota a rota:** um teste confere que o Usuário (atendimento) e o Mecânico são recusados em todas as rotas de gestão e que o Admin é recusado nas rotas só do Super Admin.
 - **Confirmar a senha em ações críticas:** criar, desativar ou excluir usuário, abrir o cadastro, mudar a exigência de 2FA dos donos de conta, entrar em modo suporte e gerar código de pareamento, revogar ou excluir dispositivo exigem que a senha (e o código do autenticador, se a conta usa 2FA) tenha sido confirmada nos últimos 10 minutos. O login conta como confirmação; o modo suporte e a volta dele não. Sem confirmação recente, o painel leva a "Confirme sua senha" e volta à página de onde a ação partiu (só para endereços do próprio painel). No modo suporte, quem confirma é o Super Admin, com a senha e o 2FA dele. Confirmações e recusas ficam na auditoria.
 - **Bloqueio por tentativas, por rede:** as senhas erradas contam por conta e por rede de origem (/24 no IPv4, /48 no IPv6). Depois de 5 erros, só aquela rede fica bloqueada, de forma progressiva até 60 min. Assim, quem sabe o seu usuário não consegue te deixar do lado de fora. Se a conta somar 20 erros vindos de vários lugares (ataque espalhado), ela fecha só para redes que nunca usou; das redes de onde o dono já entrou no último ano, o login segue funcionando. Um login certo, a troca ou a redefinição de senha zeram a contagem.
 - **Sessão:** cookie `__Host-`, `HttpOnly`, `Secure` e `SameSite=Lax`, guardada no banco só como hash.

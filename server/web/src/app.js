@@ -59,8 +59,9 @@ export function createHandlebars() {
     const letters = parts.length > 1 ? [parts[0], parts[parts.length - 1]] : parts;
     return letters.map((p) => [...p][0]).join('').toUpperCase() || '?';
   });
-  hbs.registerHelper('roleLabel', (role) => ({ superadmin: 'Super Admin', admin: 'Admin', user: 'Usuário' }[role] ?? ''));
-  hbs.registerHelper('canManage', (user) => Boolean(user) && user.role !== 'user');
+  hbs.registerHelper('roleLabel', (role) => ({ superadmin: 'Super Admin', admin: 'Admin', user: 'Usuário', mechanic: 'Mecânico' }[role] ?? ''));
+  // Atendimento (user) e oficina (mechanic) só visualizam.
+  hbs.registerHelper('canManage', (user) => Boolean(user) && !['user', 'mechanic'].includes(user.role));
   hbs.registerHelper('date', (value) => (value ? dateFormat.format(new Date(value)) : '—'));
   // Números e valores no formato brasileiro; vazio vira travessão.
   hbs.registerHelper('num', (value, digits) => (typeof value === 'number'
@@ -387,12 +388,16 @@ export async function buildApp({ config, logger, pwned = null }) {
     if (session.user.mfaSetupRequired && !MFA_SETUP_ROUTES.includes(request.routeOptions.url)) {
       return reply.redirect('/meus-dados#mfa', 303);
     }
+    // Oficina pelo link: não tem senha nem "Meus Dados"
+    if (session.user.viaLink && String(request.routeOptions.url ?? '').startsWith('/meus-dados')) {
+      return reply.redirect('/painel', 303);
+    }
     return undefined;
   };
   const requireAdmin = async (request, reply) => {
     const result = await requireUser(request, reply);
     if (reply.sent || result) return result;
-    if (request.user.role === 'user') throw new ApiError(403, 'forbidden');
+    if (['user', 'mechanic'].includes(request.user.role)) throw new ApiError(403, 'forbidden');
     return undefined;
   };
 

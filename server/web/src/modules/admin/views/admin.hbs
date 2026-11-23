@@ -49,7 +49,7 @@
     <div class="card h-100">
       <div class="card-header"><h2 class="h6 fw-semibold mb-0"><i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>Novo usuário</h2></div>
       <div class="card-body">
-        {{#unless isSuper}}<p class="small text-body-secondary">Usuários de atendimento só visualizam os dados da sua conta.</p>{{/unless}}
+        {{#unless isSuper}}<p class="small text-body-secondary">Atendimento vê todos os dados da conta. Mecânico vê só os veículos que você marcar, <b>sem a localização</b>, e pode ter prazo. Ninguém dos dois altera nada.</p>{{/unless}}
         <form method="post" action="/admin/usuarios" class="row g-2" data-validate>
           <input type="hidden" name="_csrf" value="{{csrf}}">
           <div class="{{#if isSuper}}col-sm-6{{else}}col-sm-9{{/if}}">
@@ -74,7 +74,35 @@
             {{#unless accounts.length}}<div class="form-text">Crie primeiro um usuário Admin: a conta é dele.</div>{{/unless}}
           </div>
           {{else}}
-          <input type="hidden" name="role" value="user">
+          <div class="col-sm-12">
+            <label class="form-label small fw-semibold" for="new-role">Perfil</label>
+            <select class="form-select" id="new-role" name="role">
+              <option value="user">Usuário (atendimento)</option>
+              <option value="mechanic">Mecânico (oficina)</option>
+            </select>
+          </div>
+          <div class="col-12" id="new-mechanic-box" hidden>
+            <fieldset class="border rounded p-2 mb-2">
+              <legend class="form-label small fw-semibold float-none w-auto px-1 mb-0">Veículos que ele pode ver</legend>
+              {{#each ownDevices}}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="deviceIds" value="{{id}}" id="new-dev-{{id}}">
+                <label class="form-check-label" for="new-dev-{{id}}">{{name}}</label>
+              </div>
+              {{else}}
+              <p class="small text-body-secondary mb-0">Nenhum veículo pareado ainda.</p>
+              {{/each}}
+            </fieldset>
+            <label class="form-label small fw-semibold" for="new-days">Prazo</label>
+            <select class="form-select" id="new-days" name="accessDays">
+              <option value="">Sem prazo</option>
+              <option value="7">7 dias</option>
+              <option value="15">15 dias</option>
+              <option value="30" selected>30 dias</option>
+              <option value="90">90 dias</option>
+              <option value="365">1 ano</option>
+            </select>
+          </div>
           {{/if}}
           <div class="{{#if isSuper}}col-12 text-end{{else}}col-sm-3 d-flex align-items-end{{/if}}">
             <button class="btn btn-primary {{#unless isSuper}}w-100{{/unless}}" type="submit"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Criar</button>
@@ -100,7 +128,7 @@
           {{#if must_change_password}}<span class="badge text-bg-warning">Trocar senha</span>{{/if}}
           {{#if mfa}}<span class="badge text-bg-light border" title="Verificação em duas etapas ativa"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> 2FA</span>{{/if}}
         </td>
-        <td data-label="Dispositivos">{{devices}}</td>
+        <td data-label="Dispositivos">{{#if (eq role "mechanic")}}{{#each mechanic_devices}}<span class="badge text-bg-light border me-1">{{name}}</span>{{/each}}{{#if access_until}}<div class="small text-body-secondary">até {{date access_until}}</div>{{/if}}{{else}}{{devices}}{{/if}}</td>
         <td data-label="Criado em">{{date created_at}}</td>
         <td class="table-actions text-center">
           {{#unless (eq id ../user.id)}}
@@ -126,6 +154,42 @@
     </tbody>
 {{/dataTable}}
 {{> pagination pager=usersPager label="Páginas de usuários"}}
+
+{{#if mechanics.length}}
+<h2 class="h5 mb-3 mt-4"><i class="fa-solid fa-screwdriver-wrench me-2 text-body-secondary" aria-hidden="true"></i>Mecânicos: veículos e prazo</h2>
+<div class="row g-3 mb-3">
+  {{#each mechanics}}
+  <div class="col-md-6">
+    <form method="post" action="/admin/usuarios/{{id}}/mecanico" class="card card-body h-100">
+      <input type="hidden" name="_csrf" value="{{../csrf}}">
+      <h3 class="h6 mb-2">{{username}} {{#if expired}}<span class="badge text-bg-secondary">Prazo vencido</span>{{else if access_until}}<span class="small fw-normal text-body-secondary">até {{date access_until}}</span>{{else}}<span class="small fw-normal text-body-secondary">sem prazo</span>{{/if}}</h3>
+      <div class="mb-2">
+        {{#each devices}}
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="checkbox" name="deviceIds" value="{{id}}" id="mec-{{../id}}-{{id}}" {{#if checked}}checked{{/if}}>
+          <label class="form-check-label" for="mec-{{../id}}-{{id}}">{{name}}</label>
+        </div>
+        {{/each}}
+      </div>
+      <div class="d-flex flex-wrap gap-2 align-items-end mt-auto">
+        <div>
+          <label class="form-label small fw-semibold" for="mec-days-{{id}}">Prazo</label>
+          <select class="form-select form-select-sm" id="mec-days-{{id}}" name="accessDays">
+            <option value="manter" selected>Manter</option>
+            <option value="">Sem prazo</option>
+            <option value="7">7 dias a partir de hoje</option>
+            <option value="30">30 dias a partir de hoje</option>
+            <option value="90">90 dias a partir de hoje</option>
+            <option value="365">1 ano a partir de hoje</option>
+          </select>
+        </div>
+        <button class="btn btn-outline-primary btn-sm" type="submit"><i class="fa-solid fa-floppy-disk me-1" aria-hidden="true"></i>Salvar</button>
+      </div>
+    </form>
+  </div>
+  {{/each}}
+</div>
+{{/if}}
 
 {{#if isSuper}}
 <h2 class="h5 mb-3 mt-4"><i class="fa-solid fa-clipboard-list me-2 text-body-secondary" aria-hidden="true"></i>Auditoria recente</h2>

@@ -39,6 +39,10 @@ const AUDIT = {
   dispositivo_revogado: ['Dispositivo revogado', 'fa-link-slash', 'warning'],
   dispositivo_excluido: ['Dispositivo excluído', 'fa-trash', 'danger'],
   mapa_pedido: ['Mapa pedido', 'fa-map', 'primary'],
+  mecanico_alterado: ['Mecânico alterado', 'fa-screwdriver-wrench', 'primary'],
+  link_oficina_criado: ['Link da oficina criado', 'fa-link', 'warning'],
+  link_oficina_cancelado: ['Link da oficina cancelado', 'fa-link-slash', 'secondary'],
+  link_oficina_aberto: ['Link da oficina aberto', 'fa-screwdriver-wrench', 'info'],
   mapa_excluido: ['Mapa excluído', 'fa-map', 'warning'],
 };
 const auditView = (row) => {
@@ -58,6 +62,20 @@ export function tamanho(bytes) {
 
 const MAPAS = ['base', 'encaixe'];
 
+/**
+ * Campos do mecânico vindos do formulário: veículos marcados (um ou vários) e prazo em dias.
+ * Na edição, "manter" não muda o prazo e vazio tira o prazo; na criação, vazio é sem prazo.
+ */
+export function mechanicFields(body, editing) {
+  const raw = body.deviceIds;
+  const deviceIds = (Array.isArray(raw) ? raw : raw ? [raw] : []).map(String);
+  const out = { deviceIds };
+  const days = String(body.accessDays ?? '');
+  if (/^\d{1,3}$/.test(days)) out.accessDays = Number(days);
+  else if (editing && days === '') out.accessDays = null;
+  return out;
+}
+
 export default function adminRoutes(app, {
   api, cookieName, cookieOptions, requireAdmin, context,
 }) {
@@ -65,9 +83,20 @@ export default function adminRoutes(app, {
     const query = new URLSearchParams({ usersPage: pageParam(request, 'usuarios'), auditPage: pageParam(request, 'auditoria') });
     const data = await api(request, 'GET', `/internal/admin/overview?${query}`);
     const isSuper = request.user.role === 'superadmin';
+    // Dono da conta: os veículos pareados e ativos, para marcar no mecânico.
+    const ownDevices = isSuper ? [] : (await api(request, 'GET', '/internal/devices?pageSize=100')).devices
+      .filter((d) => d.pairedAt && !d.revokedAt).map((d) => ({ id: d.id, name: d.name }));
+    const mechanics = isSuper ? [] : (data.users ?? []).filter((u) => u.role === 'mechanic').map((u) => {
+      const marked = new Set((u.mechanic_devices ?? []).map((d) => d.id));
+      return {
+        id: u.id, username: u.username, access_until: u.access_until,
+        expired: Boolean(u.access_until) && new Date(u.access_until).getTime() <= Date.now(),
+        devices: ownDevices.map((d) => ({ ...d, checked: marked.has(d.id) })),
+      };
+    });
     return reply.code(status).view('modules/admin/views/admin.hbs', context(request, {
-      title: isSuper ? 'Configurações' : 'Usuários', isSuper,
-      pageScripts: isSuper ? ['/modules/admin/admin.js'] : [],
+      title: isSuper ? 'Configurações' : 'Usuários', isSuper, ownDevices, mechanics,
+      pageScripts: ['/modules/admin/admin.js'],
       pageCss: ['/modules/admin/admin.css'],
       usersPager: pagerFor(data.usersPagination, request, { path: '/admin', param: 'usuarios' }),
       auditPager: pagerFor(data.auditPagination, request, { path: '/admin', param: 'auditoria' }),
@@ -94,11 +123,22 @@ export default function adminRoutes(app, {
       const created = await api(request, 'POST', '/internal/admin/users', {
         body: {
           username: String(request.body?.username ?? ''),
-          role: ['superadmin', 'admin'].includes(request.body?.role) ? request.body.role : 'user',
+          role: ['superadmin', 'admin', 'mechanic'].includes(request.body?.role) ? request.body.role : 'user',
           ...(request.body?.accountId ? { accountId: String(request.body.accountId) } : {}),
+          ...(request.body?.role === 'mechanic' ? mechanicFields(request.body, false) : {}),
         },
       });
       return adminView(request, reply, 200, { created });
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status >= 500 || error.status === 401 || error.code === 'reauth_required') throw error;
+      return adminView(request, reply, error.status, { error: message(error.code) });
+    }
+  });
+
+  app.post('/admin/usuarios/:id/mecanico', { preHandler: requireAdmin }, async (request, reply) => {
+    try {
+      await api(request, 'POST', `/internal/admin/users/${requireUuid(request)}/mechanic`, { body: mechanicFields(request.body ?? {}, true) });
+      return reply.redirect('/admin?ok=mechanic_updated', 303);
     } catch (error) {
       if (!(error instanceof ApiError) || error.status >= 500 || error.status === 401 || error.code === 'reauth_required') throw error;
       return adminView(request, reply, error.status, { error: message(error.code) });

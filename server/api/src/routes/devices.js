@@ -24,14 +24,15 @@ export default function devicesRoutes(app, { config, pool, live, limit, maps, re
     },
   }, async (request) => {
     const { user } = request.session;
-    const scope = '(d.user_id = $1 OR $2) AND (d.paired_at IS NOT NULL OR d.pairing_expires_at > now())';
+    const scope = `(d.user_id = $1 OR $2) AND (d.paired_at IS NOT NULL OR d.pairing_expires_at > now())
+      AND ($3::uuid IS NULL OR EXISTS (SELECT 1 FROM mechanic_devices m WHERE m.user_id = $3 AND m.device_id = d.id))`;
     const { rows, pagination } = await paged(pool, {
       countSql: `SELECT count(*)::int AS total FROM devices d WHERE ${scope}`,
       listSql: `SELECT d.id, d.name, d.installation_id, d.app_version, d.created_at, d.paired_at, d.last_seen_at, d.revoked_at, u.username AS owner
          FROM devices d JOIN users u ON u.id = d.user_id
         WHERE ${scope}
         ORDER BY d.revoked_at NULLS FIRST, d.last_seen_at DESC NULLS LAST, d.created_at DESC, d.id`,
-      params: [user.tenantId, user.role === 'superadmin'],
+      params: [user.tenantId, user.role === 'superadmin', user.role === 'mechanic' ? user.id : null],
       page: request.query.page,
       pageSize: request.query.pageSize,
     });
@@ -139,8 +140,9 @@ export default function devicesRoutes(app, { config, pool, live, limit, maps, re
            SELECT ts, dtcs, metrics FROM telemetry_samples t WHERE t.device_id = d.id ORDER BY ts DESC LIMIT 1
          ) s ON true
         WHERE (d.user_id = $1 OR $2) AND d.paired_at IS NOT NULL AND d.revoked_at IS NULL
+          AND ($3::uuid IS NULL OR EXISTS (SELECT 1 FROM mechanic_devices m WHERE m.user_id = $3 AND m.device_id = d.id))
         ORDER BY d.last_seen_at DESC NULLS LAST LIMIT 24`,
-      [user.tenantId, user.role === 'superadmin'],
+      [user.tenantId, user.role === 'superadmin', user.role === 'mechanic' ? user.id : null],
     );
     const ids = rows.map((r) => r.id);
     const fuel = ids.length ? (await pool.query(

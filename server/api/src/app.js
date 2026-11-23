@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import deviceRoutes from './routes/device.js';
 import devicesRoutes from './routes/devices.js';
 import mapsRoutes from './routes/maps.js';
+import sharesRoutes from './routes/shares.js';
 import securityRoutes from './routes/security.js';
 
 export async function buildApp({ config, pool, logger }) {
@@ -90,6 +91,7 @@ export async function buildApp({ config, pool, logger }) {
   devicesRoutes(app, context);
   adminRoutes(app, context);
   mapsRoutes(app, context);
+  sharesRoutes(app, context);
 
   return app;
 }

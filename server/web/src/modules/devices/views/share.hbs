@@ -1,0 +1,18 @@
+<div class="row justify-content-center">
+  <div class="col-md-9 col-lg-7">
+    <h1 class="page-title mb-3"><span class="page-title-icon" aria-hidden="true"><i class="fa-solid fa-screwdriver-wrench"></i></span>Link para a oficina</h1>
+    <div class="alert alert-warning" role="status"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Copie agora: o link <b>não será mostrado de novo</b>. Quem tiver o link vê o veículo até o prazo; se vazar, cancele na página do veículo.</div>
+    <div class="card card-body mb-3">
+      <label class="form-label small fw-semibold" for="share-url">Link{{#if link.label}} · {{link.label}}{{/if}}</label>
+      <div class="input-group">
+        <input class="form-control font-monospace" id="share-url" value="{{url}}" readonly>
+        <button class="btn btn-outline-primary" type="button" id="share-copy" data-copy-target="share-url"><i class="fa-solid fa-copy me-1" aria-hidden="true"></i><span>Copiar</span></button>
+      </div>
+      <p class="small text-body-secondary mt-2 mb-0">Vale até <b>{{date link.expiresAt}}</b>. Só leitura: painel ao vivo, falhas, saúde, histórico e manutenção, <b>sem a localização</b>.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-success" href="{{whatsapp}}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-whatsapp me-1" aria-hidden="true"></i>Enviar pelo WhatsApp</a>
+      <a class="btn btn-outline-secondary" href="/dispositivos/{{deviceId}}#oficina">Voltar ao veículo</a>
+    </div>
+  </div>
+</div>
