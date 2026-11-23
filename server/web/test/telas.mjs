@@ -98,9 +98,9 @@ async function novaAba(porta) {
   return {
     erros,
     cmd,
-    async ir(url, { largura = 1280, altura = 900, escuro = false, cookie } = {}) {
+    async ir(url, { largura = 1280, altura = 900, escuro = false, cookie, impressa = false } = {}) {
       await cmd('Emulation.setDeviceMetricsOverride', { width: largura, height: altura, deviceScaleFactor: 1, mobile: largura < 600 });
-      await cmd('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: escuro ? 'dark' : 'light' }] });
+      await cmd('Emulation.setEmulatedMedia', { media: impressa ? 'print' : '', features: [{ name: 'prefers-color-scheme', value: escuro ? 'dark' : 'light' }] });
       await cmd('Network.clearBrowserCookies');
       if (cookie) await cmd('Network.setCookie', { url, ...cookie });
       const carregou = uma('Page.loadEventFired');
@@ -217,6 +217,13 @@ for (const escuro of [false, true]) {
       if (!ok) throw new Error('mapa ou gráfico da viagem não apareceu');
     });
   }
+  await conferir(`${tema}-ficha`, () => aba.ir(u(`/dispositivos/${painel.dev.id}/ficha`), { escuro, ...dono }));
+  // Como sai no papel: sem o menu e sem os botões
+  await conferir(`${tema}-ficha-impressa`, async () => {
+    await aba.ir(u(`/dispositivos/${painel.dev.id}/ficha`), { escuro, impressa: true, largura: 794, altura: 1123, ...dono });
+    const ok = await aba.avaliar(`getComputedStyle(document.getElementById('app-sidebar')).display === 'none' && getComputedStyle(document.querySelector('.ficha-acoes')).display === 'none'`);
+    if (!ok) throw new Error('a versão impressa ainda mostra o menu ou os botões');
+  });
   await conferir(`${tema}-usuarios-do-dono`, () => aba.ir(u('/admin'), { escuro, ...dono }));
   // A oficina abre o link sem login: cai no veículo, só leitura e sem o Percurso
   await conferir(`${tema}-oficina-link`, async () => {

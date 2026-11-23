@@ -1,0 +1,46 @@
+/* Ficha para a oficina: na tela, como o resto do painel; no papel, só a folha, em preto e branco legível. */
+.ficha-dados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+}
+.ficha-dados dt { font-size: 0.75rem; font-weight: 400; color: var(--bs-secondary-color); }
+.ficha-dados dd { margin: 0; font-weight: 600; }
+.ficha-bloco {
+  padding: 1rem;
+  background: var(--app-card-bg, var(--bs-body-bg));
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--app-radius, 0.75rem);
+}
+.ficha-linhas {
+  height: 7rem;
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1.7rem, var(--bs-border-color) 1.7rem, var(--bs-border-color) calc(1.7rem + 1px));
+}
+
+@media print {
+  @page { margin: 12mm; }
+  /* No papel, sempre as cores claras, mesmo com o painel no tema escuro */
+  html[data-bs-theme], html[data-bs-theme] body {
+    --bs-body-color: #000;
+    --bs-body-bg: #fff;
+    --bs-secondary-color: #444;
+    --bs-border-color: #999;
+    --bs-emphasis-color: #000;
+    background: #fff !important;
+    background-image: none !important;
+    color: #000 !important;
+  }
+  .ficha .table {
+    --bs-table-color: #000; --bs-table-bg: #fff; --bs-table-border-color: #bbb;
+    --bs-table-striped-color: #000; --bs-table-striped-bg: #f2f2f2;
+    --bs-table-hover-color: #000; --bs-table-hover-bg: #f2f2f2;
+  }
+  .ficha .text-body-secondary, .ficha-dados dt { color: #444 !important; }
+  .app-sidebar, .sidebar-backdrop, .app-topbar, .app-toasts, .ficha-acoes { display: none !important; }
+  .app-main, .app-content { margin: 0 !important; padding: 0 !important; }
+  .ficha-bloco { break-inside: avoid; border-color: #999; background: #fff; padding: 0.5rem 0; border-width: 0 0 1px; border-radius: 0; }
+  .ficha .table { font-size: 0.8rem; }
+  .ficha thead.table-dark th { background: #eee !important; color: #000 !important; }
+  .ficha .badge { border: 1px solid #666; color: #000 !important; background: transparent !important; }
+  .ficha-linhas { height: 9rem; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1.7rem, #999 1.7rem, #999 calc(1.7rem + 1px)); }
+}

@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Ficha para a oficina.** Na página do veículo, o botão "Ficha para a oficina" abre uma folha só com o que interessa ao mecânico: códigos de falha com a descrição, saúde do carro, últimas leituras válidas, manutenção, últimas viagens e um quadro para anotações. "Imprimir ou salvar PDF" usa o próprio navegador; no papel saem só a folha e as cores claras, mesmo com o painel no tema escuro. Sem a localização, e vale também para o mecânico e para o link da oficina.
+
 ## [0.9.74] - 2026-11-23
 
 ### Adicionado

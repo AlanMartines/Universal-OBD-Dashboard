@@ -1,0 +1,97 @@
+<div class="ficha">
+  <div class="ficha-acoes d-flex flex-wrap gap-2 mb-3">
+    <button class="btn btn-primary btn-sm" type="button" id="ficha-imprimir"><i class="fa-solid fa-print me-1" aria-hidden="true"></i>Imprimir ou salvar PDF</button>
+    <a class="btn btn-outline-secondary btn-sm" href="/dispositivos/{{device.id}}"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Voltar ao veículo</a>
+  </div>
+
+  <header class="ficha-cabecalho mb-3">
+    <h1 class="h4 mb-1"><i class="fa-solid fa-screwdriver-wrench me-2" aria-hidden="true"></i>Ficha do veículo para a oficina</h1>
+    <dl class="ficha-dados mb-0">
+      <div><dt>Veículo</dt><dd>{{device.name}}</dd></div>
+      <div><dt>Hodômetro</dt><dd>{{#if odometerKm}}{{num odometerKm 0}} km{{else}}—{{/if}}</dd></div>
+      <div><dt>Gerada em</dt><dd>{{date geradaEm}}</dd></div>
+      <div><dt>App</dt><dd>{{#if device.appVersion}}{{device.appVersion}}{{else}}—{{/if}}</dd></div>
+    </dl>
+    <p class="small text-body-secondary mt-2 mb-0">Dados lidos pelo app no carro (OBD-II e rede do painel). São indícios para o diagnóstico, não um laudo. A localização do veículo não faz parte desta ficha.</p>
+  </header>
+
+  <section class="ficha-bloco mb-3" aria-labelledby="ficha-falhas">
+    <h2 class="h6" id="ficha-falhas">Códigos de falha</h2>
+    {{#if faults.length}}
+    <table class="table table-sm table-striped table-hover align-middle mb-0">
+      <thead class="table-dark"><tr><th scope="col">Código</th><th scope="col">Descrição</th><th scope="col">Situação</th><th scope="col">Primeira vez</th><th scope="col">Última vez</th></tr></thead>
+      <tbody>
+        {{#each faultsActive}}<tr><td class="font-monospace fw-semibold">{{code}}</td><td data-dtc-describe="{{code}}">—</td><td><span class="badge text-bg-danger">Ativa</span></td><td>{{date firstSeen}}</td><td>{{date lastSeen}}</td></tr>{{/each}}
+        {{#each faultsOld}}<tr><td class="font-monospace fw-semibold">{{code}}</td><td data-dtc-describe="{{code}}">—</td><td><span class="badge text-bg-secondary">Não aparece mais</span></td><td>{{date firstSeen}}</td><td>{{date lastSeen}}</td></tr>{{/each}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="mb-0">Nenhum código de falha enviado pelo app.</p>
+    {{/if}}
+  </section>
+
+  <section class="ficha-bloco mb-3" aria-labelledby="ficha-saude">
+    <h2 class="h6" id="ficha-saude">Saúde do carro</h2>
+    {{#if appHealth.length}}
+    <p class="small text-body-secondary mb-1">Pré-diagnóstico do app (repetido em 3 das últimas 5 viagens):</p>
+    <ul class="list-unstyled mb-2">
+      {{#each appHealth}}<li><span class="badge health-badge health-{{level}}">{{#if (eq level "ok")}}Normal{{/if}}{{#if (eq level "warn")}}Atenção{{/if}}{{#if (eq level "bad")}}Verificar{{/if}}</span> {{topic}}</li>{{/each}}
+    </ul>
+    {{/if}}
+    {{#if health.findings.length}}
+    <p class="small text-body-secondary mb-1">Últimos 14 dias, comparados com as faixas usuais:</p>
+    <ul class="list-unstyled mb-0">
+      {{#each health.findings}}<li><span class="badge health-badge health-{{level}}">{{#if (eq level "ok")}}Normal{{/if}}{{#if (eq level "warn")}}Atenção{{/if}}{{#if (eq level "bad")}}Verificar{{/if}}{{#if (eq level "info")}}Mudança{{/if}}</span> <b>{{topic}}:</b> {{text}}</li>{{/each}}
+    </ul>
+    {{else}}{{#unless appHealth.length}}
+    <p class="mb-0">Ainda sem dias suficientes de captura para um resumo.</p>
+    {{/unless}}{{/if}}
+  </section>
+
+  <section class="ficha-bloco mb-3" aria-labelledby="ficha-leituras">
+    <h2 class="h6" id="ficha-leituras">Últimas leituras válidas (24 h)</h2>
+    {{#if readings.length}}
+    <table class="table table-sm table-striped table-hover align-middle mb-0">
+      <thead class="table-dark"><tr><th scope="col">Sinal</th><th scope="col" class="text-end">Valor</th><th scope="col">Lido em</th></tr></thead>
+      <tbody>
+        {{#each readings}}<tr><td>{{label}}</td><td class="text-end">{{num value digits}} {{unit}}</td><td>{{date at}}</td></tr>{{/each}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="mb-0">Sem leituras nas últimas 24 horas.</p>
+    {{/if}}
+  </section>
+
+  <section class="ficha-bloco mb-3" aria-labelledby="ficha-manutencao">
+    <h2 class="h6" id="ficha-manutencao">Manutenção{{#if maintenanceAttention.length}} <span class="badge text-bg-danger">{{maintenanceAttention.length}} pede atenção</span>{{/if}}</h2>
+    {{#if maintenance.items.length}}
+    <table class="table table-sm table-striped table-hover align-middle mb-0">
+      <thead class="table-dark"><tr><th scope="col">Item</th><th scope="col">Situação</th><th scope="col">Próxima</th><th scope="col">Última vez</th></tr></thead>
+      <tbody>
+        {{#each maintenance.items}}<tr><td>{{name}}{{#if notes}}<div class="small text-body-secondary">{{notes}}</div>{{/if}}</td><td><span class="badge health-badge health-{{tone}}">{{label}}</span></td><td>{{when}}</td><td>{{#if last}}{{last}}{{else}}—{{/if}}</td></tr>{{/each}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="mb-0">Nenhum item de manutenção registrado no app.</p>
+    {{/if}}
+  </section>
+
+  <section class="ficha-bloco mb-3" aria-labelledby="ficha-viagens">
+    <h2 class="h6" id="ficha-viagens">Últimas viagens</h2>
+    {{#if trips.length}}
+    <table class="table table-sm table-striped table-hover align-middle mb-0">
+      <thead class="table-dark"><tr><th scope="col">Início</th><th scope="col" class="text-end">Duração</th><th scope="col" class="text-end">Distância</th><th scope="col" class="text-end">km/l</th><th scope="col" class="text-end">Vel. máx.</th><th scope="col" class="text-end">Temp. máx.</th></tr></thead>
+      <tbody>
+        {{#each trips}}<tr><td>{{date start}}</td><td class="text-end">{{minutes}} min</td><td class="text-end">{{num km 1}} km</td><td class="text-end">{{num kmPerL 1}}</td><td class="text-end">{{num maxSpeed 0}} km/h</td><td class="text-end">{{num maxCoolant 0}} °C</td></tr>{{/each}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="mb-0">Nenhuma viagem enviada ainda.</p>
+    {{/if}}
+  </section>
+
+  <section class="ficha-bloco ficha-anotacoes" aria-labelledby="ficha-notas">
+    <h2 class="h6" id="ficha-notas">Anotações da oficina</h2>
+    <div class="ficha-linhas" aria-hidden="true"></div>
+  </section>
+</div>
