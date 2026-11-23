@@ -91,6 +91,8 @@ object RemotePayload {
         alerts: List<LiveAlert> = emptyList(),
         /** Versão instalada: o painel mostra a atual, não só a do pareamento. */
         appVersion: String? = null,
+        /** Tema, dia/noite e cor escolhidos no app, para o painel web seguir. */
+        dashPrefs: DashPrefs? = null,
     ): String {
         val base = sample(s, sendGps, dtcs)
         val metrics = linkedMapOf<String, JsonPrimitive>()
@@ -101,6 +103,7 @@ object RemotePayload {
         return buildJsonObject {
             put("ts", s.timestamp)
             appVersion?.takeIf { APP_VERSION.matches(it) }?.let { put("appVersion", it) }
+            dashPrefs?.let { put("dash", it.toJson()) }
             put("metrics", JsonObject(metrics))
             base["dtcs"]?.let { put("dtcs", it) }
             base["gps"]?.let { put("gps", it) }

@@ -8,12 +8,16 @@
     </select>
     <noscript><button class="btn btn-primary btn-sm" type="submit">Abrir</button></noscript>
   </form>
+  <div class="form-check form-switch mb-0" title="Usar o tema, o dia/noite e a cor escolhidos no app">
+    <input class="form-check-input" type="checkbox" role="switch" id="vehicle-follow" checked>
+    <label class="form-check-label small" for="vehicle-follow">Seguir o app</label>
+  </div>
   <span id="vehicle-status" class="badge text-bg-secondary" role="status">Conectando…</span>
   <button class="btn btn-outline-secondary btn-sm" type="button" id="vehicle-fullscreen" title="Tela cheia" aria-label="Tela cheia"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>
   {{/if}}
 </div>
 {{#if deviceId}}
-<div id="vehicle-root" data-device-id="{{deviceId}}" data-sample="{{latestJson}}" data-limits="{{limitsJson}}"{{#if replayTrip}} data-replay-trip="{{replayTrip}}" class="is-replay"{{/if}}>
+<div id="vehicle-root" data-device-id="{{deviceId}}" data-sample="{{latestJson}}" data-limits="{{limitsJson}}" data-prefs="{{prefsJson}}"{{#if replayTrip}} data-replay-trip="{{replayTrip}}" class="is-replay"{{/if}}>
   {{#if replayTrip}}
   <div class="replay-bar" id="replay-bar" aria-label="Simulação da viagem">
     <button class="btn btn-primary btn-sm" type="button" id="replay-play" title="Reproduzir" aria-label="Reproduzir" disabled><i class="fa-solid fa-play" aria-hidden="true"></i></button>

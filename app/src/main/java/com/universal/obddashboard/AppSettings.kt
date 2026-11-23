@@ -8,6 +8,7 @@ import com.universal.obddashboard.obd.DashboardSettings
 import com.universal.obddashboard.obd.LoadedProfile
 import com.universal.obddashboard.obd.ProfileParser
 import com.universal.obddashboard.obd.UserAlarm
+import com.universal.obddashboard.remote.DashPrefs
 import com.universal.obddashboard.telemetry.ImuMotion
 import com.universal.obddashboard.telemetry.TimedRun
 import com.universal.obddashboard.telemetry.TripMark
@@ -55,6 +56,7 @@ object AppSettings {
     private const val KEY_COMPASS_CALIBRATION = "compass_calibration"
     private const val KEY_CAN_ADAPTER = "can_adapter_names"
     private const val KEY_SENSOR_TRIMS = "sensor_trims"
+    private const val KEY_DASH_PREFS = "dash_prefs"
 
     /** Chave do ajuste no veículo selecionado (ver [Vehicles]). */
     private fun sk(context: Context, key: String) = Vehicles.scopedKey(key, vid(context))
@@ -63,6 +65,12 @@ object AppSettings {
 
     private fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+
+    /** Tema, dia/noite e cor dos mostradores escolhidos na tela; vão ao painel web com a leitura ao vivo. */
+    fun dashPrefs(context: Context): DashPrefs? = DashPrefs.parse(prefs(context).getString(KEY_DASH_PREFS, null))
+
+    fun setDashPrefs(context: Context, value: DashPrefs) =
+        prefs(context).edit { putString(KEY_DASH_PREFS, value.encode()) }
 
     /** Mostradores do perfil com o que o usuário ajustou para ele. */
     fun dashboard(context: Context, loaded: LoadedProfile): DashboardSettings =

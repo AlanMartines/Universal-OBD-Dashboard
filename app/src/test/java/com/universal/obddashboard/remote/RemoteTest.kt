@@ -187,6 +187,22 @@ class RemoteTest {
             Json.parseToJsonElement(RemotePayload.live(entity(5), false, emptyList(), emptyMap(), emptyList(), "0.9 <x>")).jsonObject["appVersion"])
     }
 
+    @Test fun temaDoAppVaiComALeituraAoVivo() {
+        val p = DashPrefs.parse("""{"look":"sport","mode":"night","tint":"red"}""")!!
+        assertEquals(DashPrefs("sport", "night", "red"), p)
+        val dash = Json.parseToJsonElement(RemotePayload.live(entity(5), false, emptyList(), emptyMap(), emptyList(), null, p)).jsonObject["dash"]!!.jsonObject
+        assertEquals("sport", dash["look"]!!.jsonPrimitive.content)
+        assertEquals("night", dash["mode"]!!.jsonPrimitive.content)
+        assertEquals("red", dash["tint"]!!.jsonPrimitive.content)
+        assertEquals(null, Json.parseToJsonElement(RemotePayload.live(entity(5), false, emptyList(), emptyMap())).jsonObject["dash"])
+        // Fora da lista: tema inválido descarta tudo; modo e cor inválidos caem no padrão
+        assertEquals(null, DashPrefs.parse("""{"look":"<x>","mode":"day"}"""))
+        assertEquals(DashPrefs("hud", "auto", "green"), DashPrefs.parse("""{"look":"hud","mode":"x","tint":3}"""))
+        assertEquals(null, DashPrefs.parse("não é json"))
+        assertEquals(null, DashPrefs.parse(null))
+        assertEquals(p, DashPrefs.parse(p.encode()))
+    }
+
     @Test fun ritmoAoVivoSegueQuemEstaOlhando() {
         assertEquals(1_000L, RemoteUploader.liveDelayMs(2))
         assertEquals(10_000L, RemoteUploader.liveDelayMs(0))

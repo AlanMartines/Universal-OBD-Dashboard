@@ -785,6 +785,8 @@ describe('fluxo pelo navegador', () => {
     assert.equal(page.statusCode, 200);
     assert.match(page.body, /data-device-id="[0-9a-f-]{36}"/);
     assert.match(page.body, /data-limits="/);
+    assert.match(page.body, /data-prefs="/);
+    assert.match(page.body, /id="vehicle-follow"/);
     assert.match(page.body, /src="\/modules\/vehicle\/dash\.js\?v=[0-9a-z]+"/);
     assert.match(page.body, /aria-current="page"[^>]*>|class="active"/);
     assert.equal((await web.inject({ method: 'GET', url: '/modules/vehicle/fonts/ChakraPetch-700.woff2' })).statusCode, 200);

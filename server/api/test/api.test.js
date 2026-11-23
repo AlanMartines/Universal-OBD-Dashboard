@@ -418,6 +418,22 @@ describe('API', () => {
       assert.deepEqual(await saved(), { 'dash.rpmMax': 8000 });
     });
 
+    test('tema do app fica salvo no dispositivo e segue ao vivo; valor fora da lista é recusado', async () => {
+      const post = (dash) => app.inject({ method: 'POST', url: '/api/v1/live', headers: { authorization: `Bearer ${dev.deviceToken}` }, payload: { ts: Date.now(), metrics: { rpm: 900 }, dash } });
+      const seen = [];
+      const ouvir = (msg) => seen.push(msg.dash);
+      app.liveBus.on(dev.id, ouvir);
+      assert.equal((await post({ look: 'sport', mode: 'night', tint: 'red' })).statusCode, 200);
+      app.liveBus.off(dev.id, ouvir);
+      assert.deepEqual(seen, [{ look: 'sport', mode: 'night', tint: 'red' }]);
+      const res = await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: alice });
+      assert.deepEqual(res.json().device.dashPrefs, { look: 'sport', mode: 'night', tint: 'red' });
+      assert.equal((await post({ look: 'hud' })).statusCode, 200);
+      assert.deepEqual((await pool.query('SELECT dash_prefs FROM devices WHERE id = $1', [dev.id])).rows[0].dash_prefs, { look: 'hud', mode: 'auto', tint: 'green' });
+      assert.equal((await post({ look: '<script>' })).statusCode, 400);
+      assert.equal((await post({ look: 'hud', extra: 1 })).statusCode, 400);
+    });
+
     test('GPS e falhas são gravados', async () => {
       await send(app, dev.deviceToken, [sample(20, { dtcs: ['P0301'], gps: { lat: -10.5, lon: -20.5, speedKmh: 12, accuracyM: 5 } })]);
       const res = await internal(app, 'GET', `/internal/devices/${dev.id}`, { token: alice });

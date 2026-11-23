@@ -22,6 +22,7 @@ import com.universal.obddashboard.telemetry.PerformanceTimers
 import com.universal.obddashboard.telemetry.SensorTrims
 import com.universal.obddashboard.telemetry.TelemetryHub
 import com.universal.obddashboard.orNull
+import com.universal.obddashboard.remote.DashPrefs
 import com.universal.obddashboard.service.ObdForegroundService
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -33,6 +34,14 @@ import java.util.UUID
  * Registrada pela [MainActivity]; na tela, `bridge.x()` encontra o método no objeto certo.
  */
 class AppBridge(private val activity: MainActivity) {
+
+    /** Tema, dia/noite e cor escolhidos nos mostradores ({ look, mode, tint }); o painel web pode seguir. */
+    @JavascriptInterface
+    fun setDashPrefs(json: String): Boolean {
+        val p = DashPrefs.parse(json) ?: return false
+        if (AppSettings.dashPrefs(activity) != p) AppSettings.setDashPrefs(activity, p)
+        return true
+    }
 
     @JavascriptInterface
     fun startCapture() = activity.runOnUiThread { activity.startCapture() }

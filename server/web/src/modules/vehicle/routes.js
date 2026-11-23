@@ -15,10 +15,12 @@ export default function vehicleRoutes(app, { api, requireUser, context }) {
     const replayTrip = id && /^[0-9]{1,15}$/.test(tripParam) ? tripParam : null;
     let latest = null;
     let limits = null;
+    let prefs = null;
     if (id) {
       const data = await api(request, 'GET', `/internal/devices/${id}`);
       latest = data.latest;
       limits = data.device.dashLimits;
+      prefs = data.device.dashPrefs ?? null;
     }
     return reply.view('modules/vehicle/views/panel.hbs', context(request, {
       title: 'Painel do veículo',
@@ -27,6 +29,7 @@ export default function vehicleRoutes(app, { api, requireUser, context }) {
       replayTrip,
       latestJson: JSON.stringify(latest),
       limitsJson: JSON.stringify(limits),
+      prefsJson: JSON.stringify(prefs),
       pageCss: ['/modules/vehicle/dash.css', '/modules/vehicle/vehicle.css'],
       pageScripts: ['/modules/vehicle/dash.js', '/modules/vehicle/vehicle.js'],
     }));
