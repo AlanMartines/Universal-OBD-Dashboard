@@ -73,7 +73,7 @@ export function buildReport(fuel, trips) {
 }
 
 export default function devicesRoutes(app, {
-  config, api, cookieName, requireUser, context, hasMapData, mapFileName, mapVersion,
+  config, api, cookieName, cookieOptions, requireUser, renderError, context, hasMapData, mapFileName, mapVersion,
 }) {
   const DEVICE_ASSETS = { pageCss: ['/modules/devices/devices.css'] };
 
@@ -145,6 +145,9 @@ export default function devicesRoutes(app, {
     ]);
     const maintenance = await api(request, 'GET', `/internal/devices/${data.device.id}/maintenance`)
       .catch(() => ({ items: [], totalCost: 0, due: 0, soon: 0, odometerKm: null }));
+    // Links da oficina: só o dono do veículo (a API recusa os demais; aí o cartão não aparece).
+    const shares = ['user', 'mechanic'].includes(request.user.role) ? null
+      : await api(request, 'GET', `/internal/devices/${data.device.id}/shares`).then((r) => r.links).catch(() => null);
     const health = buildHealth(healthData.days);
     const months = Object.entries(fuel.summary.costByMonth);
     const lastMonth = months.length ? months[months.length - 1] : null;
@@ -172,6 +175,8 @@ export default function devicesRoutes(app, {
       maintenance: buildMaintenance(maintenance),
       faults,
       faultsActive: faults.filter((f) => f.active).length,
+      shares,
+      canShare: Array.isArray(shares),
       title: data.device.name,
       device: data.device,
       latestJson: JSON.stringify(data.latest),
@@ -255,4 +260,45 @@ export default function devicesRoutes(app, {
   });
   app.post('/dispositivos/:id/revogar', { preHandler: requireUser }, deviceAction('revoke', 'device_revoked'));
   app.post('/dispositivos/:id/excluir', { preHandler: requireUser }, deviceAction('delete', 'device_deleted'));
+
+  // ---------- Link para a oficina ----------
+  // O link só aparece uma vez, nesta resposta: o banco guarda o hash e nenhuma outra tela o mostra.
+  const SHARE_DAYS = [1, 3, 7, 15, 30];
+  app.post('/dispositivos/:id/oficina', { preHandler: requireUser }, async (request, reply) => {
+    const id = requireUuid(request);
+    const days = Number(request.body?.days);
+    const label = String(request.body?.label ?? '').trim().slice(0, 60);
+    const { token, link } = await api(request, 'POST', `/internal/devices/${id}/shares`, {
+      body: { days: SHARE_DAYS.includes(days) ? days : 7, ...(label ? { label } : {}) },
+    });
+    const url = `${config.publicOrigin}/oficina/${token}`;
+    const texto = `Acesso ao painel do veículo (só leitura, vale até ${new Date(link.expiresAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })}): ${url}`;
+    return reply.view('modules/devices/views/share.hbs', context(request, {
+      title: 'Link para a oficina', url, link, deviceId: id,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(texto)}`,
+      ...DEVICE_ASSETS, pageScripts: ['/modules/devices/share.js'],
+    }));
+  });
+
+  app.post('/dispositivos/:id/oficina/:shareId/cancelar', { preHandler: requireUser }, async (request, reply) => {
+    const id = requireUuid(request);
+    const shareId = String(request.params.shareId ?? '');
+    if (!UUID.test(shareId)) throw new ApiError(404, 'not_found');
+    await api(request, 'POST', `/internal/devices/${id}/shares/${shareId}/revoke`);
+    return reply.redirect(`/dispositivos/${id}?ok=share_revoked#oficina`, 303);
+  });
+
+  // Abrir o link: sem login. Troca o link por uma sessão só de leitura daquele veículo e entra nele.
+  app.get('/oficina/:token', async (request, reply) => {
+    const token = String(request.params.token ?? '');
+    if (!/^[A-Za-z0-9_-]{40,60}$/.test(token)) return renderError(reply, 404, 'share_invalid');
+    try {
+      const opened = await api(request, 'POST', '/internal/shares/open', { body: { token } });
+      reply.setCookie(cookieName, opened.token, cookieOptions);
+      return reply.redirect(`/dispositivos/${opened.deviceId}`, 303);
+    } catch (error) {
+      if (error instanceof ApiError && error.status < 500 && error.status !== 429) return renderError(reply, 404, 'share_invalid');
+      throw error;
+    }
+  });
 }

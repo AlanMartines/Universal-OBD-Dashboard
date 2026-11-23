@@ -1,5 +1,25 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "Perfil Mecânico (oficina)",
+      "text": "O dono da conta cria em Usuários, marca os veículos que ele pode ver e escolhe um prazo (ou nenhum). O mecânico só lê: painel ao vivo, falhas, saúde, histórico, viagens e manutenção, sem a localização e só dos veículos marcados. Vencido o prazo, o login e as sessões deixam de valer."
+     },
+     {
+      "title": "Link para a oficina, sem cadastro",
+      "text": "Na página do veículo, o dono gera um link de 1 a 30 dias, que aparece uma única vez, com botões para copiar e enviar pelo WhatsApp. Quem abre vê o veículo como o mecânico, sem senha e sem \"Meus Dados\"; cancelar o link derruba quem estiver com ele aberto. Tudo fica na auditoria."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.72",
   "date": "2026-11-23",
   "sections": [

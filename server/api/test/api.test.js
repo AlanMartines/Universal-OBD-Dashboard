@@ -736,13 +736,20 @@ describe('API', () => {
   });
 
   describe('papéis em cada rota de administração', () => {
-    test('Usuário (atendimento) e Admin são recusados onde não podem, antes de qualquer outra conferência', async () => {
+    test('Usuário (atendimento), Mecânico e Admin são recusados onde não podem, antes de qualquer outra conferência', async () => {
       const dono = await userToken(app, admin, 'papeldono');
       const atend = await internal(app, 'POST', '/internal/admin/users', { token: dono, body: { username: 'papelatend', role: 'user' } });
       const atendTok = await login(app, 'papelatend', atend.json().password);
       await internal(app, 'POST', '/internal/auth/password', { token: atendTok, body: { currentPassword: atend.json().password, newPassword: USER_PASSWORD } });
       const dev = (await internal(app, 'POST', '/internal/devices', { token: dono, body: { name: 'Carro dos papéis' } })).json();
       const alvo = (await pool.query(`SELECT id FROM users WHERE username = 'papelatend'`)).rows[0].id;
+      // Mecânico com um veículo pareado liberado: mesmo nele, nada de gestão
+      const pareado = await pairDevice(app, dono, 'cdcdcdcd-1111-4111-8111-cdcdcdcdcdcd');
+      const mec = await internal(app, 'POST', '/internal/admin/users', { token: dono, body: { username: 'papelmec', role: 'mechanic', deviceIds: [pareado.id] } });
+      const mecPrimeiro = await login(app, 'papelmec', mec.json().password);
+      await internal(app, 'POST', '/internal/auth/password', { token: mecPrimeiro, body: { currentPassword: mec.json().password, newPassword: USER_PASSWORD } });
+      const mecTok = await login(app, 'papelmec', USER_PASSWORD);
+      const mecId = (await pool.query(`SELECT id FROM users WHERE username = 'papelmec'`)).rows[0].id;
 
       // rotas de quem gerencia (Super Admin e Admin): o Usuário só visualiza
       const deGestor = [
@@ -754,6 +761,10 @@ describe('API', () => {
         ['POST', `/internal/devices/${dev.id}/pairing-code`],
         ['POST', `/internal/devices/${dev.id}/revoke`],
         ['POST', `/internal/devices/${dev.id}/delete`],
+        ['POST', `/internal/admin/users/${mecId}/mechanic`, { deviceIds: [pareado.id] }],
+        ['GET', `/internal/devices/${pareado.id}/shares`],
+        ['POST', `/internal/devices/${pareado.id}/shares`, { days: 1 }],
+        ['POST', `/internal/devices/${pareado.id}/pairing-code`],
       ];
       // rotas só do Super Admin: nem o dono de conta entra
       const deSuper = [
@@ -762,10 +773,12 @@ describe('API', () => {
         ['POST', `/internal/admin/users/${alvo}/impersonate`],
       ];
       const chama = ([method, url, body], token) => internal(app, method, url, { token, ...(body ? { body } : {}) });
-      for (const rota of [...deGestor, ...deSuper]) {
-        const res = await chama(rota, atendTok);
-        assert.equal(res.statusCode, 403, `Usuário em ${rota[1]}`);
-        assert.deepEqual(res.json(), { error: 'forbidden' }, `Usuário em ${rota[1]}`);
+      for (const [quem, token] of [['Usuário', atendTok], ['Mecânico', mecTok]]) {
+        for (const rota of [...deGestor, ...deSuper]) {
+          const res = await chama(rota, token);
+          assert.equal(res.statusCode, 403, `${quem} em ${rota[1]}`);
+          assert.deepEqual(res.json(), { error: 'forbidden' }, `${quem} em ${rota[1]}`);
+        }
       }
       for (const rota of deSuper) {
         const res = await chama(rota, dono);
@@ -1543,6 +1556,88 @@ describe('API', () => {
     test('validação de e-mail', () => {
       for (const good of ['a@b.co', 'nome.sobre+tag@sub.dominio.com']) assert.equal(isValidEmail(good), true, good);
       for (const bad of ['a', 'a@b', 'a b@c.com', 'a@b.com\r\nBcc:x@y.com', '<a>@b.com', 'a@-b.com']) assert.equal(isValidEmail(bad), false, bad);
+    });
+  });
+
+  describe('mecânico e link para a oficina', () => {
+    let dono; let carro; let outro; let mecToken; let mecId;
+    const comoMec = (method, url, body) => internal(app, method, url, { token: mecToken, body });
+
+    before(async () => {
+      dono = await userToken(app, admin, 'donooficina');
+      carro = await pairDevice(app, dono, 'eeeeeeee-1111-4111-8111-eeeeeeeeeeee');
+      outro = await pairDevice(app, dono, 'eeeeeeee-2222-4222-8222-eeeeeeeeeeee');
+      await send(app, carro.deviceToken, [sample(1, { gps: { lat: -10, lon: -20 } })]);
+    });
+
+    test('dono cria o mecânico só com os veículos da conta, que só lê, só o liberado e sem localização', async () => {
+      const ruim = await internal(app, 'POST', '/internal/admin/users', { token: dono, body: { username: 'mecruim', role: 'mechanic' } });
+      assert.equal(ruim.statusCode, 400);
+      assert.equal(ruim.json().error, 'mechanic_devices_required');
+      // Veículo que não é da conta (aqui, um id qualquer) é recusado
+      const alheio = await internal(app, 'POST', '/internal/admin/users', { token: dono, body: { username: 'mecruim', role: 'mechanic', deviceIds: [carro.id, 'ffffffff-1111-4111-8111-ffffffffffff'] } });
+      assert.equal(alheio.statusCode, 400);
+      assert.equal(alheio.json().error, 'mechanic_devices_invalid');
+      const criado = await internal(app, 'POST', '/internal/admin/users', { token: dono, body: { username: 'mecanico1', role: 'mechanic', deviceIds: [carro.id], accessDays: 7 } });
+      assert.equal(criado.statusCode, 200);
+      const primeiro = await login(app, 'mecanico1', criado.json().password);
+      await internal(app, 'POST', '/internal/auth/password', { token: primeiro, body: { currentPassword: criado.json().password, newPassword: USER_PASSWORD } });
+      mecToken = await login(app, 'mecanico1', USER_PASSWORD);
+      assert.ok(mecToken);
+      const lista = (await comoMec('GET', '/internal/devices')).json().devices.map((d) => d.id);
+      assert.deepEqual(lista, [carro.id]);
+      assert.deepEqual((await comoMec('GET', '/internal/devices/overview')).json().vehicles.map((v) => v.id), [carro.id]);
+      assert.equal((await comoMec('GET', `/internal/devices/${outro.id}`)).statusCode, 404);
+      const detalhe = (await comoMec('GET', `/internal/devices/${carro.id}`)).json();
+      assert.equal(detalhe.locationAllowed, false);
+      assert.equal(detalhe.latest.gps, null);
+      assert.equal((await comoMec('GET', `/internal/devices/${carro.id}/route?minutes=60`)).statusCode, 403);
+      assert.equal((await comoMec('GET', `/internal/devices/${carro.id}/faults`)).statusCode, 200);
+      assert.equal((await comoMec('POST', `/internal/devices/${carro.id}/pairing-code`)).statusCode, 403);
+      assert.equal((await comoMec('GET', '/internal/admin/overview')).statusCode, 403);
+      const usuarios = (await internal(app, 'GET', '/internal/admin/overview', { token: dono })).json().users;
+      const mec = usuarios.find((u) => u.username === 'mecanico1');
+      mecId = mec.id;
+      assert.equal(mec.role, 'mechanic');
+      assert.deepEqual(mec.mechanic_devices.map((d) => d.id), [carro.id]);
+      assert.ok(new Date(mec.access_until) > new Date());
+    });
+
+    test('dono troca os veículos do mecânico; prazo vencido derruba a sessão e o login', async () => {
+      const troca = await internal(app, 'POST', `/internal/admin/users/${mecId}/mechanic`, { token: dono, body: { deviceIds: [outro.id], accessDays: null } });
+      assert.equal(troca.statusCode, 200);
+      assert.deepEqual((await comoMec('GET', '/internal/devices')).json().devices.map((d) => d.id), [outro.id]);
+      await pool.query(`UPDATE users SET access_until = now() - interval '1 minute' WHERE id = $1`, [mecId]);
+      assert.equal((await comoMec('GET', '/internal/devices')).statusCode, 401);
+      assert.equal(await login(app, 'mecanico1', USER_PASSWORD), null);
+    });
+
+    test('link da oficina: abre numa sessão só de leitura do veículo, sem localização, e cancelar derruba', async () => {
+      const criado = await internal(app, 'POST', `/internal/devices/${carro.id}/shares`, { token: dono, body: { days: 3, label: 'Oficina do Zé' } });
+      assert.equal(criado.statusCode, 201);
+      const { token, link } = criado.json();
+      assert.ok(token.length >= 40);
+      assert.equal(link.active, true);
+      assert.equal((await internal(app, 'GET', `/internal/devices/${carro.id}/shares`, { token: dono })).json().links.length, 1);
+      // Outra conta não cria link de veículo alheio
+      assert.equal((await internal(app, 'POST', `/internal/devices/${carro.id}/shares`, { token: alice, body: { days: 3 } })).statusCode, 404);
+      const aberto = await internal(app, 'POST', '/internal/shares/open', { body: { token } });
+      assert.equal(aberto.statusCode, 200);
+      assert.equal(aberto.json().deviceId, carro.id);
+      const sessao = aberto.json().token;
+      const ver = (method, url, body) => internal(app, method, url, { token: sessao, body });
+      assert.equal((await ver('GET', `/internal/devices/${carro.id}`)).json().locationAllowed, false);
+      assert.equal((await ver('GET', `/internal/devices/${outro.id}`)).statusCode, 404);
+      assert.equal((await ver('GET', `/internal/devices/${carro.id}/route?minutes=60`)).statusCode, 403);
+      assert.equal((await ver('POST', '/internal/account/profile', { displayName: 'x' })).statusCode, 403);
+      assert.equal((await ver('POST', '/internal/auth/password', { currentPassword: 'x', newPassword: USER_PASSWORD })).statusCode, 403);
+      // O mecânico do link não aparece na lista de usuários do dono
+      assert.ok(!(await internal(app, 'GET', '/internal/admin/overview', { token: dono })).json().users.some((u) => u.username.startsWith('oficina-')));
+      const cancelar = await internal(app, 'POST', `/internal/devices/${carro.id}/shares/${link.id}/revoke`, { token: dono });
+      assert.equal(cancelar.statusCode, 200);
+      assert.equal((await ver('GET', `/internal/devices/${carro.id}`)).statusCode, 401);
+      assert.equal((await internal(app, 'POST', '/internal/shares/open', { body: { token } })).statusCode, 404);
+      assert.equal((await internal(app, 'POST', '/internal/shares/open', { body: { token: 'x'.repeat(43) } })).statusCode, 404);
     });
   });
 

@@ -43,6 +43,11 @@ export const MESSAGES = {
   maps_unavailable: 'O serviço de mapas não respondeu. Confira se o contêiner "mapas" está no ar.',
   maps_busy: 'Já há um mapa sendo baixado ou processado. Espere terminar.',
   maps_area_not_found: 'Área não encontrada no catálogo de mapas.',
+  mechanic_devices_required: 'Marque pelo menos um veículo para o mecânico.',
+  mechanic_devices_invalid: 'Algum veículo marcado não é desta conta ou não está ativo.',
+  not_mechanic: 'Esse usuário não é um mecânico.',
+  device_inactive: 'Este veículo não está pareado: não dá para gerar link.',
+  share_invalid: 'Este link venceu, foi cancelado ou não existe. Peça um novo ao dono do veículo.',
   maps_no_permission: 'O serviço de mapas não consegue gravar nas pastas dos mapas. No servidor, rode: chown -R 1000:1000 data/maps data/osrm (na pasta server/).',
 };
 
@@ -54,6 +59,8 @@ export const NOTICES = {
   user_deleted: 'Usuário excluído.',
   map_started: 'Pedido enviado. O andamento aparece abaixo e a página atualiza sozinha.',
   map_deleted: 'Mapa excluído.',
+  share_revoked: 'Link da oficina cancelado.',
+  mechanic_updated: 'Veículos e prazo do mecânico atualizados.',
   signup_updated: 'Cadastro público atualizado.',
   reauth_ok: 'Senha confirmada. Repita a ação: ações sensíveis ficam liberadas por 10 minutos.',
   mfa_admins_updated: 'Exigência de 2FA para os donos de conta atualizada.',

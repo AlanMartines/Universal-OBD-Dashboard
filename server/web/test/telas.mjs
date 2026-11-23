@@ -145,9 +145,10 @@ async function subirPainel() {
     gps: { lat: -10 - i / 2000, lon: -20 - i / 2000, speedKmh: 10 + i, accuracyM: 5 },
   }));
   await send(api.app, dev.deviceToken, amostras);
-  await internal(api.app, 'GET', '/internal/devices', { token: dono });
+  // Link da oficina (o dono acabou de entrar, então a confirmação de senha vale)
+  const link = await internal(api.app, 'POST', `/internal/devices/${dev.id}/shares`, { token: dono, body: { days: 3, label: 'Oficina' } });
   return {
-    webUrl, dev, admin, dono,
+    webUrl, dev, admin, dono, linkOficina: link.json().token,
     fechar: async () => { await web.close(); await api.app.close(); await api.pool.end(); rmSync(mapas, { recursive: true, force: true }); },
   };
 }
@@ -207,6 +208,13 @@ for (const escuro of [false, true]) {
     await esperar(1500);
     const ok = await aba.avaliar(`!document.getElementById('route-map').hidden && !document.getElementById('route-profile').hidden`);
     if (!ok) throw new Error('mapa ou gráfico do trajeto não apareceu');
+  });
+  await conferir(`${tema}-usuarios-do-dono`, () => aba.ir(u('/admin'), { escuro, ...dono }));
+  // A oficina abre o link sem login: cai no veículo, só leitura e sem o Percurso
+  await conferir(`${tema}-oficina-link`, async () => {
+    await aba.ir(u(`/oficina/${painel.linkOficina}`), { escuro });
+    const ok = await aba.avaliar(`location.pathname.startsWith('/dispositivos/') && !document.getElementById('pane-route') && /Oficina \\(link\\)/.test(document.body.innerText)`);
+    if (!ok) throw new Error('o link da oficina não abriu o veículo como deveria');
   });
   await conferir(`${tema}-celular-dispositivo`, () => aba.ir(u(`/dispositivos/${painel.dev.id}`), { escuro, largura: 390, altura: 844, ...dono }));
   for (const look of LOOKS) {
