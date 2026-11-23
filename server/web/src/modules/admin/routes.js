@@ -38,11 +38,25 @@ const AUDIT = {
   pareamento_recusado: ['Pareamento recusado', 'fa-ban', 'danger'],
   dispositivo_revogado: ['Dispositivo revogado', 'fa-link-slash', 'warning'],
   dispositivo_excluido: ['Dispositivo excluído', 'fa-trash', 'danger'],
+  mapa_pedido: ['Mapa pedido', 'fa-map', 'primary'],
+  mapa_excluido: ['Mapa excluído', 'fa-map', 'warning'],
 };
 const auditView = (row) => {
   const [label, icon, tone] = AUDIT[row.action] ?? [row.action, 'fa-circle-info', 'secondary'];
   return { ...row, label, icon, tone };
 };
+
+/** Tamanho legível (1,2 GB; 840 MB). */
+export function tamanho(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return null;
+  const un = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let v = bytes;
+  let i = 0;
+  while (v >= 1024 && i < un.length - 1) { v /= 1024; i += 1; }
+  return `${v.toLocaleString('pt-BR', { maximumFractionDigits: v < 10 && i > 0 ? 1 : 0 })} ${un[i]}`;
+}
+
+const MAPAS = ['base', 'encaixe'];
 
 export default function adminRoutes(app, {
   api, cookieName, cookieOptions, requireAdmin, context,
@@ -100,6 +114,65 @@ export default function adminRoutes(app, {
     const { token } = await api(request, 'POST', `/internal/admin/users/${requireUuid(request)}/impersonate`);
     reply.setCookie(cookieName, token, cookieOptions);
     return reply.redirect('/painel', 303);
+  });
+
+  // ---------- Mapas (só Super Admin: a API recusa os demais) ----------
+  const mapasView = async (request, reply, status = 200, extra = {}) => {
+    let estado = null;
+    let indisponivel = null;
+    try {
+      estado = await api(request, 'GET', '/internal/admin/maps');
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status === 401 || error.status === 403 || error.code === 'reauth_required') throw error;
+      indisponivel = message(error.code);
+    }
+    const mapa = (m) => (m?.instalado ? { ...m, tamanho: tamanho(m.bytes), memoriaTxt: tamanho(m.memoria) } : m);
+    return reply.code(status).view('modules/admin/views/mapas.hbs', context(request, {
+      title: 'Mapas',
+      pageScripts: ['/modules/admin/mapas.js'],
+      pageCss: ['/modules/admin/admin.css'],
+      estado: estado ? {
+        ...estado,
+        base: mapa(estado.base),
+        encaixe: mapa(estado.encaixe),
+        discoMapas: tamanho(estado.disco?.mapas),
+        discoEncaixe: tamanho(estado.disco?.encaixe),
+      } : null,
+      indisponivel,
+      ...extra,
+    }));
+  };
+
+  app.get('/admin/mapas', { preHandler: requireAdmin }, async (request, reply) => mapasView(request, reply));
+  app.get('/admin/mapas/estado.json', { preHandler: requireAdmin }, async (request) => api(request, 'GET', '/internal/admin/maps'));
+  app.get('/admin/mapas/catalogo.json', { preHandler: requireAdmin }, async (request) => api(request, 'GET', '/internal/admin/maps/catalog'));
+  app.get('/admin/mapas/tamanho.json', { preHandler: requireAdmin }, async (request) => {
+    const area = String(request.query?.area ?? '');
+    const dados = await api(request, 'GET', `/internal/admin/maps/size?${new URLSearchParams({ area })}`);
+    return { ...dados, pbfTxt: tamanho(dados.bytesPbf), memoriaTxt: tamanho(dados.memoriaEncaixe), discoTxt: tamanho(dados.discoEncaixe) };
+  });
+
+  app.post('/admin/mapas/baixar', { preHandler: requireAdmin }, async (request, reply) => {
+    const map = MAPAS.includes(request.body?.map) ? request.body.map : 'base';
+    try {
+      await api(request, 'POST', '/internal/admin/maps', { body: { map, area: String(request.body?.area ?? '') } });
+      return reply.redirect('/admin/mapas?ok=map_started', 303);
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status === 401 || error.code === 'reauth_required') throw error;
+      return mapasView(request, reply, error.status >= 500 ? 503 : error.status, { error: message(error.code) });
+    }
+  });
+
+  app.post('/admin/mapas/excluir', { preHandler: requireAdmin }, async (request, reply) => {
+    const map = MAPAS.includes(request.body?.map) ? request.body.map : null;
+    if (!map) return mapasView(request, reply, 400, { error: message('invalid_request') });
+    try {
+      await api(request, 'DELETE', `/internal/admin/maps/${map}`);
+      return reply.redirect('/admin/mapas?ok=map_deleted', 303);
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status === 401 || error.code === 'reauth_required') throw error;
+      return mapasView(request, reply, error.status >= 500 ? 503 : error.status, { error: message(error.code) });
+    }
   });
 
   app.post('/admin/usuarios/:id/excluir', { preHandler: requireAdmin }, async (request, reply) => {

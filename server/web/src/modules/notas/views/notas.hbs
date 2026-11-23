@@ -209,7 +209,8 @@
       <li><b>Fidelidade aos dados do carro:</b> nada que mascare a leitura; estimativas sempre marcadas como estimativas.</li>
       <li><b>Tudo o que o app mostra ou grava vai ao painel</b>, ao vivo e no histórico.</li>
       <li><b>Painel sem CDN:</b> bibliotecas locais, sem script nem estilo embutido.</li>
-      <li><b>Encaixe do percurso nas ruas desligado no servidor do projeto</b> (22/11/2026): era só desenho (distância, consumo e velocidade não usam), e o OSRM com o mapa do Brasil ocupava cerca de 9 GB de memória. Segue opcional para quem quiser subir (perfil <code>rotas</code>, no README do servidor); sem ele, o painel mostra o traço do GPS.</li>
+      <li><b>Encaixe do percurso nas ruas desligado no servidor do projeto</b> (22/11/2026): era só desenho (distância, consumo e velocidade não usam), e o OSRM com o mapa do Brasil ocupava cerca de 9 GB de memória. Segue opcional: quem quiser baixa pela página Mapas do painel; sem ele, o painel mostra o traço do GPS.</li>
+      <li><b>Página Mapas no painel</b> (22/11/2026): o Super Admin baixa, atualiza e exclui o mapa base e o encaixe nas ruas de qualquer área do mundo (catálogo da Geofabrik, até o planeta), com aviso de disco e memória nas áreas grandes. Um contêiner já no ar faz o trabalho, sem acesso ao Docker, e só baixa de fontes públicas de uma lista fixa; cada um monta o servidor do tamanho que quiser.</li>
       <li><b>Pré-diagnóstico só com o que já é lido</b> (15/11/2026): sem PID novo, sem peça nova e sem mexer no carro.</li>
       <li><b>Peças em três níveis</b> (15/11/2026): essencial (ELM327), recomendado (ESP32, LSM6DS3, BMP180, GY-273, divisor) e opcional (LED tricolor).</li>
       <li><b>Pontos de teste na placa</b> (16/11/2026): 12 V depois do fusível, 5 V e dois GND em laços de metal, para medir com a placa montada; o D34 e o 3V3 na solda do pino do ESP32.</li>

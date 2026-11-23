@@ -648,6 +648,9 @@ describe('fluxo pelo navegador', () => {
 
     const madeAdmin = await post('/admin/usuarios', { _csrf: csrf, username: 'contadono', role: 'admin' }, adminCookie);
     const donoCookie = await enter('contadono', senhaDe(madeAdmin.body), 'uma frase longa para esta conta');
+    // Mapas é só do Super Admin: o Admin (dono de conta) não vê o item nem abre a página.
+    assert.equal((await web.inject({ method: 'GET', url: '/admin/mapas', headers: { cookie: donoCookie } })).statusCode, 403);
+    assert.doesNotMatch((await web.inject({ method: 'GET', url: '/painel', headers: { cookie: donoCookie } })).body, /href="\/admin\/mapas"/);
     const donoPage = await web.inject({ method: 'GET', url: '/admin', headers: { cookie: donoCookie } });
     assert.equal(donoPage.statusCode, 200);
     assert.ok(!donoPage.body.includes('name="accountId"'));
@@ -676,6 +679,18 @@ describe('fluxo pelo navegador', () => {
     assert.ok(!panel.body.includes('Revogar'));
     const conta = await web.inject({ method: 'GET', url: '/meus-dados', headers: { cookie } });
     assert.ok(!conta.body.includes('action="/meus-dados/excluir"'));
+  });
+
+  test('página Mapas: sem o serviço configurado avisa, sem quebrar; item ativo no menu', async () => {
+    const page = await web.inject({ method: 'GET', url: '/admin/mapas', headers: { cookie: adminCookie } });
+    assert.equal(page.statusCode, 200);
+    assert.match(page.body, /MAPAS_URL vazio/);
+    assert.match(page.body, /href="\/admin\/mapas"[^>]*class="active"/);
+    assert.match(page.body, /src="\/modules\/admin\/mapas\.js[^"]*"/);
+    assert.equal((await web.inject({ method: 'GET', url: '/admin/mapas/catalogo.json', headers: { cookie: adminCookie } })).statusCode, 503);
+    assert.equal((await web.inject({ method: 'GET', url: '/modules/admin/mapas.js' })).statusCode, 200);
+    const sem = await post('/admin/mapas/excluir', { _csrf: await csrfOf(adminCookie, '/admin/mapas'), map: 'outro' }, adminCookie);
+    assert.equal(sem.statusCode, 400);
   });
 
   test('menu lateral: só com login, item ativo, por papel e com arquivos locais', async () => {
