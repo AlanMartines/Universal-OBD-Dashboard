@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.80] - 2026-11-24
+
 ### Alterado
 - **Roteiro de primeiro uso:** o último passo passa a se chamar "Pronto para começar a captura" (antes "primeira viagem", que sugeria só viagem), e a abertura diz "fica pronto para começar".
 

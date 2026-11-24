@@ -1,8 +1,18 @@
 [
  {
-  "version": "próxima",
-  "date": null,
+  "version": "0.9.80",
+  "date": "2026-11-24",
   "sections": [
+   {
+    "kind": "changed",
+    "title": "Alterado",
+    "items": [
+     {
+      "title": "Roteiro de primeiro uso",
+      "text": "o último passo passa a se chamar \"Pronto para começar a captura\" (antes \"primeira viagem\", que sugeria só viagem), e a abertura diz \"fica pronto para começar\"."
+     }
+    ]
+   },
    {
     "kind": "added",
     "title": "Adicionado",
