@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.79] - 2026-11-24
+
 ### Adicionado
 - **Página Mapas: escolher o estado.** Depois de Continente, País e Região, o campo **Estado / UF** ("Todos" fica com a região inteira). No Brasil, que a Geofabrik divide só em regiões, o mapa base é recortado pelo contorno do estado e o encaixe baixa a região e recorta o estado antes de processar: bem menos memória no encaixe. Contornos simplificados do IBGE, guardados no projeto; o contêiner `mapas` ganha o `osmium` (compilado da fonte, versão presa).
 
