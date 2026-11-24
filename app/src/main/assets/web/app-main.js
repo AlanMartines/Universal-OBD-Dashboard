@@ -89,6 +89,8 @@ $('dash-night-screen').addEventListener('change', (e) => {
 sendDashPrefs(Dash.prefs);
 updateDashMode();
 maybeWelcome();
+// Manutenção vencida ou perto de vencer: faixa no alto ao abrir o app (no máximo a cada 12 h)
+mtConferirAvisos('abrir').catch(() => {});
 window.onTelemetry = onTelemetry;
 // O app só envia o estado quando ele muda; com a captura parada, pede o atual ao abrir.
 try { onTelemetry(JSON.parse(bridge.getState())); } catch (e) { /* pré-visualização sem estado */ }

@@ -93,4 +93,11 @@ class MaintenanceTest {
     @Test fun addMonthsKeepsEndOfMonthSane() {
         assertEquals(day(2027, 2, 28), Maintenance.addMonths(day(2026, 1, 31), 13, tz))
     }
+
+    @Test fun itemCadastradoComDataJaPassadaFicaVencido() {
+        val agora = 1_795_000_000_000L
+        val s = Maintenance.status(null, null, 180_000.0, agora - 400L * 86_400_000L, 183_000.0, agora, setNextAt = agora - 10L * 86_400_000L)
+        org.junit.Assert.assertEquals(Maintenance.Level.DUE, s.level)
+        org.junit.Assert.assertTrue((s.remainingDays ?: 0) < 0)
+    }
 }

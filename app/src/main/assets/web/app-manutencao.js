@@ -54,10 +54,10 @@ function mtLinkNext(pfx, baseKmId, baseDateId) {
       if (!nextKmV && km) fromInKm(); else if (nextKmV) fromNextKm();
       if (!nextAtV && months) fromInMo(); else if (nextAtV) fromNextDate();
     },
-    /** {nextKm, nextAt} para enviar; data de hoje ou passada não conta (o item vence só pelo km). */
+    /** {nextKm, nextAt} para enviar. Data ou km já passados valem: o item fica vencido e o app avisa. */
     read() {
       const at = fromDateInput(nextDate.value);
-      return { nextKm: numOrNull(nextKm.value), nextAt: at && at > Date.now() + 12 * 3600e3 ? at : null };
+      return { nextKm: numOrNull(nextKm.value), nextAt: at || null };
     },
   };
 }
@@ -295,7 +295,10 @@ $('mt-save').addEventListener('click', async () => {
     body.lastAt = fromDateInput($('mt-last-when').value);
     body.lastKm = numOrNull($('mt-last-km').value);
   }
-  if (await mtCall((id) => bridge.saveMaintenanceItem(id, JSON.stringify(body)), mtEditingId == null ? 'Item criado' : 'Item alterado')) mtResetForm();
+  // Próxima troca já passada (pela data ou pelo km de hoje): cadastra assim mesmo e avisa que já está vencido
+  const vencido = (body.nextAt && body.nextAt < Date.now()) || (body.nextKm != null && mtTotalKm != null && body.nextKm <= mtTotalKm);
+  const ok = (mtEditingId == null ? 'Item criado' : 'Item alterado') + (vencido ? '. Ele já está vencido: aparece em vermelho e o app vai lembrar você.' : '');
+  if (await mtCall((id) => bridge.saveMaintenanceItem(id, JSON.stringify(body)), ok)) mtResetForm();
 });
 $('mt-cancel').addEventListener('click', mtResetForm);
 
@@ -358,3 +361,61 @@ $('mt-list').addEventListener('click', (e) => {
 });
 
 mtResetForm();
+
+/* ---------------------------------------------------------------- aviso de manutenção no alto do app */
+/* Ao abrir o app (no máximo a cada 12 h) e durante a captura, quando o km lido faz um item vencer: uma faixa no
+   alto com o item, "Ver na Manutenção" e o ✕. Fecha sozinha em 10 s. A notificação diária do Android continua. */
+const MT_AVISO_KEY = 'manutencao.avisoEm';
+const MT_AVISO_INTERVALO_MS = 12 * 3600e3;
+const MT_AVISO_DURA_MS = 10000;
+const mtAvisados = new Set();
+let mtAvisoTimer = 0;
+
+function mtEsconderAviso() {
+  clearTimeout(mtAvisoTimer);
+  $('mt-aviso').hidden = true;
+}
+
+function mtMostrarAviso(itens, vencidos) {
+  const primeiro = itens[0];
+  $('mt-aviso').classList.toggle('due', vencidos);
+  $('mt-aviso-titulo').textContent = vencidos ? 'Manutenção vencida' : 'Manutenção perto de vencer';
+  $('mt-aviso-texto').textContent = `${primeiro.name}: ${mtWhenText(primeiro.status)}` + (itens.length > 1 ? ` (e mais ${itens.length - 1})` : '');
+  // Recomeça a barra de tempo
+  const barra = $('mt-aviso-barra');
+  barra.classList.remove('correndo');
+  void barra.offsetWidth;
+  barra.classList.add('correndo');
+  $('mt-aviso').hidden = false;
+  clearTimeout(mtAvisoTimer);
+  mtAvisoTimer = setTimeout(mtEsconderAviso, MT_AVISO_DURA_MS);
+}
+
+async function mtConferirAvisos(origem) {
+  const data = parse(await nativeAsync((id) => bridge.getMaintenance(id)).catch(() => null), null);
+  if (!data || !Array.isArray(data.items)) return;
+  const due = data.items.filter((i) => i.status.level === 'DUE');
+  if (origem === 'abrir') {
+    const soon = data.items.filter((i) => i.status.level === 'SOON');
+    due.forEach((i) => mtAvisados.add(i.id));
+    if (!due.length && !soon.length) return;
+    let ultimo = 0;
+    try { ultimo = Number(localStorage.getItem(MT_AVISO_KEY)) || 0; } catch (e) { /* sem armazenamento: avisa */ }
+    if (Date.now() - ultimo < MT_AVISO_INTERVALO_MS) return;
+    try { localStorage.setItem(MT_AVISO_KEY, String(Date.now())); } catch (e) { /* idem */ }
+    mtMostrarAviso(due.length ? due : soon, due.length > 0);
+    return;
+  }
+  // Durante a captura: só o que acabou de vencer com o km lido agora
+  const novos = due.filter((i) => !mtAvisados.has(i.id));
+  novos.forEach((i) => mtAvisados.add(i.id));
+  if (novos.length) mtMostrarAviso(novos, true);
+}
+
+$('mt-aviso-fechar').addEventListener('click', mtEsconderAviso);
+$('mt-aviso-ver').addEventListener('click', () => {
+  mtEsconderAviso();
+  const aba = document.querySelector('.tab[data-tab="maint"]');
+  if (aba) aba.click();
+});
+setInterval(() => { if (lastState && lastState.running) mtConferirAvisos('captura').catch(() => {}); }, 90000);

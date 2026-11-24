@@ -1,5 +1,25 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "Manutenção: cadastrar item já vencido",
+      "text": "A data da próxima troca pode já ter passado (antes ela era descartada): o item entra vencido, aparece em vermelho e o app avisa ao salvar."
+     },
+     {
+      "title": "Aviso de manutenção dentro do app",
+      "text": "Ao abrir o app (no máximo a cada 12 h), uma faixa no alto mostra o item vencido ou perto de vencer, com \"Ver na Manutenção\" e o ✕; fecha sozinha em 10 s. Durante a captura, quando o km lido faz um item vencer, a faixa aparece de novo só para ele. A notificação diária do Android, ao começar a captura, continua."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.84",
   "date": "2026-11-24",
   "sections": [

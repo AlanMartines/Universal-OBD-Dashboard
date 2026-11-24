@@ -26,6 +26,12 @@
 
   <main>
     <div id="notices">
+      <div id="mt-aviso" class="card notice mt-aviso" role="status" hidden>
+        <div class="row-between"><b id="mt-aviso-titulo"></b><button id="mt-aviso-fechar" class="btn btn-small" type="button" aria-label="Fechar aviso">✕</button></div>
+        <p id="mt-aviso-texto" class="small"></p>
+        <button id="mt-aviso-ver" class="btn btn-small btn-primary" type="button">Ver na Manutenção</button>
+        <div id="mt-aviso-barra" class="aviso-barra" aria-hidden="true"></div>
+      </div>
       <div id="notif-warning" class="card notice" hidden>
         <b>Notificações desativadas</b>
         <p class="small">Sem elas você não vê o aviso de que a captura está rodando em segundo plano, nem os alertas do motor.</p>

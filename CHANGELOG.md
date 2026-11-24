@@ -6,6 +6,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Manutenção: cadastrar item já vencido.** A data da próxima troca pode já ter passado (antes ela era descartada): o item entra vencido, aparece em vermelho e o app avisa ao salvar.
+- **Aviso de manutenção dentro do app.** Ao abrir o app (no máximo a cada 12 h), uma faixa no alto mostra o item vencido ou perto de vencer, com "Ver na Manutenção" e o ✕; fecha sozinha em 10 s. Durante a captura, quando o km lido faz um item vencer, a faixa aparece de novo só para ele. A notificação diária do Android, ao começar a captura, continua.
+
 ## [0.9.84] - 2026-11-24
 
 ### Corrigido

@@ -232,6 +232,14 @@ main.dash-active #notices:not(:empty) { flex: none; }
 #tab-dash.active { display: flex; flex: 1; min-height: 0; min-width: 0; }
 #dash-host { flex: 1; min-width: 0; min-height: 240px; border-radius: 10px; overflow: hidden; }
 #notices .notice { margin-bottom: 8px; }
+/* Aviso de manutenção: vermelho quando vencida; barra de tempo de 10 s até fechar sozinho */
+.mt-aviso { position: relative; overflow: hidden; }
+.mt-aviso.due { border-color: var(--red); background: var(--red-soft); }
+.mt-aviso .row-between b { font-size: 0.95rem; }
+.aviso-barra { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: currentColor; opacity: .35; transform-origin: left; }
+.aviso-barra.correndo { animation: aviso-tempo 10s linear forwards; }
+@keyframes aviso-tempo { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .aviso-barra.correndo { animation: none; } }
 body.dash-fullscreen .topbar, body.dash-fullscreen .tabs, body.dash-fullscreen #notices { display: none; }
 body.dash-fullscreen main.dash-active { padding: 0; }
 body.dash-fullscreen #dash-host { border-radius: 0; min-height: 0; }

@@ -131,13 +131,16 @@ class MaintenanceBridge(private val activity: MainActivity) {
     }
 
     /**
-     * Próxima troca de um formulário: km e data do que o mecânico passou. A data só vale se for futura (hoje ou
-     * antes = sem data). Precisa de pelo menos um dos dois. Devolve (km, data) ou a mensagem de erro.
+     * Próxima troca de um formulário: km e data do que o mecânico passou. A data pode já ter passado: o item é
+     * cadastrado vencido e o app avisa. Precisa de pelo menos um dos dois. Devolve (km, data) ou a mensagem de erro.
      */
+    /** Datas antes de 2000 são erro de digitação, não uma troca vencida. */
+    private val MIN_DATE_MS = 946_684_800_000L
+
     private fun nextDue(o: JSONObject, lastKm: Double?): Pair<Pair<Double?, Long?>?, String?> {
         val km = o.optDoubleOrNull("nextKm")?.takeIf { it > 0 }
-        val at = o.optLongOrNull("nextAt")?.takeIf { it > System.currentTimeMillis() + DAY_MS / 2 }
-        if (km == null && at == null) return null to "Informe a próxima troca: o km (ou daqui a quantos km) ou uma data futura."
+        val at = o.optLongOrNull("nextAt")?.takeIf { it > MIN_DATE_MS }
+        if (km == null && at == null) return null to "Informe a próxima troca: o km (ou daqui a quantos km) ou uma data."
         if (km != null && km > 3_000_000) return null to "Km da próxima troca grande demais."
         if (km != null && lastKm != null && km <= lastKm) return null to "O km da próxima troca precisa ser maior que o da última vez."
         return (km to at) to null
