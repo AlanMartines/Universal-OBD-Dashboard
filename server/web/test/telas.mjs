@@ -103,7 +103,8 @@ async function novaAba(porta) {
       await cmd('Emulation.setEmulatedMedia', { media: impressa ? 'print' : '', features: [{ name: 'prefers-color-scheme', value: escuro ? 'dark' : 'light' }] });
       await cmd('Network.clearBrowserCookies');
       if (cookie) await cmd('Network.setCookie', { url, ...cookie });
-      const carregou = uma('Page.loadEventFired');
+      // Mudar só o "#" do endereço não recarrega a página: aí o evento é outro
+      const carregou = Promise.race([uma('Page.loadEventFired'), uma('Page.navigatedWithinDocument')]);
       await cmd('Page.navigate', { url });
       await carregou;
       await esperar(800);
@@ -231,7 +232,27 @@ for (const escuro of [false, true]) {
     const ok = await aba.avaliar(`location.pathname.startsWith('/dispositivos/') && !document.getElementById('pane-route') && /Oficina \\(link\\)/.test(document.body.innerText)`);
     if (!ok) throw new Error('o link da oficina não abriu o veículo como deveria');
   });
-  await conferir(`${tema}-celular-dispositivo`, () => aba.ir(u(`/dispositivos/${painel.dev.id}`), { escuro, largura: 390, altura: 844, ...dono }));
+  // Abas no celular: o que não cabe vai para o "Mais"; nenhuma aba cortada e o menu abre a aba certa
+  await conferir(`${tema}-celular-dispositivo`, async () => {
+    await aba.ir(u(`/dispositivos/${painel.dev.id}`), { escuro, largura: 390, altura: 844, ...dono });
+    const r = await aba.avaliar(`(() => {
+      const list = document.querySelector('.device-tabs');
+      const lim = list.getBoundingClientRect().right + 1;
+      const visiveis = [...list.children].filter((li) => !li.hidden && getComputedStyle(li).display !== 'none');
+      const cortada = visiveis.some((li) => li.getBoundingClientRect().right > lim);
+      const mais = list.querySelector('[data-tabs-mais]');
+      mais.querySelector('[data-bs-toggle="dropdown"]').click();
+      const itens = [...mais.querySelectorAll('.dropdown-item')];
+      const ultimo = itens[itens.length - 1];
+      const nome = ultimo ? ultimo.textContent.trim() : '';
+      if (ultimo) ultimo.click();
+      return { cortada, maisVisivel: !mais.hidden, itens: itens.length, nome, ativo: document.querySelector('.tab-pane.active')?.id, rotulo: mais.querySelector('[data-tabs-mais-rotulo]').textContent.trim() };
+    })()`);
+    await esperar(400);
+    const depois = await aba.avaliar(`({ ativo: document.querySelector('.tab-pane.active.show')?.id, rotulo: document.querySelector('[data-tabs-mais-rotulo]').textContent.trim(), hash: location.hash })`);
+    if (r.cortada || !r.maisVisivel || r.itens < 1) throw new Error(`abas no celular: ${JSON.stringify(r)}`);
+    if (depois.rotulo !== r.nome || depois.ativo !== 'pane-faults' || depois.hash !== '#falhas') throw new Error(`o "Mais" não abriu a aba: ${JSON.stringify({ r, depois })}`);
+  });
   for (const look of LOOKS) {
     await conferir(`${tema}-veiculo-${look}`, async () => {
       await aba.ir(u(`/painel-veiculo?dispositivo=${painel.dev.id}`), { escuro, ...dono });

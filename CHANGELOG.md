@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Abas da página do veículo no celular.** Em vez de rolar de lado (com as últimas escondidas), ficam visíveis as abas que cabem e as outras vão para o botão **Mais**, como no app. Vale em qualquer largura (no computador, "Saúde" saía cortada). Se a aba aberta estiver no Mais, o botão mostra o nome dela; se uma aba escondida tiver aviso (falha ativa ou manutenção vencida), o Mais ganha um ponto vermelho. Os endereços com # e o voltar do navegador seguem iguais.
+
 ## [0.9.75] - 2026-11-23
 
 ### Adicionado

@@ -234,6 +234,19 @@
 /* ---------- Abas do dispositivo ---------- */
 .device-tabs { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
 .device-tabs .nav-link { white-space: nowrap; }
+/* Com o "Mais" ligado (tabs.js), nada rola de lado: o que não cabe vai para o menu, que não pode ser cortado */
+.device-tabs.tabs-mais-pronto { overflow: visible; }
+.device-tabs .tab-extra { display: none !important; }
+.device-tabs .tabs-mais-aviso::before {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.35rem;
+  vertical-align: 0.1rem;
+  background: var(--bs-danger);
+  border-radius: 50%;
+}
 
 /* ---------- Estado vazio ---------- */
 
