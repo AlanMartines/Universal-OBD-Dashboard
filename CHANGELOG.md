@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.84] - 2026-11-24
+
 ### Corrigido
 - **Espaçamento nos Ajustes e em outras telas do app.** "Rever o roteiro de primeiro uso" colado na lista do Pronto para viajar; texto e botões das Permissões sem respiro; subtítulos dentro de um cartão (Ajuste fino, Tensão da bateria, Recomeçar o aprendizado, Dispositivos-gatilho) grudados no bloco de cima; botão "Escolher arquivo .csv" colado no campo de baixo. Os cartões que não tinham título ganharam um (Combustível; Bluetooth: adaptador e gatilhos; Perfis de veículo) e passam a aparecer no índice do topo dos Ajustes. A aba Sensores, sem sensores para mostrar, deixava a tela em branco: agora explica.
 
