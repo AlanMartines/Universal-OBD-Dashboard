@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Roteiro de captura: medição da bateria com o multímetro.** Novo grupo "Bateria (multímetro)" com 5 pontos: carro desligado, chave ligada, partida, marcha lenta e farol com ar. Em cada um, o app mostra ao vivo o ESP32 (com e sem o ajuste), a rede do carro, o OBD e a rotação; a pessoa digita o multímetro e toca em **Registrar ponto**, e tudo vai junto para o arquivo de diagnóstico. Na partida, o app guarda a menor tensão que o ESP32 viu. No fim, o resumo mostra o fator de cada ponto, sugere a mediana (sem a partida), avisa quando os pontos variam demais (fiação) e oferece **Aplicar como calibração**.
+
 ## [0.9.81] - 2026-11-24
 
 ### Adicionado

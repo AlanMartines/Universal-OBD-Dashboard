@@ -38,6 +38,8 @@ data class CaptureScript(
      *   a pessoa toca a posição sempre que ela muda e encerra com "Finalizar teste" ([maxS] é só o limite).
      * [choices] são botões opcionais durante o passo (ex.: posição do econômetro).
      * [engine]: "on", "off" ou "any", só para avisar; o bloqueio é sempre com o carro andando.
+     * [measure]: "battery", um ponto de medição da bateria: a pessoa digita o multímetro e o app grava junto o
+     *   que o ESP32, a rede do carro e o OBD leem no mesmo instante.
      * [passenger]: passo feito pelo passageiro com o carro andando. Só ele roda em movimento, e só num grupo "moving".
      */
     @Serializable
@@ -55,6 +57,8 @@ data class CaptureScript(
         val zones: List<Zone>? = null,
         @SerialName("max_s") val maxS: Int? = null,
         val choices: Choices? = null,
+        /** "battery": ponto de medição da bateria com o multímetro (a tela mostra as leituras e registra o ponto). */
+        val measure: String? = null,
     )
 
     @Serializable
@@ -113,8 +117,9 @@ data class CaptureScript(
                     if (!ID.matches(st.id) || !ids.add(st.id)) throw ScriptException("$ctx: id inválido ou repetido")
                     listOf(st.title, st.before, st.after).forEach { text(it, ctx) }
                     if (st.engine !in setOf("on", "off", "any")) throw ScriptException("$ctx: engine deve ser on, off ou any")
-                    val kinds = listOfNotNull(st.pattern, st.phases, st.events, st.zones)
-                    if (kinds.size != 1) throw ScriptException("$ctx: use exatamente um de pattern, phases, events ou zones")
+                    val kinds = listOfNotNull(st.pattern, st.phases, st.events, st.zones, st.measure)
+                    if (kinds.size != 1) throw ScriptException("$ctx: use exatamente um de pattern, phases, events, zones ou measure")
+                    if (st.measure != null && st.measure != "battery") throw ScriptException("$ctx: measure só aceita battery")
                     st.pattern?.let { p ->
                         text(p.on, ctx); text(p.off, ctx)
                         if (p.onS !in 1..600 || p.offS !in 1..600 || p.repeat !in 1..10) throw ScriptException("$ctx: tempos ou repetições fora da faixa")
@@ -152,7 +157,7 @@ data class CaptureScript(
 
 /** Marca que a tela pede para gravar. Só campos conhecidos, com tamanho limitado: o texto vem da WebView. */
 object CaptureMarks {
-    private val PHASES = setOf("step_start", "on", "off", "phase", "choice", "event", "note", "step_end", "skip")
+    private val PHASES = setOf("step_start", "on", "off", "phase", "choice", "event", "note", "step_end", "skip", "measure")
     private val ID = Regex("^[a-z0-9_]{1,32}$")
     private val LIMITS = mapOf("label" to 120, "value" to 60, "note" to 300, "result" to 20)
 

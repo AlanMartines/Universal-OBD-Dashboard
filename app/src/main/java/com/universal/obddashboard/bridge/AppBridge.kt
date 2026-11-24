@@ -128,6 +128,18 @@ class AppBridge(private val activity: MainActivity) {
         return "ok"
     }
 
+    /**
+     * Aplica o fator sugerido pela medição do roteiro (mediana dos pontos com o multímetro). [multimeterV] e
+     * [espV] são o ponto mais perto da mediana, só para mostrar de onde veio.
+     */
+    @JavascriptInterface
+    fun applyBatteryFactor(factor: Double, multimeterV: Double, espV: Double): String {
+        val c = com.universal.obddashboard.telemetry.BatteryCalibration
+        if (!factor.isFinite() || factor !in c.MIN_FACTOR..c.MAX_FACTOR) return "Fator fora de ×${c.MIN_FACTOR} a ×${c.MAX_FACTOR}: confira a fiação antes de calibrar."
+        AppSettings.setBatteryCalibration(activity, com.universal.obddashboard.telemetry.BatteryCalibration(Math.round(factor * 1000) / 1000.0, multimeterV, espV, System.currentTimeMillis()))
+        return "ok"
+    }
+
     @JavascriptInterface
     fun clearBatteryCalibration(): String {
         AppSettings.setBatteryCalibration(activity, null)

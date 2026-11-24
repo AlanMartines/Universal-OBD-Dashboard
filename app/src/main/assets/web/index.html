@@ -804,6 +804,15 @@
         <h3 id="script-step-title" class="script-step-title"></h3>
         <p id="script-step-before" class="muted"></p>
         <p id="script-step-warn" class="script-warn small" hidden></p>
+        <div id="script-measure" class="script-measure" hidden>
+          <div id="sm-live" class="small"></div>
+          <label>Multímetro na bateria (V)
+            <input id="sm-multimetro" type="text" inputmode="decimal" maxlength="6" placeholder="ex.: 12,6" autocomplete="off">
+          </label>
+          <div class="row"><button id="sm-registrar" class="btn btn-primary" type="button">Registrar ponto</button></div>
+          <div id="sm-resumo" class="small"></div>
+          <div class="row"><button id="sm-aplicar" class="btn" type="button" hidden>Aplicar calibração</button></div>
+        </div>
         <div id="script-live" class="script-live" hidden>
           <div id="script-say" class="script-say"></div>
           <div id="script-count" class="script-count"></div>

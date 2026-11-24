@@ -134,20 +134,128 @@ function scriptPhases(st) {
 /** Passos com botões que a pessoa toca (eventos ou grupos): terminam com "Finalizar teste". */
 function scriptTapStep(st) { return !!(st.events || st.zones); }
 
+/* ---------------------------------------------------------------- Medição da bateria (multímetro) */
+/* Cada ponto grava, no mesmo instante, o multímetro (digitado) e o que o ESP32 (cru e corrigido), a rede do carro
+   e o OBD leem. Os pontos do dia ficam na tela para o resumo; o arquivo de diagnóstico guarda tudo para análise. */
+const BAT_PONTOS_KEY = 'roteiro.bateria';
+let batPontos = {};
+let batMinPartida = null;
+function batLoad() {
+  try {
+    const p = JSON.parse(localStorage.getItem(BAT_PONTOS_KEY) || '{}');
+    batPontos = (p.day === scriptToday() && p.pontos) || {};
+  } catch (e) { batPontos = {}; }
+}
+function batSave() {
+  try { localStorage.setItem(BAT_PONTOS_KEY, JSON.stringify({ day: scriptToday(), pontos: batPontos })); } catch (e) { /* sem armazenamento */ }
+}
+const batFator = () => { const c = parse(bridge.getSensorCalibration(), {}); return (c.battery && c.battery.factor) || 1; };
+function batLeituras() {
+  const roles = meta.roles || {};
+  const esp = scriptReading(['esp_batt_v']);
+  const fator = batFator();
+  return { esp, espCru: esp != null ? esp / fator : null, fator, rede: scriptReading(['can_voltage']), obd: scriptReading([roles.voltage || 'battery_volts']), rpm: scriptRpm() };
+}
+function batLinha(box, nome, valor) {
+  const row = document.createElement('div');
+  row.className = 'kv';
+  const n = document.createElement('span');
+  n.textContent = nome;
+  const v = document.createElement('b');
+  v.textContent = valor;
+  row.append(n, v);
+  box.appendChild(row);
+}
+const batV = (v) => (v == null ? '—' : `${fmt(v, 2)} V`);
+function batRenderLive() {
+  if (!scriptStep || !scriptStep.measure) return;
+  const l = batLeituras();
+  // Na partida, guarda a menor tensão crua que o ESP32 mostrou com esta tela aberta
+  const minNow = scriptReading(['esp_batt_min']);
+  const cand = [l.espCru, minNow != null ? minNow / l.fator : null].filter((x) => x != null);
+  if (scriptStep.id === 'bat_crank' && cand.length) batMinPartida = Math.min(batMinPartida == null ? Infinity : batMinPartida, ...cand);
+  const box = $('sm-live');
+  box.replaceChildren();
+  batLinha(box, 'ESP32 (com o ajuste)', batV(l.esp));
+  batLinha(box, 'ESP32 cru', batV(l.espCru) + (l.fator !== 1 ? ` · ajuste ×${fmt(l.fator, 3)}` : ''));
+  if (scriptStep.id === 'bat_crank') batLinha(box, 'Menor do ESP32 nesta tela (cru)', batV(batMinPartida));
+  batLinha(box, 'Rede do carro', batV(l.rede));
+  batLinha(box, 'OBD (ELM327)', batV(l.obd));
+  batLinha(box, 'Rotação', l.rpm == null ? '—' : `${fmt(l.rpm, 0)} rpm`);
+}
+function batResumo() {
+  const box = $('sm-resumo');
+  box.replaceChildren();
+  const pts = scriptStepsFlat().filter((s) => s.measure && batPontos[s.id]).map((s) => ({ step: s, p: batPontos[s.id] }));
+  if (!pts.length) { $('sm-aplicar').hidden = true; return; }
+  const t = document.createElement('p');
+  t.className = 'muted small';
+  t.textContent = 'Pontos de hoje (multímetro ÷ ESP32 cru):';
+  box.appendChild(t);
+  pts.forEach(({ step, p }) => batLinha(box, step.title.replace(/^Bateria: /, ''), `${fmt(p.multimetro, 2)} V ÷ ${fmt(p.espCru, 2)} V = ×${fmt(p.fator, 3)}`));
+  // Sugestão: a mediana dos pontos fora da partida (na partida, o ESP32 e o multímetro não pegam o mesmo instante)
+  const fora = pts.filter(({ step }) => step.id !== 'bat_crank').map(({ p }) => p).sort((a, b) => a.fator - b.fator);
+  if (!fora.length) { $('sm-aplicar').hidden = true; return; }
+  const med = fora[Math.floor(fora.length / 2)];
+  const variacao = fora[fora.length - 1].fator - fora[0].fator;
+  const s = document.createElement('p');
+  s.className = 'small';
+  s.textContent = `Sugestão: ×${fmt(med.fator, 3)} (mediana de ${fora.length} ponto${fora.length > 1 ? 's' : ''}).`
+    + (variacao > 0.05 ? ` Atenção: os pontos variam ×${fmt(variacao, 3)} entre si; isso costuma ser perda na fiação ou no terra, não calibração.` : '');
+  box.appendChild(s);
+  $('sm-aplicar').hidden = false;
+  $('sm-aplicar').textContent = `Aplicar ×${fmt(med.fator, 3)} como calibração`;
+  $('sm-aplicar').dataset.fator = String(med.fator);
+  $('sm-aplicar').dataset.multimetro = String(med.multimetro);
+  $('sm-aplicar').dataset.esp = String(med.espCru);
+}
+function batRegistrar() {
+  const ready = scriptReadiness();
+  if (!ready.ok) { toast(ready.text, true); return; }
+  const multimetro = parseFloat(String($('sm-multimetro').value).replace(',', '.'));
+  if (!Number.isFinite(multimetro) || multimetro < 5 || multimetro > 16) { toast('Digite o valor do multímetro em volts (ex.: 12,6).', true); return; }
+  const l = batLeituras();
+  const espCru = scriptStep.id === 'bat_crank' ? batMinPartida : l.espCru;
+  if (espCru == null) { toast('O ESP32 ainda não mandou a tensão da bateria. Espere a leitura aparecer.', true); return; }
+  const fator = multimetro / espCru;
+  const p = { multimetro, espCru, esp: l.esp, rede: l.rede, obd: l.obd, rpm: l.rpm, fator, em: Date.now() };
+  const num = (v, d) => (v == null ? '-' : v.toFixed(d));
+  const res = scriptMark({ phase: 'measure', label: scriptStep.title, value: num(multimetro, 2),
+    note: `multimetro=${num(multimetro, 2)} esp_cru=${num(espCru, 3)} esp=${num(l.esp, 3)} rede=${num(l.rede, 2)} obd=${num(l.obd, 2)} rpm=${num(l.rpm, 0)} fator=${num(fator, 4)} ajuste=${num(l.fator, 3)}` });
+  if (res !== 'ok') { toast(res, true); return; }
+  batPontos[scriptStep.id] = p;
+  batSave();
+  scriptProgress[scriptStep.id] = 'done';
+  scriptSaveProgress();
+  $('sm-multimetro').value = '';
+  toast(`Ponto registrado: ${fmt(multimetro, 2)} V no multímetro, ×${fmt(fator, 3)}.`);
+  batResumo();
+}
+
 function scriptOpenStep(st) {
   if (scriptRunState) return;
   scriptStep = st;
+  // Passo de medição: painel próprio, sem contagem nem "Iniciar passo"
+  $('script-measure').hidden = !st.measure;
+  if (st.measure) {
+    batLoad();
+    batMinPartida = null;
+    $('sm-multimetro').value = '';
+    batRenderLive();
+    batResumo();
+  }
   $('script-list').hidden = true;
   $('script-run').hidden = false;
   $('script-step-title').textContent = (st.priority ? '★ ' : '') + st.title;
-  const total = scriptPhases(st).reduce((a, p) => a + p.s, 0);
+  const total = st.measure ? 0 : scriptPhases(st).reduce((a, p) => a + p.s, 0);
   const how = st.pattern ? `${st.pattern.on} ${st.pattern.on_s} s → ${st.pattern.off} ${st.pattern.off_s} s, ${st.pattern.repeat} vezes.` : '';
-  const length = st.zones ? 'Sem tempo fixo: no fim, toque em Finalizar teste.'
+  const length = st.measure ? 'Sem tempo: digite o multímetro e registre quando o valor estabilizar.'
+    : st.zones ? 'Sem tempo fixo: no fim, toque em Finalizar teste.'
     : st.events ? `Até ${Math.round(st.max_s / 60)} min; no fim, toque em Finalizar teste.` : `Cerca de ${Math.ceil((total + SCRIPT_PREPARE_S) / 60)} min.`;
   $('script-step-before').textContent = [st.before, how, length].filter(Boolean).join(' ');
   $('script-live').hidden = true;
   $('script-summary').hidden = true;
-  $('script-start').hidden = false;
+  $('script-start').hidden = !!st.measure;
   $('script-start').textContent = 'Iniciar passo';
   $('script-stop').hidden = true;
   $('script-skip').hidden = false;
@@ -390,6 +498,12 @@ $('script-skip').addEventListener('click', () => {
   scriptNextStep();
 });
 $('script-next').addEventListener('click', scriptNextStep);
+$('sm-registrar').addEventListener('click', batRegistrar);
+$('sm-aplicar').addEventListener('click', (e) => {
+  const d = e.currentTarget.dataset;
+  okOrToast(bridge.applyBatteryFactor(Number(d.fator), Number(d.multimetro), Number(d.esp)), `Calibração aplicada: ×${fmt(Number(d.fator), 3)}. A bateria do ESP32 já aparece corrigida.`);
+  batRenderLive();
+});
 // Confere antes de começar: a voz fala em português e o celular vibra forte no "liga" e curto no "desliga"
 $('script-test').addEventListener('click', () => {
   bridge.captureSpeak('Teste de voz. Liga.');
@@ -406,6 +520,7 @@ let scriptKeptAt = 0;
 setInterval(() => {
   if (!window.scriptPanelOpen) return;
   if (!scriptRunState) scriptRenderReady();
+  if (scriptStep && scriptStep.measure && !$('script-run').hidden) batRenderLive();
   // Parado por muito tempo entre um passo e outro, a captura não pode encerrar
   if (lastState && lastState.running && Date.now() - scriptKeptAt > 60000) { scriptKeptAt = Date.now(); bridge.captureKeepAlive(); }
 }, 1000);

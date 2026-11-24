@@ -4,6 +4,23 @@
   "title": "Mapeamento da rede do carro",
   "groups": [
     {
+      "id": "bateria",
+      "title": "Bateria (multímetro)",
+      "note": "Compara a bateria medida no multímetro com o que o ESP32, a rede do carro e o OBD leem no mesmo instante. Em cada ponto, digite o valor do multímetro e toque em Registrar ponto. No fim, o app sugere a calibração da bateria do ESP32.",
+      "steps": [
+        { "id": "bat_off", "title": "Bateria: carro desligado", "engine": "off", "measure": "battery",
+          "before": "Carro desligado há 30 min ou mais. Ligue a chave uns segundos para acordar o ESP32, desligue, espere a leitura aparecer e meça a bateria (preta no −, vermelha no +)." },
+        { "id": "bat_ign", "title": "Bateria: chave ligada, motor parado", "engine": "off", "measure": "battery",
+          "before": "Ligue a chave sem dar a partida e espere uns 10 s antes de medir." },
+        { "id": "bat_crank", "title": "Bateria: partida", "engine": "any", "measure": "battery",
+          "before": "Com esta tela aberta, filme o multímetro e dê a partida. O app guarda a menor tensão que o ESP32 viu; depois digite o menor valor do multímetro no vídeo." },
+        { "id": "bat_idle", "title": "Bateria: marcha lenta", "engine": "on", "measure": "battery",
+          "before": "Motor ligado há uns 2 min, em marcha lenta, sem farol e sem ar-condicionado." },
+        { "id": "bat_load", "title": "Bateria: farol e ar ligados", "engine": "on", "measure": "battery",
+          "before": "Marcha lenta com o farol e o ar-condicionado ligados, depois de uns 30 s." }
+      ]
+    },
+    {
       "id": "ignition",
       "title": "Ignição ligada, motor desligado",
       "note": "Carro estacionado, freio de mão puxado e 1ª marcha engatada (ou P no automático). Todas as portas fechadas, exceto a do passo.",

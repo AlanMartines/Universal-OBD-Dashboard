@@ -34,7 +34,7 @@ const bridge = NATIVE_BRIDGES.length ? new Proxy({}, {
   getSpeedSuggestion: () => '{"pct":4.5,"samples":320}', getUserAlarms: () => '[]', addUserAlarm: () => 'ok', deleteUserAlarm: () => 'ok',
   getTimedRuns: () => '[{"band":"0-60","best":null,"last":null}]', clearTimedRuns: () => 'ok',
   getSensorCalibration: () => '{"running":false,"trims":{"pitchDeg":0,"rollDeg":0,"headingDeg":0},"limits":{"tiltDeg":15,"headingDeg":45},"imu":{"upAxis":"−X","upOffDeg":15,"upLocked":true,"forwardAxis":"+Z","forwardOffDeg":4,"forwardLocked":false},"compass":null}',
-  setSensorTrims: () => 'ok', forgetSensorCalibration: () => 'ok', calibrateBattery: () => 'ok', clearBatteryCalibration: () => 'ok',
+  setSensorTrims: () => 'ok', forgetSensorCalibration: () => 'ok', calibrateBattery: () => 'ok', clearBatteryCalibration: () => 'ok', applyBatteryFactor: () => 'ok',
   getDashboardSettings: () => '{"rpmMax":7000,"rpmRedline":6250,"speedMax":200,"speedCorrectionPct":0}', setDashboardSettings: () => 'ok', resetDashboardSettings: () => 'ok',
   getFuelUps: () => '{"items":[],"summary":{"count":0},"intervals":[]}', addFuelUp: () => 'ok', deleteFuelUp: () => 'ok', updateFuelUp: () => 'ok',
   getFuelSyncStatus: () => '{"paired":true,"inSync":false,"sentAt":null}', sendFuelUpsNow: () => 'ok',
