@@ -52,6 +52,7 @@ object AppSettings {
     private const val KEY_IMU_CALIBRATION = "imu_calibration"
     private const val KEY_PHONE_IMU_CALIBRATION = "phone_imu_calibration"
     private const val KEY_SPEED_CALIBRATION = "speed_calibration_"
+    private const val KEY_BATTERY_CALIBRATION = "battery_calibration_"
     private const val KEY_HEALTH = "health_"
     private const val KEY_COMPASS_CALIBRATION = "compass_calibration"
     private const val KEY_CAN_ADAPTER = "can_adapter_names"
@@ -140,6 +141,14 @@ object AppSettings {
     fun clearHealth(context: Context, vehicleId: String) = prefs(context).edit { remove(KEY_HEALTH + vehicleId) }
 
     fun clearCompassCalibration(context: Context) = prefs(context).edit { remove(KEY_COMPASS_CALIBRATION) }
+
+    /** Calibração da bateria lida pelo ESP32 (multímetro ÷ leitura), do veículo selecionado; entra no backup. */
+    fun batteryCalibration(context: Context): com.universal.obddashboard.telemetry.BatteryCalibration? =
+        com.universal.obddashboard.telemetry.BatteryCalibration.decode(prefs(context).getString(KEY_BATTERY_CALIBRATION + vid(context), null))
+
+    fun setBatteryCalibration(context: Context, c: com.universal.obddashboard.telemetry.BatteryCalibration?) = prefs(context).edit {
+        if (c == null) remove(KEY_BATTERY_CALIBRATION + vid(context)) else putString(KEY_BATTERY_CALIBRATION + vid(context), c.encode())
+    }
 
     /** Ajuste fino à mão dos sensores do ESP32; do módulo, como as calibrações acima, e também vai no backup. */
     fun sensorTrims(context: Context): com.universal.obddashboard.telemetry.SensorTrims =

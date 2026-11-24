@@ -207,7 +207,7 @@ Motor ligado em marcha lenta, sem farol e sem A/C, com o app capturando e o ESP3
 | 5 | Pino 3V3 do ESP32 | 3,3 V ± 0,1 | Regulador do ESP32. |
 | 6 | Preta no − da bateria, vermelha no TP4 | menos de 0,1 V | Queda no terra (pinos 4 e 5 do OBD). |
 
-**Como ler:** se a medida 3 vezes 6 dá a medida 2, mas o app mostra menos, o erro está no conversor do ESP32 (corrija com `BAT_AJUSTE` no firmware). Se 2 ÷ 3 não dá 6, o erro está no divisor.
+**Como ler:** se a medida 3 vezes 6 dá a medida 2, mas o app mostra menos, o erro está no conversor do ESP32 (calibre no app, em Ajustes → Calibração dos sensores → Tensão da bateria, com o valor do multímetro; não precisa gravar firmware). Se 2 ÷ 3 não dá 6, o erro está no divisor.
 
 ## Ilhas, trilhas, resistores e fios
 

@@ -337,6 +337,11 @@ function renderSensorCal(s) {
     ? `${fmt(d.speedFactor, 3)} · ${fmt(d.speedFactorKm, 0)} km conferidos`
     : sp && sp.factor != null ? `${fmt(sp.factor, 3)} · ${fmt(sp.km, 0)} km conferidos`
       : `aprendendo · ${fmt((d.speedFactorKm || (sp && sp.km) || 0), 1)} de 5 km (retas acima de 30 km/h com GPS)`);
+  // Bateria pelo ESP32: a leitura de agora (já com o ajuste) e a calibração do multímetro, se houver
+  const bv = s && s.readings && typeof s.readings.esp_batt_v === 'number' ? s.readings.esp_batt_v : null;
+  const bc = sensorCal.battery;
+  scSet('batt', 'Bateria pelo ESP32', (bv != null ? `${fmt(bv, 2)} V agora` : 'sem leitura agora (precisa da captura e do divisor)')
+    + (bc ? ` · ajuste ×${fmt(bc.factor, 3)} (${fmt(bc.multimeterV, 2)} V no multímetro em ${new Date(bc.at).toLocaleDateString('pt-BR')})` : ' · sem ajuste'));
   const pm = sensorCal.phoneImu;
   scSet('phoneImu', 'Movimento do celular (reserva)', pm
     ? `cima no eixo ${pm.upAxis}` + (pm.forwardAxis ? `, frente no ${pm.forwardAxis}` : ' (frente ainda não aprendida)')
@@ -358,6 +363,11 @@ function sensorCalDone(res, message) {
 $('sc-save').addEventListener('click', () => sensorCalDone(
   bridge.setSensorTrims(Number($('sc-pitch').value), Number($('sc-roll').value), Number($('sc-heading').value)), 'Ajuste fino salvo.'));
 $('sc-zero').addEventListener('click', () => sensorCalDone(bridge.setSensorTrims(0, 0, 0), 'Ajuste fino zerado.'));
+$('bat-calibrar').addEventListener('click', () => {
+  const v = parseFloat(String($('bat-multimetro').value).replace(',', '.'));
+  sensorCalDone(bridge.calibrateBattery(Number.isFinite(v) ? v : 0), 'Bateria calibrada: a leitura do ESP32 já está corrigida.');
+});
+$('bat-zerar').addEventListener('click', () => sensorCalDone(bridge.clearBatteryCalibration(), 'Ajuste da bateria removido: vale a leitura crua do ESP32.'));
 $('sc-help-open').addEventListener('click', () => { $('sc-help').hidden = false; });
 $('sc-help-close').addEventListener('click', () => { $('sc-help').hidden = true; });
 $('sc-forget-imu').addEventListener('click', () => {

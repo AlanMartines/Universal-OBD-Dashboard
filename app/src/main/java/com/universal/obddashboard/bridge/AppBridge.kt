@@ -95,6 +95,12 @@ class AppBridge(private val activity: MainActivity) {
             } ?: JSONObject.NULL,
         )
         o.put(
+            "battery",
+            AppSettings.batteryCalibration(activity)?.let { c ->
+                JSONObject().put("factor", c.factor).put("multimeterV", c.multimeterV).put("espV", c.espV).put("at", c.at)
+            } ?: JSONObject.NULL,
+        )
+        o.put(
             "speed",
             AppSettings.speedCalibration(activity, Vehicles.selectedId(activity))?.let { st ->
                 val cal = com.universal.obddashboard.telemetry.SpeedCalibrator(st)
@@ -103,6 +109,29 @@ class AppBridge(private val activity: MainActivity) {
             } ?: JSONObject.NULL,
         )
         return o.toString()
+    }
+
+    /**
+     * Calibra a bateria do ESP32 com a tensão medida no multímetro agora. Usa a leitura mais recente do ESP32,
+     * sem a calibração anterior; vale na hora. Nada vai ao ESP32.
+     */
+    @JavascriptInterface
+    fun calibrateBattery(multimeterV: Double): String {
+        if (!ObdForegroundService.isRunning) return "Comece a captura com o ESP32 ligado para calibrar."
+        val now = System.currentTimeMillis()
+        val shown = TelemetryHub.state.value.value(com.universal.obddashboard.can.Slcan.ESP_BATT_V, now)
+            ?: return "O ESP32 ainda não mandou a tensão da bateria (precisa do divisor no D34 e do firmware 1.6 ou mais novo)."
+        val raw = shown / (AppSettings.batteryCalibration(activity)?.factor ?: 1.0)
+        com.universal.obddashboard.telemetry.BatteryCalibration.problem(multimeterV, raw)?.let { return it }
+        val cal = com.universal.obddashboard.telemetry.BatteryCalibration.of(multimeterV, raw, now) ?: return "Não foi possível calibrar agora."
+        AppSettings.setBatteryCalibration(activity, cal)
+        return "ok"
+    }
+
+    @JavascriptInterface
+    fun clearBatteryCalibration(): String {
+        AppSettings.setBatteryCalibration(activity, null)
+        return "ok"
     }
 
     /** Ajuste fino em graus; vale na hora, inclusive com a captura em andamento. Nada vai ao ESP32. */

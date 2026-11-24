@@ -616,8 +616,10 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         var odometerSyncedKm: Double? = null
         val link = CanListenLink(
             this, loaded.canSignals,
-            onValues = { values, ts ->
+            onValues = { raw, ts ->
                 lastCanValuesAt = SystemClock.elapsedRealtime()
+                // Bateria do ESP32 com a calibração feita no app (Ajustes → Calibração dos sensores)
+                val values = AppSettings.batteryCalibration(this)?.apply(raw) ?: raw
                 TelemetryHub.mergeValues(values, ts)
                 val s = TelemetryHub.state.value
                 val speed = s.value(roles.speed, ts) ?: s.value(roles.canSpeed, ts)

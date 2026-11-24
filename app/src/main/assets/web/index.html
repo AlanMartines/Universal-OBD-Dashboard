@@ -566,6 +566,15 @@
           <button id="sc-zero" class="btn">Zerar ajuste</button>
           <button id="sc-help-open" class="btn sc-help-btn" aria-label="Como fazer o ajuste fino" title="Como fazer">ⓘ</button>
         </div>
+        <span class="label">Tensão da bateria (ESP32)</span>
+        <p class="muted small">Meça a bateria com o multímetro (ponta preta no −, vermelha no +) e digite o valor: o app corrige a leitura do ESP32, sem gravar firmware. Calibre com o carro desligado e descansado ou com o motor em marcha lenta estável, nunca na partida. Vale para este veículo.</p>
+        <label>Multímetro na bateria agora (V)
+          <input id="bat-multimetro" type="text" inputmode="decimal" maxlength="6" placeholder="ex.: 12,6" autocomplete="off">
+        </label>
+        <div class="row">
+          <button id="bat-calibrar" class="btn btn-primary">Calibrar</button>
+          <button id="bat-zerar" class="btn">Zerar</button>
+        </div>
         <span class="label">Recomeçar o aprendizado</span>
         <p class="muted small">Use ao trocar o módulo de lugar ou por outro. O desvio do giroscópio não tem botão: ele muda a cada vez que o ESP32 liga e é medido de novo, sozinho, nos primeiros segundos parado.</p>
         <div class="row">
