@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Página do veículo:** o botão "Ver localização" ficava colado no cartão "Acesso da oficina"; agora há espaço entre os dois.
+
 ## [0.9.78] - 2026-11-23
 
 ### Adicionado

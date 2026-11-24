@@ -1,5 +1,21 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "fixed",
+    "title": "Corrigido",
+    "items": [
+     {
+      "title": "Página do veículo",
+      "text": "o botão \"Ver localização\" ficava colado no cartão \"Acesso da oficina\"; agora há espaço entre os dois."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.78",
   "date": "2026-11-23",
   "sections": [
