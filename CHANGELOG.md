@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.78] - 2026-11-23
+
 ### Adicionado
 - **Roteiro de primeiro uso no app.** Ao instalar, um passo a passo curto: boas-vindas, escolher o veículo e o perfil, parear o ELM327 e liberar as permissões, e os opcionais (escuta CAN pelo ESP32 e painel web). Cada passo tem um botão que leva direto ao ajuste certo; dá para pular, voltar e rever depois em Ajustes → Pronto para viajar. Só aparece sozinho na primeira vez e se ainda não houver viagem gravada: quem atualiza o app não vê.
 
