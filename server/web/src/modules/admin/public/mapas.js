@@ -27,6 +27,9 @@
     return o;
   }
 
+  // Rótulo de cada nível da área; os estados do Brasil ficam no quarto nível (abaixo da região)
+  var ROTULOS = ['Continente', 'País', 'Região', 'Estado / UF'];
+
   function areaEscolhida() {
     var selects = niveis.querySelectorAll('select');
     for (var i = selects.length - 1; i >= 0; i -= 1) if (selects[i].value) return selects[i].value;
@@ -36,18 +39,26 @@
   function nivel(pai, profundidade) {
     var lista = (filhos[pai || ''] || []).slice().sort(function (a, b) { return nome(a).localeCompare(nome(b), 'pt-BR'); });
     if (!lista.length) return;
+    var campo = document.createElement('div');
+    campo.className = 'mapas-nivel';
+    var rotulo = document.createElement('label');
+    rotulo.className = 'form-label';
+    rotulo.htmlFor = 'mapas-nivel-' + profundidade;
+    rotulo.textContent = ROTULOS[profundidade] || 'Sub-região';
     var s = document.createElement('select');
-    s.className = 'form-select w-auto';
-    s.setAttribute('aria-label', profundidade === 0 ? 'Continente ou planeta' : 'Detalhar a área (opcional)');
-    s.appendChild(opcao('', profundidade === 0 ? 'Escolha…' : 'Toda a área acima'));
+    s.className = 'form-select';
+    s.id = 'mapas-nivel-' + profundidade;
+    // No primeiro nível é preciso escolher; abaixo, "Todos" fica com a área inteira do nível de cima
+    s.appendChild(opcao('', profundidade === 0 ? 'Escolha…' : 'Todos'));
     lista.forEach(function (a) { s.appendChild(opcao(a.id, a.nome)); });
     s.addEventListener('change', function () {
-      var todos = Array.prototype.slice.call(niveis.querySelectorAll('select'));
-      todos.slice(todos.indexOf(s) + 1).forEach(function (el) { el.remove(); });
+      var campos = Array.prototype.slice.call(niveis.querySelectorAll('.mapas-nivel'));
+      campos.slice(campos.indexOf(campo) + 1).forEach(function (el) { el.remove(); });
       if (s.value) nivel(s.value, profundidade + 1);
       escolher();
     });
-    niveis.appendChild(s);
+    campo.append(rotulo, s);
+    niveis.appendChild(campo);
   }
 
   function mostrarTamanho() {
@@ -57,11 +68,14 @@
     if (!d || d.area !== campoArea.value) return;
     var grande = d.area === 'planeta' || (d.bytesPbf && d.bytesPbf > 3 * GB);
     if (tipo.value === 'encaixe') {
-      infoTamanho.textContent = d.pbfTxt
-        ? 'Download: ' + d.pbfTxt + '. Depois de pronto: cerca de ' + d.discoTxt + ' em disco e ' + d.memoriaTxt + ' de memória.'
-        : 'Não foi possível saber o tamanho desta área agora.';
+      infoTamanho.textContent = !d.pbfTxt ? 'Não foi possível saber o tamanho desta área agora.'
+        : d.recorte
+          ? 'Download: ' + d.pbfTxt + ' (a região inteira; o estado é recortado em seguida). Depois de pronto, no máximo cerca de ' + d.discoTxt + ' em disco e ' + d.memoriaTxt + ' de memória (o da região); um estado ocupa menos, e a página mostra o tamanho real quando terminar.'
+          : 'Download: ' + d.pbfTxt + '. Depois de pronto: cerca de ' + d.discoTxt + ' em disco e ' + d.memoriaTxt + ' de memória.';
     } else {
-      infoTamanho.textContent = 'O mapa base é recortado só no retângulo da área; o tamanho final depende dela (um estado ocupa de dezenas a centenas de MB).';
+      infoTamanho.textContent = d.recorte
+        ? 'O mapa base é recortado pelo contorno do estado (IBGE); costuma ocupar de dezenas a centenas de MB.'
+        : 'O mapa base é recortado no retângulo da área; o tamanho final depende dela (um estado ocupa de dezenas a centenas de MB).';
     }
     if (grande) {
       alerta.hidden = false;

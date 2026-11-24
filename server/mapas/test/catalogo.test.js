@@ -49,3 +49,26 @@ describe('catálogo de mapas', () => {
     assert.equal(memoriaEstimada(null), null);
   });
 });
+
+test('estados do Brasil: filhos da região certa, baixam o arquivo dela e recortam pelo contorno', async () => {
+  const { estadosDoBrasil, geojsonDoRecorte, normalizarIndice } = await import('../src/catalogo.js');
+  const indice = { features: [
+    { properties: { id: 'brazil', name: 'Brazil', parent: 'south-america', urls: { pbf: 'https://download.geofabrik.de/south-america/brazil-latest.osm.pbf' } } },
+    { properties: { id: 'centro-oeste', name: 'Centro-Oeste', parent: 'brazil', urls: { pbf: 'https://download.geofabrik.de/south-america/brazil/centro-oeste-latest.osm.pbf' } } },
+  ] };
+  const areas = normalizarIndice(indice);
+  assert.equal(areas.find((a) => a.id === 'brazil').nome, 'Brasil');
+  const go = areas.find((a) => a.id === 'brasil-go');
+  assert.equal(go.nome, 'Goiás');
+  assert.equal(go.pai, 'centro-oeste');
+  assert.equal(go.pbf, 'https://download.geofabrik.de/south-america/brazil/centro-oeste-latest.osm.pbf');
+  assert.ok(go.recorte.fracao > 0.2 && go.recorte.fracao < 0.3, 'Goiás é cerca de 1/5 do Centro-Oeste');
+  // Só os estados das regiões que estão no índice; ids no formato aceito pela API
+  const ids = areas.filter((a) => a.recorte).map((a) => a.id).sort();
+  assert.deepEqual(ids, ['brasil-df', 'brasil-go', 'brasil-ms', 'brasil-mt']);
+  assert.ok(ids.every((id) => /^[a-z0-9-]{1,80}$/.test(id)));
+  assert.equal(estadosDoBrasil([]).length, 0);
+  const geo = JSON.parse(geojsonDoRecorte(go.recorte));
+  assert.equal(geo.type, 'Feature');
+  assert.ok(['Polygon', 'MultiPolygon'].includes(geo.geometry.type));
+});

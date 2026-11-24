@@ -79,8 +79,10 @@ async function rotear(req, res) {
     const area = ID.test(id) ? await areaPorId(id) : null;
     if (!area) return responder(res, 404, { error: 'area_not_found' });
     const bytes = await tamanhoPbf(area).catch(() => null);
+    // Estado: baixa o arquivo da região inteira. O tamanho do estado só se sabe depois do recorte (a área engana:
+    // o DF tem 0,4 % da área do Centro-Oeste e boa parte das ruas), então a estimativa é o teto, o da região.
     return responder(res, 200, {
-      area: area.id, nome: area.nome, bytesPbf: bytes,
+      area: area.id, nome: area.nome, bytesPbf: bytes, recorte: Boolean(area.recorte),
       memoriaEncaixe: memoriaEstimada(bytes), discoEncaixe: discoEstimadoEncaixe(bytes),
     });
   }

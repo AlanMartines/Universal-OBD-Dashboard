@@ -4,6 +4,17 @@
  * endereço digitado, e os downloads só saem para os servidores abaixo.
  */
 
+import { readFileSync } from 'node:fs';
+
+/**
+ * Estados do Brasil: a Geofabrik só divide o Brasil em 5 regiões. Cada estado vira uma área filha da sua
+ * região, recortada pelo contorno do IBGE (src/ufs.json, gerado por scripts/gerar-ufs.mjs).
+ */
+const UFS = JSON.parse(readFileSync(new URL('./ufs.json', import.meta.url), 'utf8')).estados;
+
+/** Nomes em português onde a Geofabrik usa o inglês (o resto fica como vem do índice). */
+const NOMES = { brazil: 'Brasil' };
+
 /** Servidores de onde o contêiner pode baixar. Qualquer outro endereço é recusado. */
 export const HOSTS = new Set([
   'download.geofabrik.de',
@@ -45,9 +56,31 @@ export function normalizarIndice(indice) {
     const p = f?.properties ?? {};
     const pbf = p.urls?.pbf;
     if (typeof p.id !== 'string' || !/^[a-z0-9-]+$/.test(p.id) || !pbf || !enderecoPermitido(pbf)) continue;
-    areas.push({ id: p.id, nome: String(p.name ?? p.id), pai: typeof p.parent === 'string' ? p.parent : null, pbf });
+    areas.push({ id: p.id, nome: NOMES[p.id] ?? String(p.name ?? p.id), pai: typeof p.parent === 'string' ? p.parent : null, pbf });
   }
-  return areas;
+  return [...areas, ...estadosDoBrasil(areas)];
+}
+
+/**
+ * Os estados de cada região do Brasil presente no índice: baixam o arquivo da região (pbf) e recortam o
+ * estado (recorte). fracao é a parte da área da região, para estimar o tamanho depois do recorte.
+ */
+export function estadosDoBrasil(areas) {
+  const regioes = new Map(areas.filter((a) => a.pai === 'brazil').map((a) => [a.id, a]));
+  const total = {};
+  for (const e of UFS) total[e.regiao] = (total[e.regiao] ?? 0) + e.areaKm2;
+  return UFS.filter((e) => regioes.has(e.regiao)).map((e) => ({
+    id: `brasil-${e.uf.toLowerCase()}`,
+    nome: e.nome,
+    pai: e.regiao,
+    pbf: regioes.get(e.regiao).pbf,
+    recorte: { uf: e.uf, bbox: e.bbox, geometria: e.geometria, fracao: e.areaKm2 / total[e.regiao] },
+  }));
+}
+
+/** Contorno do recorte como GeoJSON (para o pmtiles e o osmium). */
+export function geojsonDoRecorte(recorte) {
+  return JSON.stringify({ type: 'Feature', properties: { uf: recorte.uf }, geometry: recorte.geometria });
 }
 
 /** Contorno (.poly) da área na Geofabrik: mesmo endereço do .pbf, com outro final. */

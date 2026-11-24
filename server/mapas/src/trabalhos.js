@@ -11,12 +11,13 @@ import { spawn } from 'node:child_process';
 import { createWriteStream, existsSync } from 'node:fs';
 import { constants } from 'node:fs';
 import { access, chmod, mkdir, readdir, readFile, rename, rm, stat, statfs, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { lerProgresso, textoProgresso } from './progresso.js';
 import {
-  bboxDoPoly, discoEstimadoEncaixe, enderecoPermitido, polyUrl, ultimaVersaoProtomaps,
+  bboxDoPoly, discoEstimadoEncaixe, enderecoPermitido, geojsonDoRecorte, memoriaEstimada, polyUrl, ultimaVersaoProtomaps,
 } from './catalogo.js';
 
 export const MAPS = process.env.MAPS_DIR || '/maps';
@@ -162,7 +163,7 @@ export async function limparSobras() {
 
 async function trabalhoBase(area) {
   atual.fase = 'Calculando a área';
-  const bbox = area.bbox ?? bboxDoPoly(await textoDe(polyUrl(area)));
+  const bbox = area.recorte?.bbox ?? area.bbox ?? bboxDoPoly(await textoDe(polyUrl(area)));
   if (!bbox) throw new Error('não foi possível calcular a área do mapa');
   if (await livre(MAPS) < 2 * GB) throw new Error('menos de 2 GB livres na pasta dos mapas');
 
@@ -173,7 +174,14 @@ async function trabalhoBase(area) {
 
   atual.fase = 'Recortando o mapa base (pode levar bastante tempo)';
   const tmp = join(MAPS, 'base.tmp.pmtiles');
-  await rodar('pmtiles', ['extract', `https://build.protomaps.com/${versao}`, tmp, `--bbox=${bbox.join(',')}`, `--maxzoom=${ZOOM_MAX}`], {
+  // Estado: recorta pelo contorno; o resto, pelo retângulo da área
+  let limite = `--bbox=${bbox.join(',')}`;
+  if (area.recorte) {
+    const contorno = join(tmpdir(), 'recorte-base.geojson');
+    await writeFile(contorno, geojsonDoRecorte(area.recorte));
+    limite = `--region=${contorno}`;
+  }
+  await rodar('pmtiles', ['extract', `https://build.protomaps.com/${versao}`, tmp, limite, `--maxzoom=${ZOOM_MAX}`], {
     // A barra do painel segue o pmtiles, como no encaixe: percentual, tamanho, velocidade e quanto falta
     progresso: (p) => {
       atual.progresso = p.pct / 100;
@@ -218,11 +226,22 @@ async function trabalhoEncaixe(area, bytesPbf) {
   await rm(trabalho, { recursive: true, force: true });
   await mkdir(trabalho, { recursive: true });
 
-  atual.fase = 'Baixando as ruas';
-  await baixar(area.pbf, join(trabalho, 'regiao.osm.pbf'), (feito, total) => {
+  atual.fase = area.recorte ? 'Baixando as ruas da região' : 'Baixando as ruas';
+  const baixado = join(trabalho, area.recorte ? 'regiao-inteira.osm.pbf' : 'regiao.osm.pbf');
+  await baixar(area.pbf, baixado, (feito, total) => {
     atual.progresso = total ? Math.min(1, feito / total) : null;
   });
   atual.progresso = null;
+  if (area.recorte) {
+    // Estado: recorta da região pelo contorno do IBGE; as ruas que cruzam a divisa ficam inteiras
+    atual.fase = `Recortando o estado (${area.recorte.uf})`;
+    await writeFile(join(trabalho, 'recorte.geojson'), geojsonDoRecorte(area.recorte));
+    await rodar('osmium', ['extract', '-p', 'recorte.geojson', '-s', 'smart', '-o', 'regiao.osm.pbf', '--overwrite', 'regiao-inteira.osm.pbf'], { cwd: trabalho });
+    await rm(baixado, { force: true });
+    await rm(join(trabalho, 'recorte.geojson'), { force: true });
+    // A partir daqui, o tamanho que conta é o do estado recortado (memória do encaixe pronto)
+    bytesPbf = (await stat(join(trabalho, 'regiao.osm.pbf'))).size;
+  }
 
   atual.fase = 'Processando as ruas (1 de 3)';
   await rodar('osrm-extract', ['-p', '/opt/car.lua', 'regiao.osm.pbf'], { cwd: trabalho });
@@ -239,7 +258,7 @@ async function trabalhoEncaixe(area, bytesPbf) {
   const versao = `v${Date.now()}`;
   await rename(trabalho, join(OSRM, versao));
   await gravarJson(join(OSRM, versao, 'info.json'), {
-    area: area.id, nome: area.nome, bytesPbf, memoria: bytesPbf ? Math.round(bytesPbf * 5) : null, atualizado: new Date().toISOString(),
+    area: area.id, nome: area.nome, bytesPbf, memoria: memoriaEstimada(bytesPbf), atualizado: new Date().toISOString(),
   });
   await writeFile(join(OSRM, 'ativo.tmp'), versao);
   await rename(join(OSRM, 'ativo.tmp'), join(OSRM, 'ativo'));
