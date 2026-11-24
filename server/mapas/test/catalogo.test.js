@@ -72,3 +72,11 @@ test('estados do Brasil: filhos da região certa, baixam o arquivo dela e recort
   assert.equal(geo.type, 'Feature');
   assert.ok(['Polygon', 'MultiPolygon'].includes(geo.geometry.type));
 });
+
+test('tamanho do mapa base pela saída do pmtiles (unidades decimais)', async () => {
+  const { tamanhoDoPmtiles } = await import('../src/catalogo.js');
+  assert.equal(tamanhoDoPmtiles('Extract transferred 48 MB (overfetch 0.05) for an archive size of 46 MB'), 46e6);
+  assert.equal(tamanhoDoPmtiles('... for an archive size of 1.3 GB'), 1.3e9);
+  assert.equal(tamanhoDoPmtiles('... archive size of 512 kB'), 512e3);
+  assert.equal(tamanhoDoPmtiles('nada aqui'), null);
+});

@@ -14,8 +14,10 @@ import {
   INDICE_URL, PLANETA, discoEstimadoEncaixe, enderecoPermitido, memoriaEstimada, normalizarIndice,
 } from './catalogo.js';
 import {
-  MAPS, OSRM, comecar, excluir, gravavel, limparSobras, situacao,
+  MAPS, OSRM, comecar, excluir, gravavel, limparSobras, ocupado, situacao,
 } from './trabalhos.js';
+import { consultar, iniciarFundo, tamanhoPbf } from './tamanhos.js';
+import { medirSePreciso } from './medicao.js';
 
 const PORTA = Number(process.env.MAPAS_PORT || 28473);
 const UM_DIA = 24 * 3600 * 1000;
@@ -35,13 +37,6 @@ async function carregarCatalogo() {
 async function areaPorId(id) {
   if (id === PLANETA.id) return PLANETA;
   return (await carregarCatalogo()).find((a) => a.id === id) ?? null;
-}
-
-async function tamanhoPbf(area) {
-  if (!enderecoPermitido(area.pbf)) return null;
-  const res = await fetch(area.pbf, { method: 'HEAD', redirect: 'follow' });
-  const bytes = Number(res.headers.get('content-length'));
-  return res.ok && bytes > 0 ? bytes : null;
 }
 
 function responder(res, status, corpo) {
@@ -78,12 +73,19 @@ async function rotear(req, res) {
     const id = url.searchParams.get('area') ?? '';
     const area = ID.test(id) ? await areaPorId(id) : null;
     if (!area) return responder(res, 404, { error: 'area_not_found' });
-    const bytes = await tamanhoPbf(area).catch(() => null);
-    // Estado: baixa o arquivo da região inteira. O tamanho do estado só se sabe depois do recorte (a área engana:
-    // o DF tem 0,4 % da área do Centro-Oeste e boa parte das ruas), então a estimativa é o teto, o da região.
+    // Tamanhos guardados (30 dias) ou calculados na hora; o mapa base de área grande segue em segundo plano
+    const t = await consultar(area);
+    const bytes = t.pbf;
+    // Estado: baixa o arquivo da região inteira; o encaixe pronto fica do tamanho da parte medida do estado
+    // (fracaoDados, medição mensal). Sem a medida, a estimativa é o teto, o da região.
+    const fracao = area.recorte ? area.recorte.fracaoDados : 1;
+    const base = bytes && fracao ? Math.round(bytes * fracao) : bytes;
     return responder(res, 200, {
       area: area.id, nome: area.nome, bytesPbf: bytes, recorte: Boolean(area.recorte),
-      memoriaEncaixe: memoriaEstimada(bytes), discoEncaixe: discoEstimadoEncaixe(bytes),
+      estimado: Boolean(area.recorte && fracao), bytesEstado: area.recorte && fracao && bytes ? base : null,
+      medidoEm: area.recorte?.medidoEm ?? null, guardadoEm: t.guardadoEm,
+      memoriaEncaixe: memoriaEstimada(base), discoEncaixe: discoEstimadoEncaixe(base),
+      bytesBase: t.base, baseCalculando: t.baseCalculando,
     });
   }
   if (req.method === 'POST' && caminho === '/trabalhos') {
@@ -108,6 +110,20 @@ async function rotear(req, res) {
 }
 
 await limparSobras().catch(() => {});
+
+// Uma vez por mês, a fatia de dados de cada estado é medida de novo (só com o serviço livre). Confere 10 min
+// depois de subir e depois a cada dia; ao terminar, o catálogo é refeito com as frações novas.
+const conferirMedicao = () => medirSePreciso({ ocupado, log: (m) => console.log(`mapas: ${m}`) })
+  .then((mediu) => { if (mediu) catalogo = null; })
+  .catch(() => {});
+setTimeout(conferirMedicao, 10 * 60 * 1000).unref();
+setInterval(conferirMedicao, 24 * 3600 * 1000).unref();
+
+// Tamanhos em segundo plano, com calma: uma área por minuto, começando 2 min depois de subir. O Brasil, as
+// regiões e os estados ficam sempre calculados; o resto, conforme alguém consulta.
+const preferidas = async () => (await carregarCatalogo())
+  .filter((a) => a.id === 'brazil' || a.pai === 'brazil' || a.id.startsWith('brasil-'));
+setTimeout(() => iniciarFundo({ ocupado, preferidas, log: (m) => console.log(`mapas: ${m}`) }), 2 * 60 * 1000).unref();
 createServer((req, res) => {
   rotear(req, res).catch((erro) => {
     const status = erro.status ?? 500;

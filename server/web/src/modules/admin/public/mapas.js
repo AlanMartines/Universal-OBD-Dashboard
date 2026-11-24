@@ -68,14 +68,23 @@
     if (!d || d.area !== campoArea.value) return;
     var grande = d.area === 'planeta' || (d.bytesPbf && d.bytesPbf > 3 * GB);
     if (tipo.value === 'encaixe') {
-      infoTamanho.textContent = !d.pbfTxt ? 'Não foi possível saber o tamanho desta área agora.'
-        : d.recorte
-          ? 'Download: ' + d.pbfTxt + ' (a região inteira; o estado é recortado em seguida). Depois de pronto, no máximo cerca de ' + d.discoTxt + ' em disco e ' + d.memoriaTxt + ' de memória (o da região); um estado ocupa menos, e a página mostra o tamanho real quando terminar.'
-          : 'Download: ' + d.pbfTxt + '. Depois de pronto: cerca de ' + d.discoTxt + ' em disco e ' + d.memoriaTxt + ' de memória.';
+      if (!d.pbfTxt) infoTamanho.textContent = 'Não foi possível saber o tamanho desta área agora.';
+      else if (d.recorte && d.estimado) {
+        var medido = /^\d{4}-\d{2}-\d{2}$/.test(d.medidoEm || '') ? ' (parte do estado na região medida em ' + d.medidoEm.split('-').reverse().join('/') + ')' : '';
+        infoTamanho.textContent = 'Download: ' + d.pbfTxt + ' (a região inteira; o estado, cerca de ' + d.estadoTxt + ', é recortado em seguida). Depois de pronto: cerca de ' + d.discoTxt + ' em disco e ' + d.memoriaTxt + ' de memória' + medido + '.';
+      } else if (d.recorte) {
+        infoTamanho.textContent = 'Download: ' + d.pbfTxt + ' (a região inteira; o estado é recortado em seguida). Depois de pronto, no máximo cerca de ' + d.discoTxt + ' em disco e ' + d.memoriaTxt + ' de memória (o da região).';
+      } else {
+        infoTamanho.textContent = 'Download: ' + d.pbfTxt + '. Depois de pronto: cerca de ' + d.discoTxt + ' em disco e ' + d.memoriaTxt + ' de memória.';
+      }
+    } else if (d.baseCalculando) {
+      infoTamanho.textContent = 'Calculando o tamanho do mapa base desta área (em país ou continente leva até um minuto)…';
+    } else if (d.baseTxt) {
+      infoTamanho.textContent = 'Mapa base: cerca de ' + d.baseTxt + ' em disco' + (d.recorte ? ', recortado pelo contorno do estado.' : ', recortado no retângulo da área.');
     } else {
-      infoTamanho.textContent = d.recorte
-        ? 'O mapa base é recortado pelo contorno do estado (IBGE); costuma ocupar de dezenas a centenas de MB.'
-        : 'O mapa base é recortado no retângulo da área; o tamanho final depende dela (um estado ocupa de dezenas a centenas de MB).';
+      infoTamanho.textContent = d.area === 'planeta'
+        ? 'Mapa base do planeta inteiro: mais de 100 GB em disco.'
+        : 'Não foi possível calcular o tamanho do mapa base agora; um estado costuma ocupar de dezenas a centenas de MB.';
     }
     if (grande) {
       alerta.hidden = false;
@@ -83,6 +92,20 @@
         ? 'Planeta inteiro: centenas de GB de disco e, no encaixe, de memória, e muitas horas de processamento. O ideal é baixar só as regiões onde os carros rodam.'
         : 'Área grande: confira o espaço em disco e a memória do servidor antes de baixar. Se possível, escolha uma região menor.';
     }
+  }
+
+  // O tamanho do mapa base de um país ou continente é simulado em segundo plano (10 s a 1 min): enquanto isso
+  // a página mostra "calculando" e pergunta de novo a cada 5 s, se a área escolhida ainda for a mesma.
+  function consultar(area, tentativa) {
+    fetch('/admin/mapas/tamanho.json?area=' + encodeURIComponent(area), { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (campoArea.value !== area) return;
+        ultimoTamanho = d;
+        mostrarTamanho();
+        if (d && d.baseCalculando && tentativa < 24) setTimeout(function () { if (campoArea.value === area) consultar(area, tentativa + 1); }, 5000);
+      })
+      .catch(function () { if (campoArea.value === area) infoTamanho.textContent = ''; });
   }
 
   function escolher() {
@@ -95,10 +118,7 @@
     var a = porId[area];
     form.dataset.confirm = 'Baixar ' + (tipo.value === 'base' ? 'o mapa base' : 'o encaixe nas ruas') + ' de "' + (a ? a.nome : area) + '"? Pode levar de minutos a horas, conforme o tamanho. O mapa atual segue funcionando até o novo ficar pronto.';
     infoTamanho.textContent = 'Consultando o tamanho…';
-    fetch('/admin/mapas/tamanho.json?area=' + encodeURIComponent(area), { credentials: 'same-origin' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { if (campoArea.value === area) { ultimoTamanho = d; mostrarTamanho(); } })
-      .catch(function () { infoTamanho.textContent = ''; });
+    consultar(area, 0);
   }
 
   if (form) {

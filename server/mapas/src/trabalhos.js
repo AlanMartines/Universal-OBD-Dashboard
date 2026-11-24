@@ -17,7 +17,7 @@ import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { lerProgresso, textoProgresso } from './progresso.js';
 import {
-  bboxDoPoly, discoEstimadoEncaixe, enderecoPermitido, geojsonDoRecorte, memoriaEstimada, polyUrl, ultimaVersaoProtomaps,
+  bboxDoPoly, discoEstimadoEncaixe, enderecoPermitido, geojsonDoRecorte, memoriaEstimada, polyUrl, tamanhoDoPmtiles, ultimaVersaoProtomaps,
 } from './catalogo.js';
 
 export const MAPS = process.env.MAPS_DIR || '/maps';
@@ -113,6 +113,48 @@ async function gravarJson(caminho, dados) {
 /* ------------------------------------------------------------------ Situação */
 
 /** O contêiner roda sem privilégio: as pastas precisam ser graváveis pelo usuário dele (uid 1000). */
+/*
+ * Tamanho do mapa base de uma área, sem baixar: o pmtiles extract --dry-run só lê os índices do arquivo
+ * remoto (segundos numa região; até 1 min num continente). Quem guarda e reaproveita é o src/tamanhos.js.
+ */
+let versaoBase = { valor: null, em: 0 };
+
+async function versaoProtomaps() {
+  if (versaoBase.valor && Date.now() - versaoBase.em < 6 * 3600 * 1000) return versaoBase.valor;
+  const valor = ultimaVersaoProtomaps(JSON.parse(await textoDe('https://build-metadata.protomaps.dev/builds.json')));
+  versaoBase = { valor, em: Date.now() };
+  return valor;
+}
+
+export async function simularBase(area) {
+  if (area.id === 'planeta') return null;
+  const versao = await versaoProtomaps();
+  if (!versao) return null;
+  let limite;
+  let contorno = null;
+  if (area.recorte) {
+    contorno = join(tmpdir(), `simulado-${area.id}.geojson`);
+    await writeFile(contorno, geojsonDoRecorte(area.recorte));
+    limite = `--region=${contorno}`;
+  } else {
+    const bbox = area.bbox ?? bboxDoPoly(await textoDe(polyUrl(area)));
+    if (!bbox) return null;
+    limite = `--bbox=${bbox.join(',')}`;
+  }
+  const saida = await new Promise((resolve) => {
+    const filho = spawn('pmtiles', ['extract', `https://build.protomaps.com/${versao}`, join(tmpdir(), `simulado-${area.id}.pmtiles`), limite, `--maxzoom=${ZOOM_MAX}`, '--dry-run'], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let texto = '';
+    const juntar = (d) => { texto += d; if (texto.length > 20000) texto = texto.slice(-10000); };
+    filho.stdout.on('data', juntar);
+    filho.stderr.on('data', juntar);
+    const prazo = setTimeout(() => filho.kill('SIGKILL'), 120000);   // um continente leva cerca de 45 s
+    filho.on('error', () => { clearTimeout(prazo); resolve(''); });
+    filho.on('close', () => { clearTimeout(prazo); resolve(texto); });
+  });
+  if (contorno) await rm(contorno, { force: true });
+  return tamanhoDoPmtiles(saida);
+}
+
 export async function gravavel(pasta) {
   try { await access(pasta, constants.W_OK); return true; } catch { return false; }
 }
@@ -157,6 +199,7 @@ export async function limparSobras() {
   await rm(join(MAPS, 'base.tmp.pmtiles'), { force: true });
   await rm(join(MAPS, 'assets.tmp'), { recursive: true, force: true });
   await rm(join(OSRM, 'trabalho'), { recursive: true, force: true });
+  await rm(join(OSRM, 'medicao'), { recursive: true, force: true });   // medição mensal interrompida
 }
 
 /* ------------------------------------------------------------------ Mapa base */

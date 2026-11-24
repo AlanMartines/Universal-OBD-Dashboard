@@ -6,6 +6,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Página Mapas: tamanho aproximado de cada área, sem baixar o mapa.** Ao escolher Continente, País, Região ou Estado, o texto mostra o tamanho do mapa base (simulado pelo pmtiles, que só lê os índices) e, no encaixe, o download, o disco e a memória. Num estado, o encaixe usa a parte medida do estado nos dados da região (mostra a data da medição).
+- **Tamanhos guardados por 30 dias** num arquivo da pasta dos mapas: a página responde na hora com o valor guardado; velho, mostra o antigo e atualiza em segundo plano; nunca consultado, calcula na hora (país ou continente: "Calculando…" e a página pergunta de novo) e guarda. Em segundo plano, com calma (uma área por minuto e só com o serviço livre), o Brasil, as regiões e os estados ficam sempre calculados.
+- **Medição mensal dos estados** no próprio serviço de mapas (a parte de cada estado nos dados da sua região), sem esperar o mês se faltar algum estado.
+
 ## [0.9.79] - 2026-11-24
 
 ### Adicionado

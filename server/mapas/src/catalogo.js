@@ -5,12 +5,14 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { medicaoDoServidor } from './medicao.js';
 
 /**
  * Estados do Brasil: a Geofabrik só divide o Brasil em 5 regiões. Cada estado vira uma área filha da sua
  * região, recortada pelo contorno do IBGE (src/ufs.json, gerado por scripts/gerar-ufs.mjs).
  */
-const UFS = JSON.parse(readFileSync(new URL('./ufs.json', import.meta.url), 'utf8')).estados;
+const UFS_ARQUIVO = JSON.parse(readFileSync(new URL('./ufs.json', import.meta.url), 'utf8'));
+const UFS = UFS_ARQUIVO.estados;
 
 /** Nomes em português onde a Geofabrik usa o inglês (o resto fica como vem do índice). */
 const NOMES = { brazil: 'Brasil' };
@@ -69,13 +71,30 @@ export function estadosDoBrasil(areas) {
   const regioes = new Map(areas.filter((a) => a.pai === 'brazil').map((a) => [a.id, a]));
   const total = {};
   for (const e of UFS) total[e.regiao] = (total[e.regiao] ?? 0) + e.areaKm2;
+  // A medição mensal do servidor, quando existe, vale mais que a do projeto
+  const servidor = medicaoDoServidor();
+  const medida = (e) => (typeof servidor?.fracoes?.[e.uf] === 'number'
+    ? { fracaoDados: servidor.fracoes[e.uf], medidoEm: servidor.medidoEm ?? UFS_ARQUIVO.medidoEm ?? null }
+    : { fracaoDados: e.fracaoDados ?? null, medidoEm: UFS_ARQUIVO.medidoEm ?? null });
   return UFS.filter((e) => regioes.has(e.regiao)).map((e) => ({
     id: `brasil-${e.uf.toLowerCase()}`,
     nome: e.nome,
     pai: e.regiao,
     pbf: regioes.get(e.regiao).pbf,
-    recorte: { uf: e.uf, bbox: e.bbox, geometria: e.geometria, fracao: e.areaKm2 / total[e.regiao] },
+    // fracaoDados: parte medida dos dados da região (scripts/medir-ufs.mjs); fracao: parte da área, se faltar a medida
+    recorte: { uf: e.uf, bbox: e.bbox, geometria: e.geometria, fracao: e.areaKm2 / total[e.regiao], ...medida(e) },
   }));
+}
+
+/**
+ * "for an archive size of 46 MB" (saída do pmtiles extract) → bytes. O pmtiles usa unidades decimais
+ * (kB = 1000). Sem a frase, null.
+ */
+export function tamanhoDoPmtiles(texto) {
+  const m = /archive size of ([\d.]+)\s*(B|kB|MB|GB|TB)\b/.exec(String(texto));
+  if (!m) return null;
+  const fator = { B: 1, kB: 1e3, MB: 1e6, GB: 1e9, TB: 1e12 }[m[2]];
+  return Math.round(Number(m[1]) * fator);
 }
 
 /** Contorno do recorte como GeoJSON (para o pmtiles e o osmium). */

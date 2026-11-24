@@ -189,7 +189,10 @@ export default function adminRoutes(app, {
   app.get('/admin/mapas/tamanho.json', { preHandler: requireAdmin }, async (request) => {
     const area = String(request.query?.area ?? '');
     const dados = await api(request, 'GET', `/internal/admin/maps/size?${new URLSearchParams({ area })}`);
-    return { ...dados, pbfTxt: tamanho(dados.bytesPbf), memoriaTxt: tamanho(dados.memoriaEncaixe), discoTxt: tamanho(dados.discoEncaixe) };
+    return {
+      ...dados, pbfTxt: tamanho(dados.bytesPbf), memoriaTxt: tamanho(dados.memoriaEncaixe), discoTxt: tamanho(dados.discoEncaixe),
+      baseTxt: tamanho(dados.bytesBase), estadoTxt: tamanho(dados.bytesEstado),
+    };
   });
 
   app.post('/admin/mapas/baixar', { preHandler: requireAdmin }, async (request, reply) => {
