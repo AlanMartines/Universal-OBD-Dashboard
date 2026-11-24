@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.81] - 2026-11-24
+
 ### Adicionado
 - **Calibrar a bateria do ESP32 no app, sem gravar firmware.** Em Ajustes → Calibração dos sensores → Tensão da bateria: mede-se a bateria com o multímetro, digita-se o valor e o app guarda o fator (multímetro ÷ leitura do ESP32), por veículo. Vale na hora para a tensão, o repouso, a queda na partida, a saúde do carro e o painel web; recusa fatores fora de ×0,8 a ×1,5 (aí é fiação, não calibração). Entra no backup. O `BAT_AJUSTE` do firmware fica em 1,0.
 
