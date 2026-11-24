@@ -347,6 +347,7 @@
       <div class="card">
         <div class="row-between"><span class="label">Pronto para viajar</span><span id="ready-summary" class="pill"></span></div>
         <div id="readiness" class="readiness"></div>
+        <div class="row"><button id="welcome-open" class="btn btn-small" type="button">Rever o roteiro de primeiro uso</button></div>
       </div>
 
       <div class="card form">
@@ -849,6 +850,48 @@
   </div>
 
   <div id="toasts" class="toasts" aria-live="polite"></div>
+  <dialog id="welcome-dialog" class="app-dialog welcome-dialog" aria-labelledby="welcome-title">
+    <p id="welcome-count" class="muted small welcome-count" aria-live="polite"></p>
+    <section class="welcome-step">
+      <h3 id="welcome-title">Bem-vindo ao Universal OBD</h3>
+      <p>O app lê o carro pelo adaptador <b>ELM327</b> (o essencial) e mostra os mostradores, o consumo, as viagens, as falhas e a saúde do motor.</p>
+      <p class="muted small">Ele só consulta: nunca apaga falhas nem manda comando ao carro. Em 4 passos rápidos, fica pronto para a primeira viagem.</p>
+    </section>
+    <section class="welcome-step" hidden>
+      <h3>1. O veículo</h3>
+      <p>Dê um nome ao carro e escolha o <b>perfil do modelo</b>. O perfil diz ao app o que o carro informa e como calcular o consumo.</p>
+      <div class="row"><button class="btn btn-primary" type="button" data-welcome-go="vehicle-card">Escolher o veículo</button></div>
+    </section>
+    <section class="welcome-step" hidden>
+      <h3>2. O adaptador ELM327</h3>
+      <p>Com o ELM327 no conector OBD e a ignição ligada, pareie-o no <b>Bluetooth do Android</b> (a senha costuma ser 1234 ou 0000).</p>
+      <p>Depois, libere as permissões em <b>Pronto para viajar</b>; o app acha o adaptador sozinho pelo nome, ou você escolhe na lista.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-welcome-go="readiness">Pronto para viajar</button>
+        <button class="btn" type="button" data-welcome-go="adapter-select">Escolher o adaptador</button>
+      </div>
+    </section>
+    <section class="welcome-step" hidden>
+      <h3>3. Os opcionais</h3>
+      <p><b>Escuta CAN (ESP32):</b> lê do painel do carro o tanque, o hodômetro e as luzes, ao lado do ELM327. Só escuta.</p>
+      <p><b>Painel web:</b> acompanha o carro de longe e guarda o histórico num servidor seu.</p>
+      <p class="muted small">Sem eles, tudo funciona com o ELM327 e os sensores do celular.</p>
+      <div class="row">
+        <button class="btn" type="button" data-welcome-go="can-card" id="welcome-can">Escuta CAN (ESP32)</button>
+        <button class="btn" type="button" data-welcome-go="remote-card">Painel web</button>
+      </div>
+    </section>
+    <section class="welcome-step" hidden>
+      <h3>Pronto para a primeira viagem</h3>
+      <p>Com o carro ligado, toque em <b>Iniciar</b> no alto da tela. A captura também pode começar sozinha ao conectar a multimídia do carro (Ajustes → Dispositivos-gatilho).</p>
+      <p class="muted small">Este roteiro pode ser revisto em Ajustes → Pronto para viajar.</p>
+    </section>
+    <div class="dialog-actions">
+      <button id="welcome-skip" class="btn" type="button">Pular</button>
+      <button id="welcome-back" class="btn" type="button">Voltar</button>
+      <button id="welcome-next" class="btn btn-primary" type="button">Próximo</button>
+    </div>
+  </dialog>
   <dialog id="trip-dialog" class="app-dialog" aria-labelledby="trip-dialog-title">
     <h3 id="trip-dialog-title">Viagem encerrada</h3>
     <div id="trip-dialog-body" class="trip-summary kv small"></div>
@@ -884,6 +927,7 @@
   <script src="app-falhas.js"></script>
   <script src="app-remoto.js"></script>
   <script src="app-dispositivo.js"></script>
+  <script src="app-boasvindas.js"></script>
   <script src="app-roteiro.js"></script>
   <script src="app-computador.js"></script>
   <script src="app-main.js"></script>

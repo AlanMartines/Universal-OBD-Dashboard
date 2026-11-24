@@ -1,5 +1,21 @@
 [
  {
+  "version": "próxima",
+  "date": null,
+  "sections": [
+   {
+    "kind": "added",
+    "title": "Adicionado",
+    "items": [
+     {
+      "title": "Roteiro de primeiro uso no app",
+      "text": "Ao instalar, um passo a passo curto: boas-vindas, escolher o veículo e o perfil, parear o ELM327 e liberar as permissões, e os opcionais (escuta CAN pelo ESP32 e painel web). Cada passo tem um botão que leva direto ao ajuste certo; dá para pular, voltar e rever depois em Ajustes → Pronto para viajar. Só aparece sozinho na primeira vez e se ainda não houver viagem gravada: quem atualiza o app não vê."
+     }
+    ]
+   }
+  ]
+ },
+ {
   "version": "0.9.77",
   "date": "2026-11-23",
   "sections": [

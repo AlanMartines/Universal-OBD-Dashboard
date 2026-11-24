@@ -129,6 +129,10 @@ h2 { font-family: var(--f-label); font-size: 0.95rem; margin: 18px 0 8px; color:
 }
 .app-dialog[open] .dialog-bar { animation: toast-time var(--dialog-ms, 15000ms) linear forwards; }
 .dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+/* Roteiro de primeiro uso */
+.welcome-dialog { max-width: 30rem; }
+.welcome-count { margin: 0 0 6px; min-height: 1.2em; }
+.welcome-step .row { margin-top: 6px; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--touch);

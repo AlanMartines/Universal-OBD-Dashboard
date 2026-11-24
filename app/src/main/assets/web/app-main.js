@@ -88,6 +88,7 @@ $('dash-night-screen').addEventListener('change', (e) => {
 });
 sendDashPrefs(Dash.prefs);
 updateDashMode();
+maybeWelcome();
 window.onTelemetry = onTelemetry;
 // O app só envia o estado quando ele muda; com a captura parada, pede o atual ao abrir.
 try { onTelemetry(JSON.parse(bridge.getState())); } catch (e) { /* pré-visualização sem estado */ }

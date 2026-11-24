@@ -270,11 +270,20 @@ for (const escuro of [false, true]) {
 
 // Tela do app (pré-visualização, sem o Android): cada aba e cada tema dos mostradores, de dia e de noite
 const appUrl = pathToFileURL(APP_WEB).href;
+// O roteiro de primeiro uso abre sozinho num app novo: nas outras telas ele é fechado, e tem a sua própria
+const FECHA_ROTEIRO = `(() => { const d = document.getElementById('welcome-dialog'); if (d && d.open) d.close(); return true; })()`;
 for (const escuro of [false, true]) {
   const tema = escuro ? 'escuro' : 'claro';
+  await conferir(`app-${tema}-primeiro-uso`, async () => {
+    await aba.ir(appUrl, { escuro, largura: 412, altura: 860 });
+    await esperar(600);
+    if (!(await aba.avaliar(`document.getElementById('welcome-dialog').open`))) throw new Error('o roteiro de primeiro uso não abriu');
+    await aba.avaliar(`document.getElementById('welcome-next').click(), document.getElementById('welcome-next').click(), true`);
+  });
   for (const tab of ABAS_APP) {
     await conferir(`app-${tema}-${tab}`, async () => {
       await aba.ir(appUrl, { escuro, largura: 412, altura: 860 });
+      await aba.avaliar(FECHA_ROTEIRO);
       await aba.avaliar(`document.documentElement.dataset.appTheme = ${escuro ? "''" : "'light'"}, true`);
       await aba.avaliar(`document.querySelector('[data-tab=${tab}]').click(), true`);
       await esperar(300);
@@ -283,6 +292,7 @@ for (const escuro of [false, true]) {
   for (const look of LOOKS) {
     await conferir(`app-${tema}-mostrador-${look}`, async () => {
       await aba.ir(appUrl, { escuro, largura: 412, altura: 860 });
+      await aba.avaliar(FECHA_ROTEIRO);
       await aba.avaliar(`window.Dash.setLook('${look}'), window.Dash.setMode('${escuro ? 'night' : 'day'}'), true`);
       await esperar(300);
     });
