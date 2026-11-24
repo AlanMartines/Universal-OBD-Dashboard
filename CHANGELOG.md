@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Roteiro de primeiro uso:** o último passo passa a se chamar "Pronto para começar a captura" (antes "primeira viagem", que sugeria só viagem), e a abertura diz "fica pronto para começar".
+
 ### Adicionado
 - **Página Mapas: tamanho aproximado de cada área, sem baixar o mapa.** Ao escolher Continente, País, Região ou Estado, o texto mostra o tamanho do mapa base (simulado pelo pmtiles, que só lê os índices) e, no encaixe, o download, o disco e a memória. Num estado, o encaixe usa a parte medida do estado nos dados da região (mostra a data da medição).
 - **Tamanhos guardados por 30 dias** num arquivo da pasta dos mapas: a página responde na hora com o valor guardado; velho, mostra o antigo e atualiza em segundo plano; nunca consultado, calcula na hora (país ou continente: "Calculando…" e a página pergunta de novo) e guarda. Em segundo plano, com calma (uma área por minuto e só com o serviço livre), o Brasil, as regiões e os estados ficam sempre calculados.
