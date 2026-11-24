@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.77] - 2026-11-23
+
 ### Adicionado
 - **Modo noturno de verdade no app.** Em Ajustes → Aparência, dois ajustes novos para quando os mostradores estão no modo noite (no automático, das 18 h às 6 h):
   - **Brilho dos mostradores à noite:** Normal, 80 %, 60 % ou 40 %. Escurece os mostradores sem mudar as cores; a faixa de alerta continua no brilho normal, para não perder o destaque.
