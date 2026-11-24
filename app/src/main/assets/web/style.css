@@ -260,6 +260,15 @@ body.dash-fullscreen #dash-host { border-radius: 0; min-height: 0; }
   font-family: var(--f-label); font-size: 0.82rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
 }
 .card.form > .label:first-child { display: block; margin-bottom: var(--space-3); }
+/* Subtítulos dentro de um cartão (ex.: Ajuste fino, Tensão da bateria): respiro antes, para não colar no bloco de cima */
+.card.form > .label:not(:first-child) { display: block; margin-top: 20px; margin-bottom: 6px; }
+/* Pronto para viajar: o botão do roteiro e a lista; Permissões: o estado e os botões */
+.readiness + .row { margin-top: 14px; }
+#permissions { margin: 8px 0 12px; }
+/* Botão seguido de campo no mesmo cartão (ex.: Escolher arquivo .csv): respiro antes do campo */
+.card.form > .btn + label, .card.form > .row + label { margin-top: 12px; }
+/* Aviso de vazio dentro de uma grade (ex.: Sensores): ocupa a linha inteira */
+.sensor-grid > .empty { grid-column: 1 / -1; }
 a:not(.btn) { color: var(--accent); text-underline-offset: 2px; }
 .muted { color: var(--muted); }
 .small { font-size: 0.8rem; }

@@ -74,6 +74,8 @@ function buildSensorGrid() {
     el.querySelector('.name').textContent = o.name;
     grid.appendChild(el);
   });
+  // Perfil sem saídas (ou ainda sem perfil): explica em vez de deixar a aba em branco
+  if (!grid.childElementCount) grid.innerHTML = html`${emptyState('pulse', 'Nenhum sensor para mostrar', 'Os sensores vêm do perfil do veículo (Ajustes → Veículo) e ganham valores durante a captura.')}`;
 }
 
 /* ---------------------------------------------------------------- Atualização em tempo real */
