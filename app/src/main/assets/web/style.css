@@ -479,9 +479,9 @@ input[readonly] { opacity: .7; }
 .script-ready.ok { background: var(--ok-soft); color: var(--ok); }
 .script-ready.bad { background: var(--yellow-soft); color: var(--yellow); }
 #script-test { margin-top: 8px; }
-.script-group { margin: 14px 0 6px; }
+.script-group { margin: 20px 0 6px; }
 .script-group h3 { margin: 0 0 2px; font-size: 0.95rem; }
-.script-group p { margin: 0 0 6px; }
+.script-group p { margin: 2px 0 10px; }
 .script-step { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; margin-bottom: 6px; }
 .script-step .st-title { flex: 1; min-width: 0; }
 .script-step .st-mark { flex: none; font-size: 0.8rem; color: var(--muted); }
@@ -496,8 +496,28 @@ input[readonly] { opacity: .7; }
 .script-count { font-size: 3.2rem; font-weight: 700; font-variant-numeric: tabular-nums; margin: 6px 0; }
 .script-buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
 .script-buttons .label { width: 100%; }
+/* Botões de evento e de escolha: dividem a linha por igual (antes, cada um saía de uma largura) */
+.script-buttons .btn { flex: 1 1 140px; }
 .script-actions { margin: 8px 0; }
-.script-summary { margin-top: 12px; }
+.script-summary { margin-top: 16px; }
+/* Roteiro: respiro entre os blocos de cada passo (antes, botões e campos ficavam colados uns nos outros) */
+#script-test { margin: 8px 0 0; }
+#script-back { margin-top: 16px; }
+#script-run label { display: block; margin-top: 16px; }
+#script-run label input { margin-top: 6px; }
+#script-run .row { margin-top: 12px; }
+#script-run .script-actions { margin: 16px 0 0; }
+.script-measure { margin-top: 12px; }
+/* Valores ao vivo, leituras do fim do passo e pontos da bateria: um quadro, uma linha por valor */
+#sm-live, #script-readings { margin-top: 12px; padding: 6px 12px; border-radius: var(--radius); background: var(--card); }
+#sm-live .kv, #script-readings .kv, #sm-resumo .kv {
+  justify-content: space-between; margin: 0; padding: 7px 0; border-bottom: 1px solid var(--line);
+}
+#sm-live .kv:last-child, #script-readings .kv:last-child, #sm-resumo .kv:last-child { border-bottom: 0; }
+#sm-live .kv b, #script-readings .kv b, #sm-resumo .kv b { color: var(--text); text-align: right; }
+#sm-resumo { margin-top: 16px; }
+#sm-resumo p { margin: 8px 0; }
+.script-summary .script-result { margin-bottom: 4px; }
 .script-result { font-weight: 700; }
 .script-zones { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 .script-zone { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: var(--radius); }

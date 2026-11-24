@@ -442,8 +442,15 @@ function scriptRenderReadings() {
   const ids = [roles.rpm || 'rpm', 'can_rpm', roles.coolant || 'coolant_temp', 'can_coolant_temp', roles.voltage || 'battery_volts', 'can_voltage',
     'fuel_level_pct', 'odometer_km'];
   const outputs = Object.fromEntries((meta.outputs || []).map((o) => [o.id, o]));
+  // Sinais da escuta CAN e do app não estão nas saídas do perfil: nomes legíveis em vez do id interno
+  const EXTRA = {
+    can_rpm: { name: 'Rotação (painel)', unit: 'rpm' }, can_coolant_temp: { name: 'Temperatura do motor (painel)', unit: '°C' },
+    can_voltage: { name: 'Tensão (painel)', unit: 'V', decimals: 1 }, fuel_level_pct: { name: 'Nível do tanque', unit: '%' },
+    odometer_km: { name: 'Hodômetro', unit: 'km' }, rpm: { name: 'Rotação', unit: 'rpm' },
+    coolant_temp: { name: 'Temperatura do motor', unit: '°C' }, battery_volts: { name: 'Tensão (OBD)', unit: 'V', decimals: 1 },
+  };
   [...new Set(ids)].filter((id) => Number.isFinite(r[id])).forEach((id) => {
-    const o = outputs[id] || { name: id, unit: '' };
+    const o = outputs[id] || EXTRA[id] || { name: id, unit: '' };
     const row = document.createElement('div');
     row.className = 'kv';
     const name = document.createElement('span');

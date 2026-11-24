@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Corrigido
+- **Roteiro de captura (mapeamento da rede do carro): espaçamento.** Dentro de cada passo, botões e campos ficavam colados uns nos outros. Agora há respiro entre o topo, o texto, os campos e os botões; os valores ao vivo e as leituras do fim do passo ficam num quadro, uma linha por valor; os botões de evento dividem a linha por igual; e as leituras da escuta CAN aparecem com nome legível ("Tensão (painel)") em vez do id interno.
+
 ## [0.9.82] - 2026-11-24
 
 ### Adicionado
