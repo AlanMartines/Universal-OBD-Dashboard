@@ -96,19 +96,16 @@
     <form method="post" action="/admin/mapas/baixar" id="mapas-form" data-confirm="Baixar o mapa desta área? Pode levar de minutos a horas, conforme o tamanho." data-confirm-label="Baixar" data-confirm-tone="primary">
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <input type="hidden" name="area" id="mapas-area" value="">
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label" for="mapas-tipo">Mapa</label>
+      <div class="mapas-campos">
+        <div>
+          <label class="form-label" for="mapas-tipo">Tipo de mapa</label>
           <select class="form-select" name="map" id="mapas-tipo">
-            <option value="base">Mapa base (fundo do mapa)</option>
+            <option value="base">Mapa base</option>
             <option value="encaixe">Encaixe nas ruas</option>
           </select>
         </div>
-        <div class="col-md-8">
-          <span class="form-label d-block" id="mapas-area-rotulo">Área</span>
-          <div class="d-flex flex-wrap gap-2" id="mapas-niveis" aria-labelledby="mapas-area-rotulo">
-            <span class="text-body-secondary small" id="mapas-carregando">Carregando o catálogo de áreas…</span>
-          </div>
+        <div class="mapas-campos" id="mapas-niveis" role="group" aria-label="Área do mapa">
+          <span class="text-body-secondary small" id="mapas-carregando">Carregando o catálogo de áreas…</span>
         </div>
       </div>
       <p class="small mt-3 mb-2" id="mapas-tamanho" aria-live="polite"></p>

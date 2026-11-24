@@ -58,7 +58,7 @@ O percurso usa mapas do próprio servidor: as posições não saem para nenhum s
 - **Mapa base:** o fundo do mapa (ruas e nomes), recortado do Protomaps para a área escolhida. Fica só no disco.
 - **Encaixe nas ruas:** o GPS do celular costuma ficar alguns metros fora da rua, e entre duas posições a linha corta as esquinas. Com o encaixe, o painel ajusta o traço às ruas (OSRM, perfil de carro). É só desenho: as posições gravadas, a distância e o consumo não mudam, e o botão **Ajustar às ruas** mostra o traço bruto do GPS. Ocupa memória enquanto estiver instalado.
 
-A página lista as áreas do catálogo da Geofabrik, do mundo inteiro: continentes, países, regiões e o planeta. Para cada área, mostra o tamanho e, no encaixe, uma estimativa de disco e de memória, com aviso nas áreas grandes. O ideal é baixar só onde os carros rodam: um estado ou uma região do Brasil ocupa pouco; o Brasil inteiro, cerca de 9 GB de memória no encaixe; o planeta, centenas de GB. Baixar de novo a mesma área atualiza o mapa; outra área substitui a atual. Baixar e excluir pedem a senha confirmada há pouco e ficam na auditoria.
+A página lista as áreas do catálogo da Geofabrik, do mundo inteiro: continentes, países, regiões e o planeta. No Brasil, que a Geofabrik divide só em 5 regiões, dá para descer até o **estado**: o mapa base é recortado pelo contorno do estado, e o encaixe baixa a região e recorta o estado com o `osmium` antes de processar (contornos simplificados do IBGE, em `server/mapas/src/ufs.json`, gerados por `server/mapas/scripts/gerar-ufs.mjs`). Para cada área, mostra o tamanho e, no encaixe, uma estimativa de disco e de memória, com aviso nas áreas grandes. O ideal é baixar só onde os carros rodam: um estado ou uma região do Brasil ocupa pouco; o Brasil inteiro, cerca de 9 GB de memória no encaixe; o planeta, centenas de GB. Baixar de novo a mesma área atualiza o mapa; outra área substitui a atual. Baixar e excluir pedem a senha confirmada há pouco e ficam na auditoria.
 
 O trabalho roda no contêiner `mapas`, que já fica no ar e só grava nas duas pastas dos mapas. Ele e o `osrm` rodam com o usuário 1000, então as pastas precisam ser dele (uma vez, dentro de `server/`):
 
@@ -69,7 +69,7 @@ chown -R 1000:1000 data/maps data/osrm
 
 Limites de memória no `.env`: `OSRM_MEM` (padrão 12g, o encaixe no ar) e `MAPAS_MEM` (padrão 16g, o processamento). O `osrm` troca de mapa sozinho, sem reiniciar, e o anterior segue no ar até o novo ficar pronto. Trecho que não encaixa (estacionamento, rua nova, sinal ruim) aparece como o traço do GPS.
 
-Pelo terminal, os scripts `scripts/baixar-mapa.sh` (mapa base do Brasil) e `scripts/preparar-rotas.sh` (encaixe; `OSRM_PBF_URL` escolhe a área) seguem valendo. Dados do mapa: © OpenStreetMap, por meio do Protomaps e da Geofabrik.
+Pelo terminal, os scripts `scripts/baixar-mapa.sh` (mapa base do Brasil) e `scripts/preparar-rotas.sh` (encaixe; `OSRM_PBF_URL` escolhe a área) seguem valendo. Dados do mapa: © OpenStreetMap, por meio do Protomaps e da Geofabrik; contornos dos estados: IBGE, Malhas territoriais.
 
 ## Perfis
 

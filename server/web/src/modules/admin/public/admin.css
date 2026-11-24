@@ -29,3 +29,6 @@
   max-height: 14rem; overflow: auto; padding: .5rem .75rem; margin-top: .5rem;
   background: var(--bs-tertiary-bg); border-radius: var(--bs-border-radius); white-space: pre-wrap; overflow-wrap: anywhere;
 }
+
+/* Página Mapas: campos um embaixo do outro (Tipo de mapa, Continente, País, Região, Estado / UF) */
+.mapas-campos { display: grid; gap: 1rem; max-width: 40rem; }
