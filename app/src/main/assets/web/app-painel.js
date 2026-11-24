@@ -5,8 +5,17 @@ const landscape = window.matchMedia('(orientation: landscape)');
 let dashMode = '';
 
 /** Paisagem com o Painel aberto → tela cheia; Painel aberto durante a captura → tela sempre ligada. */
+/** Tela do celular à noite (Ajustes → Aparência): 0 = brilho do sistema; senão, a porcentagem. */
+const NIGHT_SCREEN_KEY = 'dash.nightScreen';
+function nightScreen() {
+  try { return [30, 15, 5].includes(Number(localStorage.getItem(NIGHT_SCREEN_KEY))) ? Number(localStorage.getItem(NIGHT_SCREEN_KEY)) : 0; } catch (e) { return 0; }
+}
+let screenDim = null;
 function updateDashMode() {
   const onDash = $('tab-dash').classList.contains('active');
+  // À noite, com o Painel aberto, a tela baixa para o brilho escolhido; fora disso, volta ao do sistema.
+  const dim = onDash && window.Dash && Dash.scheme === 'night' ? nightScreen() : 0;
+  if (dim !== screenDim) { screenDim = dim; bridge.setScreenBrightness(dim ? dim / 100 : -1); }
   const full = onDash && landscape.matches;
   // O roteiro de captura também mantém a tela ligada: os passos são conduzidos por ela.
   const keepOn = (onDash && !!(lastState && lastState.running)) || window.scriptPanelOpen === true;

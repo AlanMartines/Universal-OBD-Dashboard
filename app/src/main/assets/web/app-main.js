@@ -77,6 +77,15 @@ Dash.setImuAction((kind) => bridge.imuCalibrate(kind) !== false);
 // Tema, dia/noite e cor vão ao app, que os manda com a leitura ao vivo para o painel web seguir.
 const sendDashPrefs = (p) => bridge.setDashPrefs(JSON.stringify(p));
 Dash.onUserPrefs(sendDashPrefs);
+// Dia e noite dos mostradores mudam o brilho da tela (Ajustes → Aparência)
+Dash.onScheme(() => updateDashMode());
+$('dash-night-dim').value = String(Dash.nightDim);
+$('dash-night-dim').addEventListener('change', (e) => Dash.setNightDim(e.target.value));
+$('dash-night-screen').value = String(nightScreen());
+$('dash-night-screen').addEventListener('change', (e) => {
+  try { localStorage.setItem(NIGHT_SCREEN_KEY, e.target.value); } catch (err) { /* vale até fechar o app */ }
+  updateDashMode();
+});
 sendDashPrefs(Dash.prefs);
 updateDashMode();
 window.onTelemetry = onTelemetry;

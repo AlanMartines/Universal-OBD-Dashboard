@@ -18,6 +18,8 @@
  *   Dash.setLook('minimal'|'capsule'|'hud'|'sport'|'classic'|'horizon'), Dash.setMode('auto'|'day'|'night'),
  *   Dash.setPage('road'|'engine'|'trip'|'motion'), Dash.setAutoPage(bool)
  *   Dash.setImuAction(fn): liga os botões Zerar nível / Calibrar frente da Dinâmica (fn('level'|'forward'))
+ *   Dash.setNightDim(100|80|60|40) / Dash.onScheme(fn) / Dash.scheme: brilho dos mostradores à noite e aviso
+ *   quando o dia/noite resolvido muda (o app baixa o brilho da tela à noite)
  *   Dash.prefs / Dash.applyPrefs({ look, mode, tint }) / Dash.onUserPrefs(fn): escolha de tema, dia/noite e cor,
  *   que o app manda ao painel web; fn só é chamada quando a pessoa troca pelos botões
  */
@@ -108,6 +110,11 @@ window.Dash = (function () {
   /** Cor dos mostradores da Cápsula: verde ou vermelho. */
   const TINTS = [['green', 'Verde'], ['red', 'Vermelho']];
   let onPrefs = null;
+  // Noite: os mostradores podem ficar mais escuros (filtro de brilho); o app usa onScheme para baixar a tela.
+  const NIGHT_DIMS = [100, 80, 60, 40];
+  let nightDim = NIGHT_DIMS.includes(Number(store.get('nightDim', '100'))) ? Number(store.get('nightDim', '100')) : 100;
+  let onSchemeFn = null;
+  let lastScheme = null;
   let tint = TINTS.some((t) => t[0] === store.get('tint', 'green')) ? store.get('tint', 'green') : 'green';
   let page = userPage;
   let stoppedSince = null;
@@ -1377,8 +1384,21 @@ window.Dash = (function () {
   }
   function applyScheme() {
     if (!root || !ui.modeBtn) return;
-    root.dataset.scheme = resolveScheme();
+    const scheme = resolveScheme();
+    root.dataset.scheme = scheme;
+    root.style.setProperty('--night-dim', String(nightDim / 100));
+    root.classList.toggle('night-dim', scheme === 'night' && nightDim < 100);
     ui.modeBtn.textContent = MODE_LABEL[mode];
+    if (scheme !== lastScheme) {
+      lastScheme = scheme;
+      if (onSchemeFn) onSchemeFn(scheme);
+    }
+  }
+  function setNightDim(v) {
+    if (!NIGHT_DIMS.includes(Number(v))) return;
+    nightDim = Number(v);
+    store.set('nightDim', nightDim);
+    applyScheme();
   }
 
   function setLook(l) { if (THEMES[l] && root) { look = l; store.set('look', l); applyLook(); } }
@@ -1621,7 +1641,9 @@ window.Dash = (function () {
   function paint() { if (theme && theme.paint) theme.paint(shown); }
 
   return {
-    mount, setMeta, update, setLook, setMode, setPage, setAutoPage, applyPrefs,
+    mount, setMeta, update, setLook, setMode, setPage, setAutoPage, applyPrefs, setNightDim,
+    onScheme(fn) { onSchemeFn = typeof fn === 'function' ? fn : null; },
+    get scheme() { return lastScheme; }, get nightDim() { return nightDim; },
     onUserPrefs(fn) { onPrefs = typeof fn === 'function' ? fn : null; },
     get prefs() { return prefs(); },
     setImuAction(fn) { onImuAction = typeof fn === 'function' ? fn : null; if (root && state) render(); },

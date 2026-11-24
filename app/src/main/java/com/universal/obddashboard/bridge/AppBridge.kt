@@ -35,6 +35,7 @@ import java.util.UUID
  */
 class AppBridge(private val activity: MainActivity) {
 
+
     /** Tema, dia/noite e cor escolhidos nos mostradores ({ look, mode, tint }); o painel web pode seguir. */
     @JavascriptInterface
     fun setDashPrefs(json: String): Boolean {
@@ -458,6 +459,18 @@ class AppBridge(private val activity: MainActivity) {
         else activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
+    /**
+     * Brilho da tela à noite com o Painel aberto (Ajustes → Aparência): [level] de 0,01 a 1 fixa o brilho só
+     * desta janela; qualquer outro valor (o app manda -1) devolve o brilho do sistema. Não mexe no ajuste do
+     * Android: ao sair do app, vale o de sempre.
+     */
+    @JavascriptInterface
+    fun setScreenBrightness(level: Double) = activity.runOnUiThread {
+        val lp = activity.window.attributes
+        lp.screenBrightness = windowBrightness(level)
+        activity.window.attributes = lp
+    }
+
     /** Abre a tela do Android para liberar as notificações deste app. */
     @JavascriptInterface
     fun openNotificationSettings() = activity.runOnUiThread {
@@ -469,7 +482,12 @@ class AppBridge(private val activity: MainActivity) {
         )
     }
 
-    private companion object {
-        const val MAX_VEHICLES = 10
+    companion object {
+        private const val MAX_VEHICLES = 10
+
+        /** Valor do brilho da janela: 0,01 a 1 vale como está; o resto volta ao brilho do sistema. */
+        fun windowBrightness(level: Double): Float =
+            if (level.isFinite() && level >= 0.01 && level <= 1.0) level.toFloat()
+            else WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
     }
 }

@@ -6,6 +6,12 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Adicionado
+- **Modo noturno de verdade no app.** Em Ajustes → Aparência, dois ajustes novos para quando os mostradores estão no modo noite (no automático, das 18 h às 6 h):
+  - **Brilho dos mostradores à noite:** Normal, 80 %, 60 % ou 40 %. Escurece os mostradores sem mudar as cores; a faixa de alerta continua no brilho normal, para não perder o destaque.
+  - **Tela do celular à noite, com a aba Painel aberta:** brilho do sistema, 30 %, 15 % ou 5 %. Vale só para a janela do app; fora da aba Painel, de dia ou ao sair do app, volta o brilho do sistema.
+  - Os dois entram no backup.
+
 ## [0.9.76] - 2026-11-23
 
 ### Alterado

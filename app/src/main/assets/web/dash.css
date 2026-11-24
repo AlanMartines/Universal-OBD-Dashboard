@@ -20,6 +20,9 @@
   --c-accent: #6fd3ff; --c-seg-off: #14181d; --c-ok: #33d17a; --c-warn: #ffb21e; --c-bad: #ff3b3b;
   --c-ring: #1d2126; --c-fill-a: #f4f6f8; --c-fill-b: #737b85; --c-glow: rgba(88, 214, 255, .55);
 }
+/* À noite, mostradores mais escuros (Ajustes → Aparência): só o brilho, as cores ficam as mesmas. A faixa
+   de alerta fica fora, no brilho normal, para não perder o destaque. */
+.cluster.night-dim > :not(.cl-alert) { filter: brightness(var(--night-dim, 1)); }
 .cluster[data-scheme="day"] {
   --c-bg: #f3f5f7; --c-line: #d2d8df; --c-text: #090c0f; --c-muted: #56616d;
   --c-accent: #0072ad; --c-seg-off: #dce1e7; --c-ok: #11854a; --c-warn: #a96400; --c-bad: #cf1515;
