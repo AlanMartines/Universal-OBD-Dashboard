@@ -14,4 +14,8 @@
 (fp_text user "TJA1050" (at 9.8 3.81 0) (layer "F.Fab") (effects (font (size 1.0 1.0) (thickness 0.15))))
 (model "${KICAD9_3DMODEL_DIR}/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x04_P2.54mm_Vertical.step" (offset (xyz 0.0 0.0 0.0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))
 (model "${KIPRJMOD}/escuta_can.3dshapes/TJA1050_Module.wrl" (offset (xyz 0.0 0.0 0.0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))
+(model "${KICAD9_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-8_3.9x4.9mm_P1.27mm.step" (offset (xyz 6.6 -3.81 12.4)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))
+(model "${KICAD9_3DMODEL_DIR}/Resistor_SMD.3dshapes/R_0805_2012Metric.step" (offset (xyz 12.4 -0.01 12.4)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))
+(model "${KICAD9_3DMODEL_DIR}/Capacitor_SMD.3dshapes/C_0805_2012Metric.step" (offset (xyz 6.6 -7.61 12.4)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))
+(model "${KICAD9_3DMODEL_DIR}/Capacitor_SMD.3dshapes/C_0805_2012Metric.step" (offset (xyz 12.4 -7.61 12.4)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0)))
 (embedded_fonts no))

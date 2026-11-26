@@ -14,7 +14,7 @@ e o tamanho da placa e dos apoios do `../placa/caixa.py`. Mudou a placa ilhada, 
 
 | Arquivo | Conteúdo |
 |---|---|
-| `escuta_can.kicad_sym`, `escuta_can.pretty/`, `escuta_can.3dshapes/` | Biblioteca do projeto: ESP32 DevKit V1 (50 × 28 mm, barras a 25,4 mm), TJA1050 (22 × 11 mm), RT8272 HW-108 (21 × 21 mm), porta-fusível AS-06 (pinos a 20,32 mm, furo de 1,5 mm), ilhas do cabo OBD, barras, resistores, C1 e pontos de teste Keystone 5000. Modelos 3D dos módulos em VRML e STEP, com as medidas reais |
+| `escuta_can.kicad_sym`, `escuta_can.pretty/`, `escuta_can.3dshapes/` | Biblioteca do projeto: ESP32 DevKit V1 (50 × 28 mm, barras a 25,4 mm), TJA1050 (22 × 11 mm), RT8272 HW-108 (21 × 21 mm), porta-fusível AS-06 (pinos a 20,32 mm, furo de 1,5 mm), ilhas do cabo OBD, barras, resistores, C1 e pontos de teste Keystone 5000. Modelos 3D: a placa de cada módulo com as medidas reais (VRML e STEP próprios) e, por cima, os componentes com os modelos oficiais da KiCad (ESP32-WROOM-32, micro-USB Molex, SO-8, bobina, trimpot, SMD 0805 e 1206), nos lugares das peças reais |
 | `escuta-can-uno.kicad_pro`, `.kicad_sch`, `.kicad_pcb`, `.kicad_dru` | Projeto KiCad. Regras: sinal ≥ 0,25 mm, alimentação (12 V, 12 V com fusível, 5 V, 3V3, GND) ≥ 0,6 mm, folga ≥ 0,2 mm |
 | `fabricacao/gerbers-escuta-can-uno.zip` | 9 Gerber, furação Excellon (PTH e NPTH) com mapa e o job: é o que vai para a fábrica |
 | `fabricacao/BOM.csv`, `fabricacao/CPL.csv` | Lista de peças e posições no formato da JLCPCB (centro de cada peça, origem no canto de baixo à esquerda) |

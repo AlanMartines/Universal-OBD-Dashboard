@@ -22,6 +22,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -377,6 +378,34 @@ def write_step(path, nome, boxes):
     open(path, 'w').write(head + data + '\nENDSEC;\nEND-ISO-10303-21;\n')
 
 
+def centro_modelo(rel):
+    """Centro (x, y) da caixa envolvente de um modelo oficial da KiCad, no sistema do modelo (mm, y para cima), lido
+    do .wrl (1 unidade = 2,54 mm)."""
+    txt = open(os.path.join('/usr/share/kicad/3dmodels', rel[:-5] + '.wrl')).read()
+    xs, ys = [], []
+    for bloco in re.findall(r'point\s*\[([^\]]*)\]', txt):
+        nums = [float(v) for v in re.findall(r'-?\d+\.?\d*(?:[eE]-?\d+)?', bloco)]
+        xs += [v * 2.54 for v in nums[0::3]]
+        ys += [v * 2.54 for v in nums[1::3]]
+    return (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+
+
+def oficial(fp, rel, x, y, z, rot=0, borda_x=None):
+    """Modelo 3D oficial da KiCad (rel: pasta/arquivo.step) com o centro em (x, y) do footprint (y para baixo), na
+    altura z. rot: graus da KiCad (positivo gira no sentido horário, visto de cima). borda_x: em vez do centro, a ponta
+    de +x do modelo cai em borda_x (o micro-USB, que passa um pouco da placa do ESP32)."""
+    cx, cy = centro_modelo(rel)
+    a = math.radians(-rot)
+    rx, ry = cx * math.cos(a) - cy * math.sin(a), cx * math.sin(a) + cy * math.cos(a)
+    ox, oy = x - rx, -y - ry
+    if borda_x is not None:
+        txt = open(os.path.join('/usr/share/kicad/3dmodels', rel[:-5] + '.wrl')).read()
+        pts = [float(v) * 2.54 for b in re.findall(r'point\s*\[([^\]]*)\]', txt) for v in re.findall(r'-?\d+\.?\d*(?:[eE]-?\d+)?', b)]
+        xm = max(px * math.cos(a) - py * math.sin(a) for px, py in zip(pts[0::3], pts[1::3]))
+        ox = borda_x - xm
+    fp.models.append(f'(model "{MOD3D}/{rel}" (offset (xyz {r2(ox)} {r2(oy)} {r2(z)})) (scale (xyz 1 1 1)) (rotate (xyz 0 0 {rot})))')
+
+
 def own_model(fp, nome):
     fp.model(f'${{KIPRJMOD}}/{LIB}.3dshapes/{nome}.wrl')
 
@@ -405,11 +434,17 @@ def fp_esp():
         box3(m, '#111111', -P / 2, off - P / 2, FEM_H, 15 * P, P, MALE_H)
     box3(m, '#1a237e', x0, y0, MOD_Z, gp.ESP_L, gp.ESP_W, ESP_T)
     zt = MOD_Z + ESP_T
-    box3(m, '#263238', x0 + 1.0, cy - 9, zt, 25.5, 18, 0.8)            # módulo WROOM-32 (antena à esquerda)
-    box3(m, '#b0bec5', x0 + 7.5, cy - 8, zt + 0.8, 18, 16, 2.2)        # blindagem
-    box3(m, '#cfd8dc', x0 + 44.5, cy - 3.8, zt, 6.5, 7.6, 3.0)         # micro-USB (à direita)
-    for by in (cy - 9.5, cy + 8.2):                                     # BOOT e EN
-        box3(m, '#eeeeee', x0 + 40, by, zt, 3.4, 2.4, 1.5)
+    # peças da placa do ESP32: modelos oficiais da KiCad, nos lugares da placa real
+    oficial(fp, 'RF_Module.3dshapes/ESP32-WROOM-32.step', x0 + 1.0 + 12.75, cy, zt, -90)   # antena à esquerda
+    oficial(fp, 'Connector_USB.3dshapes/USB_Micro-B_Molex_47346-0001.step', 0, cy, zt, -90, borda_x=x0 + gp.ESP_L + 0.6)
+    for by in (cy - 8.3, cy + 9.4):                                                          # BOOT e EN
+        oficial(fp, 'Button_Switch_SMD.3dshapes/SW_SPST_B3U-1000P.step', x0 + 41.7, by, zt)
+    oficial(fp, 'Package_TO_SOT_SMD.3dshapes/SOT-223.step', x0 + 36.0, cy + 5.0, zt)       # regulador AMS1117 3,3 V
+    oficial(fp, 'Package_DFN_QFN.3dshapes/QFN-28-1EP_5x5mm_P0.5mm_EP3.35x3.35mm.step', x0 + 35.0, cy - 4.5, zt)   # CP2102 (USB)
+    for ly in (cy - 7.0, cy + 7.0):                                                          # LEDs (alimentação e GPIO2)
+        oficial(fp, 'LED_SMD.3dshapes/LED_0805_2012Metric.step', x0 + 44.0, ly, zt)
+    for ry in (cy - 2.0, cy + 1.0):
+        oficial(fp, 'Resistor_SMD.3dshapes/R_0805_2012Metric.step', x0 + 40.0, ry, zt)
     return fp
 
 
@@ -432,8 +467,10 @@ def fp_tja():
     box3(m, '#111111', -P / 2, -P / 2, FEM_H, P, 4 * P, MALE_H)
     box3(m, '#1565c0', x0, y0, MOD_Z, gp.TJA_MM[0], gp.TJA_MM[1], MOD_T)
     mt = MOD_Z + MOD_T
-    box3(m, '#212121', x0 + 5.0, yc - 2.6, mt, 5.6, 5.2, 1.5)           # TJA1050 (SOIC-8)
-    box3(m, '#212121', x0 + 12.4, y0 + 1.0, mt, 2.4, 1.4, 0.5)          # resistor "121"
+    oficial(fp, 'Package_SO.3dshapes/SOIC-8_3.9x4.9mm_P1.27mm.step', x0 + 7.8, yc, mt)       # TJA1050 (SO-8)
+    oficial(fp, 'Resistor_SMD.3dshapes/R_0805_2012Metric.step', x0 + 13.6, y0 + 1.7, mt)    # resistor "121"
+    for cx_ in (x0 + 7.8, x0 + 13.6):
+        oficial(fp, 'Capacitor_SMD.3dshapes/C_0805_2012Metric.step', cx_, y0 + gp.TJA_MM[1] - 1.7, mt)
     return fp
 
 
@@ -458,9 +495,11 @@ def fp_buck():
     box3(m, '#111111', -7 * P - P / 2, 6 * P - P / 2, FEM_H, P, 2 * P, MALE_H)
     box3(m, '#0d47a1', bx0, by0, MOD_Z, gp.BUCK_MM, gp.BUCK_MM, MOD_T)
     bt = MOD_Z + MOD_T
-    box3(m, '#212121', bx0 + 10.5, by0 + 9.5, bt, 9, 9, 4.0)            # bobina 4R7
-    box3(m, '#212121', bx0 + 5.5, by0 + 2.0, bt, 6, 5, 1.2)             # RT8272
-    box3(m, '#cfd8dc', bx0 + 0.8, by0 + 0.8, bt, 3.4, 3.4, 2.2)         # trimpot
+    oficial(fp, 'Inductor_SMD.3dshapes/L_Sunlord_MWSA1004S.step', bx0 + 15.0, by0 + 14.0, bt)   # bobina 4R7
+    oficial(fp, 'Package_SO.3dshapes/SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.29x3mm.step', bx0 + 8.5, by0 + 4.5, bt)   # RT8272
+    oficial(fp, 'Potentiometer_SMD.3dshapes/Potentiometer_Bourns_3314J_Vertical.step', bx0 + 2.6, by0 + 2.8, bt)   # ajuste
+    for cy_ in (by0 + 11.0, by0 + 16.5):                                                     # capacitores de entrada e saída
+        oficial(fp, 'Capacitor_SMD.3dshapes/C_1206_3216Metric.step', bx0 + 4.0, cy_, bt, 90)
     return fp
 
 
