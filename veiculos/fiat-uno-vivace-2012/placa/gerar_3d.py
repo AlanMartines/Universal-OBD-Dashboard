@@ -674,12 +674,12 @@ DET = {
 # ---------------------------------------------------------------- PCB de duas faces (versão 2, para fábrica)
 # O visor troca a placa perfurada por ela: trilhas e ilhas da PCB, as peças que mudam de furo ('mover' e 'tp') nos
 # lugares dela, sem fios estanhados. Versão TJA1050: a PCB do KiCad (../placa-pcb/gerar_kicad.py grava o pcb3d.json).
-# Versão SN65HVD230: o exemplo do gerar_pcb.py.
-PCB3D = os.path.normpath(os.path.join(OUT, '..', 'placa-pcb', 'pcb3d.json'))
-if g.VARIANTE == 'tja' and os.path.exists(PCB3D):
+# Versão SN65HVD230: a PCB do KiCad em ../placa-pcb/sn65/ (PCB_VARIANTE=sn65); sem ela, o exemplo do gerar_pcb.py.
+PCB3D = os.path.normpath(os.path.join(OUT, '..', 'placa-pcb', *(['sn65'] if g.VARIANTE == 'sn65' else []), 'pcb3d.json'))
+if os.path.exists(PCB3D):
     with open(PCB3D, encoding='utf-8') as fh:
         DET['pcb'] = json.load(fh)
-if g.VARIANTE == 'sn65':
+elif g.VARIANTE == 'sn65':
     import gerar_pcb as pcb  # noqa: E402  (mesmas posições: lê o gerar_placa.py já carregado nesta versão)
     pcb.check()
 

@@ -282,7 +282,7 @@ describe('fluxo pelo navegador', () => {
     const pcb = (await web.inject({ method: 'GET', url: '/projeto/placa?placa=pcb' })).body;
     assert.ok(pcb.includes('src="/modules/projeto/modelo3d-dados.js?v=') && pcb.includes('data-placa="pcb"') && pcb.includes('KiCad'));
     const pcbSn65 = (await web.inject({ method: 'GET', url: '/projeto/placa?placa=pcb&versao=sn65' })).body;
-    assert.ok(pcbSn65.includes('modelo3d-sn65-dados.js') && pcbSn65.includes('data-placa="pcb"'));
+    assert.ok(pcbSn65.includes('modelo3d-sn65-dados.js') && pcbSn65.includes('data-placa="pcb"') && pcbSn65.includes('placa-pcb/sn65'));
     const outra = (await web.inject({ method: 'GET', url: '/projeto/placa?versao=xyz' })).body;
     assert.ok(outra.includes('src="/modules/projeto/modelo3d-dados.js?v=') && !outra.includes('modelo3d-sn65'));
     // Three.js local: só os dois arquivos que o visor importa

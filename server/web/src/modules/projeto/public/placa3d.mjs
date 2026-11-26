@@ -13,7 +13,7 @@ const dica = document.getElementById('dica3d');
 // trilhas viram cobre sob a máscara verde; somem os fios estanhados, os fios isolados de baixo e os jumpers J1 a J3;
 // as peças que mudam de furo na PCB ('mover': resistores e capacitores; 'tp': pontos de teste) vão para os lugares
 // dela. Dados exportados por gerar_3d.py em 'pcb': na versão TJA1050, a PCB do KiCad (placa-pcb/gerar_kicad.py); na
-// SN65HVD230, o exemplo do gerar_pcb.py.
+// SN65HVD230, a do KiCad em placa-pcb/sn65/ (PCB_VARIANTE=sn65).
 const MODO_PCB = !!(X && X.pcb && canvas && canvas.dataset.placa === 'pcb');
 if (MODO_PCB) {
   const mesmo = (p, q) => Math.abs(p[0] - q[0]) < 0.01 && Math.abs(p[1] - q[1]) < 0.01;

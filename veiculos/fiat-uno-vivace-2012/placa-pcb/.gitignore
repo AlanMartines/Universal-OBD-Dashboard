@@ -8,3 +8,4 @@ gerber/
 pos.csv
 # o esquemático é gerado aqui (a regra da raiz barra os PDF de manuais)
 !fabricacao/esquematico.pdf
+!sn65/fabricacao/esquematico.pdf

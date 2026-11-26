@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PCB definitiva (duas faces, KiCad 9) da escuta CAN do Uno Vivace, versão TJA1050: mesmo circuito da placa ilhada.
+"""PCB definitiva (duas faces, KiCad 9) da escuta CAN do Uno Vivace: mesmo circuito da placa ilhada, nas duas versões.
 
 Fonte da verdade: ../placa/gerar_placa.py (posições na grade de 2,54 mm e ligações), ../placa/gerar_3d.py (alturas e
 medidas dos módulos) e ../placa/caixa.py (placa de 50 x 70 mm apoiada nos 4 cantos). Este script gera, sem interface
@@ -11,7 +11,12 @@ gráfica:
   - fabricacao/: Gerber + furação (zip), BOM.csv, CPL.csv, esquemático em PDF, SVG das duas faces, STEP e PNG 3D.
 
 Uso (KiCad 9 com o módulo pcbnew):
-    python3 veiculos/fiat-uno-vivace-2012/placa-pcb/gerar_kicad.py
+    python3 veiculos/fiat-uno-vivace-2012/placa-pcb/gerar_kicad.py                       # TJA1050, nesta pasta
+    PCB_VARIANTE=sn65 python3 veiculos/fiat-uno-vivace-2012/placa-pcb/gerar_kicad.py     # SN65HVD230, em sn65/
+
+Na versão SN65HVD230 (módulo WCMCU-230 em 3,3 V): sem o divisor do RX (R1 a R3) e sem o J2; o CTX fica preso no 3V3
+(nunca transmite), o CRX vai direto ao D21 e o R4 vai para a coluna 18, como no exemplo do gerar_pcb.py, para o CANH
+não cruzar o 3V3.
 
 Diferenças de posição em relação à placa ilhada (o circuito é o mesmo): o C1 desce uma linha (linha 20), para o
 pátio dele não encostar no R6, e o TP3 vai para (10, 16), porque a trilha do 5 V passa na linha 13. As trilhas são
@@ -31,13 +36,18 @@ import zipfile
 AQUI = os.path.dirname(os.path.abspath(__file__))
 PLACA = os.path.normpath(os.path.join(AQUI, '..', 'placa'))
 sys.path.insert(0, PLACA)
-os.environ['PLACA_VARIANTE'] = 'tja'
-import gerar_placa as gp   # noqa: E402  (posições da placa ilhada, versão TJA1050)
+VARIANTE = os.environ.get('PCB_VARIANTE', 'tja')
+assert VARIANTE in ('tja', 'sn65'), VARIANTE
+SN65 = VARIANTE == 'sn65'
+os.environ['PLACA_VARIANTE'] = VARIANTE
+import gerar_placa as gp   # noqa: E402  (posições da placa ilhada, na versão escolhida)
 import caixa               # noqa: E402  (só para conferir o tamanho da placa e os apoios)
 
-PROJ = 'escuta-can-uno'
+TRANS = 'SN65HVD230' if SN65 else 'TJA1050'
+SAIDA = os.path.join(AQUI, 'sn65') if SN65 else AQUI   # pasta do projeto KiCad desta versão
+PROJ = 'escuta-can-uno-sn65' if SN65 else 'escuta-can-uno'
 LIB = 'escuta_can'
-FAB = os.path.join(AQUI, 'fabricacao')
+FAB = os.path.join(SAIDA, 'fabricacao')
 P = gp.P
 W, H = gp.W, gp.H
 assert (W, H) == (50.0, 70.0) and caixa.APOIO == 3.5
@@ -67,13 +77,15 @@ def g(c, r):
 # Redes globais (nomes dos rótulos do esquemático = nomes das redes da PCB)
 POWER = ['12V', '12V_FUS', '5V', '3V3', 'GND']
 
-ESP_NET = {'D21': 'CAN_RX_3V3', 'GND': 'GND', '3V3': '3V3', 'VIN': '5V', 'D34': 'VBAT_ADC', 'D25': 'SDA', 'D26': 'SCL',
+ESP_NET = {'D21': 'CRX' if SN65 else 'CAN_RX_3V3', 'GND': 'GND', '3V3': '3V3', 'VIN': '5V', 'D34': 'VBAT_ADC', 'D25': 'SDA', 'D26': 'SCL',
            'D18': 'LED_COM', 'TX2': 'LED_R', 'RX2': 'LED_G', 'D4': 'LED_B'}
 
 # Peças: ref → (símbolo, valor, footprint, {pino: rede}, posição do pino 1 (c, r), posição do pino 2 ou None, extra)
 # A posição define a colocação; o ângulo sai do pino 1 → pino 2.
 POS_C1 = ((5, 20), (7, 20))
 POS_RES = {'R5': ((4, 21), (4, 17))}   # R5 uma linha acima: o pátio dele encostava no do porta-fusível
+if SN65:
+    POS_RES['R4'] = ((18, 3), (18, 7))   # ao lado do USB do ESP32: na coluna 16 o CANH cruzaria o 3V3
 POS_TP = {'TP1': (11, 23), 'TP2': (16, 14), 'TP3': (10, 16), 'TP4': (10, 21)}
 
 PARTS = []
@@ -91,9 +103,15 @@ for i, n in enumerate(gp.ESP_BOT):
     esp_pins[str(i + 16)] = (n, ESP_NET.get(n))
 part('U1', 'ESP32_DevKit_V1', 'ESP32 DevKit V1 (30 pinos)', 'ESP32_DevKit_V1_30P_Socket', esp_pins, (2, 2), (16, 2),
      'ESP32 DevKit V1 em duas barras fêmea de 15 pinos (fileiras a 25,4 mm), antena para fora da placa à esquerda, USB à direita')
-part('U2', 'TJA1050_Module', 'TJA1050 (módulo, só escuta)', 'TJA1050_Module_Socket',
-     {'1': ('VCC', '5V'), '2': ('TXD', '5V'), '3': ('RXD', 'CAN_RX_5V'), '4': ('GND', 'GND')},
-     gp.TJA_PINS['VCC'], gp.TJA_PINS['GND'], 'Módulo TJA1050 22 x 11 mm em barra fêmea de 4 pinos; TXD preso em 5 V (nunca transmite)')
+if SN65:
+    part('U2', 'SN65HVD230_Module', 'SN65HVD230 (WCMCU-230, só escuta)', 'SN65HVD230_Module_Socket',
+         {'1': ('3V3', '3V3'), '2': ('GND', 'GND'), '3': ('CTX', '3V3'), '4': ('CRX', 'CRX'), '5': ('CANH', 'CANH'),
+          '6': ('CANL', 'CANL')}, gp.SN_PINS['3V3'], gp.SN_PINS['GND'],
+         'Módulo WCMCU-230 (SN65HVD230) 15,7 x 13,9 mm em barra fêmea de 6 pinos, em 3,3 V; CTX preso no 3V3 (nunca transmite); sem o R2 de 120 ohms')
+else:
+    part('U2', 'TJA1050_Module', 'TJA1050 (módulo, só escuta)', 'TJA1050_Module_Socket',
+         {'1': ('VCC', '5V'), '2': ('TXD', '5V'), '3': ('RXD', 'CAN_RX_5V'), '4': ('GND', 'GND')},
+         gp.TJA_PINS['VCC'], gp.TJA_PINS['GND'], 'Módulo TJA1050 22 x 11 mm em barra fêmea de 4 pinos; TXD preso em 5 V (nunca transmite)')
 part('U3', 'RT8272_Module', 'RT8272 HW-108 (12 V → 5 V)', 'RT8272_HW108_Socket',
      {'1': ('EN', None), '2': ('IN-', 'GND'), '3': ('IN+', '12V_FUS'), '4': ('OUT-', 'GND'), '5': ('OUT+', '5V')},
      gp.BUCK_PINS['EN'], gp.BUCK_PINS['IN+'], 'Step-down RT8272 (HW-108) 21 x 21 mm, regulado em 5,0 V; EN sem ligação')
@@ -103,9 +121,10 @@ part('F1', 'Fuse', '1,5 A (vidro 5 x 20 mm)', 'Fuseholder_AS06_5x20_P20.32',
 part('J1', 'OBD_Pigtail', 'Cabo OBD2 macho (fios 16, 4, 5, 14)', 'OBD_Pigtail_4W',
      {'16': ('+12V', '12V'), '4': ('GND_CH', 'GND'), '5': ('GND_SIG', 'GND'), '14': ('CAN-L', 'CANL')},
      gp.OBD_PADS['16'], gp.OBD_PADS['4'], 'Fios soldados: 16 (+12 V), 4 e 5 (GND), 14 (CAN-L do painel). O pino 6 fica sem ligação')
-part('J2', 'Conn_01x02', 'CANH/CANL do TJA1050 (fios)', 'PinHeader_1x02_H',
-     {'1': ('CANH', 'CANH'), '2': ('CANL', 'CANL')}, gp.CAN_HOLES['CANH'], gp.CAN_HOLES['CANL'],
-     'Barra macho de 2 pinos: fios curtos do CANH e do CANL do módulo TJA1050 (Dupont fêmea)')
+if not SN65:
+    part('J2', 'Conn_01x02', 'CANH/CANL do TJA1050 (fios)', 'PinHeader_1x02_H',
+         {'1': ('CANH', 'CANH'), '2': ('CANL', 'CANL')}, gp.CAN_HOLES['CANH'], gp.CAN_HOLES['CANL'],
+         'Barra macho de 2 pinos: fios curtos do CANH e do CANL do módulo TJA1050 (Dupont fêmea)')
 SENS = {'SDA': 'SDA', 'SCL': 'SCL', 'GND': 'GND', 'VCC': '5V'}
 for ref, nome, pins in (('J3', 'GY-273 (bússola)', gp.MAG_PINS), ('J4', 'LSM6DS3 (acel./giro)', gp.LSM_PINS),
                         ('J5', 'BMP180 (pressão)', gp.BMP_PINS)):
@@ -128,7 +147,7 @@ TP_NET = {'12 V': '12V_FUS', '5 V': '5V', 'GND': 'GND'}
 for nome, rot, _, _, desc in gp.TEST_POINTS:
     part(nome, 'TestPoint', rot, 'TestPoint_Keystone_5000', {'1': ('TP', TP_NET[rot])}, POS_TP[nome], None, desc)
 
-PAD_REF = {'U1': ('1', '15'), 'U2': ('1', '4'), 'U3': ('1', '3'), 'J1': ('16', '4')}   # pads que caem em at e at2
+PAD_REF = {'U1': ('1', '15'), 'U2': ('1', '2' if SN65 else '4'), 'U3': ('1', '3'), 'J1': ('16', '4')}   # pads que caem em at e at2
 NETS = sorted({n for p in PARTS for _, n in p['pins'].values() if n})
 
 
@@ -147,6 +166,7 @@ def sym_def(nome, prefix, left, right, width=10.16):
 sym_def('ESP32_DevKit_V1', 'U', [(str(i + 1), n) for i, n in enumerate(gp.ESP_TOP)],
         [(str(i + 16), n) for i, n in enumerate(gp.ESP_BOT)], 15.24)
 sym_def('TJA1050_Module', 'U', [('1', 'VCC'), ('2', 'TXD'), ('3', 'RXD'), ('4', 'GND')], [], 12.7)
+sym_def('SN65HVD230_Module', 'U', [('1', '3V3'), ('2', 'GND'), ('3', 'CTX'), ('4', 'CRX'), ('5', 'CANH'), ('6', 'CANL')], [], 12.7)
 sym_def('RT8272_Module', 'U', [('1', 'EN'), ('2', 'IN-'), ('3', 'IN+')], [('4', 'OUT-'), ('5', 'OUT+')], 12.7)
 sym_def('OBD_Pigtail', 'J', [('16', '+12V'), ('4', 'GND_CH'), ('5', 'GND_SIG'), ('14', 'CAN-L')], [], 12.7)
 sym_def('Conn_01x02', 'J', [('1', 'Pin_1'), ('2', 'Pin_2')], [], 5.08)
@@ -205,7 +225,7 @@ def sym_text(nome, full):
 
 def write_symbol_lib():
     body = '\n'.join(sym_text(n, n) for n in SYMS)
-    with open(os.path.join(AQUI, f'{LIB}.kicad_sym'), 'w') as f:
+    with open(os.path.join(SAIDA, f'{LIB}.kicad_sym'), 'w') as f:
         f.write(f'(kicad_symbol_lib (version 20241209) (generator "gerar_kicad") (generator_version "9.0")\n{body}\n)\n')
 
 
@@ -474,6 +494,30 @@ def fp_tja():
     return fp
 
 
+# ----------------------------------------------------------------- SN65HVD230 (WCMCU-230, 15,7 x 13,9 mm) em barra fêmea 1x06
+def fp_sn65():
+    fp = Fp('SN65HVD230_Module_Socket', 'Modulo WCMCU-230 (SN65HVD230) 15,7 x 13,9 mm em barra femea 1x06 (3V3, GND, CTX, CRX, CANH, CANL), deitado para cima',
+            ref_at=(-2.4, 0), val_at=(2.5 * P, -6.0), ref_size=0.9)
+    pads = [(i * P, 0) for i in range(6)]
+    for i, (x, y) in enumerate(pads):
+        fp.pad(str(i + 1), x, y, 1.7, 1.0, square=(i == 0))
+    fp.rect('F.CrtYd', -1.25, -1.25, 5 * P + 1.25, 1.25, 0.05)
+    l, w = gp.SN_MM
+    x0, y1 = 2.5 * P - l / 2, 1.3   # módulo deitado para cima, com a barra na borda de baixo (gerar_3d.py)
+    y0 = y1 - w
+    fp.rect('F.Fab', x0, y0, x0 + l, y1, 0.1)
+    fp.text('F.Fab', 2.5 * P, y0 + 7.6, 'SN65HVD230', 0.9)
+    fp.model(f'{MOD3D}/Connector_PinSocket_2.54mm.3dshapes/PinSocket_1x06_P2.54mm_Vertical.step', (0, 0, 0), -90)
+    own_model(fp, 'SN65HVD230_Module')
+    m = 'SN65HVD230_Module'
+    box3(m, '#111111', -P / 2, -P / 2, FEM_H, 6 * P, P, MALE_H)
+    box3(m, '#1565c0', x0, y0, MOD_Z, l, w, MOD_T)
+    mt = MOD_Z + MOD_T
+    oficial(fp, 'Package_SO.3dshapes/SOIC-8_3.9x4.9mm_P1.27mm.step', x0 + 5.6 + 2.3, y0 + 1.0 + 2.8, mt, 90)   # VP230
+    oficial(fp, 'Resistor_SMD.3dshapes/R_0805_2012Metric.step', x0 + 2.5, y0 + 7.25, mt)                    # R1 "103"
+    return fp
+
+
 # ----------------------------------------------------------------- RT8272 (HW-108, 21 x 21 mm)
 def fp_buck():
     fp = Fp('RT8272_HW108_Socket', 'Step-down RT8272 (HW-108) 21 x 21 mm em barras femea: EN, IN-, IN+ e OUT-, OUT+ (fileiras a 17,78 mm)',
@@ -587,22 +631,22 @@ def fp_tp():
 
 
 def write_fp_lib():
-    d = os.path.join(AQUI, f'{LIB}.pretty')
-    d3 = os.path.join(AQUI, f'{LIB}.3dshapes')
+    d = os.path.join(SAIDA, f'{LIB}.pretty')
+    d3 = os.path.join(SAIDA, f'{LIB}.3dshapes')
     for x in (d, d3):
         shutil.rmtree(x, ignore_errors=True)
         os.makedirs(x)
     BOXES.clear()
-    for fp in (fp_esp(), fp_tja(), fp_buck(), fp_fuse(), fp_obd(), fp_header(2), fp_header(4), fp_header(5),
+    for fp in (fp_esp(), fp_sn65() if SN65 else fp_tja(), fp_buck(), fp_fuse(), fp_obd(), fp_header(2), fp_header(4), fp_header(5),
                fp_res(), fp_cap(), fp_tp()):
         FPS[fp.nome] = fp
         open(os.path.join(d, f'{fp.nome}.kicad_mod'), 'w').write(fp.text_sexpr())
     for nome, boxes in BOXES.items():
         write_wrl(os.path.join(d3, f'{nome}.wrl'), boxes)
         write_step(os.path.join(d3, f'{nome}.step'), nome, boxes)
-    open(os.path.join(AQUI, 'fp-lib-table'), 'w').write(
+    open(os.path.join(SAIDA, 'fp-lib-table'), 'w').write(
         f'(fp_lib_table (version 7)\n  (lib (name "{LIB}")(type "KiCad")(uri "${{KIPRJMOD}}/{LIB}.pretty")(options "")(descr "Escuta CAN do Uno"))\n)\n')
-    open(os.path.join(AQUI, 'sym-lib-table'), 'w').write(
+    open(os.path.join(SAIDA, 'sym-lib-table'), 'w').write(
         f'(sym_lib_table (version 7)\n  (lib (name "{LIB}")(type "KiCad")(uri "${{KIPRJMOD}}/{LIB}.kicad_sym")(options "")(descr "Escuta CAN do Uno"))\n)\n')
 
 
@@ -632,8 +676,8 @@ def write_project():
         'schematic': {'meta': {'version': 1}},
         'sheets': [[uid('sheet', PROJ), 'Root']],
     }
-    json.dump(pro, open(os.path.join(AQUI, f'{PROJ}.kicad_pro'), 'w'), indent=2)
-    open(os.path.join(AQUI, f'{PROJ}.kicad_dru'), 'w').write(
+    json.dump(pro, open(os.path.join(SAIDA, f'{PROJ}.kicad_pro'), 'w'), indent=2)
+    open(os.path.join(SAIDA, f'{PROJ}.kicad_dru'), 'w').write(
         '(version 1)\n'
         '(rule "Alimentacao: trilha de pelo menos 0,6 mm"\n  (condition "A.NetClass == \'Power\'")\n  (constraint track_width (min 0.6mm)))\n'
         '(rule "Sinal: trilha de pelo menos 0,25 mm"\n  (condition "A.NetClass == \'Default\'")\n  (constraint track_width (min 0.25mm)))\n')
@@ -655,14 +699,16 @@ def write_schematic():
     used = sorted({p['sym'] for p in PARTS})
     libsyms = '\n'.join(sym_text(n, f'{LIB}:{n}') for n in used)
     out = [f'(kicad_sch (version 20250114) (generator "eeschema") (generator_version "9.0") (uuid "{root}") (paper "A3")',
-           '(title_block (title "Escuta CAN listen-only: Fiat Uno Vivace 2012 (TJA1050)") (date "2026-11-26") (rev "2.0") '
+           f'(title_block (title "Escuta CAN listen-only: Fiat Uno Vivace 2012 ({TRANS})") (date "2026-11-26") (rev "2.0") '
            '(company "Universal OBD Dashboard") (comment 1 "Mesmo circuito da placa ilhada 5 x 7 cm (veiculos/fiat-uno-vivace-2012/placa)") '
-           '(comment 2 "Só escuta: TXD preso em 5 V; RXD por divisor; CANH em 3,3 V (R4)"))',
+           + ('(comment 2 "Só escuta: CTX preso no 3V3; CRX direto no D21; CANH em 3,3 V (R4)"))' if SN65 else
+              '(comment 2 "Só escuta: TXD preso em 5 V; RXD por divisor; CANH em 3,3 V (R4)"))'),
            f'(lib_symbols\n{libsyms}\n)']
     notas = [
         (20.32, 22.86, 'ALIMENTAÇÃO: OBD 16 (+12 V) → F1 1,5 A → RT8272 (5,0 V). OBD 4 e 5: GND.'),
-        (20.32, 27.94, 'CAN (só escuta): OBD 14 (CAN-L do painel) → CANL do TJA1050; CANH em 3,3 V por R4 (1 kΩ). O pino 6 do OBD fica sem ligação.'),
-        (20.32, 33.02, 'RX do TJA1050 (5 V) → R1 1 kΩ → D21 do ESP32 ← R2 + R3 (2 kΩ) ao GND: 3,33 V no pino. TXD preso em 5 V: o transceptor nunca transmite.'),
+        (20.32, 27.94, f'CAN (só escuta): OBD 14 (CAN-L do painel) → CANL do {TRANS}; CANH em 3,3 V por R4 (1 kΩ). O pino 6 do OBD fica sem ligação.'),
+        (20.32, 33.02, 'SN65HVD230 em 3,3 V: CRX direto no D21 do ESP32 (sem divisor). CTX preso no 3V3: o transceptor nunca transmite. Sem o R2 de 120 Ω do módulo.'
+         if SN65 else 'RX do TJA1050 (5 V) → R1 1 kΩ → D21 do ESP32 ← R2 + R3 (2 kΩ) ao GND: 3,33 V no pino. TXD preso em 5 V: o transceptor nunca transmite.'),
         (20.32, 38.1, 'Bateria: 12 V com fusível → R5 100 kΩ → D34 (ADC1) → R6 20 kΩ → GND, C1 100 nF de filtro. 12 V = 2,0 V no pino.'),
         (20.32, 43.18, 'Sensores I2C (D25 = SDA, D26 = SCL), alimentados em 5 V (os módulos têm regulador): GY-273, LSM6DS3, BMP180.'),
     ]
@@ -700,7 +746,7 @@ def write_schematic():
                        f'(property "Intersheetrefs" "${{INTERSHEET_REFS}}" (at {lx} {ey} 0) (effects (font (size 1.27 1.27)) (hide yes))))')
     out.append('(sheet_instances (path "/" (page "1")))')
     out.append('(embedded_fonts no))')
-    open(os.path.join(AQUI, f'{PROJ}.kicad_sch'), 'w').write('\n'.join(out) + '\n')
+    open(os.path.join(SAIDA, f'{PROJ}.kicad_sch'), 'w').write('\n'.join(out) + '\n')
 
 
 # ======================================================================= placa
@@ -712,19 +758,9 @@ TRACKS = [
     ('12V_FUS', 0.8, 'F', [(1, 24), (1, 23), (8, 23), (8, 16)]),
     ('12V_FUS', 0.6, 'F', [(4, 23), (4, 21)]),
     ('12V_FUS', 0.6, 'F', [(8, 23), (11, 23)]),
-    # 5 V: RT8272 → VIN do ESP32 (linha 13, logo abaixo das barras), TP2, sensores e TJA1050 (VCC e TXD)
+    # 5 V: RT8272 → VIN do ESP32 (linha 13, logo abaixo das barras), TP2 e sensores
     ('5V', 0.8, 'F', [(1, 21), (2, 21), (2, 13), (16, 13), (16, 12)]),
-    ('5V', 0.6, 'F', [(16, 13), (16, 15), (15, 15), (15, 17), (15, 18), (11, 18), (11, 20)]),
-    # 3V3 do ESP32 → R4
-    ('3V3', 0.6, 'F', [(16, 2), (16, 3)]),
-    # CAN: R4 → CANH (por baixo, coluna 18) → J2; CANL do J2 → OBD 14
-    ('CANH', 0.3, 'B', [(16, 7), (18, 7), (18, 23), (16, 23), (16, 24)]),
-    ('CANL', 0.5, 'F', [(17, 24), (18, 24)]),
-    # RX: TJA1050 (5 V) → R1 → D21; divisor R2 + R3
-    ('CAN_RX_5V', 0.3, 'F', [(11, 3), (11, 4), (17, 4), (17, 21), (11, 21)]),
-    ('CAN_RX_3V3', 0.3, 'F', [(6, 2), (6, 3), (7, 3)]),
-    ('CAN_RX_3V3', 0.3, 'F', [(6, 3), (6, 4)]),
-    ('RX_DIV', 0.3, 'F', [(6, 8), (7, 8)]),
+    ('5V', 0.6, 'F', [(16, 13), (16, 15), (15, 15), (15, 17)]),
     # Bateria: junção R5/R6/C1 → D34 (por baixo, coluna 5)
     ('VBAT_ADC', 0.3, 'B', [(5, 12), (5, 20)]),
     ('VBAT_ADC', 0.3, 'B', [(4, 17), (5, 17)]),
@@ -734,16 +770,42 @@ TRACKS = [
     ('SDA', 0.3, 'B', [(9, 12), (9, 14), (12, 14), (12, 17)]),
     ('SCL', 0.3, 'B', [(10, 12), (10, 13), (13, 13), (13, 17)]),
 ] + [(f'LED_{k}', 0.3, 'F', [(c, r), (c, r + 1)]) for k, (c, r) in gp.LED_PINS.items()]
+if SN65:
+    TRACKS += [
+        # 3V3 do ESP32 → R4 (coluna 18) por cima; → 3V3 e CTX do SN65HVD230 por baixo (coluna 17 e linha 20)
+        ('3V3', 0.6, 'F', [(16, 2), (17, 2), (18, 2), (18, 3)]),
+        ('3V3', 0.6, 'B', [(16, 2), (17, 2), (17, 20), (13, 20), (13, 23)]),
+        ('3V3', 0.6, 'B', [(15, 20), (15, 23)]),
+        # CAN: R4 → CANH (coluna 18, por cima); CANL → OBD 14; CRX → D21 direto (sem divisor)
+        ('CANH', 0.3, 'F', [(18, 7), (18, 22), (17, 22), (17, 23)]),
+        ('CANL', 0.5, 'F', [(18, 23), (18, 24)]),
+        ('CRX', 0.3, 'F', [(6, 2), (6, 4), (17, 4), (17, 21), (16, 21), (16, 23)]),
+    ]
+else:
+    TRACKS += [
+        # 5 V do TJA1050 (VCC e TXD presos juntos)
+        ('5V', 0.6, 'F', [(15, 17), (15, 18), (11, 18), (11, 20)]),
+        # 3V3 do ESP32 → R4
+        ('3V3', 0.6, 'F', [(16, 2), (16, 3)]),
+        # CAN: R4 → CANH (por baixo, coluna 18) → J2; CANL do J2 → OBD 14
+        ('CANH', 0.3, 'B', [(16, 7), (18, 7), (18, 23), (16, 23), (16, 24)]),
+        ('CANL', 0.5, 'F', [(17, 24), (18, 24)]),
+        # RX: TJA1050 (5 V) → R1 → D21; divisor R2 + R3
+        ('CAN_RX_5V', 0.3, 'F', [(11, 3), (11, 4), (17, 4), (17, 21), (11, 21)]),
+        ('CAN_RX_3V3', 0.3, 'F', [(6, 2), (6, 3), (7, 3)]),
+        ('CAN_RX_3V3', 0.3, 'F', [(6, 3), (6, 4)]),
+        ('RX_DIV', 0.3, 'F', [(6, 8), (7, 8)]),
+    ]
 
 TEXTOS_F = [   # (texto, coluna, linha, tamanho)
     ('ESP32 DevKit V1', 9.5, 9.7, 1.2), ('USB →', 15.0, 10.9, 0.9), ('← antena', 3.6, 10.9, 0.9),
     ('RT8272 5,0 V', 4.6, 14.6, 1.0), ('FUSÍVEL 1,5 A', 5.0, 22.85, 0.9),
-    ('TJA1050', 14.2, 19.6, 1.0), ('OBD 16 4 5', 12.0, 25.55, 0.8), ('14', 18.0, 25.55, 0.8), ('CAN H L', 16.5, 22.4, 0.8),
+    ('OBD 16 4 5', 12.0, 25.55, 0.8), ('14', 18.0, 25.55, 0.8),
     ('GY-273', 17.4, 15.0, 0.8), ('LSM6DS3', 17.4, 16.0, 0.8), ('BMP180', 17.4, 17.0, 0.8),
     ('LED RGB', 14.6, 1.0, 0.8), ('C', 8, 0.15, 0.8), ('R', 10, 0.15, 0.8), ('G', 11, 0.15, 0.8), ('B', 12, 0.15, 0.8),
-]
+] + ([('SN65HVD230', 15.0, 20.9, 1.0)] if SN65 else [('TJA1050', 14.2, 19.6, 1.0), ('CAN H L', 16.5, 22.4, 0.8)])
 TEXTOS_B = [
-    ('ESCUTA CAN · UNO VIVACE 2012', 9.0, 5.0, 1.0), ('somente escuta (listen-only) · TJA1050', 9.0, 6.0, 0.85),
+    ('ESCUTA CAN · UNO VIVACE 2012', 9.0, 5.0, 1.0), (f'somente escuta (listen-only) · {TRANS}', 9.0, 6.0, 0.85),
     ('v2.0 · 50 × 70 mm · 2 camadas', 9.0, 7.0, 0.85),
 ]
 REF_AT = {'TP1': (-2.4, 0)}   # referências fora do lugar padrão do footprint (mm, relativas ao pad 1)
@@ -769,7 +831,7 @@ def build_board():
     sh.SetLayer(pcbnew.Edge_Cuts)
     sh.SetWidth(mm(0.1))
     board.Add(sh)
-    libdir = os.path.join(AQUI, f'{LIB}.pretty')
+    libdir = os.path.join(SAIDA, f'{LIB}.pretty')
     root = uid('sheet', PROJ)
     pads_xy = []   # (x, y, raio, rede) para a costura de vias
     for p in PARTS:
@@ -911,7 +973,7 @@ def build_board():
             if layer == pcbnew.B_SilkS:
                 tx.SetMirrored(True)
             board.Add(tx)
-    path = os.path.join(AQUI, f'{PROJ}.kicad_pcb')
+    path = os.path.join(SAIDA, f'{PROJ}.kicad_pcb')
     board.Save(path)
     # encher as zonas numa placa aberta do arquivo (o enchedor precisa da placa carregada com o projeto)
     b2 = pcbnew.LoadBoard(path)
@@ -934,7 +996,7 @@ def build_board():
 # ======================================================================= conferência e exportação
 def cli(*args, ok_codes=(0,)):
     env = dict(os.environ, KICAD9_3DMODEL_DIR='/usr/share/kicad/3dmodels')
-    r = subprocess.run(['kicad-cli', *args], cwd=AQUI, capture_output=True, text=True, env=env)
+    r = subprocess.run(['kicad-cli', *args], cwd=SAIDA, capture_output=True, text=True, env=env)
     if r.returncode not in ok_codes:
         sys.exit(f'kicad-cli {" ".join(args)} falhou ({r.returncode}):\n{r.stdout}\n{r.stderr}')
     return r
@@ -943,11 +1005,11 @@ def cli(*args, ok_codes=(0,)):
 def erc_drc():
     sch, pcb = f'{PROJ}.kicad_sch', f'{PROJ}.kicad_pcb'
     r = cli('sch', 'erc', '--exit-code-violations', '--severity-all', '--format', 'json', '-o', 'erc.json', sch, ok_codes=(0, 5))
-    erc = json.load(open(os.path.join(AQUI, 'erc.json')))
+    erc = json.load(open(os.path.join(SAIDA, 'erc.json')))
     ev = [v for s in erc.get('sheets', []) for v in s.get('violations', [])]
     r2_ = cli('pcb', 'drc', '--exit-code-violations', '--schematic-parity', '--severity-all', '--format', 'json',
               '-o', 'drc.json', pcb, ok_codes=(0, 5))
-    drc = json.load(open(os.path.join(AQUI, 'drc.json')))
+    drc = json.load(open(os.path.join(SAIDA, 'drc.json')))
     dv = drc.get('violations', [])
     un = drc.get('unconnected_items', [])
     par = drc.get('schematic_parity', [])
@@ -958,14 +1020,14 @@ def exportar():
     pcb, sch = f'{PROJ}.kicad_pcb', f'{PROJ}.kicad_sch'
     shutil.rmtree(FAB, ignore_errors=True)
     os.makedirs(FAB)
-    gdir = os.path.join(AQUI, 'gerber')
+    gdir = os.path.join(SAIDA, 'gerber')
     shutil.rmtree(gdir, ignore_errors=True)
     os.makedirs(gdir)
     cli('pcb', 'export', 'gerbers', '--layers', 'F.Cu,B.Cu,F.Paste,B.Paste,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts',
         '--subtract-soldermask', '-o', 'gerber/', pcb)
     cli('pcb', 'export', 'drill', '--format', 'excellon', '--excellon-separate-th', '--generate-map', '--map-format', 'gerberx2',
         '--drill-origin', 'absolute', '-o', 'gerber/', pcb)
-    zpath = os.path.join(FAB, 'gerbers-escuta-can-uno.zip')
+    zpath = os.path.join(FAB, f'gerbers-{PROJ}.zip')
     with zipfile.ZipFile(zpath, 'w', zipfile.ZIP_DEFLATED) as z:
         for n in sorted(os.listdir(gdir)):
             z.write(os.path.join(gdir, n), n)
@@ -983,7 +1045,7 @@ def exportar():
     # CPL (padrão JLCPCB: Designator, Mid X, Mid Y, Layer, Rotation): centro dos pads de cada peça, com a origem no
     # canto de baixo à esquerda da placa e o Y para cima
     import pcbnew
-    b = pcbnew.LoadBoard(os.path.join(AQUI, pcb))
+    b = pcbnew.LoadBoard(os.path.join(SAIDA, pcb))
     with open(os.path.join(FAB, 'CPL.csv'), 'w', newline='') as f:
         w = csv.writer(f)
         w.writerow(['Designator', 'Mid X', 'Mid Y', 'Layer', 'Rotation'])
@@ -1001,15 +1063,15 @@ def exportar():
     cli('pcb', 'export', 'svg', '--layers', 'B.Cu,B.SilkS,B.Mask,Edge.Cuts', '--mode-single', '--mirror', '--fit-page-to-board',
         '--exclude-drawing-sheet', '-o', os.path.join(FAB, 'pcb-bottom.svg'), pcb)
     # 3D
-    r = cli('pcb', 'export', 'step', '--subst-models', '--force', '-o', os.path.join(FAB, 'escuta-can-uno.step'), pcb)
+    r = cli('pcb', 'export', 'step', '--subst-models', '--force', '-o', os.path.join(FAB, f'{PROJ}.step'), pcb)
     faltando = [l for l in (r.stdout + r.stderr).splitlines() if 'not found' in l.lower() or 'could not' in l.lower()]
     for lado in ('top', 'bottom'):
         cli('pcb', 'render', '--quality', 'basic', '--side', lado, '-w', '1600', '-h', '1100', '--background', 'opaque',
             '-o', os.path.join(FAB, f'render-3d-{lado}.png'), pcb)
     # a placa nua (sem os modelos 3D das peças), para mostrar o desenho da PCB
     import pcbnew
-    nua = os.path.join(AQUI, '_placa-nua.kicad_pcb')
-    b = pcbnew.LoadBoard(os.path.join(AQUI, pcb))
+    nua = os.path.join(SAIDA, '_placa-nua.kicad_pcb')
+    b = pcbnew.LoadBoard(os.path.join(SAIDA, pcb))
     for fp in b.GetFootprints():
         fp.Models().clear()
     b.Save(nua)
@@ -1049,13 +1111,14 @@ def exportar_3d(pcb):
         faces[lay].append({'n': net, 'w': w, 'cor': NET_COL.get(net, '#e0e0e0'), 'pts': [[r3(v) for v in g(*cr)] for cr in pts]})
     mm2 = lambda cr: [r3(v) for v in g(*cr)]
     mover = {nome: [mm2(a), mm2(b2)] for nome, (a, b2) in POS_RES.items()}
-    mover['C1'] = [mm2(POS_C1[0]), mm2(POS_C1[1])]
+    mover['C1'] = [mm2(POS_C1[0]), mm2(POS_C1[1])]   # na versão SN65HVD230, o R4 também (vem do POS_RES)
     orig_tp = {nome: cr for nome, _, cr, _, _ in gp.TEST_POINTS}
-    dados = {'fonte': 'veiculos/fiat-uno-vivace-2012/placa-pcb/gerar_kicad.py (KiCad 9)', 'transceptor': 'TJA1050',
+    fonte = 'veiculos/fiat-uno-vivace-2012/placa-pcb/gerar_kicad.py (KiCad 9' + (', PCB_VARIANTE=sn65)' if SN65 else ')')
+    dados = {'fonte': fonte, 'transceptor': TRANS,
              'cima': faces['F'], 'baixo': faces['B'], 'plano_cima': True,
              'vias': sorted(vias), 'ilhas': sorted(ilhas, key=lambda il: (il['p'][1], il['p'][0])),
              'mover': mover, 'tp': {n: mm2(cr) for n, cr in POS_TP.items() if cr != orig_tp[n]}}
-    with open(os.path.join(AQUI, 'pcb3d.json'), 'w') as f:
+    with open(os.path.join(SAIDA, 'pcb3d.json'), 'w') as f:
         json.dump(dados, f, ensure_ascii=False, separators=(',', ':'))
         f.write('\n')
 
@@ -1076,7 +1139,7 @@ def main():
               [(i.get('description'), i.get('pos')) for i in v.get('items', [])][:2])
     if ev or dv or un or par:
         sys.exit('pare: ERC ou DRC com violações')
-    exportar_3d(os.path.join(AQUI, f'{PROJ}.kicad_pcb'))
+    exportar_3d(os.path.join(SAIDA, f'{PROJ}.kicad_pcb'))
     gerbers, faltando = exportar()
     print('Gerber:', ', '.join(gerbers))
     if faltando:

@@ -303,6 +303,8 @@ O que muda em relação à versão principal (fusível, RT8272, BMP180 e cabo OB
 - **GND:** (15,12) → (15,13) → (9,13) → (9,22) → (12,22) → (12,24) → (14,24) → GND do módulo (14,23).
 - **R2 "121" do módulo: tirar.** Ele fica ligado direto entre CANH e CANL: no módulo do projeto, a medida deu **120 Ω** (10/11/2026). Tire o R2 com o ferro de solda, aquecendo os dois lados ao mesmo tempo, ou quebrando-o com cuidado; depois, entre CANH e CANL a medida deve ficar bem alta (kΩ ou aberto). Com ele, o CANH preso em 3,3 V pelo R4 ficaria colado no CANL e o receptor não veria sinal nenhum. O R1 "103" (10 kΩ) é do controle de inclinação do chip e fica.
 
+A PCB de fábrica desta versão está em [PCB da versão SN65HVD230](#pcb-da-versão-sn65hvd230).
+
 **Antes de ligar no carro:** sem nada ligado, não pode haver continuidade entre GND e (1,24), (9,24), (11,24), (2,13), (16,12), (17,2), (16,22), (17,23) ou (18,23). Entre (17,23) e (18,23) também não pode haver continuidade (se houver cerca de 120 Ω, é o R2). O D21 (6,2) tem continuidade com o CRX (16,23), e o CTX (15,23) com o 3V3 (16,2).
 
 ## PCB de duas faces (versão 2, para fábrica)
@@ -310,7 +312,8 @@ O que muda em relação à versão principal (fusível, RT8272, BMP180 e cabo OB
 PCB com trilhas fixas para encomendar numa fábrica como a JLCPCB ou a PCBWay: duas faces e furos metalizados. É a
 versão 2 da placa ilhada, para depois de ela ser validada no carro.
 
-- **Projeto:** no KiCad 9 (26/11/2026), em [`../placa-pcb/`](../placa-pcb/), com o mesmo circuito da versão TJA1050.
+- **Projeto:** no KiCad 9 (26/11/2026), em [`../placa-pcb/`](../placa-pcb/), com o mesmo circuito da versão TJA1050
+  (a da versão SN65HVD230 está [mais abaixo](#pcb-da-versão-sn65hvd230)).
 - **Tamanho:** 50 × 70 mm, cabe na mesma caixa, sobre os apoios dos cantos.
 - **Módulos:** continuam encaixados em barras fêmea.
 - **Gerador:** o [`gerar_kicad.py`](../placa-pcb/gerar_kicad.py) lê as posições e as ligações deste `gerar_placa.py`, as
@@ -351,8 +354,31 @@ O que muda em relação à placa ilhada:
   3. Peça só a placa: as peças são de furo, montadas à mão.
 - **Detalhes:** [`../placa-pcb/README.md`](../placa-pcb/README.md).
 
-O exemplo anterior, de 21/11, na versão SN65HVD230 (`gerar_pcb.py`, que gera `pcb-cima.svg` e `pcb-baixo.svg`),
-continua aqui como referência dessa variante.
+### PCB da versão SN65HVD230
+
+A mesma PCB para a versão alternativa, também no KiCad 9 (26/11/2026), em [`../placa-pcb/sn65/`](../placa-pcb/sn65/):
+`PCB_VARIANTE=sn65 python3 veiculos/fiat-uno-vivace-2012/placa-pcb/gerar_kicad.py`. Alimentação, sensores, bateria e LED
+ficam iguais aos da principal; muda só o transceptor.
+
+| Face de cima (componentes) | Face de baixo (espelhada, como se vê virando a placa) |
+|---|---|
+| ![PCB SN65HVD230, face de cima: alimentação, CRX direto no D21, CANH e LED](../placa-pcb/sn65/fabricacao/pcb-top.svg) | ![PCB SN65HVD230, face de baixo: plano de GND e as trilhas de SDA, SCL, D34 e 3V3 do módulo](../placa-pcb/sn65/fabricacao/pcb-bottom.svg) |
+| ![PCB SN65HVD230 sem componentes em 3D, vista de cima](../placa-pcb/sn65/fabricacao/render-3d-top-sem-componentes.png) | ![PCB SN65HVD230 sem componentes em 3D, vista de baixo](../placa-pcb/sn65/fabricacao/render-3d-bottom-sem-componentes.png) |
+
+O que muda em relação à PCB principal:
+
+- **Sem R1, R2, R3 e J2:** o módulo trabalha em 3,3 V, então o CRX vai direto ao D21, por cima, pela coluna 17.
+- **CTX preso no 3V3:** a trava física, o transceptor nunca transmite. O 3V3 chega ao módulo por baixo, pela coluna 17
+  e pela linha 20, até o 3V3 (13,23) e o CTX (15,23).
+- **R4 na coluna 18**, (18,3)–(18,7), ao lado do USB do ESP32: na coluna 16 o CANH cruzaria o 3V3. O CANH desce por
+  cima pela coluna 18 até (17,23); o CANL vai de (18,23) ao pino 14 do OBD (18,24).
+- **R2 "121" do módulo:** tirar, como na placa ilhada.
+
+**Situação:** ERC, DRC e conferência entre esquemático e placa zerados. Arquivos de fábrica em
+`../placa-pcb/sn65/fabricacao/` (`gerbers-escuta-can-uno-sn65.zip`, BOM, CPL, PDF, STEP).
+
+O exemplo anterior, de 21/11 (`gerar_pcb.py`, que gera `pcb-cima.svg` e `pcb-baixo.svg`), continua aqui como
+referência.
 
 ## Medidas dos componentes
 

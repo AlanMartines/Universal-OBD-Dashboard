@@ -21,7 +21,7 @@
       </div>
     </div>
     {{#if pcb}}{{#if sn65}}
-    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>PCB de duas faces da versão com o SN65HVD230: exemplo de 21/11, com as mesmas peças e posições da placa ilhada, trilhas no lugar dos fios estanhados e plano de GND na face de baixo. O R4 fica na coluna 18 e o TP3 em (11, 19). A PCB de fábrica desenhada no KiCad é a da versão TJA1050.</p>
+    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>PCB de fábrica da versão com o SN65HVD230 (versão 2, para encomendar numa fábrica como a JLCPCB ou a PCBWay), desenhada no KiCad 9 com o mesmo circuito da placa ilhada dessa versão: ERC e DRC zerados, Gerber, lista de peças e modelo 3D em STEP. O transceptor trabalha em 3,3 V: o CRX vai direto ao D21 (sem divisor) e o CTX fica preso no 3V3, então ele nunca transmite. O R4 vai para a coluna 18, o C1 desce para a linha 20, o R5 sobe uma linha e o TP3 vai para (10, 16). Os arquivos estão em <a href="{{pcbUrl}}/sn65" target="_blank" rel="noopener">placa-pcb/sn65</a>.</p>
     {{else}}
     <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>PCB de fábrica (versão 2, para encomendar numa fábrica como a JLCPCB ou a PCBWay), desenhada no KiCad 9 com o mesmo circuito da placa ilhada: ERC e DRC zerados, Gerber, lista de peças e modelo 3D em STEP. Na face de cima ficam a alimentação e o RX; na de baixo, o plano de GND e as trilhas de SDA, SCL, D34 e CANH. O C1 desce para a linha 20, o R5 sobe uma linha e o TP3 vai para (10, 16). Os arquivos estão em <a href="{{pcbUrl}}" target="_blank" rel="noopener">placa-pcb</a>.</p>
     {{/if}}{{/if}}

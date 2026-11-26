@@ -7,7 +7,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ## [Não lançado]
 
 ### Alterado
-- **Painel, Placa em 3D → PCB de fábrica:** mostra a PCB desenhada no KiCad (versão TJA1050, `veiculos/fiat-uno-vivace-2012/placa-pcb/`), com as trilhas, as ilhas, as vias de costura e o C1, o R5 e o TP3 nos furos dela. O botão segue a versão escolhida: com o SN65HVD230, continua o exemplo de 21/11.
+- **Painel, Placa em 3D → PCB de fábrica:** mostra a PCB desenhada no KiCad, com as trilhas, as ilhas, as vias de costura e as peças que mudam de furo. O botão segue a versão escolhida: TJA1050 (`veiculos/fiat-uno-vivace-2012/placa-pcb/`) ou SN65HVD230 (`placa-pcb/sn65/`, com o R4 na coluna 18, o CRX direto no D21 e o CTX preso no 3V3).
 
 ## [0.9.85] - 2026-11-24
 

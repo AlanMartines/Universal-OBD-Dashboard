@@ -25,6 +25,21 @@ e o tamanho da placa e dos apoios do `../placa/caixa.py`. Mudou a placa ilhada, 
 O script roda o ERC e o DRC (com a conferência entre esquemático e placa) e para se sobrar qualquer violação ou
 ligação faltando. Só depois exporta.
 
+## Versão SN65HVD230
+
+```bash
+PCB_VARIANTE=sn65 python3 veiculos/fiat-uno-vivace-2012/placa-pcb/gerar_kicad.py
+```
+
+Gera o mesmo conjunto em [`sn65/`](sn65/) (projeto `escuta-can-uno-sn65`, `sn65/fabricacao/gerbers-escuta-can-uno-sn65.zip`
+etc.), a partir da placa ilhada dessa versão:
+
+- **Sem R1, R2, R3 e J2:** o CRX vai direto ao D21.
+- **CTX preso no 3V3:** o 3V3 chega ao módulo por baixo.
+- **R4 na coluna 18:** o CANH desce por cima pela coluna 18.
+
+O resto (alimentação, sensores, bateria, LED, pontos de teste, regras e encomenda) é igual. ERC, DRC e paridade zerados.
+
 ## Como a placa está feita
 
 - **Placa:** 50 × 70 mm, 2 camadas, 1,6 mm. Os 4 cantos (3,5 × 3,5 mm, onde a caixa apoia a placa) ficam sem cobre.

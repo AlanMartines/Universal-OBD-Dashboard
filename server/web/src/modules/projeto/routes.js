@@ -17,7 +17,7 @@ export default function projetoRoutes(app) {
 
   // ?versao=sn65 mostra a versão alternativa, com o SN65HVD230 no lugar do TJA1050; qualquer outro valor, a principal.
   // ?placa=pcb troca a placa perfurada pela PCB de duas faces (versão 2, para fábrica): na versão TJA1050, a PCB do
-  // KiCad (placa-pcb/); com ?versao=sn65, o exemplo do gerar_pcb.py.
+  // KiCad (placa-pcb/); com ?versao=sn65, a PCB do KiCad da versão SN65HVD230 (placa-pcb/sn65/).
   app.get('/projeto/placa', async (request, reply) => {
     const pcb = request.query?.placa === 'pcb';
     const sn65 = request.query?.versao === 'sn65';
