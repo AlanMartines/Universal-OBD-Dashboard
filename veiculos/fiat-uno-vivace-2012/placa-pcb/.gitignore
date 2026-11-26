@@ -1,0 +1,10 @@
+__pycache__/
+erc.json
+drc.json
+*.kicad_prl
+fp-info-cache
+*-backups/
+gerber/
+pos.csv
+# o esquemático é gerado aqui (a regra da raiz barra os PDF de manuais)
+!fabricacao/esquematico.pdf
