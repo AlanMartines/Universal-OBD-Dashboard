@@ -604,7 +604,7 @@
 .dyn-rim.in { stroke: var(--c-line); stroke-width: 2; }
 .dyn-tick { stroke: var(--c-muted); stroke-width: 1.2; }
 .dyn-tick.major { stroke: var(--c-text); stroke-width: 2.6; }
-.dyn-upright { transform-box: fill-box; transform-origin: center; transition: transform .5s ease-out; }
+.dyn-upright { transform-box: fill-box; transform-origin: center; transition: transform .2s linear; }
 .dyn-card-pt { fill: var(--c-text); font-family: var(--f-num); font-weight: 800; font-size: 28px; text-anchor: middle; dominant-baseline: central; }
 .dyn-card-pt.n { fill: var(--c-bad); }
 .dyn-card-pt.mid { fill: var(--c-muted); font-weight: 700; font-size: 15px; }
@@ -612,7 +612,7 @@
 .dyn-north { fill: var(--c-bad); }
 .dyn-head-arc { fill: none; stroke: var(--dyn-head); stroke-width: 4; stroke-linecap: round; }
 .dyn-head-ptr { fill: var(--dyn-head); filter: drop-shadow(0 0 4px var(--dyn-head)); }
-.dyn-compass { transition: transform .5s ease-out; }
+.dyn-compass { transition: transform .2s linear; }
 .dyn-head-ptr.off { opacity: 0; }
 
 .dyn-sky { fill: color-mix(in srgb, var(--c-accent) 20%, var(--c-bg)); }
@@ -624,7 +624,7 @@
 .dyn-rung-t { font-family: var(--f-num); font-size: 13px; dominant-baseline: central; }
 .dyn-rung-t.up { fill: var(--c-accent); }
 .dyn-rung-t.down { fill: var(--c-ok); }
-.dyn-hz, .dyn-roll-ptr { transition: transform .35s linear; }
+.dyn-hz, .dyn-roll-ptr { transition: transform .2s linear; }
 .dyn-hz.off { opacity: .35; }
 .dyn-roll-tick { stroke: var(--c-text); stroke-width: 2; }
 .dyn-roll-ptr { fill: var(--c-ok); }

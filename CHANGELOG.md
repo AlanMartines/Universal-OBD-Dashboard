@@ -6,6 +6,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Melhorado
+- **Rosa dos ventos em tempo real.** O rumo gira na hora pelo giroscópio (LSM6DS3 do ESP32; sem ele, o do celular), sem esperar o GPS, que dá um rumo a cada 1 ou 2 s e já atrasado. O GPS e as bússolas só corrigem devagar o desvio do giroscópio, e o rumo do GPS é adiantado pelo giro desde a leitura dele.
+- **Inclinação de frente e de lado em tempo real.** Filtro complementar: o giroscópio responde na hora e o acelerômetro corrige devagar (2,5 s; 8 s arrancando, freando ou em curva forte, quando a conta dele erra). Antes, só o acelerômetro, com 2,5 s de atraso, e a frente ficava torta por alguns segundos depois de uma frenagem.
+- **Tela mais ágil.** Os dados chegam 5 vezes por segundo (antes 4), no ritmo do sensor do ESP32, e as animações dos marcadores ficaram mais curtas (0,2 s).
+
 ### Alterado
 - **Painel, Placa em 3D → PCB de fábrica:** mostra a PCB desenhada no KiCad, com as trilhas, as ilhas, as vias de costura e as peças que mudam de furo. O botão segue a versão escolhida: TJA1050 (`veiculos/fiat-uno-vivace-2012/placa-pcb/`) ou SN65HVD230 (`placa-pcb/sn65/`, com o R4 na coluna 18, o CRX direto no D21 e o CTX preso no 3V3).
 

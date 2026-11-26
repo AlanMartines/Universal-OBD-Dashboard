@@ -5,6 +5,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 /** O módulo vai torto de propósito: a orientação tem que sair só do uso (paradas, arrancadas e frenagens). */
@@ -75,6 +76,57 @@ class ImuMotionTest {
         speed = 40.0
         m.drive(3.0, 0.0, 0.0, 0.0, 1.0)
         assertNull(m.yawDps)
+    }
+
+    /**
+     * Andando reto a 50 km/h, o carro inclina de [p0] a [p1] graus de frente e de [r0] a [r1] de lado em [s] segundos: o
+     * acelerômetro vê a gravidade mudar e o giroscópio vê o giro (nariz para cima é giro negativo em torno da esquerda;
+     * o lado esquerdo subindo, positivo em torno da frente).
+     */
+    private fun ImuMotion.tilt(s: Double, p0: Double, p1: Double, r0: Double, r1: Double) {
+        val start = t
+        val end = t + (s * 1000).toLong()
+        val pr = (p1 - p0) / s
+        val rr = (r1 - r0) / s
+        while (t < end) {
+            t += 50
+            if (t % speedEveryMs == 0L) onSpeed(t, 50.0)
+            if (t % 200 == 0L) {
+                val k = (t - start) / 1000.0 / s
+                val f = sin(Math.toRadians(p0 + (p1 - p0) * k))
+                val l = sin(Math.toRadians(r0 + (r1 - r0) * k))
+                update(t, 0.2, sensor(f, l, sqrt(1 - f * f - l * l)), DoubleArray(3) { -pr * left[it] + rr * fwd[it] + bias[it] }, 0.02)
+            }
+        }
+    }
+
+    @Test fun gyroMakesTheTiltFollowAtOnce() {
+        val m = learned()
+        speed = 50.0
+        m.drive(15.0, 0.0, 0.0, 0.0, 1.0)   // reta até a leitura assentar depois da última frenagem
+        assertEquals(0.0, m.pitchDeg!!, 0.5)
+        // Subida de 6° e inclinação lateral de 4° em 0,4 s: só com o acelerômetro (2,5 s de filtro), mal sairia do zero
+        m.tilt(0.4, 0.0, 6.0, 0.0, 4.0)
+        assertEquals("frente na hora", 6.0, m.pitchDeg!!, 1.0)
+        assertEquals("lado na hora", 4.0, m.rollDeg!!, 1.0)
+        // Parado na nova inclinação, o acelerômetro confirma: nada escorrega
+        m.tilt(5.0, 6.0, 6.0, 4.0, 4.0)
+        assertEquals(6.0, m.pitchDeg!!, 0.5)
+        assertEquals(4.0, m.rollDeg!!, 0.5)
+        // E volta na hora
+        m.tilt(0.4, 6.0, 0.0, 4.0, 0.0)
+        assertEquals(0.0, m.pitchDeg!!, 1.0)
+        assertEquals(0.0, m.rollDeg!!, 1.0)
+    }
+
+    @Test fun gyroDriftIsPulledBackByTheAccelerometer() {
+        val m = learned()
+        speed = 50.0
+        m.drive(15.0, 0.0, 0.0, 0.0, 1.0)
+        // Desvio de 0,5 °/s aparece depois de medido (esquentou): em 20 s seriam 10°, mas o acelerômetro segura
+        bias = DoubleArray(3) { -0.5 * left[it] }
+        m.tilt(20.0, 0.0, 0.0, 0.0, 0.0)
+        assertEquals(0.0, m.pitchDeg!!, 1.5)
     }
 
     @Test fun learnsMountingFromStopsAndSpeedChanges() {

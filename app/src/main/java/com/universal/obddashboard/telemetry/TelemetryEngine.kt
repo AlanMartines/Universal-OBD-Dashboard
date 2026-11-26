@@ -261,7 +261,8 @@ class TelemetryEngine(
             lastPhoneAt = ph.timestamp
             compass.onPhone(ph.timestamp, ph.azimuthDeg, ph.axis, ph.reliable, motion.yawDps.takeIf { motionFresh })
         }
-        compass.update(now, speed)
+        // Giro do carro na hora (ESP32; sem ele, o do celular): a rosa dos ventos gira sem esperar o GPS
+        compass.update(now, speed, motion.yawNowDps.takeIf { motionFresh })
         val compassSave = compass.calibration.takeIf { compass.changes != savedCompass && now - lastCompassSaveAt >= IMU_SAVE_MS }
             ?.also { savedCompass = compass.changes; lastCompassSaveAt = now }
 

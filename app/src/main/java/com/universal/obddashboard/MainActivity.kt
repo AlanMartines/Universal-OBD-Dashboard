@@ -631,7 +631,7 @@ class MainActivity : ComponentActivity() {
         const val ACTION_START_CAPTURE = "com.universal.obddashboard.action.START_CAPTURE"
         private const val TAG = "MainActivity"
         private const val APP_URL = "https://appassets.androidplatform.net/assets/web/index.html"
-        private const val UI_REFRESH_MS = 250L
+        private const val UI_REFRESH_MS = 200L   // 5 por segundo, o ritmo do sensor de movimento do ESP32
         internal const val CONSOLE_REVIEW_LINES = 3000
         internal const val MAX_CSV_BYTES = 1_000_000
         internal const val MAX_TRIPS_FOR_TOTALS = 500

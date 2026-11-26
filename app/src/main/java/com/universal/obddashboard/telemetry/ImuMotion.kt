@@ -139,6 +139,8 @@ class ImuMotion(calibration: Calibration? = null) {
     var rollDeg: Double? = null; private set
     /** Giro em torno do eixo de cima do carro (°/s): positivo virando para a esquerda. */
     var yawDps: Double? = null; private set
+    /** O mesmo giro, sem a suavização: o que a rosa dos ventos usa para girar na hora (null antes do desvio medido). */
+    var yawNowDps: Double? = null; private set
     var impactG: Double? = null; private set
     var bumps = 0; private set
     var maxBrakeG = 0.0; private set
@@ -289,7 +291,9 @@ class ImuMotion(calibration: Calibration? = null) {
         val ky = 1 - exp(-dt / YAW_TAU_S)
         smYaw = smYaw?.let { it + (yaw - it) * ky } ?: yaw
         // Giro só depois de medir o desvio do giroscópio: antes, uma reta poderia aparecer como curva
-        yawDps = smYaw.takeIf { biasW >= BIAS_READY_S }
+        val gyroOk = biasW >= BIAS_READY_S
+        yawDps = smYaw.takeIf { gyroOk }
+        yawNowDps = yaw.takeIf { gyroOk }
 
         // Andando em linha reta com a velocidade mudando: aprende a frente (de ré não, que inverteria)
         val dv = dvdtG
@@ -315,7 +319,20 @@ class ImuMotion(calibration: Calibration? = null) {
         val moving = v != null && v >= STOP_KMH
         val known = !moving || dirLatched != null || (v ?: 0.0) > DIR_DECIDE_MAX_KMH
         val sgn = if (direction == DIR_REVERSE) -1.0 else 1.0
-        val k = 1 - exp(-dt / SLOPE_TAU_S)
+        // Filtro complementar: o giroscópio responde na hora (gira a inclinação pelo que o carro girou desde a última
+        // leitura) e o acelerômetro corrige devagar, em SLOPE_TAU_S, o desvio que o giroscópio acumula. Sem o desvio
+        // do giroscópio medido, só o acelerômetro, como antes. Nariz para cima é giro negativo em torno da esquerda;
+        // o lado esquerdo subindo é giro positivo em torno da frente.
+        if (gyroOk) {
+            val dPitch = Math.toRadians(-dot(gyro, left) * dt)
+            val dRoll = Math.toRadians(dot(gyro, fwd) * dt)
+            slopeSin = slopeSin?.let { sin(asin(it.coerceIn(-1.0, 1.0)) + dPitch).coerceIn(-0.5, 0.5) }
+            rollSin = rollSin?.let { sin(asin(it.coerceIn(-1.0, 1.0)) + dRoll).coerceIn(-0.5, 0.5) }
+        }
+        // Arrancando, freando ou em curva forte, a conta do acelerômetro erra (a velocidade do OBD chega atrasada e a força
+        // da curva é estimada): com o giroscópio segurando a resposta, ele corrige mais devagar nesses momentos
+        val busy = gyroOk && (abs(dv ?: 0.0) > BUSY_G || abs(yaw) > BUSY_DPS)
+        val k = 1 - exp(-dt / if (busy) SLOPE_BUSY_TAU_S else SLOPE_TAU_S)
         // Parado não há aceleração: o que sobra na frente é a rampa. Andando, desconta a aceleração do OBD.
         val sinNow = when {
             !moving && v != null -> along
@@ -497,7 +514,7 @@ class ImuMotion(calibration: Calibration? = null) {
         fwdAcc = DoubleArray(3); fwdW = 0.0
         upLocked = false; fwdLocked = false
         slopeSin = null; rollSin = null; smAccel = null; smLat = null; smYaw = null; offS = 0.0
-        yawDps = null
+        yawDps = null; yawNowDps = null
         dirLatched = null
         launchAt = null
         dirVotes = 0
@@ -523,6 +540,10 @@ class ImuMotion(calibration: Calibration? = null) {
         const val RESET_COS = 0.94      // cerca de 20° fora do "cima" aprendido
         const val RESET_S = 10.0
         const val SLOPE_TAU_S = 2.5
+        /** Com o giroscópio, arrancando, freando ou em curva forte: o acelerômetro corrige em 8 s em vez de 2,5 s. */
+        const val SLOPE_BUSY_TAU_S = 8.0
+        const val BUSY_G = 0.05
+        const val BUSY_DPS = 5.0
         const val G_TAU_S = 0.4
         const val YAW_TAU_S = 0.4
         const val BUMP_G = 0.4          // desvio da gravidade que conta como buraco ou impacto

@@ -58,6 +58,27 @@ class CompassTest {
         assertEquals(Compass.SOURCE_GPS, c.source)
     }
 
+    @Test fun gyroTurnsTheHeadingBetweenLateGpsFixes() {
+        // Curva à direita de 20 °/s: o GPS só dá rumo a cada 1 s e ele vale para meio segundo antes
+        fun run(gyro: Boolean): Double {
+            val c = Compass()
+            var true0 = 90.0
+            val start = t
+            var worst = 0.0
+            repeat(25) { i ->
+                t += 200
+                val now = 90.0 + 20.0 * (t - start) / 1000.0
+                true0 = now
+                if (i % 5 == 0) c.onGps(t, (now - 20.0 * 0.5).toFloat(), 40.0, 4f)
+                c.update(t, 40.0, if (gyro) -20.0 else null)
+                if (i >= 5) worst = maxOf(worst, abs(((c.headingDeg!! - true0) % 360 + 540) % 360 - 180))
+            }
+            return worst
+        }
+        assertTrue("com o giroscópio acompanha a curva", run(gyro = true) < 3.0)
+        assertTrue("sem ele, atrasa como antes", run(gyro = false) > 10.0)
+    }
+
     @Test fun learnsFromGpsAndPointsRightWithoutIt() {
         val c = Compass()
         c.learnCircle()

@@ -30,6 +30,11 @@ import kotlin.math.sqrt
  *
  * Ajuste fino ([headingTrimDeg], Ajustes → Calibração dos sensores): graus somados ao rumo das bússolas. O do GPS não
  * muda, porque é o de referência.
+ *
+ * Tempo real ([update] com o giro do carro): o GPS dá um rumo a cada 1 ou 2 s, e já atrasado (sai da diferença entre
+ * duas posições). Com o giroscópio, o rumo mostrado gira na hora pelo que o carro virou, e a fonte escolhida acima só
+ * corrige devagar ([FUSE_GPS_TAU_S], [FUSE_MAG_TAU_S]) o desvio que o giroscópio acumula. O rumo do GPS é adiantado
+ * pelo giro desde a leitura dele ([GPS_LAG_S] a mais). Sem giroscópio, vale a fonte direto, como antes.
  */
 class Compass(calibration: Calibration? = null) {
 
@@ -210,7 +215,7 @@ class Compass(calibration: Calibration? = null) {
      * Escolhe o rumo de agora: GPS bom; senão as bússolas (as duas juntas quando concordam, ou a que estiver lendo);
      * parado, o último do GPS por até [GPS_HOLD_MS].
      */
-    fun update(now: Long, speedKmh: Double?) {
+    fun update(now: Long, speedKmh: Double?, yawDps: Double? = null) {
         val gpsFresh = gpsGood && now - gpsAt <= GPS_FRESH_MS
         val mag = magHeading?.takeIf { now - magAt <= MAG_FRESH_MS }
         val stopped = (speedKmh ?: 0.0) < 1
@@ -234,6 +239,32 @@ class Compass(calibration: Calibration? = null) {
             stoppedHold -> { headingDeg = gpsBearing; source = SOURCE_GPS }
             else -> { headingDeg = null; source = null }
         }
+        fuseGyro(now, yawDps)
+    }
+
+    private var fusedDeg: Double? = null
+    private var fusedAt = 0L
+
+    /** Gira o rumo pelo giroscópio e corrige devagar pela fonte escolhida (ver o cabeçalho da classe). */
+    private fun fuseGyro(now: Long, yawDps: Double?) {
+        val chosen = headingDeg
+        val prev = fusedDeg
+        if (chosen == null || yawDps == null) {
+            fusedDeg = null
+            return
+        }
+        val dt = if (prev == null) 0.0 else ((now - fusedAt) / 1000.0).coerceIn(0.0, 0.5)
+        fusedAt = now
+        // Positivo virando para a esquerda: o rumo (contado no sentido horário) diminui
+        val target = if (source == SOURCE_GPS) norm(chosen - yawDps * (((now - gpsAt) / 1000.0).coerceAtMost(GPS_FRESH_MS / 1000.0) + GPS_LAG_S)) else chosen
+        if (prev == null || abs(wrap(target - prev)) > FUSE_RESET_DEG) {
+            fusedDeg = target
+        } else {
+            val spun = prev - yawDps * dt
+            val tau = if (source == SOURCE_GPS) FUSE_GPS_TAU_S else FUSE_MAG_TAU_S
+            fusedDeg = norm(spun + wrap(target - spun) * (1 - exp(-dt / tau)))
+        }
+        headingDeg = fusedDeg
     }
 
     private fun learn(bearing: Double, mag: DoubleArray) {
@@ -339,6 +370,13 @@ class Compass(calibration: Calibration? = null) {
     }
 
     companion object {
+        /** Quanto o rumo do GPS chega atrasado (s): ele sai de duas posições seguidas, então vale para o meio delas. */
+        const val GPS_LAG_S = 0.5
+        /** Correção do giroscópio pelo GPS e pelas bússolas (s): o giroscópio manda no curto prazo, a fonte no longo. */
+        const val FUSE_GPS_TAU_S = 1.5
+        const val FUSE_MAG_TAU_S = 1.0
+        /** Diferença acima disso entre o rumo girado e a fonte: recomeça da fonte (primeira leitura, troca brusca). */
+        const val FUSE_RESET_DEG = 45.0
         const val SOURCE_GPS = "gps"
         const val SOURCE_MAG = "mag"
         const val SOURCE_PHONE = "phone"

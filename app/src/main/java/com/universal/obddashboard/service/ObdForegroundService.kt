@@ -1546,7 +1546,7 @@ class ObdForegroundService : Service(), CommandQueue.Listener {
         const val REASON_PROFILE_ERROR = "profile_error"
         const val REASON_IGNITION_NOT_DETECTED = "ignition_not_detected"
 
-        private const val DERIVED_TICK_MS = 250L
+        private const val DERIVED_TICK_MS = 200L   // o ritmo do sensor de movimento do ESP32 (uma linha a cada 200 ms)
         /** Pré-diagnóstico regravado a cada minuto (a viagem em andamento substitui a anterior). */
         private const val HEALTH_SAVE_MS = 60_000L
         private const val STATUS_NOTIFICATION_MS = 5000L
