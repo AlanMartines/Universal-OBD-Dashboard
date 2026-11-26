@@ -11,18 +11,20 @@
     <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
       <span class="small text-body-secondary">Versão:</span>
       <div class="btn-group btn-group-sm" role="group" aria-label="Versão da placa">
-        <a class="btn btn-outline-primary{{#unless sn65}} active{{/unless}}" href="/projeto/placa"{{#unless sn65}} aria-current="page"{{/unless}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>TJA1050 (principal)</a>
-        <a class="btn btn-outline-primary{{#if sn65}} active{{/if}}" href="/projeto/placa?versao=sn65"{{#if sn65}} aria-current="page"{{/if}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>SN65HVD230 (alternativa)</a>
+        <a class="btn btn-outline-primary{{#unless sn65}} active{{/unless}}" href="/projeto/placa{{#if pcb}}?placa=pcb{{/if}}"{{#unless sn65}} aria-current="page"{{/unless}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>TJA1050 (principal)</a>
+        <a class="btn btn-outline-primary{{#if sn65}} active{{/if}}" href="/projeto/placa?versao=sn65{{#if pcb}}&amp;placa=pcb{{/if}}"{{#if sn65}} aria-current="page"{{/if}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>SN65HVD230 (alternativa)</a>
       </div>
       <span class="small text-body-secondary ms-md-2">Placa:</span>
       <div class="btn-group btn-group-sm" role="group" aria-label="Tipo de placa">
         <a class="btn btn-outline-primary{{#unless pcb}} active{{/unless}}" href="/projeto/placa{{#if sn65}}?versao=sn65{{/if}}"{{#unless pcb}} aria-current="page"{{/unless}}><i class="fa-solid fa-border-all me-1" aria-hidden="true"></i>Ilhada (perfurada)</a>
-        <a class="btn btn-outline-primary{{#if pcb}} active{{/if}}" href="/projeto/placa?versao=sn65&amp;placa=pcb"{{#if pcb}} aria-current="page"{{/if}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>PCB de fábrica</a>
+        <a class="btn btn-outline-primary{{#if pcb}} active{{/if}}" href="/projeto/placa?placa=pcb{{#if sn65}}&amp;versao=sn65{{/if}}"{{#if pcb}} aria-current="page"{{/if}}><i class="fa-solid fa-microchip me-1" aria-hidden="true"></i>PCB de fábrica</a>
       </div>
     </div>
-    {{#if pcb}}
-    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>PCB de duas faces (versão 2, para encomendar numa fábrica como a JLCPCB ou a PCBWay): as mesmas peças e posições da versão com o SN65HVD230, trilhas no lugar dos fios estanhados e plano de GND na face de baixo. O R4 fica na coluna 18 e o TP3 em (11, 19). Ainda é um exemplo: será desenhada no KiCad depois de a placa ilhada ser validada no carro.</p>
-    {{/if}}
+    {{#if pcb}}{{#if sn65}}
+    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>PCB de duas faces da versão com o SN65HVD230: exemplo de 21/11, com as mesmas peças e posições da placa ilhada, trilhas no lugar dos fios estanhados e plano de GND na face de baixo. O R4 fica na coluna 18 e o TP3 em (11, 19). A PCB de fábrica desenhada no KiCad é a da versão TJA1050.</p>
+    {{else}}
+    <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>PCB de fábrica (versão 2, para encomendar numa fábrica como a JLCPCB ou a PCBWay), desenhada no KiCad 9 com o mesmo circuito da placa ilhada: ERC e DRC zerados, Gerber, lista de peças e modelo 3D em STEP. Na face de cima ficam a alimentação e o RX; na de baixo, o plano de GND e as trilhas de SDA, SCL, D34 e CANH. O C1 desce para a linha 20, o R5 sobe uma linha e o TP3 vai para (10, 16). Os arquivos estão em <a href="{{pcbUrl}}" target="_blank" rel="noopener">placa-pcb</a>.</p>
+    {{/if}}{{/if}}
     {{#if sn65}}{{#unless pcb}}
     <p class="small alert alert-info py-2 mb-2"><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>Versão alternativa: o SN65HVD230 trabalha em 3,3 V e dispensa o divisor do RX (R1, R2 e R3). O CTX fica preso no 3V3, então ele nunca transmite. No módulo do projeto, a medida entre CANH e CANL deu 120 Ω (10/11/2026): o R2 ("121") está ligado e precisa sair antes de ligar no carro. Ainda não testada no carro.</p>
     {{/unless}}{{/if}}

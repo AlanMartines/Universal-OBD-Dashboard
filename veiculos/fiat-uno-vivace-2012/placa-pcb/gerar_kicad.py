@@ -985,6 +985,42 @@ def exportar():
     return gerbers, faltando
 
 
+# Cores das redes no visor 3D do painel (as mesmas do exemplo SN65 do gerar_pcb.py)
+NET_COL = {'12V': '#ff7043', '12V_FUS': '#ab47bc', '5V': '#ef5350', '3V3': '#ffa726', 'GND': '#90a4ae', 'CANH': '#42a5f5',
+           'CANL': '#29b6f6', 'CAN_RX_5V': '#ffee58', 'CAN_RX_3V3': '#fdd835', 'RX_DIV': '#fbc02d', 'SDA': '#26c6da',
+           'SCL': '#66bb6a', 'VBAT_ADC': '#a1887f'}
+
+
+def exportar_3d(pcb):
+    """pcb3d.json: o que o visor 3D do painel precisa para mostrar esta PCB (o gerar_3d.py da placa lê e põe em 'pcb').
+    Coordenadas em mm a partir do canto de cima à esquerda, como as da placa ilhada."""
+    import pcbnew
+    b = pcbnew.LoadBoard(pcb)
+    r3 = lambda v: round(v, 3)
+    ilhas = []
+    for fp in b.GetFootprints():
+        for pd in fp.Pads():
+            q = pd.GetPosition()
+            ilhas.append({'p': [r3(pcbnew.ToMM(q.x) - OX), r3(pcbnew.ToMM(q.y) - OY)], 'd': r3(pcbnew.ToMM(pd.GetSize(pcbnew.F_Cu).x)),
+                          'q': pd.GetShape() == pcbnew.PAD_SHAPE_RECT, 'gnd': pd.GetNetname() == 'GND'})
+    vias = [[r3(pcbnew.ToMM(t.GetPosition().x) - OX), r3(pcbnew.ToMM(t.GetPosition().y) - OY)]
+            for t in b.GetTracks() if t.GetClass() == 'PCB_VIA']
+    faces = {'F': [], 'B': []}
+    for net, w, lay, pts in TRACKS:
+        faces[lay].append({'n': net, 'w': w, 'cor': NET_COL.get(net, '#e0e0e0'), 'pts': [[r3(v) for v in g(*cr)] for cr in pts]})
+    mm2 = lambda cr: [r3(v) for v in g(*cr)]
+    mover = {nome: [mm2(a), mm2(b2)] for nome, (a, b2) in POS_RES.items()}
+    mover['C1'] = [mm2(POS_C1[0]), mm2(POS_C1[1])]
+    orig_tp = {nome: cr for nome, _, cr, _, _ in gp.TEST_POINTS}
+    dados = {'fonte': 'veiculos/fiat-uno-vivace-2012/placa-pcb/gerar_kicad.py (KiCad 9)', 'transceptor': 'TJA1050',
+             'cima': faces['F'], 'baixo': faces['B'], 'plano_cima': True,
+             'vias': sorted(vias), 'ilhas': sorted(ilhas, key=lambda il: (il['p'][1], il['p'][0])),
+             'mover': mover, 'tp': {n: mm2(cr) for n, cr in POS_TP.items() if cr != orig_tp[n]}}
+    with open(os.path.join(AQUI, 'pcb3d.json'), 'w') as f:
+        json.dump(dados, f, ensure_ascii=False, separators=(',', ':'))
+        f.write('\n')
+
+
 def main():
     write_symbol_lib()
     write_fp_lib()
@@ -1001,6 +1037,7 @@ def main():
               [(i.get('description'), i.get('pos')) for i in v.get('items', [])][:2])
     if ev or dv or un or par:
         sys.exit('pare: ERC ou DRC com violações')
+    exportar_3d(os.path.join(AQUI, f'{PROJ}.kicad_pcb'))
     gerbers, faltando = exportar()
     print('Gerber:', ', '.join(gerbers))
     if faltando:

@@ -190,8 +190,8 @@ for (const escuro of [false, true]) {
   for (const [nome, caminho] of [['login', '/login'], ['projeto', '/projeto'], ['sobre', '/sobre'], ['notas', '/projeto/notas']]) {
     await conferir(`${tema}-${nome}`, () => aba.ir(u(caminho), { escuro }));
   }
-  // Modelo 3D, nas três variações: o aviso de erro não pode aparecer
-  for (const [nome, caminho] of [['placa-tja', '/projeto/placa'], ['placa-sn65', '/projeto/placa?versao=sn65'], ['placa-pcb', '/projeto/placa?placa=pcb']]) {
+  // Modelo 3D, nas quatro variações: o aviso de erro não pode aparecer
+  for (const [nome, caminho] of [['placa-tja', '/projeto/placa'], ['placa-sn65', '/projeto/placa?versao=sn65'], ['placa-pcb', '/projeto/placa?placa=pcb'], ['placa-pcb-sn65', '/projeto/placa?placa=pcb&versao=sn65']]) {
     await conferir(`${tema}-${nome}`, async () => {
       await aba.ir(u(caminho), { escuro });
       await esperar(1500);

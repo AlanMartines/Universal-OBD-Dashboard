@@ -6,6 +6,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+- **Painel, Placa em 3D → PCB de fábrica:** mostra a PCB desenhada no KiCad (versão TJA1050, `veiculos/fiat-uno-vivace-2012/placa-pcb/`), com as trilhas, as ilhas, as vias de costura e o C1, o R5 e o TP3 nos furos dela. O botão segue a versão escolhida: com o SN65HVD230, continua o exemplo de 21/11.
+
 ## [0.9.85] - 2026-11-24
 
 ### Adicionado

@@ -278,6 +278,11 @@ describe('fluxo pelo navegador', () => {
     const sn65 = (await web.inject({ method: 'GET', url: '/projeto/placa?versao=sn65' })).body;
     assert.ok(sn65.includes('src="/modules/projeto/modelo3d-sn65-dados.js?v=') && sn65.includes('SN65HVD230'));
     assert.equal((await web.inject({ method: 'GET', url: '/modules/projeto/modelo3d-sn65-dados.js' })).statusCode, 200);
+    // PCB de fábrica: na versão TJA1050, a do KiCad (dados no modelo principal); com versao=sn65, o exemplo do gerar_pcb.py
+    const pcb = (await web.inject({ method: 'GET', url: '/projeto/placa?placa=pcb' })).body;
+    assert.ok(pcb.includes('src="/modules/projeto/modelo3d-dados.js?v=') && pcb.includes('data-placa="pcb"') && pcb.includes('KiCad'));
+    const pcbSn65 = (await web.inject({ method: 'GET', url: '/projeto/placa?placa=pcb&versao=sn65' })).body;
+    assert.ok(pcbSn65.includes('modelo3d-sn65-dados.js') && pcbSn65.includes('data-placa="pcb"'));
     const outra = (await web.inject({ method: 'GET', url: '/projeto/placa?versao=xyz' })).body;
     assert.ok(outra.includes('src="/modules/projeto/modelo3d-dados.js?v=') && !outra.includes('modelo3d-sn65'));
     // Three.js local: só os dois arquivos que o visor importa

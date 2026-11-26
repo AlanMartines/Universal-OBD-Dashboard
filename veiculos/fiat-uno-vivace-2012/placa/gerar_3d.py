@@ -671,8 +671,14 @@ DET = {
     'fios_baixo': [{'n': f'{name}: {desc}', 'cor': col, 'pts': [rr(xy(c, r)) for c, r in pts]} for name, col, pts, desc in g.BOTTOM_WIRES],
 }
 
-# ---------------------------------------------------------------- PCB de duas faces (gerar_pcb.py), só na versão SN65HVD230
-# O visor troca a placa perfurada por ela: trilhas e ilhas da PCB, R4 e TP3 nos lugares dela, sem fios estanhados.
+# ---------------------------------------------------------------- PCB de duas faces (versão 2, para fábrica)
+# O visor troca a placa perfurada por ela: trilhas e ilhas da PCB, as peças que mudam de furo ('mover' e 'tp') nos
+# lugares dela, sem fios estanhados. Versão TJA1050: a PCB do KiCad (../placa-pcb/gerar_kicad.py grava o pcb3d.json).
+# Versão SN65HVD230: o exemplo do gerar_pcb.py.
+PCB3D = os.path.normpath(os.path.join(OUT, '..', 'placa-pcb', 'pcb3d.json'))
+if g.VARIANTE == 'tja' and os.path.exists(PCB3D):
+    with open(PCB3D, encoding='utf-8') as fh:
+        DET['pcb'] = json.load(fh)
 if g.VARIANTE == 'sn65':
     import gerar_pcb as pcb  # noqa: E402  (mesmas posições: lê o gerar_placa.py já carregado nesta versão)
     pcb.check()
@@ -685,7 +691,7 @@ if g.VARIANTE == 'sn65':
         'baixo': _pcb_tracks(pcb.BOTTOM),
         'vias': [rr(xy(c, r)) for c, r, _ in pcb.VIAS],
         'ilhas': [{'p': rr(xy(c, r)), 'd': d, 'q': sq, 'gnd': net == 'GND'} for _, c, r, net, d, sq in pcb.pads],
-        'r4': [rr(xy(*pcb.R4[0])), rr(xy(*pcb.R4[1]))],
+        'mover': {'R4': [rr(xy(*pcb.R4[0])), rr(xy(*pcb.R4[1]))]},
         'tp': {nome: rr(xy(*cr)) for nome, cr in pcb.TP_AT.items()},
     }
 

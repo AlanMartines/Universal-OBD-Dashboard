@@ -11,15 +11,19 @@ const dica = document.getElementById('dica3d');
 
 // Modo PCB (/projeto/placa?placa=pcb; MODO_PCB, porque PCB já é o nome das cores das plaquinhas dos módulos): a placa perfurada dá lugar à PCB de duas faces (versão 2, para fábrica). As
 // trilhas viram cobre sob a máscara verde; somem os fios estanhados, os fios isolados de baixo e os jumpers J1 a J3;
-// R4 e TP3 vão para os lugares da PCB (dados de gerar_pcb.py, exportados por gerar_3d.py em 'pcb').
+// as peças que mudam de furo na PCB ('mover': resistores e capacitores; 'tp': pontos de teste) vão para os lugares
+// dela. Dados exportados por gerar_3d.py em 'pcb': na versão TJA1050, a PCB do KiCad (placa-pcb/gerar_kicad.py); na
+// SN65HVD230, o exemplo do gerar_pcb.py.
 const MODO_PCB = !!(X && X.pcb && canvas && canvas.dataset.placa === 'pcb');
 if (MODO_PCB) {
   const mesmo = (p, q) => Math.abs(p[0] - q[0]) < 0.01 && Math.abs(p[1] - q[1]) < 0.01;
   const mover = (de, para) => { X.solda = X.solda.filter((p) => !de.some((q) => mesmo(p, q))).concat(para); };
-  const r4 = X.resistores.find((r) => r.n.startsWith('R4 '));
-  if (r4) {
-    mover([r4.a, r4.b], X.pcb.r4);
-    [r4.a, r4.b] = X.pcb.r4;
+  for (const [nome, ab] of Object.entries(X.pcb.mover || {})) {
+    const peca = [...X.resistores, ...(X.capacitores || [])].find((r) => r.n.startsWith(`${nome} `));
+    if (peca) {
+      mover([peca.a, peca.b], ab);
+      [peca.a, peca.b] = ab;
+    }
   }
   for (const tp of X.pontos_teste) {
     const novo = X.pcb.tp[tp.nome];
