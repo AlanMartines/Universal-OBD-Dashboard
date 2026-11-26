@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.86] - 2026-11-26
+
 ### Melhorado
 - **Rosa dos ventos em tempo real.** O rumo gira na hora pelo giroscópio (LSM6DS3 do ESP32; sem ele, o do celular), sem esperar o GPS, que dá um rumo a cada 1 ou 2 s e já atrasado. O GPS e as bússolas só corrigem devagar o desvio do giroscópio, e o rumo do GPS é adiantado pelo giro desde a leitura dele.
 - **Inclinação de frente e de lado em tempo real.** Filtro complementar: o giroscópio responde na hora e o acelerômetro corrige devagar (2,5 s; 8 s arrancando, freando ou em curva forte, quando a conta dele erra). Antes, só o acelerômetro, com 2,5 s de atraso, e a frente ficava torta por alguns segundos depois de uma frenagem.
