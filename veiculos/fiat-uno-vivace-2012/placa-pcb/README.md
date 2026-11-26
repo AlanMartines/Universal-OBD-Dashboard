@@ -44,6 +44,26 @@ Diferenças de posição em relação à placa ilhada (o circuito é o mesmo):
 Os módulos, o porta-fusível, as barras dos sensores, o LED e o cabo OBD ficam nos mesmos furos: a placa cabe na
 mesma caixa.
 
+## Encomenda (referência: [PCB Brasil](https://pcbbrasil.com.br/quote))
+
+| Opção | Valor |
+|---|---|
+| Dimensões | 50 × 70 mm |
+| Quantidade | 5 |
+| Layers | 2 |
+| Material | FR-4, TG 150-160 |
+| Espessura | 1,6 mm (a caixa conta com ela) |
+| Menor pista/distância | 6/6 mil (a folga mínima do projeto é 0,2 mm, menos que 8 mil) |
+| Menor furo | 0,3 mm (vias de costura) |
+| Máscara / silkscreen | verde / branco |
+| Gold fingers | não |
+| Acabamento | HASL (com ou sem chumbo) |
+| Vias | tenting |
+| Cobre | 1 oz |
+| Stencil e montagem | não (peças de furo, soldadas à mão) |
+
+Arquivo: `fabricacao/gerbers-escuta-can-uno.zip`.
+
 ## Antes de mandar fabricar
 
 1. **Medidas reais:** confira os módulos nas barras, encaixando o ESP32, o TJA1050 e o RT8272 sobre o desenho em
