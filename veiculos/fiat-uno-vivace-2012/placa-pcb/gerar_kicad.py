@@ -967,6 +967,21 @@ def exportar():
     for lado in ('top', 'bottom'):
         cli('pcb', 'render', '--quality', 'basic', '--side', lado, '-w', '1600', '-h', '1100', '--background', 'opaque',
             '-o', os.path.join(FAB, f'render-3d-{lado}.png'), pcb)
+    # a placa nua (sem os modelos 3D das peças), para mostrar o desenho da PCB
+    import pcbnew
+    nua = os.path.join(AQUI, '_placa-nua.kicad_pcb')
+    b = pcbnew.LoadBoard(os.path.join(AQUI, pcb))
+    for fp in b.GetFootprints():
+        fp.Models().clear()
+    b.Save(nua)
+    try:
+        for lado in ('top', 'bottom'):
+            cli('pcb', 'render', '--quality', 'basic', '--side', lado, '-w', '1600', '-h', '1100', '--background', 'opaque',
+                '-o', os.path.join(FAB, f'render-3d-{lado}-sem-componentes.png'), os.path.basename(nua))
+    finally:
+        for ext in ('.kicad_pcb', '.kicad_prl', '.kicad_pro'):
+            if os.path.exists(nua[:-10] + ext):
+                os.remove(nua[:-10] + ext)
     return gerbers, faltando
 
 

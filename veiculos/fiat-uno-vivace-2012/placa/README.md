@@ -307,22 +307,52 @@ O que muda em relação à versão principal (fusível, RT8272, BMP180 e cabo OB
 
 ## PCB de duas faces (versão 2, para fábrica)
 
-Exemplo de placa com trilhas fixas (21/11/2026), para encomendar numa fábrica como a JLCPCB ou a PCBWay: duas faces e furos metalizados. É a versão 2 da placa ilhada, para depois de ela ser validada no carro. Mesmas peças e mesmas posições da versão com o SN65HVD230, mesmo tamanho (50 × 70 mm, cabe na mesma caixa sobre os apoios dos cantos) e os módulos continuam encaixados em barras fêmea. O [`gerar_pcb.py`](gerar_pcb.py) lê as posições do `gerar_placa.py` (que também o chama): mudou a placa ilhada, a PCB acompanha. Uma conferência simples para a geração com erro se uma trilha ficar solta ou encostar numa ilha de outra rede.
+PCB com trilhas fixas para encomendar numa fábrica como a JLCPCB ou a PCBWay: duas faces e furos metalizados. É a
+versão 2 da placa ilhada, para depois de ela ser validada no carro.
+
+- **Projeto:** no KiCad 9 (26/11/2026), em [`../placa-pcb/`](../placa-pcb/), com o mesmo circuito da versão TJA1050.
+- **Tamanho:** 50 × 70 mm, cabe na mesma caixa, sobre os apoios dos cantos.
+- **Módulos:** continuam encaixados em barras fêmea.
+- **Gerador:** o [`gerar_kicad.py`](../placa-pcb/gerar_kicad.py) lê as posições e as ligações deste `gerar_placa.py`, as
+  medidas do `gerar_3d.py` e a placa do `caixa.py`. Mudou a placa ilhada, rode de novo.
 
 | Face de cima (componentes) | Face de baixo (espelhada, como se vê virando a placa) |
 |---|---|
-| ![PCB, face de cima: alimentação, CAN, 3V3 e LED](pcb-cima.svg) | ![PCB, face de baixo: plano de GND e as trilhas de I2C, D34 e CRX](pcb-baixo.svg) |
+| ![PCB, face de cima: alimentação, RX do TJA1050, divisor e LED](../placa-pcb/fabricacao/pcb-top.svg) | ![PCB, face de baixo: plano de GND e as trilhas de SDA, SCL, D34 e CANH](../placa-pcb/fabricacao/pcb-bottom.svg) |
+| ![PCB sem componentes em 3D, vista de cima: ilhas, trilhas e serigrafia](../placa-pcb/fabricacao/render-3d-top-sem-componentes.png) | ![PCB sem componentes em 3D, vista de baixo: plano de GND, vias de costura e serigrafia](../placa-pcb/fabricacao/render-3d-bottom-sem-componentes.png) |
 
 O que muda em relação à placa ilhada:
 
-- **Face de cima:** 12 V com trilha de 1,0 mm (antes e depois do fusível), 5 V com 0,8 mm, sinais (3V3, CANH, CANL, LED) com 0,3 a 0,5 mm. O CTX continua preso no 3V3: o transceptor nunca transmite.
-- **Face de baixo:** plano de GND em quase toda a face (menos ruído na leitura da bateria e na CAN), ligado às ilhas de GND com alívio térmico. Só quatro sinais passam por baixo, onde cruzariam a alimentação: SDA (D25), SCL (D26), D34 (divisor da bateria) e CRX (D21, por uma via embaixo do ESP32).
+- **Face de cima:**
+  - alimentação: 12 V do OBD com 1,0 mm; 12 V com fusível e 5 V com 0,8 mm; ramais e 3V3 com 0,6 mm;
+  - RX do TJA1050, divisor do RX e LED com 0,3 mm;
+  - o TXD continua preso em 5 V: o transceptor nunca transmite.
+- **Face de baixo:**
+  - plano de GND na placa toda (menos ruído na leitura da bateria e na CAN), ligado às ilhas de GND com alívio térmico;
+  - só passam por baixo os sinais que cruzariam a alimentação: SDA (D25), SCL (D26), D34 (divisor da bateria) e CANH;
+  - também há GND na face de cima, nos espaços livres, costurado por 120 vias.
 - **Sem fios J1 a J3:** viram trilhas.
-- **R4 na coluna 18** (18,3)–(18,7), ao lado do USB do ESP32: na coluna 16 o CANH cruzaria o 3V3.
-- **TP3 em (11,19):** na posição da placa ilhada passa a trilha do 5 V.
-- **R2 "121" do módulo SN65HVD230:** tirar, como na placa ilhada.
+- **Cantos sem cobre:** 3,5 × 3,5 mm, onde a caixa apoia a placa.
+- **Três peças mudam de furo**, para os pátios não se sobreporem (o circuito é o mesmo):
+  - C1 vai para a linha 20;
+  - R5 vai para (4,17)–(4,21);
+  - TP3 vai para (10,16), porque a trilha do 5 V passa na linha 13.
 
-**Situação:** só exemplo, sem conferência de fábrica (DRC) e sem os arquivos Gerber. Para encomendar: desenhar no KiCad a partir deste exemplo, depois das medições pelos pontos de teste, do ajuste do divisor da bateria e da instalação do GY-273. Uma versão de uma face só (corrosão caseira ou CNC) também é possível: o plano de GND fica, e os quatro sinais de baixo viram fios por cima.
+**Situação:** ERC, DRC e conferência entre esquemático e placa zerados.
+
+- **Arquivos de fábrica** (em `../placa-pcb/fabricacao/`):
+  - Gerber com a furação em zip;
+  - BOM e CPL no formato da JLCPCB;
+  - esquemático em PDF;
+  - modelo 3D em STEP.
+- **Para encomendar:**
+  1. Faça as medições pelos pontos de teste na placa ilhada.
+  2. Imprima o `pcb-top.svg` em 100 % e encaixe os módulos por cima para conferir.
+  3. Peça só a placa: as peças são de furo, montadas à mão.
+- **Detalhes:** [`../placa-pcb/README.md`](../placa-pcb/README.md).
+
+O exemplo anterior, de 21/11, na versão SN65HVD230 (`gerar_pcb.py`, que gera `pcb-cima.svg` e `pcb-baixo.svg`),
+continua aqui como referência dessa variante.
 
 ## Medidas dos componentes
 

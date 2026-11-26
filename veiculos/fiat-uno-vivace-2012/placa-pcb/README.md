@@ -19,7 +19,8 @@ e o tamanho da placa e dos apoios do `../placa/caixa.py`. Mudou a placa ilhada, 
 | `fabricacao/gerbers-escuta-can-uno.zip` | 9 Gerber, furação Excellon (PTH e NPTH) com mapa e o job: é o que vai para a fábrica |
 | `fabricacao/BOM.csv`, `fabricacao/CPL.csv` | Lista de peças e posições no formato da JLCPCB (centro de cada peça, origem no canto de baixo à esquerda) |
 | `fabricacao/esquematico.pdf`, `pcb-top.svg`, `pcb-bottom.svg` | Revisão 2D (a face de baixo vem espelhada, como se vê virando a placa) |
-| `fabricacao/escuta-can-uno.step`, `render-3d-top.png`, `render-3d-bottom.png` | Modelo 3D (STEP AP214) e as duas vistas |
+| `fabricacao/escuta-can-uno.step`, `render-3d-top.png`, `render-3d-bottom.png` | Modelo 3D (STEP AP214) e as duas vistas, com as peças |
+| `fabricacao/render-3d-top-sem-componentes.png`, `render-3d-bottom-sem-componentes.png` | As duas vistas da PCB sem componentes (só a placa) |
 
 O script roda o ERC e o DRC (com a conferência entre esquemático e placa) e para se sobrar qualquer violação ou
 ligação faltando. Só depois exporta.
