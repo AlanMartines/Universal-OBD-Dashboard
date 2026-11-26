@@ -1,0 +1,7 @@
+(version 1)
+(rule "Alimentacao: trilha de pelo menos 0,6 mm"
+  (condition "A.NetClass == 'Power'")
+  (constraint track_width (min 0.6mm)))
+(rule "Sinal: trilha de pelo menos 0,25 mm"
+  (condition "A.NetClass == 'Default'")
+  (constraint track_width (min 0.25mm)))
