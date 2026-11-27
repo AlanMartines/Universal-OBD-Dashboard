@@ -5,6 +5,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -117,6 +118,31 @@ class ImuMotionTest {
         m.tilt(0.4, 6.0, 0.0, 4.0, 0.0)
         assertEquals(0.0, m.pitchDeg!!, 1.0)
         assertEquals(0.0, m.rollDeg!!, 1.0)
+    }
+
+    @Test fun aTurnOnACamberedRoadDoesNotTiltTheCar() {
+        // Viagem de 27/11/2026: curvas de uns 23 °/s numa pista com caimento davam inclinação falsa de 10° a 25°
+        val m = learned()
+        speed = 20.0
+        m.drive(15.0, 0.0, 0.0, 0.0, 1.0)
+        val c = Math.toRadians(7.0)   // caimento: o lado esquerdo do carro 7° mais alto
+        val u = DoubleArray(3) { sin(c) * left[it] + cos(c) * up[it] }       // a vertical de verdade, nos eixos do módulo
+        val hl = DoubleArray(3) { cos(c) * left[it] - sin(c) * up[it] }      // a esquerda na horizontal
+        fun run(s: Double, yawDps: Double) {
+            val latG = (20 / 3.6) * Math.toRadians(yawDps) / ImuMotion.G   // força da curva para a esquerda
+            val end = t + (s * 1000).toLong()
+            while (t < end) {
+                t += 50
+                if (t % speedEveryMs == 0L) m.onSpeed(t, 20.0)
+                if (t % 200 == 0L) m.update(t, 0.2, DoubleArray(3) { u[it] + hl[it] * latG }, DoubleArray(3) { u[it] * yawDps + bias[it] }, 0.02)
+            }
+        }
+        run(12.0, 0.0)
+        assertEquals("parado no caimento", 7.0, m.rollDeg!!, 1.0)
+        // Curva de 23 °/s por 4 s em torno da vertical de verdade: a inclinação não muda
+        run(4.0, 23.0)
+        assertEquals("a curva não vira inclinação de frente", 0.0, m.pitchDeg!!, 1.0)
+        assertEquals("nem de lado", 7.0, m.rollDeg!!, 1.5)
     }
 
     @Test fun gyroDriftIsPulledBackByTheAccelerometer() {

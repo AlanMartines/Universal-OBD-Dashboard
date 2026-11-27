@@ -319,15 +319,20 @@ class ImuMotion(calibration: Calibration? = null) {
         val moving = v != null && v >= STOP_KMH
         val known = !moving || dirLatched != null || (v ?: 0.0) > DIR_DECIDE_MAX_KMH
         val sgn = if (direction == DIR_REVERSE) -1.0 else 1.0
-        // Filtro complementar: o giroscópio responde na hora (gira a inclinação pelo que o carro girou desde a última
-        // leitura) e o acelerômetro corrige devagar, em SLOPE_TAU_S, o desvio que o giroscópio acumula. Sem o desvio
-        // do giroscópio medido, só o acelerômetro, como antes. Nariz para cima é giro negativo em torno da esquerda;
-        // o lado esquerdo subindo é giro positivo em torno da frente.
-        if (gyroOk) {
-            val dPitch = Math.toRadians(-dot(gyro, left) * dt)
-            val dRoll = Math.toRadians(dot(gyro, fwd) * dt)
-            slopeSin = slopeSin?.let { sin(asin(it.coerceIn(-1.0, 1.0)) + dPitch).coerceIn(-0.5, 0.5) }
-            rollSin = rollSin?.let { sin(asin(it.coerceIn(-1.0, 1.0)) + dRoll).coerceIn(-0.5, 0.5) }
+        // Filtro complementar: o giroscópio responde na hora e o acelerômetro corrige devagar, em SLOPE_TAU_S, o desvio
+        // que o giroscópio acumula. Sem o desvio do giroscópio medido, só o acelerômetro, como antes.
+        // O giro entra em 3D: a vertical de verdade, escrita nos eixos do carro (frente, esquerda e cima aprendidos), é
+        // girada ao contrário do giro do carro (du/dt = -ω × u). Assim uma curva em torno da vertical não mexe na
+        // inclinação, mesmo com o carro inclinado (pista com caimento); somar o giro eixo por eixo vazava a curva para a
+        // inclinação (v0.9.86: 23 °/s de curva com 7° de caimento davam uns 11° de erro).
+        val s0 = slopeSin
+        val r0 = rollSin
+        if (gyroOk && s0 != null && r0 != null) {
+            val u = fwd.times(s0).plus(left.times(r0)).plus(up.times(sqrt((1 - s0 * s0 - r0 * r0).coerceAtLeast(0.0))))
+            val w = gyro.times(PI / 180)
+            val turned = unit(u.minus(cross(w, u).times(dt)))
+            slopeSin = dot(turned, fwd).coerceIn(-0.5, 0.5)
+            rollSin = dot(turned, left).coerceIn(-0.5, 0.5)
         }
         // Arrancando, freando ou em curva forte, a conta do acelerômetro erra (a velocidade do OBD chega atrasada e a força
         // da curva é estimada): com o giroscópio segurando a resposta, ele corrige mais devagar nesses momentos

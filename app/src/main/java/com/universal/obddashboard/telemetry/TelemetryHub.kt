@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import com.universal.obddashboard.can.Slcan
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 
 data class Reading(val value: Double, val timestamp: Long)
@@ -213,7 +215,39 @@ object TelemetryHub {
             for ((k, v) in values) merged[k] = Reading(v, timestamp)
             s.copy(readings = merged)
         }
+        queueMotion(values, timestamp)
     }
+
+    /**
+     * Um bloco do sensor de movimento (média de 200 ms): aceleração (g), giro (°/s) e pico (g). O laço do app roda a cada
+     * 200 ms, mas o Bluetooth entrega os blocos em rajadas (17 ms ou 500 ms entre eles): guardados numa fila, nenhum
+     * se perde. Para o filtro da inclinação e do rumo, que somam o giro, um bloco perdido é um pedaço do giro que some.
+     */
+    class MotionSample(val t: Long, val a: DoubleArray, val gyro: DoubleArray, val peak: Double)
+
+    private val espMotion = ConcurrentLinkedQueue<MotionSample>()
+    private val phoneMotion = ConcurrentLinkedQueue<MotionSample>()
+
+    private fun queueMotion(values: Map<String, Double>, t: Long) {
+        fun put(q: ConcurrentLinkedQueue<MotionSample>, ax: String, ay: String, az: String, gx: String, gy: String, gz: String, pk: String) {
+            val x = values[ax] ?: return
+            q.add(MotionSample(t, doubleArrayOf(x, values[ay] ?: 0.0, values[az] ?: 0.0),
+                doubleArrayOf(values[gx] ?: 0.0, values[gy] ?: 0.0, values[gz] ?: 0.0), values[pk] ?: 0.0))
+            while (q.size > MOTION_QUEUE_MAX) q.poll()   // sem ninguém consumindo (fora da captura), não cresce
+        }
+        put(espMotion, Slcan.IMU_AX, Slcan.IMU_AY, Slcan.IMU_AZ, Slcan.IMU_GX, Slcan.IMU_GY, Slcan.IMU_GZ, Slcan.IMU_PEAK)
+        put(phoneMotion, PhoneSensors.AX, PhoneSensors.AY, PhoneSensors.AZ, PhoneSensors.GX, PhoneSensors.GY, PhoneSensors.GZ, PhoneSensors.PEAK)
+    }
+
+    /** Tira da fila os blocos que chegaram desde a última vez (do ESP32 ou, com [phone], do celular), na ordem. */
+    fun drainMotion(phone: Boolean): List<MotionSample> {
+        val q = if (phone) phoneMotion else espMotion
+        val out = ArrayList<MotionSample>()
+        while (true) out.add(q.poll() ?: break)
+        return out
+    }
+
+    private const val MOTION_QUEUE_MAX = 50
 
     fun update(transform: (DashboardState) -> DashboardState) = _state.update(transform)
 

@@ -204,30 +204,20 @@ class TelemetryEngine(
         // Sensor de movimento do ESP32: cada linha nova (5 por segundo) passa pelo ImuMotion
         val ax = state.readings[Slcan.IMU_AX]
         val imuFresh = ax != null && now - ax.timestamp < IMU_STALE_MS
-        if (ax != null && imuFresh && ax.timestamp != lastImuAt) {
-            val dt = if (lastImuAt == 0L) 0.2 else (ax.timestamp - lastImuAt) / 1000.0
-            lastImuAt = ax.timestamp
-            val r = { id: String -> state.readings[id]?.value ?: 0.0 }
-            imu.update(
-                ax.timestamp, dt,
-                doubleArrayOf(ax.value, r(Slcan.IMU_AY), r(Slcan.IMU_AZ)),
-                doubleArrayOf(r(Slcan.IMU_GX), r(Slcan.IMU_GY), r(Slcan.IMU_GZ)),
-                r(Slcan.IMU_PEAK),
-            )
+        // Todos os blocos que chegaram desde a última volta, cada um com os seus 200 ms (o Bluetooth entrega em rajadas:
+        // o intervalo de chegada não é o do sensor)
+        for (m in TelemetryHub.drainMotion(phone = false)) {
+            if (m.t <= lastImuAt - IMU_STALE_MS) continue
+            lastImuAt = m.t
+            imu.update(m.t, MOTION_BLOCK_S, m.a, m.gyro, m.peak)
         }
         // Reserva: acelerômetro e giroscópio do celular, aprendidos em paralelo (calibração própria)
         val pax = state.readings[PhoneSensors.AX]
         val phoneImuFresh = pax != null && now - pax.timestamp < IMU_STALE_MS
-        if (pax != null && phoneImuFresh && pax.timestamp != lastPhoneImuAt) {
-            val dt = if (lastPhoneImuAt == 0L) 0.2 else ((pax.timestamp - lastPhoneImuAt) / 1000.0).coerceAtMost(1.0)
-            lastPhoneImuAt = pax.timestamp
-            val r = { id: String -> state.readings[id]?.value ?: 0.0 }
-            phoneImu.update(
-                pax.timestamp, dt,
-                doubleArrayOf(pax.value, r(PhoneSensors.AY), r(PhoneSensors.AZ)),
-                doubleArrayOf(r(PhoneSensors.GX), r(PhoneSensors.GY), r(PhoneSensors.GZ)),
-                r(PhoneSensors.PEAK),
-            )
+        for (m in TelemetryHub.drainMotion(phone = true)) {
+            if (m.t <= lastPhoneImuAt - IMU_STALE_MS) continue
+            lastPhoneImuAt = m.t
+            phoneImu.update(m.t, MOTION_BLOCK_S, m.a, m.gyro, m.peak)
         }
         // O que vale na tela: o ESP32 (preso no carro); sem ele, o celular
         val usePhone = !imuFresh && phoneImuFresh
@@ -462,6 +452,8 @@ class TelemetryEngine(
 
         /** Sem linha do sensor de movimento há tanto tempo, os valores somem da tela. */
         const val IMU_STALE_MS = 2000L
+        /** Cada bloco do sensor de movimento (ESP32 e celular) é a média de 200 ms. */
+        const val MOTION_BLOCK_S = 0.2
         const val IMU_SAVE_MS = 30_000L
         const val VIBRATION_WINDOW_MS = 3000L
         /** Sinais da rede CAN usados no pré-diagnóstico (nomes dos perfis com escuta). */
