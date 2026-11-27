@@ -6,6 +6,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.9.87] - 2026-11-27
+
 ### Corrigido
 - **Inclinação falsa nas curvas (v0.9.86).** O giro entrava eixo por eixo e, com o carro inclinado (pista com caimento), parte da curva virava inclinação: 10° a 25° falsos em curvas fechadas, e a frente presa em 11° a 14° por até um minuto. Agora a vertical é girada em 3D pelo giroscópio, e uma curva em torno da vertical não mexe na inclinação.
 - **Leituras do sensor de movimento perdidas.** O Bluetooth entrega os blocos de 200 ms em rajadas e o app aproveitava só o último de cada volta (13 % a 20 % perdidos). Agora cada bloco, do ESP32 ou do celular, entra numa fila e é processado.
